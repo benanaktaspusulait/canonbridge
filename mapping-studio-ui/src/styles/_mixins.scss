@@ -3,7 +3,7 @@
  * Reusable style patterns
  */
 
-@import 'variables';
+@use 'variables' as *;
 
 // ============================================
 // Flexbox Utilities

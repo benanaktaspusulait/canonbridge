@@ -1,29 +1,9 @@
-.page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-  gap: 1rem;
-}
-
-.page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-color);
-  margin: 0 0 0.25rem;
-}
-
-.page-subtitle {
-  font-size: 0.875rem;
-  color: var(--text-color-secondary);
-  margin: 0;
-}
-
+/* ── Stat grid ── */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 1rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .stat-card {
@@ -32,89 +12,54 @@
   border-radius: 12px;
   padding: 1.25rem;
   display: flex;
-  gap: 1rem;
   align-items: flex-start;
+  gap: 1rem;
+  transition: box-shadow 0.15s;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
 }
 
 .stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 
-  i { font-size: 1.25rem; color: var(--text-color); opacity: 0.8; }
+  i {
+    font-size: 1.125rem;
+    color: var(--text-color);
+    opacity: 0.75;
+  }
 }
 
-.stat-body { flex: 1; min-width: 0; }
+.stat-body {
+  flex: 1;
+  min-width: 0;
+}
 
 .stat-value {
-  font-size: 1.5rem;
+  font-size: 1.375rem;
   font-weight: 700;
   color: var(--text-color);
   line-height: 1.2;
 }
 
 .stat-label {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   color: var(--text-color-secondary);
-  margin: 0.2rem 0 0.35rem;
+  margin: 2px 0 6px;
 }
 
 .stat-change {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 500;
 
-  &.positive { color: var(--green-600); }
-  &.negative  { color: var(--red-500); }
-  &.neutral   { color: var(--text-color-secondary); }
-}
-
-/* Card header */
-.card-header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem 0;
-  gap: 1rem;
-}
-
-.card-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-color);
-  margin: 0 0 0.2rem;
-}
-
-.card-subtitle {
-  font-size: 0.8rem;
-  color: var(--text-color-secondary);
-  margin: 0;
-}
-
-/* Table cells */
-.partner-code {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 0.8rem;
-  background: var(--surface-100);
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  color: var(--primary-700);
-}
-
-.event-code {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 0.8rem;
-  color: var(--text-color-secondary);
-}
-
-.version-badge {
-  font-size: 0.78rem;
-  background: var(--surface-100);
-  padding: 0.1rem 0.45rem;
-  border-radius: 6px;
-  color: var(--text-color-secondary);
-  font-weight: 500;
+  &.positive { color: #16a34a; }
+  &.negative { color: #dc2626; }
+  &.neutral  { color: var(--text-color-secondary); }
 }
