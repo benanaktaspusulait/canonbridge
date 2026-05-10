@@ -38,6 +38,24 @@ Partner C format  ──┘     (zero custom code)
 
 ## Architecture
 
+```mermaid
+flowchart TD
+    Partner["Partner systems"] --> Raw["Kafka: partner.raw.events"]
+    Raw --> Transformer["Node.js Transformer<br/>JSONata + Ajv + Worker Pool"]
+    Transformer --> Canonical["Kafka: canonical.events"]
+    Transformer --> Retry["Retry topics<br/>1m / 5m / 30m"]
+    Transformer --> DLQ["transformation.dlq"]
+    Canonical --> Business["Java/Quarkus Business Service<br/>idempotency + dependencies"]
+    Business --> DB["PostgreSQL<br/>domain + processed_events"]
+    Business --> Outbox["Outbox table"]
+    Outbox --> Events["Kafka: business.events"]
+    Studio["Mapping Studio<br/>visual mappings + review + publish"] --> Transformer
+    Schemas["Schemas + partner fixtures"] --> Studio
+    Schemas --> Transformer
+    Transformer --> Obs["Prometheus / Grafana / OpenTelemetry"]
+    Business --> Obs
+```
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Partner Ecosystem                        │
@@ -100,6 +118,53 @@ Partner C format  ──┘     (zero custom code)
 
 ---
 
+## Example: Raw Partner Event to Canonical Event
+
+The repository now includes a complete sample mapping package:
+
+- Raw input schema: [`partners/acme-marketplace/order-created/input.v1.schema.json`](./partners/acme-marketplace/order-created/input.v1.schema.json)
+- JSONata mapping: [`partners/acme-marketplace/order-created/inbound.v1.jsonata`](./partners/acme-marketplace/order-created/inbound.v1.jsonata)
+- Canonical schema: [`schemas/canonical/order-created.v1.schema.json`](./schemas/canonical/order-created.v1.schema.json)
+- Fixture pair: [`valid-order.input.json`](./partners/acme-marketplace/order-created/fixtures/valid-order.input.json) → [`valid-order.expected.json`](./partners/acme-marketplace/order-created/fixtures/valid-order.expected.json)
+
+**Before: partner-specific payload**
+
+```json
+{
+  "partnerId": "acme-marketplace",
+  "eventType": "OrderCreated",
+  "payload": {
+    "order_header": {
+      "order_id": "ORD-123",
+      "order_date": "2026-05-10",
+      "status": "A"
+    },
+    "customer": {
+      "full_name": "  Ada Lovelace  ",
+      "email": ""
+    }
+  }
+}
+```
+
+**After: canonical business event**
+
+```json
+{
+  "eventType": "CanonicalOrderCreated",
+  "schemaVersion": "v1",
+  "payload": {
+    "orderId": "ORD-123",
+    "customerName": "Ada Lovelace",
+    "customerEmail": "no-reply@test.com",
+    "status": "ACTIVE",
+    "totalAmount": 250.5
+  }
+}
+```
+
+---
+
 ## Key Design Decisions
 
 | Decision | Choice | Why |
@@ -120,6 +185,12 @@ Full rationale with tradeoffs: [docs/adr/](./docs/adr/)
 ---
 
 ## Enterprise Capabilities
+
+### Multi-Tenant Model
+- Every event envelope carries `tenantId`, `partnerId`, `eventType`, and `schemaVersion`.
+- Kafka partitioning should preserve tenant and partner ordering boundaries.
+- Mapping definitions are versioned per tenant/partner/event/schema tuple.
+- Runtime quotas, rate limits, DLQ views, and audit access should be scoped by tenant.
 
 ### Reliability
 - **At-least-once delivery** with idempotent processing — no silent data loss
@@ -170,6 +241,8 @@ Full rationale with tradeoffs: [docs/adr/](./docs/adr/)
 | CI/CD pipelines | Complete |
 | Security design | Complete |
 | Observability design | Complete |
+| Canonical schemas and sample partner fixture | Complete |
+| Local Kafka/PostgreSQL/Prometheus/Grafana compose | Complete |
 | Service implementation | Pending |
 | Mapping Studio UI | Pending |
 | Integration tests | Pending |
@@ -200,7 +273,17 @@ docker-compose up -d
 # Grafana:    http://localhost:3000  (admin/admin)
 # Prometheus: http://localhost:9090
 # Kafka UI:   http://localhost:8080
+# Kafka:      localhost:9092
+# Schema Registry: docker-compose --profile schema-registry up -d
 # PostgreSQL: localhost:5432
+```
+
+Validate the planning-level schemas and sample mapping fixture:
+
+```bash
+npm install --no-package-lock
+npm run test:schema-compatibility
+npm run test:mapping-fixtures
 ```
 
 Full setup: [docs/deployment/DOCKER_COMPOSE_LOCAL.md](./docs/deployment/DOCKER_COMPOSE_LOCAL.md)
