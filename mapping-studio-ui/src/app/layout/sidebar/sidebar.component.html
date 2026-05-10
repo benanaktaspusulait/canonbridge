@@ -1,63 +1,40 @@
-<nav class="sidebar" [class.collapsed]="collapsed">
-
-  <!-- Logo -->
-  <div class="sidebar-logo">
-    <div class="logo-icon">
-      <i class="pi pi-sitemap"></i>
-    </div>
-    @if (!collapsed) {
-      <div class="logo-text">
-        <span class="logo-name">CanonBridge</span>
-        <span class="logo-sub">{{ 'sidebar.logoSub' | i18n }}</span>
+<aside class="layout-sidebar" [class.layout-sidebar-collapsed]="collapsed">
+  <div class="layout-sidebar-header">
+    <div class="layout-sidebar-brand">
+      <div class="layout-sidebar-logo">
+        <i class="pi pi-sitemap"></i>
       </div>
-    }
+      @if (!collapsed) {
+        <div class="layout-sidebar-titles">
+          <span class="layout-sidebar-title">CanonBridge</span>
+          <span class="layout-sidebar-sub">{{ 'sidebar.logoSub' | i18n }}</span>
+        </div>
+      }
+    </div>
   </div>
 
-  <!-- Main navigation -->
-  <div class="nav-section">
-    @if (!collapsed) {
-      <span class="nav-section-label">{{ 'nav.section.main' | i18n }}</span>
-    }
-    @for (item of navItems; track item.route) {
-      <a
-        [routerLink]="item.route"
-        routerLinkActive="active"
-        class="nav-item"
-        [pTooltip]="collapsed ? (item.labelKey | i18n) : ''"
-        tooltipPosition="right">
-        <i class="pi {{ item.icon }}"></i>
-        @if (!collapsed) {
-          <span class="nav-label">{{ item.labelKey | i18n }}</span>
-          @if (item.badge) {
-            <span class="nav-badge {{ item.badgeSeverity }}">{{ item.badge }}</span>
-          }
-        } @else if (item.badge) {
-          <span class="nav-badge-dot {{ item.badgeSeverity }}"></span>
-        }
-      </a>
-    }
-  </div>
+  <p-divider styleClass="m-0" />
 
-  <!-- Spacer -->
-  <div class="nav-spacer"></div>
-
-  <p-divider styleClass="my-0" />
-
-  <!-- Bottom navigation -->
-  <div class="nav-section nav-bottom">
-    @for (item of bottomItems; track item.route) {
-      <a
-        [routerLink]="item.route"
-        routerLinkActive="active"
-        class="nav-item"
-        [pTooltip]="collapsed ? (item.labelKey | i18n) : ''"
-        tooltipPosition="right">
-        <i class="pi {{ item.icon }}"></i>
-        @if (!collapsed) {
-          <span class="nav-label">{{ item.labelKey | i18n }}</span>
-        }
-      </a>
-    }
-  </div>
-
-</nav>
+  @if (!collapsed) {
+    <div class="layout-sidebar-menu">
+      <p-scrollPanel [style]="{ width: '100%', height: '100%' }" styleClass="layout-sidebar-scroll">
+        <p-panelmenu [model]="panelModel()" styleClass="layout-panelmenu w-full border-none" />
+      </p-scrollPanel>
+    </div>
+  } @else {
+    <div class="layout-sidebar-icons">
+      @for (item of iconNavItems; track item.route) {
+        <p-button
+          [routerLink]="item.route"
+          [icon]="item.icon"
+          [rounded]="true"
+          [text]="true"
+          severity="secondary"
+          [pTooltip]="item.labelKey | i18n"
+          tooltipPosition="right"
+          styleClass="layout-sidebar-icon-btn w-full"
+          routerLinkActive="layout-sidebar-icon-active" />
+      }
+    </div>
+  }
+</aside>

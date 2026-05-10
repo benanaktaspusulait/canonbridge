@@ -21,7 +21,9 @@
     "settings": "Ayarlar"
   },
   "sidebar": {
-    "logoSub": "Mapping Studio"
+    "logoSub": "Mapping Studio",
+    "menuGroup": "Uygulama",
+    "preferencesGroup": "Tercihler"
   },
   "topbar": {
     "demo": "Demo",

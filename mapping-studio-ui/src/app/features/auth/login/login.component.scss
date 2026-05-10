@@ -117,6 +117,18 @@ html.dark-mode .login-form-panel {
 .login-form-container {
   width: 100%;
   max-width: 420px;
+  margin: 0 auto;
+}
+
+:host ::ng-deep .login-card.p-card {
+  max-width: 440px;
+  margin: 0 auto;
+  border: 1px solid var(--surface-border);
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.12) !important;
+}
+
+html.dark-mode :host ::ng-deep .login-card.p-card {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
 }
 
 .form-header {

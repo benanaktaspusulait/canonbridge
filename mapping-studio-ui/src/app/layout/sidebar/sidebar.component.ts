@@ -1,41 +1,92 @@
-import { Component, Input } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
-import { TooltipModule } from 'primeng/tooltip';
+import { Component, Input, effect, inject, signal } from '@angular/core';
+import { RouterModule } from '@angular/router';
+import { MenuItem } from 'primeng/api';
+import { PanelMenuModule } from 'primeng/panelmenu';
+import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { DividerModule } from 'primeng/divider';
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
+import { I18nService } from '../../core/i18n/i18n.service';
 
-interface NavItem {
-  labelKey: string;
-  icon: string;
+interface NavEntry {
   route: string;
+  icon: string;
+  labelKey: string;
   badge?: string;
-  badgeSeverity?: 'danger' | 'warning' | 'info';
+  badgeStyleClass?: string;
 }
+
+const PRIMARY_NAV: NavEntry[] = [
+  { route: '/dashboard', icon: 'pi pi-home', labelKey: 'nav.dashboard' },
+  { route: '/studio', icon: 'pi pi-objects-column', labelKey: 'nav.studio' },
+  { route: '/mappings', icon: 'pi pi-directions', labelKey: 'nav.mappings' },
+  { route: '/partners', icon: 'pi pi-building', labelKey: 'nav.partners' },
+  {
+    route: '/dlq',
+    icon: 'pi pi-exclamation-triangle',
+    labelKey: 'nav.dlq',
+    badge: '12',
+    badgeStyleClass: 'p-badge-danger'
+  },
+  { route: '/monitoring', icon: 'pi pi-chart-line', labelKey: 'nav.monitoring' }
+];
+
+const SECONDARY_NAV: NavEntry[] = [
+  { route: '/settings', icon: 'pi pi-cog', labelKey: 'nav.settings' }
+];
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, TooltipModule, DividerModule, I18nPipe],
+  imports: [
+    RouterModule,
+    PanelMenuModule,
+    ScrollPanelModule,
+    DividerModule,
+    ButtonModule,
+    TooltipModule,
+    I18nPipe
+  ],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss'
 })
 export class SidebarComponent {
   @Input() collapsed = false;
 
-  readonly navItems: NavItem[] = [
-    { labelKey: 'nav.dashboard', icon: 'pi-home', route: '/dashboard' },
-    { labelKey: 'nav.studio', icon: 'pi-objects-column', route: '/studio' },
-    { labelKey: 'nav.mappings', icon: 'pi-directions', route: '/mappings' },
-    { labelKey: 'nav.partners', icon: 'pi-building', route: '/partners' },
-    {
-      labelKey: 'nav.dlq',
-      icon: 'pi-exclamation-triangle',
-      route: '/dlq',
-      badge: '12',
-      badgeSeverity: 'danger'
-    },
-    { labelKey: 'nav.monitoring', icon: 'pi-chart-line', route: '/monitoring' }
-  ];
+  private readonly i18n = inject(I18nService);
 
-  readonly bottomItems: NavItem[] = [{ labelKey: 'nav.settings', icon: 'pi-cog', route: '/settings' }];
+  readonly panelModel = signal<MenuItem[]>([]);
+  readonly iconNavItems: NavEntry[] = [...PRIMARY_NAV, ...SECONDARY_NAV];
+
+  constructor() {
+    effect(() => {
+      this.i18n.translations();
+      this.panelModel.set(this.buildPanelModel());
+    });
+  }
+
+  private buildPanelModel(): MenuItem[] {
+    const toItems = (entries: NavEntry[]): MenuItem[] =>
+      entries.map(e => ({
+        label: this.i18n.translate(e.labelKey),
+        icon: e.icon,
+        routerLink: [e.route],
+        badge: e.badge,
+        badgeStyleClass: e.badgeStyleClass
+      }));
+
+    return [
+      {
+        label: this.i18n.translate('sidebar.menuGroup'),
+        expanded: true,
+        items: toItems(PRIMARY_NAV)
+      },
+      {
+        label: this.i18n.translate('sidebar.preferencesGroup'),
+        expanded: true,
+        items: toItems(SECONDARY_NAV)
+      }
+    ];
+  }
 }

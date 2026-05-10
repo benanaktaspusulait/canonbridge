@@ -7,6 +7,8 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MenuItem } from 'primeng/api';
 import { BadgeModule } from 'primeng/badge';
 import { SelectModule } from 'primeng/select';
+import { ToolbarModule } from 'primeng/toolbar';
+import { TagModule } from 'primeng/tag';
 import { AuthService } from '../../core/services/auth.service';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { I18nService, LangId } from '../../core/i18n/i18n.service';
@@ -23,6 +25,8 @@ import { ThemeService } from '../../core/theme/theme.service';
     TooltipModule,
     BadgeModule,
     SelectModule,
+    ToolbarModule,
+    TagModule,
     I18nPipe
   ],
   templateUrl: './topbar.component.html',

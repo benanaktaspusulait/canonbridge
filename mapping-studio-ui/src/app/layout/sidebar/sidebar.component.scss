@@ -1,48 +1,51 @@
-.sidebar {
+.layout-sidebar {
   position: fixed;
   top: 0;
   left: 0;
   bottom: 0;
-  width: 260px;
-  background: var(--surface-card);
-  border-right: 1px solid var(--surface-border);
-  box-shadow: 4px 0 32px rgba(15, 23, 42, 0.06);
+  width: 280px;
+  z-index: 110;
   display: flex;
   flex-direction: column;
+  background: var(--surface-card);
+  border-right: 1px solid var(--surface-border);
+  box-shadow: 4px 0 32px rgba(15, 23, 42, 0.07);
   transition: width 0.2s ease, box-shadow 0.2s ease;
-  z-index: 100;
-  overflow: hidden;
 }
 
-html.dark-mode .sidebar {
+.layout-sidebar-collapsed {
+  width: 4.5rem;
+}
+
+html.dark-mode .layout-sidebar {
   box-shadow: 4px 0 40px rgba(0, 0, 0, 0.45);
 }
 
-.sidebar.collapsed {
-  width: 72px;
+.layout-sidebar-header {
+  flex-shrink: 0;
+  padding: 0.875rem 1rem;
+  min-height: 4rem;
+  display: flex;
+  align-items: center;
 }
 
-/* ── Logo ── */
-.sidebar-logo {
+.layout-sidebar-brand {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0 1rem;
-  height: 64px;
-  border-bottom: 1px solid var(--surface-border);
-  flex-shrink: 0;
+  min-width: 0;
 }
 
-.logo-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(145deg, #1e40af 0%, #4338ca 55%, #6d28d9 100%);
-  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.35);
+.layout-sidebar-logo {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--border-radius-lg, 10px);
+  background: linear-gradient(145deg, var(--primary-color) 0%, #5b21b6 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--primary-color) 45%, transparent);
 
   i {
     color: #fff;
@@ -50,160 +53,117 @@ html.dark-mode .sidebar {
   }
 }
 
-.logo-text {
+.layout-sidebar-titles {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  min-width: 0;
 }
 
-.logo-name {
+.layout-sidebar-title {
   font-size: 0.9375rem;
   font-weight: 700;
   color: var(--text-color);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
   white-space: nowrap;
-}
-
-.logo-sub {
-  font-size: 0.6875rem;
-  color: var(--text-color-secondary);
-  white-space: nowrap;
-}
-
-/* ── Nav sections ── */
-.nav-section {
-  padding: 0.75rem 0.5rem 0;
-}
-
-.nav-section-label {
-  display: block;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-color-secondary);
-  padding: 0 0.75rem 0.5rem;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-/* ── Nav item ── */
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.625rem 0.75rem;
-  border-radius: 8px;
-  color: var(--text-color-secondary);
-  text-decoration: none;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  position: relative;
-  white-space: nowrap;
-  margin-bottom: 2px;
-
-  i {
-    font-size: 1rem;
-    flex-shrink: 0;
-    width: 20px;
-    text-align: center;
-  }
-
-  &:hover {
-    background: var(--surface-hover);
-    color: var(--text-color);
-  }
-
-  &.active {
-    background: color-mix(in srgb, var(--primary-color) 12%, var(--surface-card));
-    color: var(--primary-color);
-    font-weight: 600;
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 3px;
-      height: 22px;
-      background: linear-gradient(180deg, var(--primary-color), color-mix(in srgb, var(--primary-color) 65%, #6366f1));
-      border-radius: 0 3px 3px 0;
-    }
-  }
-}
-
-html.dark-mode .nav-item.active {
-  background: color-mix(in srgb, var(--primary-color) 18%, transparent);
-}
-
-.nav-label {
-  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* ── Badge ── */
-.nav-badge {
+.layout-sidebar-sub {
   font-size: 0.6875rem;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 999px;
-  line-height: 1.4;
-
-  &.danger  { background: color-mix(in srgb, #fecaca 85%, transparent); color: #b91c1c; }
-  &.warning { background: color-mix(in srgb, #fef08a 75%, transparent); color: #a16207; }
-  &.info    { background: color-mix(in srgb, #bfdbfe 80%, transparent); color: #1d4ed8; }
+  font-weight: 500;
+  color: var(--text-color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
 }
 
-html.dark-mode .nav-badge {
-  &.danger  { background: rgba(220, 38, 38, 0.25); color: #fca5a5; }
-  &.warning { background: rgba(202, 138, 4, 0.22); color: #fde047; }
-  &.info    { background: rgba(37, 99, 235, 0.25); color: #93c5fd; }
-}
-
-.nav-badge-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  position: absolute;
-  top: 8px;
-  right: 8px;
-
-  &.danger  { background: #dc2626; }
-  &.warning { background: #ca8a04; }
-  &.info    { background: #2563eb; }
-}
-
-/* ── Spacer ── */
-.nav-spacer {
+.layout-sidebar-menu {
   flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-/* ── Bottom section ── */
-.nav-bottom {
-  padding-bottom: 0.5rem;
+:host ::ng-deep .layout-sidebar-scroll {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+
+  .p-scrollpanel-content {
+    padding: 0.5rem 0.75rem 1rem;
+  }
 }
 
-/* ── Collapsed state ── */
-.sidebar.collapsed {
-  .nav-section-label,
-  .nav-label,
-  .nav-badge,
-  .logo-text {
-    display: none;
+:host ::ng-deep .layout-panelmenu a.router-link-active {
+  background: color-mix(in srgb, var(--primary-color) 14%, var(--surface-card)) !important;
+  color: var(--primary-color) !important;
+  font-weight: 600 !important;
+}
+
+html.dark-mode :host ::ng-deep .layout-panelmenu a.router-link-active {
+  background: color-mix(in srgb, var(--primary-color) 22%, transparent) !important;
+}
+
+:host ::ng-deep .layout-panelmenu {
+  .p-panelmenu-panel {
+    border: none;
+    box-shadow: none;
+    background: transparent;
   }
 
-  .nav-item {
-    justify-content: center;
-    padding: 0.625rem;
-
-    i { width: auto; }
+  .p-panelmenu-header-link {
+    padding: 0.5rem 0.25rem;
+    border-radius: var(--border-radius-md, 8px);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-color-secondary);
   }
 
-  .sidebar-logo {
-    justify-content: center;
-    padding: 0;
+  .p-panelmenu-content {
+    padding: 0 0 0.5rem;
+    border: none;
+    background: transparent;
   }
+
+  .p-panelmenu-item-link {
+    border-radius: var(--border-radius-md, 8px);
+    margin-bottom: 2px;
+    padding: 0.5rem 0.625rem;
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .p-panelmenu-item-link.router-link-active,
+  .p-panelmenu-item-link.p-panelmenu-item-link-active,
+  .p-panelmenu-item-link.router-link-active:hover {
+    background: color-mix(in srgb, var(--primary-color) 14%, var(--surface-card));
+    color: var(--primary-color);
+    font-weight: 600;
+  }
+}
+
+.layout-sidebar-icons {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.35rem 1rem;
+  align-items: stretch;
+}
+
+:host ::ng-deep .layout-sidebar-icon-btn.p-button {
+  justify-content: center;
+}
+
+:host ::ng-deep .layout-sidebar-icon-active.p-button {
+  background: color-mix(in srgb, var(--primary-color) 16%, var(--surface-card)) !important;
+  color: var(--primary-color) !important;
+}
+
+html.dark-mode :host ::ng-deep .layout-sidebar-icon-active.p-button {
+  background: color-mix(in srgb, var(--primary-color) 22%, transparent) !important;
 }

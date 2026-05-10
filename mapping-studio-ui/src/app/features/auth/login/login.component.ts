@@ -8,6 +8,7 @@ import { PasswordModule } from 'primeng/password';
 import { MessageModule } from 'primeng/message';
 import { DividerModule } from 'primeng/divider';
 import { SelectModule } from 'primeng/select';
+import { CardModule } from 'primeng/card';
 import { AuthService } from '../../../core/services/auth.service';
 import { I18nPipe } from '../../../core/i18n/i18n.pipe';
 
@@ -30,6 +31,7 @@ interface DemoAccount {
     MessageModule,
     DividerModule,
     SelectModule,
+    CardModule,
     I18nPipe
   ],
   templateUrl: './login.component.html',

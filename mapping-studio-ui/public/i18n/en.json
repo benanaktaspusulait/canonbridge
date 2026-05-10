@@ -21,7 +21,9 @@
     "settings": "Settings"
   },
   "sidebar": {
-    "logoSub": "Mapping Studio"
+    "logoSub": "Mapping Studio",
+    "menuGroup": "Application",
+    "preferencesGroup": "Preferences"
   },
   "topbar": {
     "demo": "Demo",
