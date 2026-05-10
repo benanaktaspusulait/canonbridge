@@ -567,24 +567,24 @@ Total Duration: 32 weeks (8 months)
 ## 📚 Key Documentation References
 
 1. **Architecture**: `docs/architecture/01-overview.md`
-2. **Tech Stack**: `TECH_STACK_FINAL.md`
+2. **Tech Stack**: `../architecture/tech-stack.md`
 3. **Frontend Guide**: `docs/implementation/FRONTEND_REACT_GUIDE.md`
 4. **Forms Guide**: `docs/implementation/FORMS_ANGULAR_GUIDE.md`
 5. **Transformer Guide**: `docs/implementation/TRANSFORMER_NODEJS_GUIDE.md`
 6. **Business Service Guide**: `docs/implementation/SERVICES_JAVA_QUARKUS_GUIDE.md`
 7. **Kubernetes Guide**: `docs/deployment/KUBERNETES_DEPLOYMENT_GUIDE.md`
 8. **Docker Compose**: `docs/deployment/DOCKER_COMPOSE_LOCAL.md`
-9. **SaaS Requirements**: `SAAS_REQUIREMENTS.md`
-10. **Product Roadmap**: `PRODUCT_ROADMAP.md`
+9. **SaaS Requirements**: `../product/saas-requirements.md`
+10. **Product Roadmap**: `../product/roadmap.md`
 
 ---
 
 ## 🔗 Related Documents
 
 - [Complete Documentation Summary](./COMPLETE_DOCUMENTATION_SUMMARY.md)
-- [Product Transformation](./PRODUCT_TRANSFORMATION.md)
-- [Getting Started](./GETTING_STARTED.md)
-- [Quick Start](./QUICK_START.md)
+- [Product Transformation](../archive/product-transformation.md)
+- [Getting Started](../getting-started.md)
+- [Quick Start](../README.md)
 
 ---
 

@@ -574,7 +574,7 @@ docker system prune -a
 
 - [Kubernetes Deployment Guide](./KUBERNETES_DEPLOYMENT_GUIDE.md)
 - [Deployment Checklist](./01-deployment-checklist.md)
-- [Tech Stack Final](../../TECH_STACK_FINAL.md)
+- [Tech Stack Final](../architecture/tech-stack.md)
 
 ---
 

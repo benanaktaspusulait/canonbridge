@@ -786,4 +786,4 @@ docker-compose up
 
 ---
 
-**See Also**: [TECH_STACK_FINAL.md](../../TECH_STACK_FINAL.md), [Architecture Overview](../architecture/01-overview.md)
+**See Also**: [TECH_STACK_FINAL.md](../architecture/tech-stack.md), [Architecture Overview](../architecture/01-overview.md)

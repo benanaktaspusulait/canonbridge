@@ -7,7 +7,7 @@ ETL Solutions is a production-grade event transformation platform that enables r
 > Current status: this repository is primarily a documentation and architecture package. Product implementation, runnable source code, local environment files, automated tests, and performance benchmarks still need to be added before production-readiness claims can be treated as proven.
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-MVP-yellow.svg)](PRODUCT_ROADMAP.md)
+[![Status](https://img.shields.io/badge/status-MVP-yellow.svg)](roadmap.md)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-green.svg)](https://nodejs.org/)
 
 ## 🎯 Why ETL Solutions?
@@ -34,7 +34,7 @@ ETL Solutions is a production-grade event transformation platform that enables r
 
 This product is most useful for teams with repeated multi-partner integration pain: many external payload formats, frequent mapping changes, operational DLQ/replay needs, and a shared canonical business event model. It may be overbuilt for 1-2 stable integrations or highly partner-specific business logic.
 
-See [PRODUCT_ROADMAP.md](PRODUCT_ROADMAP.md#-product-necessity-assessment) for the product necessity assessment, current gaps, and first validation step.
+See [roadmap.md](roadmap.md#-product-necessity-assessment) for the product necessity assessment, current gaps, and first validation step.
 
 ## 🚀 Quick Start
 
@@ -60,22 +60,22 @@ curl http://localhost:3000/health/live
 ```
 
 ### 4. Create First Integration
-See [GETTING_STARTED.md](GETTING_STARTED.md) for detailed walkthrough.
+See [../getting-started.md](../getting-started.md) for detailed walkthrough.
 
 ## 📚 Documentation
 
 | Document | Purpose |
 |----------|---------|
-| [GETTING_STARTED.md](GETTING_STARTED.md) | Quick start guide (5-30 minutes) |
-| [PRODUCT_ROADMAP.md](PRODUCT_ROADMAP.md) | Product vision and timeline |
-| [QUICK_START.md](QUICK_START.md) | Navigation by role |
-| [docs/README.md](docs/README.md) | Complete documentation index |
-| [docs/product/](docs/product/) | Mapping Studio product and UX documentation |
-| [docs/architecture/](docs/architecture/) | Architecture decisions |
-| [docs/implementation/](docs/implementation/) | Implementation patterns |
-| [docs/operations/](docs/operations/) | Operational procedures |
-| [docs/deployment/](docs/deployment/) | Deployment strategies |
-| [docs/testing/](docs/testing/) | Testing strategies |
+| [../getting-started.md](../getting-started.md) | Quick start guide (5-30 minutes) |
+| [roadmap.md](roadmap.md) | Product vision and timeline |
+| [../README.md](../README.md) | Navigation by role |
+| [../README.md](../README.md) | Complete documentation index |
+| [./](./) | Mapping Studio product and UX documentation |
+| [../architecture/](../architecture/) | Architecture decisions |
+| [../implementation/](../implementation/) | Implementation patterns |
+| [../operations/](../operations/) | Operational procedures |
+| [../deployment/](../deployment/) | Deployment strategies |
+| [../testing/](../testing/) | Testing strategies |
 
 ## 🏗️ Architecture
 
@@ -200,7 +200,7 @@ docker run -p 3000:3000 etl-solutions:latest
 kubectl apply -f k8s/
 ```
 
-See [docs/deployment/](docs/deployment/) for detailed procedures.
+See [../deployment/](../deployment/) for detailed procedures.
 
 ## 📊 Monitoring
 
@@ -311,7 +311,7 @@ git push origin feature/my-feature
 - [ ] Anomaly detection
 - [ ] Self-healing
 
-See [PRODUCT_ROADMAP.md](PRODUCT_ROADMAP.md) for details.
+See [roadmap.md](roadmap.md) for details.
 
 ## 💡 Use Cases
 
@@ -345,9 +345,9 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ## 📞 Support
 
 ### Documentation
-- [GETTING_STARTED.md](GETTING_STARTED.md) - Quick start
-- [docs/README.md](docs/README.md) - Full documentation
-- [QUICK_START.md](QUICK_START.md) - Navigation by role
+- [../getting-started.md](../getting-started.md) - Quick start
+- [../README.md](../README.md) - Full documentation
+- [../README.md](../README.md) - Navigation by role
 
 ### Community
 - GitHub Issues
@@ -386,7 +386,7 @@ Built with:
 
 ## 🎯 Next Steps
 
-1. **Read** [GETTING_STARTED.md](GETTING_STARTED.md) (5 minutes)
+1. **Read** [../getting-started.md](../getting-started.md) (5 minutes)
 2. **Setup** local development (10 minutes)
 3. **Create** first integration (30 minutes)
 4. **Deploy** to staging (1 hour)
@@ -394,11 +394,11 @@ Built with:
 
 ---
 
-**Questions?** Check [QUICK_START.md](QUICK_START.md) or [docs/README.md](docs/README.md)
+**Questions?** Check [../README.md](../README.md) or [../README.md](../README.md)
 
-**Ready to get started?** → [GETTING_STARTED.md](GETTING_STARTED.md)
+**Ready to get started?** → [../getting-started.md](../getting-started.md)
 
-**Want to see the roadmap?** → [PRODUCT_ROADMAP.md](PRODUCT_ROADMAP.md)
+**Want to see the roadmap?** → [roadmap.md](roadmap.md)
 
 ---
 

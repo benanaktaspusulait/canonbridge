@@ -58,7 +58,7 @@ Partner C sends JSON ─┘
 → Start with `docs/operations/08-runbook.md`
 
 ### I want to see the product roadmap
-→ Read `PRODUCT_ROADMAP.md`
+→ Read `product/roadmap.md`
 
 ## 🛠️ Local Development Setup
 
@@ -348,7 +348,7 @@ docker logs transformer-service | jq 'select(.partnerId=="my-partner")'
 5. Document procedures
 
 ### For Product Managers
-1. Read `PRODUCT_ROADMAP.md`
+1. Read `product/roadmap.md`
 2. Review success metrics
 3. Plan feature releases
 4. Gather customer feedback
@@ -357,7 +357,7 @@ docker logs transformer-service | jq 'select(.partnerId=="my-partner")'
 ## 🎓 Learning Resources
 
 ### Documentation
-- `docs/README.md` - Full documentation index
+- `README.md` - Full documentation index
 - `docs/architecture/` - Architecture decisions
 - `docs/implementation/` - Implementation patterns
 - `docs/operations/` - Operational procedures
@@ -378,7 +378,7 @@ docker logs transformer-service | jq 'select(.partnerId=="my-partner")'
 ## 💬 Getting Help
 
 ### Documentation
-- Check `docs/README.md` for navigation
+- Check `README.md` for navigation
 - Search for your topic
 - Review examples
 
@@ -420,6 +420,6 @@ You now have everything you need to:
 
 ---
 
-**Questions?** Check `docs/README.md` or `QUICK_START.md`
+**Questions?** Check `README.md` or `README.md`
 
 **Last Updated**: May 10, 2026

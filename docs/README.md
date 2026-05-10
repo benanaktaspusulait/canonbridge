@@ -21,7 +21,7 @@ ETL Solutions transforms partner-specific JSON payloads into canonical business 
 
 This documentation is organized into logical sections for easy navigation and maintenance.
 
-**For Product Overview**: See [PRODUCT_ROADMAP.md](../PRODUCT_ROADMAP.md)
+**For Product Overview**: See [PRODUCT_ROADMAP.md](./product/roadmap.md)
 
 ### 1. **Product** (`./product/`)
 Management UI and Mapping Studio product behavior.
@@ -117,7 +117,7 @@ Testing strategies and examples.
 **Product Managers**
 - Start with: [Mapping Studio Requirements](./product/01-mapping-studio-product-requirements.md)
 - Then read: [Mapping Studio UX Flow](./product/02-mapping-studio-ux-flow.md)
-- Reference: [Product Roadmap](../PRODUCT_ROADMAP.md)
+- Reference: [Product Roadmap](./product/roadmap.md)
 
 ### By Task
 

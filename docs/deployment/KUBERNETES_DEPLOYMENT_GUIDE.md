@@ -817,4 +817,4 @@ kubectl get hpa -n etl-solutions -w
 
 ---
 
-**See Also**: [TECH_STACK_FINAL.md](../../TECH_STACK_FINAL.md), [Deployment Checklist](./01-deployment-checklist.md)
+**See Also**: [TECH_STACK_FINAL.md](../architecture/tech-stack.md), [Deployment Checklist](./01-deployment-checklist.md)
