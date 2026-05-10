@@ -13,6 +13,7 @@ This is the central hub for all Integration Magic documentation. Whether you're 
 | **Create my first integration** | [Getting Started](./getting-started.md) | 10 min |
 | **See what's possible** | [Product Overview](./product/overview.md) | 5 min |
 | **Learn the Mapping Studio** | [Mapping Studio Guide](./product/README.md) | 15 min |
+| **Design visual transformations** | [Visual JSONata Design](./product/06-mapping-studio-visual-jsonata-design.md) | 20 min |
 | **Understand the magic** | [Architecture Overview](./architecture/01-overview.md) | 20 min |
 | **Deploy to production** | [Deployment Guide](./deployment/setup-guide.md) | 1 hour |
 | **See the roadmap** | [Product Roadmap](./product/roadmap.md) | 5 min |
@@ -26,7 +27,8 @@ This is the central hub for all Integration Magic documentation. Whether you're 
 **You create integrations without coding:**
 1. [Getting Started](./getting-started.md) - Your first integration in 10 minutes
 2. [Mapping Studio Guide](./product/README.md) - Master the visual interface
-3. [Common Patterns](./product/02-mapping-studio-ux-flow.md) - Tips and tricks
+3. [Visual JSONata Design](./product/06-mapping-studio-visual-jsonata-design.md) - Use transformations without code
+4. [Common Patterns](./product/02-mapping-studio-ux-flow.md) - Tips and tricks
 
 ### 📊 For Product Managers
 **You understand the value and roadmap:**
@@ -62,6 +64,7 @@ This is the central hub for all Integration Magic documentation. Whether you're 
 - [Product Roadmap](./product/roadmap.md)
 - [SaaS Requirements](./product/saas-requirements.md)
 - [Mapping Studio Docs](./product/README.md)
+- [Visual JSONata Design](./product/06-mapping-studio-visual-jsonata-design.md)
 
 Mapping Studio is the core management workflow: upload or paste sample JSON, inspect the inferred JSON tree, generate an input schema, map source fields to canonical fields, preview transformations, create fixtures, review, and publish immutable mapping versions.
 

@@ -21,6 +21,7 @@ Mapping Studio is the management UI for configuring partner integrations from sa
 | [03-mapping-studio-api-data-model.md](./03-mapping-studio-api-data-model.md) | API contracts, domain entities, state model, permissions |
 | [04-mapping-studio-validation-testing.md](./04-mapping-studio-validation-testing.md) | Validation pipeline, fixtures, quality gates, test strategy |
 | [05-mapping-studio-implementation-plan.md](./05-mapping-studio-implementation-plan.md) | Delivery plan, architecture integration, milestones, risks |
+| [06-mapping-studio-visual-jsonata-design.md](./06-mapping-studio-visual-jsonata-design.md) | Visual JSONata UI design, transform catalog, generator API, roles, validation |
 
 ## Mapping Studio MVP Flow
 
@@ -48,5 +49,5 @@ It does not own runtime Kafka consumption, business event processing, outbox pub
 - [Architecture Overview](../architecture/01-overview.md)
 - [Transformation Layer](../architecture/05-transformation-layer.md)
 - [Mapping Versioning](../implementation/03-mapping-versioning.md)
+- [Visual JSONata Design](./06-mapping-studio-visual-jsonata-design.md)
 - [Transformer Node.js Guide](../implementation/TRANSFORMER_NODEJS_GUIDE.md)
-
