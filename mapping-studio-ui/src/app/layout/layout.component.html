@@ -2,6 +2,12 @@
   <app-sidebar [collapsed]="sidebarCollapsed()" />
   <div class="main-area">
     <app-topbar (toggleSidebar)="toggleSidebar()" />
+    <div class="demo-environment-banner" role="status">
+      <i class="pi pi-flask" aria-hidden="true"></i>
+      <span
+        ><strong>Demo environment</strong> — illustrative data only. No live API or partner traffic.</span
+      >
+    </div>
     <main class="page-content">
       <router-outlet />
     </main>

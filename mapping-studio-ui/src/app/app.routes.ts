@@ -30,6 +30,13 @@ export const routes: Routes = [
           import('./pages/mappings/mappings.component').then(m => m.MappingsComponent)
       },
       {
+        path: 'studio',
+        loadComponent: () =>
+          import('./pages/integration-studio/integration-studio.component').then(
+            m => m.IntegrationStudioComponent
+          )
+      },
+      {
         path: 'partners',
         loadComponent: () =>
           import('./pages/partners/partners.component').then(m => m.PartnersComponent)

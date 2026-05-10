@@ -858,9 +858,9 @@ WHERE actor_email = 'user@example.com';
 
 ## 📚 RELATED DOCUMENTS
 
-- [Security Operations](./12-security-operations.md)
+- [Security Operations](./14-security-operations.md)
 - [Monitoring Dashboards](./01-monitoring-dashboards.md)
-- [Production Readiness](./10-production-readiness.md)
+- [Production Readiness](./11-production-readiness.md)
 
 ---
 

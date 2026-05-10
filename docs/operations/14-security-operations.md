@@ -693,7 +693,7 @@ psql -c "SELECT * FROM audit_log WHERE timestamp > NOW() - INTERVAL '1 hour';"
 - [Monitoring Dashboards](./01-monitoring-dashboards.md)
 - [Alerting Strategy](./02-alerting-strategy.md)
 - [Disaster Recovery](./06-disaster-recovery.md)
-- [Audit Logging](./13-audit-logging.md)
+- [Audit Logging](./16-audit-logging.md)
 
 ---
 

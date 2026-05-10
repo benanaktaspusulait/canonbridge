@@ -9,7 +9,9 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: var(--font-family);
+  font-family: 'Inter', var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   background: var(--surface-ground);
   color: var(--text-color);
 }
@@ -121,3 +123,73 @@ code {
 .full-height    { height: 100vh; }
 .text-sm        { font-size: 0.875rem; }
 .mt-4           { margin-top: 1rem; }
+
+/* ── Step wizard (Integration Studio) ── */
+.wizard-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.wizard-step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-color-secondary);
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  cursor: default;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+  .step-index {
+    width: 1.375rem;
+    height: 1.375rem;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    background: var(--surface-100);
+    color: var(--text-color-secondary);
+  }
+
+  &.active {
+    color: var(--primary-color);
+    border-color: color-mix(in srgb, var(--primary-color) 35%, var(--surface-border));
+    background: var(--primary-50, #eff6ff);
+
+    .step-index {
+      background: var(--primary-color);
+      color: #fff;
+    }
+  }
+
+  &.done {
+    color: var(--text-color);
+
+    .step-index {
+      background: var(--green-500, #22c55e);
+      color: #fff;
+    }
+  }
+}
+
+.mono-pre {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  margin: 0;
+  padding: 1rem;
+  border-radius: 8px;
+  background: var(--surface-900, #0f172a);
+  color: #e2e8f0;
+  overflow: auto;
+  max-height: 320px;
+  border: 1px solid var(--surface-border);
+}

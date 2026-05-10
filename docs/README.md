@@ -88,6 +88,7 @@ This is the central hub for all CanonBridge documentation. Whether you're a busi
 - [SaaS Requirements](./product/saas-requirements.md)
 - [Mapping Studio Docs](./product/README.md)
 - [Visual JSONata Design](./product/06-mapping-studio-visual-jsonata-design.md)
+- [Mapping Studio Design System](./product/mapping-studio-design-system.md)
 
 Mapping Studio is the core management workflow: upload or paste sample JSON, inspect the inferred JSON tree, generate an input schema, map source fields to canonical fields, preview transformations, create fixtures, review, and publish immutable mapping versions.
 
@@ -149,13 +150,13 @@ Mapping Studio is the core management workflow: upload or paste sample JSON, ins
 - [Performance Tuning](./operations/07-performance-tuning.md)
 - [Runbook](./operations/08-runbook.md)
 - [Failure Scenarios](./operations/09-failure-scenarios.md)
-- [Schema Evolution](./operations/09-schema-evolution.md)
-- [Production Readiness](./operations/10-production-readiness.md)
-- [Replay & Recovery](./operations/10-replay-recovery.md)
-- [Support Diagnostics](./operations/11-support-diagnostics.md)
-- [Security Operations](./operations/12-security-operations.md)
-- [Cost & Capacity Planning](./operations/13-cost-capacity-planning.md)
-- [Audit Logging](./operations/14-audit-logging.md)
+- [Schema Evolution](./operations/10-schema-evolution.md)
+- [Production Readiness](./operations/11-production-readiness.md)
+- [Replay & Recovery](./operations/12-replay-recovery.md)
+- [Support Diagnostics](./operations/13-support-diagnostics.md)
+- [Security Operations](./operations/14-security-operations.md)
+- [Cost & Capacity Planning](./operations/15-cost-capacity-planning.md)
+- [Audit Logging](./operations/16-audit-logging.md)
 
 ### Testing
 

@@ -281,7 +281,7 @@ See [docs/project/STRATEGY.md](./docs/project/STRATEGY.md) for validation plan a
 | **Everyone** | [Master Roadmap](./docs/project/MASTER_ROADMAP.md) · [Documentation Hub](./docs/README.md) |
 
 **Core Documents**:
-- [Project Status](./PROJECT_STATUS.md) - Current status and next steps
+- [Project Status](./docs/project/PROJECT_STATUS.md) - Current status and next steps
 - [Master Roadmap](./docs/project/MASTER_ROADMAP.md) - Official project plan
 - [Project Summary](./docs/project/PROJECT_SUMMARY.md) - Quick overview
 - [Brand Identity](./docs/project/BRAND_IDENTITY.md) - Name, vision, messaging

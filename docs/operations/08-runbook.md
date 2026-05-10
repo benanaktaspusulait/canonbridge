@@ -74,7 +74,7 @@ Most failures recover automatically. This table is for awareness — operator ac
 | Outbox publisher | Crash | Kubernetes restarts → pending records published in burst |
 | Pending table | Excessive growth | Scheduled cleanup archives expired events to DLQ |
 
-For full self-healing details: [Support and Diagnostics](./11-support-diagnostics.md#self-healing-mechanisms)
+For full self-healing details: [Support and Diagnostics](./13-support-diagnostics.md#self-healing-mechanisms)
 
 ## See Also
 
@@ -82,5 +82,5 @@ For full self-healing details: [Support and Diagnostics](./11-support-diagnostic
 - [Rollback Procedure](../deployment/04-rollback-procedure.md)
 - [Disaster Recovery](./06-disaster-recovery.md)
 - [Failure Scenarios](./09-failure-scenarios.md)
-- [Support and Diagnostics](./11-support-diagnostics.md)
+- [Support and Diagnostics](./13-support-diagnostics.md)
 

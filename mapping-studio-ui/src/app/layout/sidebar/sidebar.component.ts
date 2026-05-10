@@ -23,6 +23,7 @@ export class SidebarComponent {
 
   readonly navItems: NavItem[] = [
     { label: 'Dashboard',   icon: 'pi-home',        route: '/dashboard' },
+    { label: 'Studio',      icon: 'pi-objects-column', route: '/studio' },
     { label: 'Mappings',    icon: 'pi-directions',  route: '/mappings' },
     { label: 'Partners',    icon: 'pi-building',    route: '/partners' },
     { label: 'DLQ',         icon: 'pi-exclamation-triangle', route: '/dlq', badge: '12', badgeSeverity: 'danger' },

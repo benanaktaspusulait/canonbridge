@@ -1,0 +1,324 @@
+<div class="page-header studio-header">
+  <div>
+    <h1 class="page-title">Integration Studio</h1>
+    <p class="page-subtitle">
+      Model partner payloads, define your canonical contract, map fields with no-code transforms, then validate
+      — all in-browser for this demo.
+    </p>
+  </div>
+  <div class="page-actions">
+    <p-button label="Mapping catalog" icon="pi pi-list" variant="outlined" severity="secondary" routerLink="/mappings" />
+  </div>
+</div>
+
+<div class="wizard-steps" aria-label="Workflow steps">
+  @for (s of steps; track s.id) {
+    <button type="button" class="wizard-step {{ stepClass(s.id) }}" (click)="setStep(s.id)">
+      <span class="step-index">{{ s.id + 1 }}</span>
+      {{ s.label }}
+    </button>
+  }
+</div>
+
+@if (activeStep() === 0) {
+  <div class="step-panels">
+    <p-card styleClass="studio-card">
+      <ng-template pTemplate="header">
+        <div class="card-header-row">
+          <div>
+            <h2 class="card-title">Ingest sample payload</h2>
+            <p class="card-subtitle">
+              Paste JSON from a partner system or load a file. The structure is parsed into a field tree for mapping.
+            </p>
+          </div>
+        </div>
+      </ng-template>
+      <div class="toolbar-row">
+        <input #fileIn type="file" accept="application/json,.json" class="sr-only" (change)="onFileSelected($event)" />
+        <p-button label="Load JSON file" icon="pi pi-upload" variant="outlined" severity="secondary" (onClick)="fileIn.click()" />
+        <p-button label="Analyze payload" icon="pi pi-sync" (onClick)="analyzePayload()" />
+        <p-button label="Next" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextStep()" [disabled]="!treeNodes().length" />
+      </div>
+      @if (parseError()) {
+        <p-message severity="error" [text]="parseError()!" styleClass="w-full mt-3" />
+      }
+      <textarea
+        pTextarea
+        [ngModel]="sourceJson()"
+        (ngModelChange)="sourceJson.set($event); parseError.set(null)"
+        class="json-input w-full mt-3"
+        rows="14"
+        placeholder='{ "your": "partner-json" }'></textarea>
+    </p-card>
+
+    <p-card styleClass="studio-card">
+      <ng-template pTemplate="header">
+        <div class="card-header-row">
+          <div>
+            <h2 class="card-title">Field tree</h2>
+            <p class="card-subtitle">Inferred hierarchy from the current JSON (read-only preview).</p>
+          </div>
+        </div>
+      </ng-template>
+      @if (treeNodes().length) {
+        <p-tree [value]="treeNodes()" styleClass="field-tree w-full" />
+      } @else {
+        <p class="empty-hint">Analyze a valid JSON document to populate the tree.</p>
+      }
+    </p-card>
+  </div>
+}
+
+@if (activeStep() === 1) {
+  <p-card styleClass="studio-card mb-4">
+    <ng-template pTemplate="header">
+      <div class="card-header-row">
+        <div>
+          <h2 class="card-title">Canonical schema</h2>
+          <p class="card-subtitle">
+            Declare how data must appear inside your platform: field keys, types, and whether each is required.
+          </p>
+        </div>
+      </div>
+    </ng-template>
+    <div class="toolbar-row mb-3">
+      <p-button label="Add field" icon="pi pi-plus" variant="outlined" severity="secondary" (onClick)="addTargetField()" />
+      <p-button label="Back" icon="pi pi-arrow-left" variant="outlined" severity="secondary" (onClick)="prevStep()" />
+      <p-button label="Next" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextStep()" />
+    </div>
+    <p-table [value]="targetFields()" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Target key</th>
+          <th>Type</th>
+          <th>Required</th>
+          <th>Description</th>
+          <th style="width: 3rem"></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-f let-rowIndex="rowIndex">
+        <tr>
+          <td>
+            <input pInputText class="w-full" [ngModel]="f.key" (ngModelChange)="patchTargetAt(rowIndex, { key: $event })" />
+          </td>
+          <td>
+            <p-select
+              [options]="fieldTypeOptions"
+              [ngModel]="f.type"
+              (ngModelChange)="patchTargetAt(rowIndex, { type: $event })"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-full" />
+          </td>
+          <td>
+            <p-toggleswitch [ngModel]="f.required" (ngModelChange)="patchTargetAt(rowIndex, { required: $event })" />
+          </td>
+          <td>
+            <input
+              pInputText
+              class="w-full"
+              [ngModel]="f.description"
+              (ngModelChange)="patchTargetAt(rowIndex, { description: $event })" />
+          </td>
+          <td>
+            <p-button
+              icon="pi pi-trash"
+              variant="text"
+              severity="danger"
+              (onClick)="removeTargetAt(rowIndex)"
+              [disabled]="targetFields().length <= 1" />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+}
+
+@if (activeStep() === 2) {
+  <p-card styleClass="studio-card mb-4">
+    <ng-template pTemplate="header">
+      <div class="card-header-row">
+        <div>
+          <h2 class="card-title">Transform rules</h2>
+          <p class="card-subtitle">
+            Connect source paths to canonical keys. Choose a transformation: direct copy, date reformat, enum translation,
+            numeric coercion, defaults, or combining two source fields.
+          </p>
+        </div>
+      </div>
+    </ng-template>
+    <div class="toolbar-row mb-3">
+      <p-button label="Add rule" icon="pi pi-plus" variant="outlined" severity="secondary" (onClick)="addRule()" />
+      <p-button label="Back" icon="pi pi-arrow-left" variant="outlined" severity="secondary" (onClick)="prevStep()" />
+      <p-button label="Next" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextStep()" />
+    </div>
+    <p-table [value]="rules()" styleClass="p-datatable-sm p-datatable-striped" [tableStyle]="{ 'min-width': '56rem' }">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Source path</th>
+          <th>Target key</th>
+          <th>Transform</th>
+          <th>Parameters</th>
+          <th style="width: 3rem"></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-rule>
+        <tr>
+          <td>
+            <p-select
+              [options]="sourcePathOptions()"
+              [ngModel]="rule.sourcePath"
+              (ngModelChange)="patchRule(rule.id, { sourcePath: $event })"
+              optionLabel="label"
+              optionValue="value"
+              [filter]="true"
+              filterPlaceholder="Search path"
+              placeholder="Select path"
+              styleClass="w-full" />
+          </td>
+          <td>
+            <p-select
+              [options]="targetKeyOptions()"
+              [ngModel]="rule.targetKey"
+              (ngModelChange)="patchRule(rule.id, { targetKey: $event })"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-full" />
+          </td>
+          <td>
+            <p-select
+              [options]="transformOptions"
+              [ngModel]="rule.transform"
+              (ngModelChange)="patchRule(rule.id, { transform: $event })"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-full" />
+          </td>
+          <td class="params-cell">
+            @switch (rule.transform) {
+              @case ('date_format') {
+                <div class="param-grid">
+                  <input
+                    pInputText
+                    placeholder="Input pattern (e.g. yyyy-MM-dd)"
+                    [ngModel]="rule.paramA"
+                    (ngModelChange)="patchRule(rule.id, { paramA: $event })" />
+                  <input
+                    pInputText
+                    placeholder="Output pattern (e.g. dd/MM/yyyy)"
+                    [ngModel]="rule.paramB"
+                    (ngModelChange)="patchRule(rule.id, { paramB: $event })" />
+                </div>
+              }
+              @case ('enum_map') {
+                <input
+                  pInputText
+                  class="w-full"
+                  placeholder="A=AKTIF,B=PASIF,C=ASKIDA"
+                  [ngModel]="rule.paramA"
+                  (ngModelChange)="patchRule(rule.id, { paramA: $event })" />
+              }
+              @case ('default_value') {
+                <input
+                  pInputText
+                  class="w-full"
+                  placeholder="Value when source is empty"
+                  [ngModel]="rule.paramA"
+                  (ngModelChange)="patchRule(rule.id, { paramA: $event })" />
+              }
+              @case ('combine') {
+                <div class="param-grid">
+                  <p-select
+                    [options]="sourcePathOptions()"
+                    [ngModel]="rule.paramA"
+                    (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Second path"
+                    styleClass="w-full" />
+                  <input
+                    pInputText
+                    placeholder="Separator (space)"
+                    [ngModel]="rule.paramB"
+                    (ngModelChange)="patchRule(rule.id, { paramB: $event })" />
+                </div>
+              }
+              @default {
+                <span class="text-color-secondary text-sm">No extra parameters</span>
+              }
+            }
+          </td>
+          <td>
+            <p-button
+              icon="pi pi-trash"
+              variant="text"
+              severity="danger"
+              (onClick)="removeRule(rule)"
+              [disabled]="rules().length <= 1" />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+}
+
+@if (activeStep() === 3) {
+  <div class="step-panels validate-grid">
+    <p-card styleClass="studio-card">
+      <ng-template pTemplate="header">
+        <div class="card-header-row">
+          <div>
+            <h2 class="card-title">Run validation</h2>
+            <p class="card-subtitle">
+              Executes transforms locally against the sample JSON and checks required canonical fields (demo-only, no API).
+            </p>
+          </div>
+        </div>
+      </ng-template>
+      <div class="toolbar-row">
+        <p-button label="Back" icon="pi pi-arrow-left" variant="outlined" severity="secondary" (onClick)="prevStep()" />
+        <p-button label="Test mapping" icon="pi pi-play" (onClick)="runTest()" />
+        <p-button
+          label="Publish (demo)"
+          icon="pi pi-cloud-upload"
+          severity="success"
+          (onClick)="publishDemo()"
+          [disabled]="validationOk() !== true" />
+      </div>
+      @if (validationOk() !== null) {
+        <div class="result-block mt-3">
+          <p-tag
+            [severity]="validationOk() ? 'success' : 'danger'"
+            [value]="validationOk() ? 'Schema check passed' : 'Schema check failed'" />
+          <ul class="validation-list">
+            @for (msg of validationMessages(); track msg) {
+              <li>{{ msg }}</li>
+            }
+          </ul>
+        </div>
+      }
+      @if (published()) {
+        <p-message
+          severity="success"
+          text="Demo publish recorded. In production this version would be promoted and traffic would route to the new mapping."
+          styleClass="w-full mt-3" />
+      }
+    </p-card>
+
+    <p-card styleClass="studio-card">
+      <ng-template pTemplate="header">
+        <div class="card-header-row">
+          <div>
+            <h2 class="card-title">Transformed output</h2>
+            <p class="card-subtitle">Preview of the canonical payload after applying your rules.</p>
+          </div>
+        </div>
+      </ng-template>
+      @if (testOutput()) {
+        <pre class="mono-pre">{{ testOutput() | json }}</pre>
+      } @else {
+        <p class="empty-hint">Run “Test mapping” to see output.</p>
+      }
+    </p-card>
+  </div>
+}

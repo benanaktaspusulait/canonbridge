@@ -1,4 +1,5 @@
 import { Component, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { CardModule } from 'primeng/card';
@@ -24,7 +25,7 @@ interface MappingVersion {
 @Component({
   selector: 'app-mappings',
   standalone: true,
-  imports: [FormsModule, DecimalPipe, CardModule, ButtonModule, TableModule, TagModule,
+  imports: [RouterLink, FormsModule, DecimalPipe, CardModule, ButtonModule, TableModule, TagModule,
             InputTextModule, TooltipModule, IconFieldModule, InputIconModule],
   templateUrl: './mappings.component.html',
   styleUrl: './mappings.component.scss'

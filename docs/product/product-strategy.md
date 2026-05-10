@@ -616,6 +616,6 @@ Runtime değişiklik için: POST /admin/config/reload
 - [İş Modeli ve Fiyatlandırma](./business-model.md)
 - [Rekabet Analizi](./competitive-analysis.md)
 - [Platform Upgrade Stratejisi](../deployment/08-platform-upgrade.md)
-- [Support ve Diagnostics](../operations/11-support-diagnostics.md)
+- [Support ve Diagnostics](../operations/13-support-diagnostics.md)
 - [Mimari Genel Bakış](../architecture/01-overview.md)
 - [ADR Klasörü](../adr/)

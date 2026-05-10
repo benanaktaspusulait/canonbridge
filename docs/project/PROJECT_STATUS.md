@@ -29,11 +29,11 @@
 
 ## 📁 DOCUMENTATION INVENTORY
 
-### Project Documents (12 files)
+### Project Documents (root + docs/project)
 
 | Document | Purpose | Status |
 |----------|---------|--------|
-| `README.md` | Project overview | ✅ Complete |
+| `README.md` (repo root) | Project overview | ✅ Complete |
 | `BRAND_IDENTITY.md` | Official name and vision | ✅ Complete |
 | `STRATEGY.md` | Customer, market, economics | ✅ Complete |
 | `MASTER_ROADMAP.md` | Official project roadmap | ✅ Complete |
@@ -42,6 +42,7 @@
 | `PROJECT_SUMMARY.md` | Quick reference | ✅ Complete |
 | `DOCUMENTATION_ANALYSIS_REPORT.md` | Issues identified | ✅ Complete |
 | `DOCUMENTATION_FIXES_COMPLETE.md` | Fixes applied | ✅ Complete |
+| `WORK_SUMMARY.md` | Documentation and cleanup work log | ✅ Complete |
 | `PHASE2_COMPLETE.md` | Historical reference | ⚠️ Deprecated |
 | `PROJECT_STATUS.md` | This document | ✅ Complete |
 
@@ -77,7 +78,7 @@
 | `ADR-009` | Security threat model | ✅ Complete |
 | `ADR-010` | Schema registry strategy | ✅ Complete |
 
-### Operations Documents (14 files)
+### Operations Documents (16 files)
 
 | Document | Purpose | Status |
 |----------|---------|--------|
@@ -90,12 +91,13 @@
 | `07-performance-tuning.md` | Performance optimization | ✅ Complete |
 | `08-runbook.md` | Operational runbook | ✅ Complete |
 | `09-failure-scenarios.md` | Failure handling | ✅ Complete |
-| `09-schema-evolution.md` | Schema compatibility | ✅ Complete |
-| `10-production-readiness.md` | Production checklist | ✅ Complete |
-| `10-replay-recovery.md` | Replay procedures | ✅ Complete |
-| `12-security-operations.md` | Security operations | ✅ Complete |
-| `13-cost-capacity-planning.md` | Cost and capacity | ✅ Complete |
-| `14-audit-logging.md` | Audit logging | ✅ Complete |
+| `10-schema-evolution.md` | Schema compatibility | ✅ Complete |
+| `11-production-readiness.md` | Production checklist | ✅ Complete |
+| `12-replay-recovery.md` | Replay procedures | ✅ Complete |
+| `13-support-diagnostics.md` | Support procedures | ✅ Complete |
+| `14-security-operations.md` | Security operations | ✅ Complete |
+| `15-cost-capacity-planning.md` | Cost and capacity | ✅ Complete |
+| `16-audit-logging.md` | Audit logging | ✅ Complete |
 
 ### Implementation Documents (10 files)
 

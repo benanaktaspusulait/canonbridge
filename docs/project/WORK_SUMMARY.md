@@ -108,11 +108,11 @@
 **Issue 5: Missing operational documents** ✅
 - **Status**: Fixed
 - **Actions**: Created 5 new operational documents:
-  1. `09-schema-evolution.md` - Schema compatibility and migration
-  2. `10-replay-recovery.md` - Replay and disaster recovery
-  3. `12-security-operations.md` - Kafka ACL, mTLS, Vault
-  4. `13-cost-capacity-planning.md` - Cost estimates and capacity planning
-  5. `14-audit-logging.md` - Audit logging implementation
+  1. `10-schema-evolution.md` - Schema compatibility and migration
+  2. `12-replay-recovery.md` - Replay and disaster recovery
+  3. `14-security-operations.md` - Kafka ACL, mTLS, Vault
+  4. `15-cost-capacity-planning.md` - Cost estimates and capacity planning
+  5. `16-audit-logging.md` - Audit logging implementation
 
 **Issue 6: Structural clarity** ✅
 - **Status**: Fixed
@@ -127,8 +127,8 @@
 
 **Documents Created**:
 1. `DOCUMENTATION_FIXES_COMPLETE.md` - Summary of all fixes
-2. `PROJECT_STATUS.md` - Current project status and inventory
-3. `WORK_SUMMARY.md` - This document
+2. `docs/project/PROJECT_STATUS.md` - Current project status and inventory
+3. `docs/project/WORK_SUMMARY.md` - This document
 
 **Result**: Complete documentation of work performed
 
@@ -180,15 +180,14 @@
 ```
 /Users/benanaktas/project/etlsolutions/
 ├── README.md                          # Main project README
-├── PROJECT_STATUS.md                  # Current status (NEW)
-├── WORK_SUMMARY.md                    # This document (NEW)
-│
 ├── docs/                              # All documentation
 │   ├── README.md                      # Documentation hub
 │   ├── getting-started.md
 │   │
-│   ├── project/                       # Project planning (12 files)
+│   ├── project/                       # Project planning
 │   │   ├── README.md
+│   │   ├── PROJECT_STATUS.md          # Current status
+│   │   ├── WORK_SUMMARY.md            # Work log (this document)
 │   │   ├── MASTER_ROADMAP.md          # Single source of truth
 │   │   ├── BRAND_IDENTITY.md
 │   │   ├── STRATEGY.md
@@ -208,13 +207,13 @@
 │   │   ├── ADR-001-kafka-over-rabbitmq.md
 │   │   └── ...
 │   │
-│   ├── operations/                    # Operations docs (14 files)
+│   ├── operations/                    # Operations docs (16 files)
 │   │   ├── 01-monitoring-dashboards.md
-│   │   ├── 09-schema-evolution.md     # NEW
-│   │   ├── 10-replay-recovery.md      # NEW
-│   │   ├── 12-security-operations.md  # NEW
-│   │   ├── 13-cost-capacity-planning.md # NEW
-│   │   ├── 14-audit-logging.md        # NEW
+│   │   ├── 10-schema-evolution.md     # NEW
+│   │   ├── 12-replay-recovery.md      # NEW
+│   │   ├── 14-security-operations.md  # NEW
+│   │   ├── 15-cost-capacity-planning.md # NEW
+│   │   ├── 16-audit-logging.md        # NEW
 │   │   └── ...
 │   │
 │   ├── implementation/                # Implementation guides (10 files)
@@ -491,15 +490,15 @@ Once customer validation is complete and a go decision is made, the project can 
 8. `DOCUMENTATION_FIXES_COMPLETE.md` - Fixes applied
 
 ### Operations
-1. `09-schema-evolution.md` - Schema compatibility
-2. `10-replay-recovery.md` - Replay procedures
-3. `12-security-operations.md` - Security operations
-4. `13-cost-capacity-planning.md` - Cost and capacity
-5. `14-audit-logging.md` - Audit logging
+1. `10-schema-evolution.md` - Schema compatibility
+2. `12-replay-recovery.md` - Replay procedures
+3. `14-security-operations.md` - Security operations
+4. `15-cost-capacity-planning.md` - Cost and capacity
+5. `16-audit-logging.md` - Audit logging
 
 ### Summary
-1. `PROJECT_STATUS.md` - Current status
-2. `WORK_SUMMARY.md` - This document
+1. `docs/project/PROJECT_STATUS.md` - Current status
+2. `docs/project/WORK_SUMMARY.md` - This document
 
 ---
 

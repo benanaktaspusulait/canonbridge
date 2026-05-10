@@ -96,35 +96,35 @@ This document summarizes all documentation fixes applied to address the critical
 
 **Documents Created**:
 
-1. **Schema Evolution** (`09-schema-evolution.md`) ✅
+1. **Schema Evolution** (`10-schema-evolution.md`) ✅
    - Compatibility rules (backward, forward, full)
    - Schema versioning strategy
    - Migration procedures
    - Breaking change handling
    - Schema Registry integration
 
-2. **Replay & Recovery** (`10-replay-recovery.md`) ✅
+2. **Replay & Recovery** (`12-replay-recovery.md`) ✅
    - Replay scenarios and procedures
    - Kafka offset management
    - Data recovery strategies
    - Disaster recovery procedures
    - Testing and validation
 
-3. **Security Operations** (`12-security-operations.md`) ✅
+3. **Security Operations** (`14-security-operations.md`) ✅
    - Kafka ACL configuration
    - mTLS setup and certificate management
    - HashiCorp Vault integration
    - Network security policies
    - Security monitoring and incident response
 
-4. **Cost & Capacity Planning** (`13-cost-capacity-planning.md`) ✅
+4. **Cost & Capacity Planning** (`15-cost-capacity-planning.md`) ✅
    - Cost estimates for 4 deployment tiers
    - Capacity planning formulas
    - Sizing calculators for Kafka, PostgreSQL
    - Monitoring capacity metrics
    - Cost optimization strategies
 
-5. **Audit Logging** (`14-audit-logging.md`) ✅
+5. **Audit Logging** (`16-audit-logging.md`) ✅
    - Audit event categories
    - Database schema and storage strategy
    - Implementation examples (Node.js, Java)
@@ -132,11 +132,11 @@ This document summarizes all documentation fixes applied to address the critical
    - Compliance considerations (GDPR, SOC 2, HIPAA)
 
 **Files Created**:
-- `/Users/benanaktas/project/etlsolutions/docs/operations/09-schema-evolution.md`
-- `/Users/benanaktas/project/etlsolutions/docs/operations/10-replay-recovery.md`
-- `/Users/benanaktas/project/etlsolutions/docs/operations/12-security-operations.md`
-- `/Users/benanaktas/project/etlsolutions/docs/operations/13-cost-capacity-planning.md`
-- `/Users/benanaktas/project/etlsolutions/docs/operations/14-audit-logging.md`
+- `/Users/benanaktas/project/etlsolutions/docs/operations/10-schema-evolution.md`
+- `/Users/benanaktas/project/etlsolutions/docs/operations/12-replay-recovery.md`
+- `/Users/benanaktas/project/etlsolutions/docs/operations/14-security-operations.md`
+- `/Users/benanaktas/project/etlsolutions/docs/operations/15-cost-capacity-planning.md`
+- `/Users/benanaktas/project/etlsolutions/docs/operations/16-audit-logging.md`
 
 ---
 
@@ -190,11 +190,11 @@ This document summarizes all documentation fixes applied to address the critical
 
 | File | Purpose | Lines |
 |------|---------|-------|
-| `docs/operations/09-schema-evolution.md` | Schema compatibility and evolution | ~400 |
-| `docs/operations/10-replay-recovery.md` | Replay and disaster recovery | ~350 |
-| `docs/operations/12-security-operations.md` | Security operations and mTLS | ~600 |
-| `docs/operations/13-cost-capacity-planning.md` | Cost estimates and capacity planning | ~550 |
-| `docs/operations/14-audit-logging.md` | Audit logging implementation | ~700 |
+| `docs/operations/10-schema-evolution.md` | Schema compatibility and evolution | ~400 |
+| `docs/operations/12-replay-recovery.md` | Replay and disaster recovery | ~350 |
+| `docs/operations/14-security-operations.md` | Security operations and mTLS | ~600 |
+| `docs/operations/15-cost-capacity-planning.md` | Cost estimates and capacity planning | ~550 |
+| `docs/operations/16-audit-logging.md` | Audit logging implementation | ~700 |
 | **Total** | **5 new documents** | **~2,600 lines** |
 
 ### Files Modified

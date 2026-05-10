@@ -22,6 +22,7 @@ Mapping Studio is the management UI for configuring partner integrations from sa
 | [04-mapping-studio-validation-testing.md](./04-mapping-studio-validation-testing.md) | Validation pipeline, fixtures, quality gates, test strategy |
 | [05-mapping-studio-implementation-plan.md](./05-mapping-studio-implementation-plan.md) | Delivery plan, architecture integration, milestones, risks |
 | [06-mapping-studio-visual-jsonata-design.md](./06-mapping-studio-visual-jsonata-design.md) | Visual JSONata UI design, transform catalog, generator API, roles, validation |
+| [mapping-studio-design-system.md](./mapping-studio-design-system.md) | UI tokens, components, and layout conventions for Mapping Studio |
 
 ## Mapping Studio MVP Flow
 

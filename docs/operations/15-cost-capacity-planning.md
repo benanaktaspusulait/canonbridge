@@ -633,7 +633,7 @@ spec:
 - [Scaling Guide](./04-scaling.md)
 - [Performance Tuning](./07-performance-tuning.md)
 - [Monitoring Dashboards](./01-monitoring-dashboards.md)
-- [Production Readiness](./10-production-readiness.md)
+- [Production Readiness](./11-production-readiness.md)
 
 ---
 

@@ -20,7 +20,7 @@ This document organizes all project documentation by implementation phase, makin
 
 **Essential (Must Read)**:
 - ✅ `README.md` - Project overview
-- ✅ `PROJECT_STATUS.md` - Current status
+- ✅ `docs/project/PROJECT_STATUS.md` - Current status
 - ✅ `docs/project/MASTER_ROADMAP.md` - Official roadmap
 - ✅ `docs/project/STRATEGY.md` - Validation plan
 - ✅ `docs/project/MVP_DEFINITION.md` - What we'll build
@@ -36,7 +36,7 @@ This document organizes all project documentation by implementation phase, makin
 **Reference**:
 - ✅ `docs/project/DOCUMENTATION_ANALYSIS_REPORT.md` - Issues found
 - ✅ `docs/project/DOCUMENTATION_FIXES_COMPLETE.md` - Fixes applied
-- ✅ `WORK_SUMMARY.md` - Work completed
+- ✅ `docs/project/WORK_SUMMARY.md` - Work completed
 
 ### Activities
 - Customer interviews
@@ -168,13 +168,13 @@ This document organizes all project documentation by implementation phase, makin
 - ✅ `docs/operations/07-performance-tuning.md` - Performance optimization
 - ✅ `docs/operations/08-runbook.md` - Operational runbook
 - ✅ `docs/operations/09-failure-scenarios.md` - Failure handling
-- ✅ `docs/operations/09-schema-evolution.md` - Schema compatibility
-- ✅ `docs/operations/10-production-readiness.md` - Production checklist
-- ✅ `docs/operations/10-replay-recovery.md` - Replay procedures
-- ✅ `docs/operations/11-support-diagnostics.md` - Support procedures
-- ✅ `docs/operations/12-security-operations.md` - Security operations
-- ✅ `docs/operations/13-cost-capacity-planning.md` - Cost and capacity
-- ✅ `docs/operations/14-audit-logging.md` - Audit logging
+- ✅ `docs/operations/10-schema-evolution.md` - Schema compatibility
+- ✅ `docs/operations/11-production-readiness.md` - Production checklist
+- ✅ `docs/operations/12-replay-recovery.md` - Replay procedures
+- ✅ `docs/operations/13-support-diagnostics.md` - Support procedures
+- ✅ `docs/operations/14-security-operations.md` - Security operations
+- ✅ `docs/operations/15-cost-capacity-planning.md` - Cost and capacity
+- ✅ `docs/operations/16-audit-logging.md` - Audit logging
 
 **Implementation**:
 - ✅ `docs/implementation/05-worker-pool.md` - Worker pool design
@@ -225,7 +225,7 @@ This document organizes all project documentation by implementation phase, makin
 
 **Operations**:
 - ✅ `docs/operations/04-scaling.md` - Scaling strategies
-- ✅ `docs/operations/09-schema-evolution.md` - Schema evolution
+- ✅ `docs/operations/10-schema-evolution.md` - Schema evolution
 
 **ADRs**:
 - ✅ `docs/adr/ADR-007-immutable-mapping-versioning.md` - Versioning
@@ -268,7 +268,7 @@ This document organizes all project documentation by implementation phase, makin
 - ✅ `docs/adr/ADR-008-event-id-idempotency.md` - Idempotency
 
 **Operations**:
-- ✅ `docs/operations/10-replay-recovery.md` - Replay procedures
+- ✅ `docs/operations/12-replay-recovery.md` - Replay procedures
 
 ### Activities
 - Java/Quarkus business service
@@ -307,7 +307,7 @@ This document organizes all project documentation by implementation phase, makin
 **Operations**:
 - ✅ `docs/operations/04-scaling.md` - Auto-scaling
 - ✅ `docs/operations/06-disaster-recovery.md` - DR procedures
-- ✅ `docs/operations/10-production-readiness.md` - Production checklist
+- ✅ `docs/operations/11-production-readiness.md` - Production checklist
 
 ### Activities
 - Kubernetes manifests
@@ -338,9 +338,9 @@ This document organizes all project documentation by implementation phase, makin
 - ✅ `docs/architecture/11-sequence-diagrams.md` - Flow diagrams
 
 **Operations**:
-- ✅ `docs/operations/12-security-operations.md` - Security operations
-- ✅ `docs/operations/13-cost-capacity-planning.md` - Cost and capacity
-- ✅ `docs/operations/14-audit-logging.md` - Audit logging
+- ✅ `docs/operations/14-security-operations.md` - Security operations
+- ✅ `docs/operations/15-cost-capacity-planning.md` - Cost and capacity
+- ✅ `docs/operations/16-audit-logging.md` - Audit logging
 
 **Governance**:
 - ✅ `docs/governance/01-data-governance.md` - Data governance
@@ -391,10 +391,11 @@ This document organizes all project documentation by implementation phase, makin
 ### Phase 0: Validation (7 docs)
 ```
 README.md
-PROJECT_STATUS.md
 docs/
   ├── getting-started.md
   └── project/
+      ├── PROJECT_STATUS.md
+      ├── WORK_SUMMARY.md
       ├── MASTER_ROADMAP.md
       ├── STRATEGY.md
       ├── MVP_DEFINITION.md
@@ -492,13 +493,13 @@ docs/
 3. Reference: Architecture docs as needed
 
 **Phase 3 (Production)**:
-1. Start: `docs/operations/10-production-readiness.md`
+1. Start: `docs/operations/11-production-readiness.md`
 2. Then: Read ALL operations docs (16 docs)
 3. Implement: Monitoring, security, scaling
 
 **Phase 4 (Multi-Partner)**:
 1. Start: `docs/governance/01-data-governance.md`
-2. Then: `docs/operations/09-schema-evolution.md`
+2. Then: `docs/operations/10-schema-evolution.md`
 3. Reference: Versioning and schema docs
 
 **Phase 5 (Business Service)**:
@@ -512,9 +513,9 @@ docs/
 3. Implement: K8s manifests, CI/CD
 
 **Phase 7 (Enterprise)**:
-1. Start: `docs/operations/12-security-operations.md`
-2. Then: `docs/operations/14-audit-logging.md`
-3. Then: `docs/operations/13-cost-capacity-planning.md`
+1. Start: `docs/operations/14-security-operations.md`
+2. Then: `docs/operations/16-audit-logging.md`
+3. Then: `docs/operations/15-cost-capacity-planning.md`
 
 ---
 

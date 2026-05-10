@@ -18,8 +18,28 @@
   margin-left: 72px;
 }
 
+.demo-environment-banner {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.8125rem;
+  color: var(--amber-900, #78350f);
+  background: linear-gradient(90deg, var(--amber-50, #fffbeb), var(--orange-50, #fff7ed));
+  border-bottom: 1px solid var(--amber-200, #fde68a);
+
+  i {
+    font-size: 0.875rem;
+    opacity: 0.85;
+  }
+}
+
 .page-content {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem 2rem;
+  padding: 1.75rem 2.25rem;
+  max-width: 1600px;
+  width: 100%;
+  margin: 0 auto;
 }

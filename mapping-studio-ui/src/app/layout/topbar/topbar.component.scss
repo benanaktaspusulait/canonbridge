@@ -21,6 +21,19 @@
   gap: 0.25rem;
 }
 
+.env-chip {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--amber-900, #78350f);
+  background: var(--amber-100, #fef3c7);
+  border: 1px solid var(--amber-200, #fde68a);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  margin-right: 0.35rem;
+}
+
 /* ── User menu ── */
 .user-menu {
   display: flex;
