@@ -2,6 +2,25 @@
 @import "primeicons/primeicons.css";
 @import "primeflex/primeflex.css";
 
+/* ── CanonBridge design tokens (app chrome on top of Prime Aura) ── */
+:root {
+  --cb-brand-from: #1e3a5f;
+  --cb-brand-to: #312e81;
+  --cb-accent: #2563eb;
+  --cb-accent-muted: #3b82f6;
+  --cb-code-partner: #1d4ed8;
+  --cb-code-event: #6d28d9;
+  --cb-page-mesh: radial-gradient(1200px 600px at 10% -10%, rgba(37, 99, 235, 0.07), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgba(109, 40, 217, 0.06), transparent 50%),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+html.dark-mode {
+  --cb-code-partner: #93c5fd;
+  --cb-code-event: #c4b5fd;
+  --cb-page-mesh: var(--surface-ground);
+}
+
 /* Base */
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -83,8 +102,8 @@ code {
   color: var(--text-color);
 }
 
-.partner-code { color: #2563eb; }
-.event-code   { color: #7c3aed; }
+.partner-code { color: var(--cb-code-partner); font-weight: 500; }
+.event-code   { color: var(--cb-code-event); font-weight: 500; }
 
 /* ── Version badge ── */
 .version-badge {
@@ -161,8 +180,8 @@ code {
 
   &.active {
     color: var(--primary-color);
-    border-color: color-mix(in srgb, var(--primary-color) 35%, var(--surface-border));
-    background: var(--primary-50, #eff6ff);
+    border-color: color-mix(in srgb, var(--primary-color) 38%, var(--surface-border));
+    background: color-mix(in srgb, var(--primary-color) 10%, var(--surface-card));
 
     .step-index {
       background: var(--primary-color);
@@ -180,16 +199,27 @@ code {
   }
 }
 
+html.dark-mode .wizard-step.active {
+  background: color-mix(in srgb, var(--primary-color) 16%, transparent);
+}
+
 .mono-pre {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 0.75rem;
   line-height: 1.5;
   margin: 0;
   padding: 1rem;
-  border-radius: 8px;
-  background: var(--surface-900, #0f172a);
+  border-radius: 10px;
+  background: #0b1220;
   color: #e2e8f0;
   overflow: auto;
   max-height: 320px;
-  border: 1px solid var(--surface-border);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+html.dark-mode .mono-pre {
+  background: #020617;
+  border-color: var(--surface-border);
+  color: #cbd5e1;
 }

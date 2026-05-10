@@ -6,11 +6,16 @@
   width: 260px;
   background: var(--surface-card);
   border-right: 1px solid var(--surface-border);
+  box-shadow: 4px 0 32px rgba(15, 23, 42, 0.06);
   display: flex;
   flex-direction: column;
-  transition: width 0.2s ease;
+  transition: width 0.2s ease, box-shadow 0.2s ease;
   z-index: 100;
   overflow: hidden;
+}
+
+html.dark-mode .sidebar {
+  box-shadow: 4px 0 40px rgba(0, 0, 0, 0.45);
 }
 
 .sidebar.collapsed {
@@ -32,7 +37,8 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  background: linear-gradient(145deg, #1e40af 0%, #4338ca 55%, #6d28d9 100%);
+  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -110,7 +116,7 @@
   }
 
   &.active {
-    background: var(--primary-50, #eff6ff);
+    background: color-mix(in srgb, var(--primary-color) 12%, var(--surface-card));
     color: var(--primary-color);
     font-weight: 600;
 
@@ -122,10 +128,14 @@
       transform: translateY(-50%);
       width: 3px;
       height: 22px;
-      background: var(--primary-color);
+      background: linear-gradient(180deg, var(--primary-color), color-mix(in srgb, var(--primary-color) 65%, #6366f1));
       border-radius: 0 3px 3px 0;
     }
   }
+}
+
+html.dark-mode .nav-item.active {
+  background: color-mix(in srgb, var(--primary-color) 18%, transparent);
 }
 
 .nav-label {
@@ -142,9 +152,15 @@
   border-radius: 999px;
   line-height: 1.4;
 
-  &.danger  { background: #fee2e2; color: #dc2626; }
-  &.warning { background: #fef9c3; color: #ca8a04; }
-  &.info    { background: #dbeafe; color: #2563eb; }
+  &.danger  { background: color-mix(in srgb, #fecaca 85%, transparent); color: #b91c1c; }
+  &.warning { background: color-mix(in srgb, #fef08a 75%, transparent); color: #a16207; }
+  &.info    { background: color-mix(in srgb, #bfdbfe 80%, transparent); color: #1d4ed8; }
+}
+
+html.dark-mode .nav-badge {
+  &.danger  { background: rgba(220, 38, 38, 0.25); color: #fca5a5; }
+  &.warning { background: rgba(202, 138, 4, 0.22); color: #fde047; }
+  &.info    { background: rgba(37, 99, 235, 0.25); color: #93c5fd; }
 }
 
 .nav-badge-dot {

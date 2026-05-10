@@ -13,10 +13,26 @@
   display: flex;
   align-items: flex-start;
   gap: 1rem;
+  transition: box-shadow 0.15s ease;
+
+  &:hover {
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+  }
 
   &.breach {
     border-color: #fca5a5;
-    background: #fff5f5;
+    background: color-mix(in srgb, #fef2f2 88%, var(--surface-card));
+  }
+}
+
+html.dark-mode .metric-card {
+  &:hover {
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
+  }
+
+  &.breach {
+    border-color: rgba(248, 113, 113, 0.5);
+    background: color-mix(in srgb, rgba(127, 29, 29, 0.35), var(--surface-card));
   }
 }
 

@@ -2,6 +2,10 @@
   display: flex;
   height: 100vh;
   overflow: hidden;
+  background: var(--cb-page-mesh);
+}
+
+html.dark-mode .app-layout {
   background: var(--surface-ground);
 }
 
@@ -25,13 +29,25 @@
   gap: 0.5rem;
   padding: 0.5rem 1.25rem;
   font-size: 0.8125rem;
-  color: var(--amber-900, #78350f);
-  background: linear-gradient(90deg, var(--amber-50, #fffbeb), var(--orange-50, #fff7ed));
-  border-bottom: 1px solid var(--amber-200, #fde68a);
+  color: #854d0e;
+  background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 45%, #ffedd5 100%);
+  border-bottom: 1px solid #fcd34d;
+  letter-spacing: 0.01em;
 
   i {
     font-size: 0.875rem;
-    opacity: 0.85;
+    opacity: 0.88;
+    color: #b45309;
+  }
+}
+
+html.dark-mode .demo-environment-banner {
+  color: #fde68a;
+  background: linear-gradient(90deg, rgba(180, 83, 9, 0.22), rgba(146, 64, 14, 0.28));
+  border-bottom-color: rgba(251, 191, 36, 0.35);
+
+  i {
+    color: #fcd34d;
   }
 }
 
