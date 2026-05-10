@@ -1,8 +1,16 @@
-# Integration Magic Documentation
+# CanonBridge Documentation
 
 **🪄 Complete guide to solving integration problems without code**
 
-This is the central hub for all Integration Magic documentation. Whether you're a business user creating integrations, a developer understanding the architecture, or a DevOps engineer deploying to production - start here.
+> ⚠️ **Project Status**: This project is currently in the **DESIGN & VALIDATION PHASE**.
+> - Documentation is complete (architecture, implementation guides, operations)
+> - Code has not been written yet
+> - Customer validation has not been completed
+> - All performance claims are targets, not measured results
+> 
+> See [MASTER_ROADMAP.md](../MASTER_ROADMAP.md) for current phase.
+
+This is the central hub for all CanonBridge documentation. Whether you're a business user creating integrations, a developer understanding the architecture, or a DevOps engineer deploying to production - start here.
 
 ---
 

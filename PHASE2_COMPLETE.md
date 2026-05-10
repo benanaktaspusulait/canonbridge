@@ -1,5 +1,11 @@
 # Phase 2 Complete: Infrastructure Planning
 
+> ⚠️ **DEPRECATED**: This document is deprecated. Please refer to [MASTER_ROADMAP.md](./MASTER_ROADMAP.md) for the official project roadmap.
+> 
+> This file is kept for historical reference only.
+
+---
+
 **Product**: CanonBridge  
 **Phase**: 2 - Infrastructure Planning  
 **Status**: ✅ **COMPLETE**  

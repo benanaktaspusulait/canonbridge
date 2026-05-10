@@ -7,7 +7,7 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 async function importDependencies() {
   try {
     const jsonataModule = await import('jsonata');
-    const ajvModule = await import('ajv');
+    const ajvModule = await import('ajv/dist/2020.js');
     const formatsModule = await import('ajv-formats');
     return {
       jsonata: jsonataModule.default ?? jsonataModule,

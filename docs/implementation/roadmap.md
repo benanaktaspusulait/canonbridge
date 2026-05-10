@@ -1,5 +1,11 @@
 # CanonBridge - Implementation Roadmap
 
+> ⚠️ **DEPRECATED**: This document is deprecated. Please refer to [MASTER_ROADMAP.md](../../MASTER_ROADMAP.md) for the official project roadmap.
+> 
+> This file is kept for historical reference only.
+
+---
+
 ## 📋 Project Status: Phase 1 - Documentation Complete ✅
 
 This document outlines the complete implementation roadmap for the CanonBridge platform based on the finalized tech stack and comprehensive documentation.

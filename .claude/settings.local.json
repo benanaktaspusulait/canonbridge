@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(cp /Users/benanaktas/project/community/docs/architecture/java25-microservices-design.md /Users/benanaktas/project/community/docs/technology/phase-1-design.md)",
-      "Bash(cp /Users/benanaktas/project/community/docs/architecture/java25-microservices-requirements.md /Users/benanaktas/project/community/docs/technology/phase-1-requirements.md)"
+      "Bash(cp /Users/benanaktas/project/community/docs/architecture/java25-microservices-requirements.md /Users/benanaktas/project/community/docs/technology/phase-1-requirements.md)",
+      "Bash(npm --version)",
+      "Bash(npx @angular/cli --version)",
+      "Bash(npx @angular/cli new mapping-studio-ui --routing=true --style=scss --ssr=false --standalone=true --skip-git=true --skip-install=false)",
+      "Bash(npm install:*)"
     ]
   }
 }

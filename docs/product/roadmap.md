@@ -1,5 +1,11 @@
 # Product Roadmap - From Architecture to Production
 
+> ⚠️ **DEPRECATED**: This document is deprecated. Please refer to [MASTER_ROADMAP.md](../../MASTER_ROADMAP.md) for the official project roadmap.
+> 
+> This file is kept for historical reference only.
+
+---
+
 ## 🎯 Vision
 
 Transform the ETL Solutions architecture into a **production-grade, scalable, and maintainable event transformation platform** that enables rapid partner onboarding and reduces time-to-market.

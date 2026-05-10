@@ -2,6 +2,14 @@
 
 > **Enterprise Integration Platform** — Event-driven partner data transformation at scale.
 
+> ⚠️ **Project Status**: This project is currently in the **DESIGN & VALIDATION PHASE**.
+> - **Code**: Not yet written (0%)
+> - **Customer Validation**: Not yet completed
+> - **Performance Claims**: Target values based on architecture, not measured results
+> - **Timeline**: Estimates require validation
+>
+> See [MASTER_ROADMAP.md](./MASTER_ROADMAP.md) for current phase and [STRATEGY.md](./STRATEGY.md) for validation plan.
+
 CanonBridge eliminates the engineering bottleneck of multi-partner integrations. Instead of writing custom adapter code for every new partner, business users define field mappings visually and publish in minutes. The platform handles transformation, validation, ordering, retry, and observability automatically.
 
 ---
@@ -231,21 +239,31 @@ Full rationale with tradeoffs: [docs/adr/](./docs/adr/)
 
 ## Project Status
 
-**Phase**: Architecture & Design complete. Implementation pending.
+**Current Phase**: Phase 0 - Validation & Strategy<br>
+**Code Status**: 0% (Design phase)<br>
+**Documentation**: 100% (Architecture and planning complete)
 
-| Layer | Status |
-|---|---|
-| Architecture documentation | Complete |
-| ADR (decision records) | Complete |
-| Kubernetes manifests | Complete |
-| CI/CD pipelines | Complete |
-| Security design | Complete |
-| Observability design | Complete |
-| Canonical schemas and sample partner fixture | Complete |
-| Local Kafka/PostgreSQL/Prometheus/Grafana compose | Complete |
-| Service implementation | Pending |
-| Mapping Studio UI | Pending |
-| Integration tests | Pending |
+> 📋 **See [MASTER_ROADMAP.md](./MASTER_ROADMAP.md) for the official project plan**
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Architecture documentation | ✅ Complete | Comprehensive design docs |
+| ADR (decision records) | ✅ Complete | 10 architecture decisions documented |
+| Kubernetes manifests | ✅ Complete | Ready for Phase 6 |
+| CI/CD pipelines | ✅ Complete | Ready for Phase 6 |
+| Security design | ✅ Complete | Threat model and controls defined |
+| Observability design | ✅ Complete | Monitoring strategy defined |
+| Customer validation | ⏳ Not started | **Phase 0 required before MVP** |
+| Service implementation | ⏳ Planned | Phase 1 (after validation) |
+| Mapping Studio UI | ⏳ Planned | Phase 2 |
+| Integration tests | ⏳ Planned | Phase 1-3 |
+
+**Next Steps**:
+1. Complete Phase 0: Customer Discovery (2 weeks)
+2. Go/no-go decision based on validation
+3. If go: Build MVP (Phase 1, 4 weeks)
+
+See [STRATEGY.md](./STRATEGY.md) for validation plan and success criteria.
 
 ---
 
