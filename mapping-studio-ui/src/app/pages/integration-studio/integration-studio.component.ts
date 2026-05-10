@@ -25,45 +25,17 @@ import { FieldsetModule } from 'primeng/fieldset';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
-
-export type TransformKind =
-  | 'direct'
-  | 'date_format'
-  | 'enum_map'
-  | 'number_coerce'
-  | 'default_value'
-  | 'combine'
-  | 'string_uppercase'
-  | 'string_lowercase'
-  | 'string_trim'
-  | 'string_substring'
-  | 'string_replace'
-  | 'array_join'
-  | 'array_element'
-  | 'conditional_value'
-  | 'template_string';
-
-export interface TargetField {
-  key: string;
-  type: 'string' | 'number' | 'date';
-  required: boolean;
-  description: string;
-}
-
-export interface MappingRule {
-  id: string;
-  sourcePath: string;
-  targetKey: string;
-  transform: TransformKind;
-  /** date: input pattern; enum: map string; default: fallback; combine: second path; replace: find; substring: start; array_element: index; conditional: expected raw value */
-  paramA: string;
-  /** date: output pattern; combine: separator; replace: replacement; substring: length; conditional: value if match */
-  paramB: string;
-  /** conditional: value if no match */
-  paramC: string;
-  /** When non-empty: custom mapping logic on full payload → written to targetKey (replaces visual transform). */
-  advancedExpression: string;
-}
+import { targetFieldsFromCanonicalPayloadProperties } from './canonical-fields-from-schema';
+import { collectSchemaValuePaths, isRootObjectSchema } from './json-schema-walk';
+import type { FixtureRow, MappingRule, TargetField, TransformKind } from './integration-studio.models';
+import { buildCombinedMappingExpression } from './rule-to-jsonata';
+import {
+  createStudioAjv,
+  formatAjvIssueForList,
+  instancePathToTargetKey,
+  validateWithAjv,
+  type AjvIssue
+} from './studio-ajv';
 
 const DEMO_JSON = `{
   "customer": {
@@ -77,10 +49,34 @@ const DEMO_JSON = `{
 }`;
 
 const DEFAULT_TARGETS: TargetField[] = [
-  { key: 'musteriAdi', type: 'string', required: true, description: 'Canonical customer display name' },
-  { key: 'durum', type: 'string', required: true, description: 'Lifecycle state (AKTIF / PASIF / ASKIDA)' },
-  { key: 'tarih', type: 'date', required: true, description: 'Order date (DD/MM/YYYY)' },
-  { key: 'adet', type: 'number', required: true, description: 'Line quantity' }
+  {
+    key: 'musteriAdi',
+    type: 'string',
+    required: true,
+    description: 'Canonical customer display name',
+    source: 'manual'
+  },
+  {
+    key: 'durum',
+    type: 'string',
+    required: true,
+    description: 'Lifecycle state (AKTIF / PASIF / ASKIDA)',
+    source: 'manual'
+  },
+  {
+    key: 'tarih',
+    type: 'date',
+    required: true,
+    description: 'Order date (DD/MM/YYYY)',
+    source: 'manual'
+  },
+  {
+    key: 'adet',
+    type: 'number',
+    required: true,
+    description: 'Line quantity',
+    source: 'manual'
+  }
 ];
 
 const DEFAULT_RULES: MappingRule[] = [
@@ -261,6 +257,13 @@ function stableStringify(value: unknown): string {
   }
 }
 
+function effectiveJsonataExpression(rule: MappingRule): string | undefined {
+  const j = rule.jsonataExpression?.trim();
+  if (j) return j;
+  const a = rule.advancedExpression?.trim();
+  return a || undefined;
+}
+
 function applyVisualTransform(rule: MappingRule, payload: unknown): unknown {
   const raw = getByPath(payload, rule.sourcePath);
   switch (rule.transform) {
@@ -351,6 +354,7 @@ function applyVisualTransform(rule: MappingRule, payload: unknown): unknown {
 export class IntegrationStudioComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly jsonataCheck = inject(JsonataCheckService);
+  private readonly ajv = createStudioAjv();
 
   /** When `mapping.transformerApiUrl` is set, advanced formulas are mirrored to the transformer for validation. */
   get transformerConfigured(): boolean {
@@ -387,6 +391,29 @@ export class IntegrationStudioComponent implements OnInit {
   altTransformerMessages = signal<string[]>([]);
   published = signal(false);
 
+  readonly inputSchemaMeta = signal<{ title?: string; $id?: string } | null>(null);
+  readonly inputSchemaDoc = signal<Record<string, unknown> | null>(null);
+  readonly inputSchemaLoadError = signal<string | null>(null);
+  readonly inputSchemaValidationIssues = signal<AjvIssue[]>([]);
+  readonly inputSchemaPathSuggestions = signal<string[]>([]);
+
+  readonly canonicalSchemaMeta = signal<{ title?: string; $id?: string } | null>(null);
+  readonly canonicalSchemaDoc = signal<Record<string, unknown> | null>(null);
+  readonly canonicalSchemaLoadError = signal<string | null>(null);
+  readonly canonicalSchemaIssuesDetail = signal<{ targetKey: string | null; text: string }[]>([]);
+  readonly rulesWithOutputSchemaErrors = signal<Set<string>>(new Set());
+
+  validateStepTab = signal<'test' | 'fixtures' | 'expression'>('test');
+  fixtures = signal<FixtureRow[]>([
+    { id: 'fx_1', name: 'Fixture 1', inputJson: '', expectedJson: '', status: 'idle' },
+    { id: 'fx_2', name: 'Fixture 2', inputJson: '', expectedJson: '', status: 'idle' }
+  ]);
+  fixtureRunSummary = signal<string | null>(null);
+  fixtureConfigMessage = signal<{ severity: 'info' | 'error'; text: string } | null>(null);
+  selectedFixtureDetailId = signal<string | null>(null);
+
+  readonly combinedExpressionPreview = computed(() => buildCombinedMappingExpression(this.rules()));
+
   readonly transformOptions = computed(() => {
     this.i18n.translations();
     const kinds: TransformKind[] = [
@@ -420,9 +447,12 @@ export class IntegrationStudioComponent implements OnInit {
     }));
   });
 
-  readonly sourcePathOptions = computed(() =>
-    this.sourcePaths().map(p => ({ label: p, value: p }))
-  );
+  readonly sourcePathOptions = computed(() => {
+    const fromJson = this.sourcePaths();
+    const fromSch = this.inputSchemaPathSuggestions();
+    const merged = [...new Set([...fromSch, ...fromJson])].sort((a, b) => a.localeCompare(b));
+    return merged.map(p => ({ label: p, value: p }));
+  });
 
   readonly targetKeyOptions = computed(() =>
     this.targetFields().map(f => ({ label: f.key, value: f.key }))
@@ -463,8 +493,18 @@ export class IntegrationStudioComponent implements OnInit {
     this.validationOk.set(null);
     this.published.set(false);
     this.ruleEvalErrors.set({});
+    this.inputSchemaValidationIssues.set([]);
     try {
       const parsed = JSON.parse(this.sourceJson()) as unknown;
+      const sch = this.inputSchemaDoc();
+      if (sch) {
+        const v = validateWithAjv(this.ajv, sch, parsed);
+        if (v.ok) {
+          this.inputSchemaValidationIssues.set([]);
+        } else {
+          this.inputSchemaValidationIssues.set(v.issues);
+        }
+      }
       const nodes = buildTreeNodes(parsed, '');
       const paths: string[] = [];
       collectLeafPaths(nodes, paths);
@@ -495,7 +535,7 @@ export class IntegrationStudioComponent implements OnInit {
   addTargetField(): void {
     this.targetFields.update(rows => [
       ...rows,
-      { key: `field_${rows.length + 1}`, type: 'string', required: false, description: '' }
+      { key: `field_${rows.length + 1}`, type: 'string', required: false, description: '', source: 'manual' }
     ]);
   }
 
@@ -552,13 +592,13 @@ export class IntegrationStudioComponent implements OnInit {
   }
 
   ruleUsesAdvancedLogic(rule: MappingRule): boolean {
-    return Boolean(rule.advancedExpression?.trim());
+    return Boolean(effectiveJsonataExpression(rule));
   }
 
   ruleSummaryText(rule: MappingRule | null): string {
     if (!rule) return '';
     this.i18n.translations();
-    if (rule.advancedExpression?.trim()) {
+    if (effectiveJsonataExpression(rule)) {
       return this.i18n.translate('studio.summary.advanced', { target: rule.targetKey });
     }
     const path = rule.sourcePath || '—';
@@ -652,7 +692,7 @@ export class IntegrationStudioComponent implements OnInit {
   ): Promise<{ mergedErrors: Record<string, string>; extraNotes: string[] }> {
     const merged = { ...mergedErrors };
     const extraNotes: string[] = [];
-    const advanced = this.rules().filter(r => r.advancedExpression?.trim());
+    const advanced = this.rules().filter(r => effectiveJsonataExpression(r));
     if (!advanced.length) {
       return { mergedErrors: merged, extraNotes };
     }
@@ -661,7 +701,7 @@ export class IntegrationStudioComponent implements OnInit {
         payload,
         advanced.map(r => ({
           ruleId: r.id,
-          expression: r.advancedExpression!.trim()
+          expression: effectiveJsonataExpression(r)!
         }))
       );
       if (!resp) {
@@ -693,8 +733,9 @@ export class IntegrationStudioComponent implements OnInit {
     const errors: Record<string, string> = {};
     for (const rule of this.rules()) {
       try {
-        if (rule.advancedExpression?.trim()) {
-          const r = await evaluateMappingExpression(rule.advancedExpression.trim(), payload);
+        const ex = effectiveJsonataExpression(rule);
+        if (ex) {
+          const r = await evaluateMappingExpression(ex, payload);
           out[rule.targetKey] = r as unknown;
         } else {
           out[rule.targetKey] = applyVisualTransform(rule, payload) as unknown;
@@ -712,6 +753,8 @@ export class IntegrationStudioComponent implements OnInit {
     this.published.set(false);
     this.parseError.set(null);
     this.altParseError.set(null);
+    this.rulesWithOutputSchemaErrors.set(new Set());
+    this.canonicalSchemaIssuesDetail.set([]);
     let payload: unknown;
     try {
       payload = JSON.parse(this.sourceJson());
@@ -746,6 +789,39 @@ export class IntegrationStudioComponent implements OnInit {
         messages.push(this.i18n.translate('studio.validation.ruleEvalFailed', { field: label }));
       }
     }
+
+    const canSch = this.canonicalSchemaDoc();
+    if (canSch) {
+      const cval = validateWithAjv(this.ajv, canSch, out);
+      if (!cval.ok) {
+        ok = false;
+        const detail: { targetKey: string | null; text: string }[] = [];
+        const hilite = new Set<string>();
+        const gen = this.i18n.translate('studio.schema.generalField');
+        for (const issue of cval.issues) {
+          const tk = instancePathToTargetKey(issue.instancePath);
+          detail.push({
+            targetKey: tk,
+            text: formatAjvIssueForList(tk ?? gen, issue.message)
+          });
+          if (tk) {
+            for (const rr of this.rules()) {
+              if (rr.targetKey === tk) {
+                hilite.add(rr.id);
+              }
+            }
+          }
+        }
+        this.canonicalSchemaIssuesDetail.set(detail);
+        this.rulesWithOutputSchemaErrors.set(hilite);
+        messages.push(this.i18n.translate('studio.schema.canonicalFailedSummary'));
+      } else {
+        this.canonicalSchemaIssuesDetail.set([]);
+        this.rulesWithOutputSchemaErrors.set(new Set());
+        messages.push(this.i18n.translate('studio.schema.canonicalValidDetail'));
+      }
+    }
+
     if (ok) {
       messages.push(this.i18n.translate('studio.validation.allPresent'));
     }
@@ -776,7 +852,7 @@ export class IntegrationStudioComponent implements OnInit {
     const { out, errors } = await this.executeRulesOnPayload(payload);
     this.altTestOutput.set(out);
 
-    const advanced = this.rules().filter(r => r.advancedExpression?.trim());
+    const advanced = this.rules().filter(r => effectiveJsonataExpression(r));
     if (!advanced.length) {
       return;
     }
@@ -799,5 +875,321 @@ export class IntegrationStudioComponent implements OnInit {
     if (this.validationOk() === true) {
       this.published.set(true);
     }
+  }
+
+  onLoadInputSchema(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !file.name.toLowerCase().endsWith('.json')) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? '');
+      let doc: unknown;
+      try {
+        doc = JSON.parse(text);
+      } catch (e) {
+        this.inputSchemaLoadError.set(
+          this.i18n.translate('studio.schema.invalidJson', {
+            msg: e instanceof Error ? e.message : String(e)
+          })
+        );
+        return;
+      }
+      this.inputSchemaLoadError.set(null);
+      if (!isRootObjectSchema(doc)) {
+        this.inputSchemaLoadError.set(this.i18n.translate('studio.schema.unsupportedRoot'));
+        return;
+      }
+      const d = doc as Record<string, unknown>;
+      this.inputSchemaDoc.set(d);
+      this.inputSchemaMeta.set({
+        title: typeof d['title'] === 'string' ? d['title'] : undefined,
+        $id: typeof d['$id'] === 'string' ? d['$id'] : undefined
+      });
+      const paths = new Set<string>();
+      collectSchemaValuePaths(d, '', paths);
+      this.inputSchemaPathSuggestions.set([...paths].sort((a, b) => a.localeCompare(b)));
+      this.analyzePayload();
+    };
+    reader.readAsText(file);
+  }
+
+  onLoadCanonicalSchema(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !file.name.toLowerCase().endsWith('.json')) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? '');
+      let doc: unknown;
+      try {
+        doc = JSON.parse(text);
+      } catch (e) {
+        this.canonicalSchemaLoadError.set(
+          this.i18n.translate('studio.schema.invalidJson', {
+            msg: e instanceof Error ? e.message : String(e)
+          })
+        );
+        return;
+      }
+      this.canonicalSchemaLoadError.set(null);
+      if (!isRootObjectSchema(doc)) {
+        this.canonicalSchemaLoadError.set(this.i18n.translate('studio.schema.unsupportedRoot'));
+        return;
+      }
+      const d = doc as Record<string, unknown>;
+      this.targetFields.update(rows => rows.filter(f => f.source !== 'schema'));
+      const added = targetFieldsFromCanonicalPayloadProperties(d);
+      this.targetFields.update(rows => [...rows, ...added]);
+      this.canonicalSchemaDoc.set(d);
+      this.canonicalSchemaMeta.set({
+        title: typeof d['title'] === 'string' ? d['title'] : undefined,
+        $id: typeof d['$id'] === 'string' ? d['$id'] : undefined
+      });
+    };
+    reader.readAsText(file);
+  }
+
+  onValidateTabChange(value: string | number | undefined): void {
+    const v = value === undefined || value === null ? 'test' : `${value}`;
+    if (v === 'fixtures' || v === 'expression') {
+      this.validateStepTab.set(v);
+    } else {
+      this.validateStepTab.set('test');
+    }
+  }
+
+  ruleRowAjvError(ruleId: string): boolean {
+    return this.rulesWithOutputSchemaErrors().has(ruleId);
+  }
+
+  jumpToRuleForTarget(targetKey: string | null): void {
+    if (!targetKey) return;
+    const rule = this.rules().find(r => r.targetKey === targetKey);
+    if (!rule) return;
+    this.setStep(2);
+    this.selectedRule.set(rule);
+    this.ruleInspectorTab.set('visual');
+  }
+
+  addFixtureRow(): void {
+    const n = this.fixtures().length + 1;
+    this.fixtures.update(rs => [
+      ...rs,
+      { id: `fx_${Date.now()}_${rs.length}`, name: `Fixture ${n}`, inputJson: '', expectedJson: '', status: 'idle' }
+    ]);
+  }
+
+  removeFixtureRow(id: string): void {
+    this.fixtures.update(rs => (rs.length <= 1 ? rs : rs.filter(r => r.id !== id)));
+    if (this.selectedFixtureDetailId() === id) {
+      this.selectedFixtureDetailId.set(null);
+    }
+  }
+
+  patchFixtureRow(id: string, patch: Partial<FixtureRow>): void {
+    this.fixtures.update(rs => rs.map(r => (r.id === id ? { ...r, ...patch } : r)));
+  }
+
+  pickFixtureFile(rowId: string, field: 'inputJson' | 'expectedJson'): void {
+    const el = document.getElementById(`studio-fx-${field}-${rowId}`) as HTMLInputElement | null;
+    el?.click();
+  }
+
+  onFixtureLoadFile(rowId: string, field: 'inputJson' | 'expectedJson', ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? '');
+      this.patchFixtureRow(rowId, { [field]: text, status: 'idle' });
+    };
+    reader.readAsText(file);
+  }
+
+  onLoadPartnerConfig(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || !file.name.toLowerCase().endsWith('.json')) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const cfg = JSON.parse(String(reader.result ?? '')) as Record<string, unknown>;
+        const fx = cfg['fixtures'];
+        if (!Array.isArray(fx)) {
+          this.fixtureConfigMessage.set({
+            severity: 'info',
+            text: this.i18n.translate('studio.fixture.configNoFixtures')
+          });
+          return;
+        }
+        this.fixtureConfigMessage.set(null);
+        this.fixtures.update(rs => {
+          const extra: FixtureRow[] = fx.map((p: unknown, idx: number) => {
+            const path = String(p);
+            const base = path.split('/').pop() ?? path;
+            return {
+              id: `fx_cfg_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 7)}`,
+              name: base,
+              inputJson: '',
+              expectedJson: '',
+              status: 'idle' as const
+            };
+          });
+          return [...rs, ...extra];
+        });
+      } catch (e) {
+        this.fixtureConfigMessage.set({
+          severity: 'error',
+          text: this.i18n.translate('studio.fixture.invalidConfig', {
+            msg: e instanceof Error ? e.message : String(e)
+          })
+        });
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  private computeShallowDiff(
+    expected: Record<string, unknown>,
+    actual: Record<string, unknown>
+  ): { path: string; expected: unknown; actual: unknown }[] {
+    const keys = new Set([...Object.keys(expected), ...Object.keys(actual)]);
+    const diffs: { path: string; expected: unknown; actual: unknown }[] = [];
+    for (const k of keys) {
+      if (stableStringify(expected[k]) !== stableStringify(actual[k])) {
+        diffs.push({ path: k, expected: expected[k], actual: actual[k] });
+      }
+    }
+    return diffs;
+  }
+
+  async runAllFixtures(): Promise<void> {
+    this.fixtureRunSummary.set(null);
+    const next = [...this.fixtures()];
+    let passed = 0;
+    for (let i = 0; i < next.length; i++) {
+      const row = next[i];
+      if (!row.inputJson.trim()) {
+        next[i] = { ...row, status: 'idle', errorMessage: undefined, actualJson: undefined, diffs: undefined };
+        continue;
+      }
+      let payload: unknown;
+      try {
+        payload = JSON.parse(row.inputJson);
+      } catch (e) {
+        next[i] = {
+          ...row,
+          status: 'error',
+          errorMessage: e instanceof Error ? e.message : String(e),
+          diffs: undefined
+        };
+        continue;
+      }
+      const { out, errors } = await this.executeRulesOnPayload(payload);
+      if (Object.keys(errors).length) {
+        next[i] = {
+          ...row,
+          status: 'error',
+          errorMessage: Object.values(errors).join('; '),
+          actualJson: JSON.stringify(out, null, 2),
+          diffs: undefined
+        };
+        continue;
+      }
+      const expRaw = row.expectedJson.trim();
+      if (!expRaw) {
+        next[i] = {
+          ...row,
+          status: 'passed',
+          errorMessage: undefined,
+          actualJson: JSON.stringify(out, null, 2),
+          diffs: undefined
+        };
+        passed += 1;
+        continue;
+      }
+      let expectedParsed: unknown;
+      try {
+        expectedParsed = JSON.parse(expRaw);
+      } catch (e) {
+        next[i] = {
+          ...row,
+          status: 'error',
+          errorMessage:
+            (e instanceof Error ? e.message : String(e)) +
+            ' (' +
+            this.i18n.translate('studio.fixture.expectedJson') +
+            ')',
+          diffs: undefined
+        };
+        continue;
+      }
+      if (stableStringify(expectedParsed) === stableStringify(out)) {
+        next[i] = {
+          ...row,
+          status: 'passed',
+          errorMessage: undefined,
+          actualJson: JSON.stringify(out, null, 2),
+          diffs: undefined
+        };
+        passed += 1;
+      } else if (
+        expectedParsed !== null &&
+        typeof expectedParsed === 'object' &&
+        out !== null &&
+        typeof out === 'object'
+      ) {
+        next[i] = {
+          ...row,
+          status: 'failed',
+          errorMessage: undefined,
+          actualJson: JSON.stringify(out, null, 2),
+          diffs: this.computeShallowDiff(
+            expectedParsed as Record<string, unknown>,
+            out as Record<string, unknown>
+          )
+        };
+      } else {
+        next[i] = {
+          ...row,
+          status: 'failed',
+          errorMessage: undefined,
+          actualJson: JSON.stringify(out, null, 2),
+          diffs: [{ path: '.', expected: expectedParsed, actual: out }]
+        };
+      }
+    }
+    this.fixtures.set(next);
+    this.fixtureRunSummary.set(
+      this.i18n.translate('studio.fixture.summary', { passed, total: next.length })
+    );
+  }
+
+  toggleFixtureDetail(id: string): void {
+    this.selectedFixtureDetailId.update(cur => (cur === id ? null : id));
+  }
+
+  async copyCombinedExpression(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.combinedExpressionPreview());
+    } catch {
+      /* ignore */
+    }
+  }
+
+  downloadCombinedExpression(): void {
+    const blob = new Blob([this.combinedExpressionPreview()], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'mapping-preview.jsonata';
+    a.click();
+    URL.revokeObjectURL(url);
   }
 }

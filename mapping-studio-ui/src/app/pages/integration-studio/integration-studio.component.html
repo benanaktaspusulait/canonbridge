@@ -62,12 +62,24 @@
       </ng-template>
       <div class="toolbar-row">
         <input #fileIn type="file" accept="application/json,.json" class="sr-only" (change)="onFileSelected($event)" />
+        <input
+          #inputSchemaIn
+          type="file"
+          accept=".json,application/json"
+          class="sr-only"
+          (change)="onLoadInputSchema($event)" />
         <p-button
           [label]="'studio.loadFile' | i18n"
           icon="pi pi-upload"
           variant="outlined"
           severity="secondary"
           (onClick)="fileIn.click()" />
+        <p-button
+          [label]="'studio.schema.loadInput' | i18n"
+          icon="pi pi-file-import"
+          variant="outlined"
+          severity="secondary"
+          (onClick)="inputSchemaIn.click()" />
         <p-button [label]="'studio.analyze' | i18n" icon="pi pi-sync" (onClick)="analyzePayload()" />
         <p-button
           [label]="'studio.next' | i18n"
@@ -76,6 +88,29 @@
           (onClick)="nextStep()"
           [disabled]="!treeNodes().length" />
       </div>
+      @if (inputSchemaLoadError()) {
+        <p-message severity="error" [text]="inputSchemaLoadError()!" styleClass="w-full mt-2" />
+      }
+      @if (inputSchemaMeta(); as sm) {
+        <div class="schema-meta studio-schema-meta mt-2">
+          @if (sm.title) {
+            <span><strong>{{ 'studio.schema.metaTitle' | i18n }}:</strong> {{ sm.title }}</span>
+          }
+          @if (sm.$id) {
+            <span><strong>{{ 'studio.schema.metaId' | i18n }}:</strong> {{ sm.$id }}</span>
+          }
+        </div>
+      }
+      @if (inputSchemaValidationIssues().length && !parseError()) {
+        <div class="mt-3">
+          <p class="text-sm font-semibold mb-1">{{ 'studio.schema.inputIssuesTitle' | i18n }}</p>
+          <ul class="validation-list">
+            @for (iss of inputSchemaValidationIssues(); track iss.instancePath + iss.message) {
+              <li><code>{{ iss.instancePath || '/' }}</code> — {{ iss.message }}</li>
+            }
+          </ul>
+        </div>
+      }
       @if (parseError()) {
         <p-message severity="error" [text]="parseError()!" styleClass="w-full mt-3" />
       }
@@ -117,12 +152,24 @@
       </div>
     </ng-template>
     <div class="toolbar-row mb-3">
+      <input
+        #canonicalSchemaIn
+        type="file"
+        accept=".json,application/json"
+        class="sr-only"
+        (change)="onLoadCanonicalSchema($event)" />
       <p-button
         [label]="'studio.addField' | i18n"
         icon="pi pi-plus"
         variant="outlined"
         severity="secondary"
         (onClick)="addTargetField()" />
+      <p-button
+        [label]="'studio.schema.loadCanonical' | i18n"
+        icon="pi pi-file-import"
+        variant="outlined"
+        severity="secondary"
+        (onClick)="canonicalSchemaIn.click()" />
       <p-button
         [label]="'studio.back' | i18n"
         icon="pi pi-arrow-left"
@@ -131,6 +178,19 @@
         (onClick)="prevStep()" />
       <p-button [label]="'studio.next' | i18n" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextStep()" />
     </div>
+    @if (canonicalSchemaLoadError()) {
+      <p-message severity="error" [text]="canonicalSchemaLoadError()!" styleClass="w-full mb-3" />
+    }
+    @if (canonicalSchemaMeta(); as cm) {
+      <div class="schema-meta studio-schema-meta mb-3">
+        @if (cm.title) {
+          <span><strong>{{ 'studio.schema.metaTitle' | i18n }}:</strong> {{ cm.title }}</span>
+        }
+        @if (cm.$id) {
+          <span><strong>{{ 'studio.schema.metaId' | i18n }}:</strong> {{ cm.$id }}</span>
+        }
+      </div>
+    }
     <p-table [value]="targetFields()" styleClass="p-datatable-sm">
       <ng-template pTemplate="header">
         <tr>
@@ -142,9 +202,14 @@
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-f let-rowIndex="rowIndex">
-        <tr>
+        <tr [class.studio-target-from-schema]="f.source === 'schema'">
           <td>
-            <input pInputText class="w-full" [ngModel]="f.key" (ngModelChange)="patchTargetAt(rowIndex, { key: $event })" />
+            <div class="studio-target-key-cell">
+              <input pInputText class="w-full" [ngModel]="f.key" (ngModelChange)="patchTargetAt(rowIndex, { key: $event })" />
+              @if (f.source === 'schema') {
+                <p-tag severity="info" [value]="'studio.schema.fromSchemaTag' | i18n" styleClass="mt-1" />
+              }
+            </div>
           </td>
           <td>
             <p-select
@@ -226,7 +291,7 @@
             </tr>
           </ng-template>
           <ng-template pTemplate="body" let-rule>
-            <tr [pSelectableRow]="rule">
+            <tr [pSelectableRow]="rule" [class.studio-rule-row--ajv]="ruleRowAjvError(rule.id)">
               <td>
                 <p-select
                   [options]="sourcePathOptions()"
@@ -536,70 +601,275 @@
           </div>
         </div>
       </ng-template>
-      <div class="toolbar-row">
-        <p-button
-          [label]="'studio.back' | i18n"
-          icon="pi pi-arrow-left"
-          variant="outlined"
-          severity="secondary"
-          (onClick)="prevStep()" />
-        <p-button [label]="'studio.testMapping' | i18n" icon="pi pi-play" (onClick)="runTest()" />
-        <p-button
-          [label]="'studio.publishDemo' | i18n"
-          icon="pi pi-cloud-upload"
-          severity="success"
-          (onClick)="publishDemo()"
-          [disabled]="validationOk() !== true" />
-      </div>
-      @if (validationOk() !== null) {
-        <div class="result-block mt-3">
-          <p-tag
-            [severity]="validationOk() ? 'success' : 'danger'"
-            [value]="
-              validationOk() ? ('studio.schemaOk' | i18n) : ('studio.schemaFail' | i18n)
-            " />
-          <ul class="validation-list">
-            @for (msg of validationMessages(); track msg) {
-              <li>{{ msg }}</li>
-            }
-          </ul>
-        </div>
-      }
-      @if (published()) {
-        <p-message severity="success" [text]="'studio.publishSuccess' | i18n" styleClass="w-full mt-3" />
-      }
+      <div class="studio-inspector-tabs-wrap studio-validate-tabs-wrap">
+        <p-tabs [value]="validateStepTab()" (valueChange)="onValidateTabChange($event)">
+          <p-tablist>
+            <p-tab value="test">{{ 'studio.validateTab.test' | i18n }}</p-tab>
+            <p-tab value="fixtures">{{ 'studio.validateTab.fixtures' | i18n }}</p-tab>
+            <p-tab value="expression">{{ 'studio.validateTab.expression' | i18n }}</p-tab>
+          </p-tablist>
+          <p-tabpanels>
+            <p-tabpanel value="test">
+              <div class="inspector-panel">
+                <div class="toolbar-row">
+                  <p-button
+                    [label]="'studio.back' | i18n"
+                    icon="pi pi-arrow-left"
+                    variant="outlined"
+                    severity="secondary"
+                    (onClick)="prevStep()" />
+                  <p-button [label]="'studio.testMapping' | i18n" icon="pi pi-play" (onClick)="runTest()" />
+                  <p-button
+                    [label]="'studio.publishDemo' | i18n"
+                    icon="pi pi-cloud-upload"
+                    severity="success"
+                    (onClick)="publishDemo()"
+                    [disabled]="validationOk() !== true" />
+                </div>
+                @if (canonicalSchemaIssuesDetail().length) {
+                  <ul class="validation-list mt-3">
+                    @for (row of canonicalSchemaIssuesDetail(); track row.text) {
+                      <li class="studio-canonical-issue">
+                        {{ row.text }}
+                        @if (row.targetKey) {
+                          <p-button
+                            [label]="'studio.schema.jumpToRule' | i18n"
+                            size="small"
+                            variant="text"
+                            (onClick)="jumpToRuleForTarget(row.targetKey)" />
+                        }
+                      </li>
+                    }
+                  </ul>
+                }
+                @if (validationOk() !== null) {
+                  <div class="result-block mt-3">
+                    <p-tag
+                      [severity]="validationOk() ? 'success' : 'danger'"
+                      [value]="
+                        validationOk() ? ('studio.schemaOk' | i18n) : ('studio.schemaFail' | i18n)
+                      " />
+                    <ul class="validation-list">
+                      @for (msg of validationMessages(); track msg) {
+                        <li>{{ msg }}</li>
+                      }
+                    </ul>
+                  </div>
+                }
+                @if (published()) {
+                  <p-message severity="success" [text]="'studio.publishSuccess' | i18n" styleClass="w-full mt-3" />
+                }
 
-      <p-divider />
+                <p-divider />
 
-      <h3 class="card-title studio-section-title mt-2">{{ 'studio.altFixtureTitle' | i18n }}</h3>
-      <p class="card-subtitle mb-2">{{ 'studio.altFixtureSubtitle' | i18n }}</p>
-      <textarea
-        pTextarea
-        class="json-input w-full"
-        rows="6"
-        [ngModel]="altFixtureJson()"
-        (ngModelChange)="altFixtureJson.set($event)"
-        [placeholder]="'studio.altFixturePlaceholder' | i18n"></textarea>
-      <div class="toolbar-row mt-2">
-        <p-button [label]="'studio.testAltFixture' | i18n" icon="pi pi-bolt" variant="outlined" (onClick)="runAltFixture()" />
+                <h3 class="card-title studio-section-title mt-2">{{ 'studio.altFixtureTitle' | i18n }}</h3>
+                <p class="card-subtitle mb-2">{{ 'studio.altFixtureSubtitle' | i18n }}</p>
+                <textarea
+                  pTextarea
+                  class="json-input w-full"
+                  rows="6"
+                  [ngModel]="altFixtureJson()"
+                  (ngModelChange)="altFixtureJson.set($event)"
+                  [placeholder]="'studio.altFixturePlaceholder' | i18n"></textarea>
+                <div class="toolbar-row mt-2">
+                  <p-button
+                    [label]="'studio.testAltFixture' | i18n"
+                    icon="pi pi-bolt"
+                    variant="outlined"
+                    (onClick)="runAltFixture()" />
+                </div>
+                @if (altParseError()) {
+                  <p-message severity="error" [text]="altParseError()!" styleClass="w-full mt-2" />
+                }
+                @if (altTransformerMessages().length) {
+                  <div class="result-block mt-2">
+                    <p-tag severity="warn" [value]="'studio.altTransformerTag' | i18n" />
+                    <ul class="validation-list">
+                      @for (m of altTransformerMessages(); track m) {
+                        <li>{{ m }}</li>
+                      }
+                    </ul>
+                  </div>
+                }
+                @if (altTestOutput()) {
+                  <h4 class="mt-3 mb-1 text-sm text-color-secondary">{{ 'studio.altOutputTitle' | i18n }}</h4>
+                  <pre class="mono-pre">{{ altTestOutput() | json }}</pre>
+                }
+              </div>
+            </p-tabpanel>
+            <p-tabpanel value="fixtures">
+              <div class="inspector-panel">
+                <h3 class="card-title">{{ 'studio.fixture.title' | i18n }}</h3>
+                <p class="card-subtitle">{{ 'studio.fixture.subtitle' | i18n }}</p>
+                <div class="toolbar-row mb-3">
+                  <input
+                    #cfgIn
+                    type="file"
+                    accept=".json,application/json"
+                    class="sr-only"
+                    (change)="onLoadPartnerConfig($event)" />
+                  <p-button
+                    [label]="'studio.fixture.add' | i18n"
+                    icon="pi pi-plus"
+                    variant="outlined"
+                    (onClick)="addFixtureRow()" />
+                  <p-button [label]="'studio.fixture.runAll' | i18n" icon="pi pi-play" (onClick)="runAllFixtures()" />
+                  <p-button
+                    [label]="'studio.fixture.loadConfig' | i18n"
+                    icon="pi pi-file-import"
+                    variant="outlined"
+                    severity="secondary"
+                    (onClick)="cfgIn.click()" />
+                </div>
+                @if (fixtureConfigMessage(); as cfm) {
+                  <p-message
+                    [severity]="cfm.severity"
+                    [text]="cfm.text"
+                    styleClass="w-full mb-3" />
+                }
+                @if (fixtureRunSummary()) {
+                  <p-tag severity="info" [value]="fixtureRunSummary()!" styleClass="mb-3" />
+                }
+                <p-table [value]="fixtures()" styleClass="p-datatable-sm">
+                  <ng-template pTemplate="header">
+                    <tr>
+                      <th>{{ 'studio.fixture.name' | i18n }}</th>
+                      <th>{{ 'studio.fixture.status' | i18n }}</th>
+                      <th style="width: 12rem">{{ 'studio.colParameters' | i18n }}</th>
+                      <th style="width: 3rem"></th>
+                    </tr>
+                  </ng-template>
+                  <ng-template pTemplate="body" let-fx>
+                    <tr [class.studio-fixture-failed]="fx.status === 'failed'">
+                      <td>
+                        <input
+                          pInputText
+                          class="w-full"
+                          [ngModel]="fx.name"
+                          (ngModelChange)="patchFixtureRow(fx.id, { name: $event })" />
+                        <textarea
+                          pTextarea
+                          class="w-full mono-textarea mt-2"
+                          rows="4"
+                          [ngModel]="fx.inputJson"
+                          (ngModelChange)="patchFixtureRow(fx.id, { inputJson: $event, status: 'idle' })"
+                          placeholder="input JSON"></textarea>
+                        <textarea
+                          pTextarea
+                          class="w-full mono-textarea mt-2"
+                          rows="3"
+                          [ngModel]="fx.expectedJson"
+                          (ngModelChange)="patchFixtureRow(fx.id, { expectedJson: $event, status: 'idle' })"
+                          placeholder="expected JSON (optional)"></textarea>
+                      </td>
+                      <td>
+                        @switch (fx.status) {
+                          @case ('passed') {
+                            <p-tag severity="success" [value]="'studio.fixture.passed' | i18n" />
+                          }
+                          @case ('failed') {
+                            <p-tag severity="danger" [value]="'studio.fixture.failed' | i18n" />
+                          }
+                          @case ('error') {
+                            <p-tag severity="warn" [value]="'studio.fixture.error' | i18n" />
+                          }
+                          @default {
+                            <span class="text-color-secondary text-sm">—</span>
+                          }
+                        }
+                        @if (fx.errorMessage) {
+                          <p class="text-sm mt-1 mb-0">{{ fx.errorMessage }}</p>
+                        }
+                        @if (fx.status === 'failed') {
+                          <p-button
+                            [label]="'studio.fixture.expandRow' | i18n"
+                            size="small"
+                            variant="text"
+                            (onClick)="toggleFixtureDetail(fx.id)" />
+                        }
+                      </td>
+                      <td>
+                        <input
+                          type="file"
+                          accept=".json,application/json"
+                          class="sr-only"
+                          [id]="'studio-fx-inputJson-' + fx.id"
+                          (change)="onFixtureLoadFile(fx.id, 'inputJson', $event)" />
+                        <input
+                          type="file"
+                          accept=".json,application/json"
+                          class="sr-only"
+                          [id]="'studio-fx-expectedJson-' + fx.id"
+                          (change)="onFixtureLoadFile(fx.id, 'expectedJson', $event)" />
+                        <p-button
+                          [label]="'studio.fixture.loadInputFile' | i18n"
+                          size="small"
+                          variant="outlined"
+                          (onClick)="pickFixtureFile(fx.id, 'inputJson')" />
+                        <p-button
+                          [label]="'studio.fixture.loadExpectedFile' | i18n"
+                          size="small"
+                          variant="outlined"
+                          styleClass="mt-1"
+                          (onClick)="pickFixtureFile(fx.id, 'expectedJson')" />
+                      </td>
+                      <td>
+                        <p-button
+                          icon="pi pi-trash"
+                          variant="text"
+                          severity="danger"
+                          (onClick)="removeFixtureRow(fx.id)" />
+                      </td>
+                    </tr>
+                  </ng-template>
+                </p-table>
+                @for (fx of fixtures(); track fx.id) {
+                  @if (selectedFixtureDetailId() === fx.id && fx.diffs?.length) {
+                    <div class="studio-fixture-diff-panel mt-3 p-3 border-round border-1 surface-border">
+                      <p class="font-semibold mt-0">{{ 'studio.fixture.diffTitle' | i18n }} — {{ fx.name }}</p>
+                      <ul class="validation-list">
+                        @for (d of fx.diffs!; track d.path) {
+                          <li>
+                            <code>{{ d.path }}</code> — {{ 'studio.fixture.expectedCol' | i18n }}:
+                            {{ d.expected | json }} · {{ 'studio.fixture.actualCol' | i18n }}:
+                            {{ d.actual | json }}
+                          </li>
+                        }
+                      </ul>
+                      @if (fx.actualJson) {
+                        <pre class="mono-pre mt-2">{{ fx.actualJson }}</pre>
+                      }
+                    </div>
+                  }
+                }
+              </div>
+            </p-tabpanel>
+            <p-tabpanel value="expression">
+              <div class="inspector-panel">
+                <h3 class="card-title">{{ 'studio.expression.title' | i18n }}</h3>
+                <p class="card-subtitle">{{ 'studio.expression.subtitle' | i18n }}</p>
+                <div class="toolbar-row mb-2">
+                  <p-button
+                    [label]="'studio.expression.copy' | i18n"
+                    icon="pi pi-copy"
+                    variant="outlined"
+                    (onClick)="copyCombinedExpression()" />
+                  <p-button
+                    [label]="'studio.expression.download' | i18n"
+                    icon="pi pi-download"
+                    (onClick)="downloadCombinedExpression()" />
+                </div>
+                <textarea
+                  pTextarea
+                  class="w-full mono-textarea studio-expression-preview"
+                  readonly
+                  rows="16"
+                  [value]="combinedExpressionPreview()"></textarea>
+              </div>
+            </p-tabpanel>
+          </p-tabpanels>
+        </p-tabs>
       </div>
-      @if (altParseError()) {
-        <p-message severity="error" [text]="altParseError()!" styleClass="w-full mt-2" />
-      }
-      @if (altTransformerMessages().length) {
-        <div class="result-block mt-2">
-          <p-tag severity="warn" [value]="'studio.altTransformerTag' | i18n" />
-          <ul class="validation-list">
-            @for (m of altTransformerMessages(); track m) {
-              <li>{{ m }}</li>
-            }
-          </ul>
-        </div>
-      }
-      @if (altTestOutput()) {
-        <h4 class="mt-3 mb-1 text-sm text-color-secondary">{{ 'studio.altOutputTitle' | i18n }}</h4>
-        <pre class="mono-pre">{{ altTestOutput() | json }}</pre>
-      }
     </p-card>
 
     <p-card styleClass="studio-card">

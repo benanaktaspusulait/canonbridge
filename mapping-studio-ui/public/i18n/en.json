@@ -353,6 +353,54 @@
       "string": "String",
       "number": "Number",
       "date": "Date"
+    },
+    "schema": {
+      "loadInput": "Load input schema",
+      "loadCanonical": "Load canonical schema",
+      "metaTitle": "Schema title",
+      "metaId": "$id",
+      "invalidJson": "Invalid JSON file: {{msg}}",
+      "unsupportedRoot": "Unsupported schema: root must be type \"object\".",
+      "inputIssuesTitle": "Input JSON vs loaded schema",
+      "canonicalFailedSummary": "Canonical JSON Schema validation failed (see details below).",
+      "canonicalValidDetail": "Canonical JSON Schema validation passed ✓",
+      "generalField": "general",
+      "jumpToRule": "Open rule",
+      "fromSchemaTag": "From schema"
+    },
+    "validateTab": {
+      "test": "Test & publish",
+      "fixtures": "Fixture batch",
+      "expression": "JSONata export"
+    },
+    "fixture": {
+      "title": "Fixture batch runner",
+      "subtitle": "Run the current mapping rules against multiple input/expected pairs (kept separate from the single alternate JSON box above).",
+      "add": "Add fixture",
+      "runAll": "Run all",
+      "loadConfig": "Load config.json",
+      "loadInputFile": "Load input .json",
+      "loadExpectedFile": "Load expected .json",
+      "remove": "Remove",
+      "name": "Name",
+      "status": "Status",
+      "passed": "Passed ✓",
+      "failed": "Failed ✗",
+      "error": "Error ⚠",
+      "summary": "{{passed}} / {{total}} passed",
+      "configNoFixtures": "No fixtures array found in this config file.",
+      "invalidConfig": "Invalid config file: {{msg}}",
+      "expectedJson": "expected JSON",
+      "diffTitle": "Differences",
+      "expectedCol": "Expected",
+      "actualCol": "Actual",
+      "expandRow": "Show diff"
+    },
+    "expression": {
+      "title": "Combined JSONata",
+      "subtitle": "Object literal mapping target keys to expressions (visual rules are translated; advanced/jsonataExpression overrides).",
+      "copy": "Copy expression",
+      "download": "Download mapping-preview.jsonata"
     }
   }
 }

@@ -353,6 +353,54 @@
       "string": "Metin",
       "number": "Sayı",
       "date": "Tarih"
+    },
+    "schema": {
+      "loadInput": "Giriş şeması yükle",
+      "loadCanonical": "Kanonik şema yükle",
+      "metaTitle": "Şema başlığı",
+      "metaId": "$id",
+      "invalidJson": "Geçersiz JSON dosyası: {{msg}}",
+      "unsupportedRoot": "Desteklenmeyen şema: kök tip \"object\" olmalıdır.",
+      "inputIssuesTitle": "Kaynak JSON ve yüklenen şema",
+      "canonicalFailedSummary": "Kanonik JSON Schema doğrulaması başarısız (ayrıntılar aşağıda).",
+      "canonicalValidDetail": "Kanonik JSON Schema doğrulaması geçti ✓",
+      "generalField": "genel",
+      "jumpToRule": "Kuralı aç",
+      "fromSchemaTag": "Şemadan"
+    },
+    "validateTab": {
+      "test": "Test ve yayın",
+      "fixtures": "Toplu fixture",
+      "expression": "JSONata dışa aktarım"
+    },
+    "fixture": {
+      "title": "Toplu fixture çalıştırıcı",
+      "subtitle": "Geçerli eşleme kurallarını birden çok giriş/beklenen çiftinde çalıştırır (tek alternatif JSON alanından bağımsızdır).",
+      "add": "Fixture ekle",
+      "runAll": "Tümünü çalıştır",
+      "loadConfig": "config.json yükle",
+      "loadInputFile": "Giriş .json yükle",
+      "loadExpectedFile": "Beklenen .json yükle",
+      "remove": "Sil",
+      "name": "Ad",
+      "status": "Durum",
+      "passed": "Geçti ✓",
+      "failed": "Başarısız ✗",
+      "error": "Hata ⚠",
+      "summary": "{{passed}} / {{total}} geçti",
+      "configNoFixtures": "Bu config dosyasında fixtures dizisi yok.",
+      "invalidConfig": "Geçersiz config dosyası: {{msg}}",
+      "expectedJson": "beklenen JSON",
+      "diffTitle": "Farklar",
+      "expectedCol": "Beklenen",
+      "actualCol": "Gerçek",
+      "expandRow": "Farkı göster"
+    },
+    "expression": {
+      "title": "Birleşik JSONata",
+      "subtitle": "Hedef anahtarları ifadelere bağlayan nesne sabiti (görsel kurallar çevrilir; gelişmiş/jsonataExpression baskın gelir).",
+      "copy": "İfadeyi kopyala",
+      "download": "mapping-preview.jsonata indir"
     }
   }
 }
