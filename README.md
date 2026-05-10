@@ -4,6 +4,8 @@
 
 ETL Solutions is a production-grade event transformation platform that enables rapid partner onboarding and reduces time-to-market for integration projects.
 
+> Current status: this repository is primarily a documentation and architecture package. Product implementation, runnable source code, local environment files, automated tests, and performance benchmarks still need to be added before production-readiness claims can be treated as proven.
+
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/status-MVP-yellow.svg)](PRODUCT_ROADMAP.md)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-green.svg)](https://nodejs.org/)
@@ -27,6 +29,12 @@ ETL Solutions is a production-grade event transformation platform that enables r
 ✅ Clean separation of concerns
 ✅ Scales to 10,000+ messages/second
 ```
+
+### Product Fit
+
+This product is most useful for teams with repeated multi-partner integration pain: many external payload formats, frequent mapping changes, operational DLQ/replay needs, and a shared canonical business event model. It may be overbuilt for 1-2 stable integrations or highly partner-specific business logic.
+
+See [PRODUCT_ROADMAP.md](PRODUCT_ROADMAP.md#-product-necessity-assessment) for the product necessity assessment, current gaps, and first validation step.
 
 ## 🚀 Quick Start
 
@@ -127,11 +135,11 @@ Database + Events
 
 | Metric | Target | Status |
 |--------|--------|--------|
-| Throughput | 10,000 msg/sec | ✅ Achieved |
-| Latency (p99) | < 100ms | ✅ Achieved |
-| Uptime | 99.95% | ✅ Target |
-| DLQ Rate | < 0.1% | ✅ Target |
-| Consumer Lag | < 1,000 msg | ✅ Target |
+| Throughput | 10,000 msg/sec | 🎯 Target, benchmark needed |
+| Latency (p99) | < 100ms | 🎯 Target, benchmark needed |
+| Uptime | 99.95% | 🎯 Target, production proof needed |
+| DLQ Rate | < 0.1% | 🎯 Target, production proof needed |
+| Consumer Lag | < 1,000 msg | 🎯 Target, load test needed |
 
 ## 🛠️ Technology Stack
 
@@ -268,13 +276,13 @@ git push origin feature/my-feature
 
 ## 📋 Roadmap
 
-### Phase 1: MVP (Weeks 1-4) ✅
-- [x] Kafka consumer/producer
-- [x] JSONata transformation
-- [x] Ajv validation
-- [x] DLQ and retry topics
-- [x] Graceful shutdown
-- [x] Health checks
+### Phase 1: MVP (Weeks 1-4) 🔄
+- [ ] Kafka consumer/producer
+- [ ] JSONata transformation
+- [ ] Ajv validation
+- [ ] DLQ and retry topics
+- [ ] Graceful shutdown
+- [ ] Health checks
 
 ### Phase 2: Production Hardening (Weeks 5-8) 🔄
 - [ ] Worker pool
@@ -368,10 +376,11 @@ Built with:
 
 | Component | Status | Version |
 |-----------|--------|---------|
-| Core Platform | ✅ MVP Ready | 1.0.0 |
-| Documentation | ✅ Complete | 1.0.0 |
-| Testing | ✅ Comprehensive | 1.0.0 |
-| Production Ready | 🔄 In Progress | - |
+| Architecture Package | ✅ Draft complete | 1.0.0 |
+| Core Platform | ⏳ Implementation needed | - |
+| Documentation | 🔄 Product validation added | 1.0.0 |
+| Testing | ⏳ Test suite needed | - |
+| Production Ready | ⏳ Not yet proven | - |
 | Enterprise Features | ⏳ Planned | - |
 
 ## 🎯 Next Steps
