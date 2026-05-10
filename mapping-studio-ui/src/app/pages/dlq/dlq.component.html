@@ -1,0 +1,73 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Dead Letter Queue</h1>
+    <p class="page-subtitle">{{ messages.length }} failed messages — investigate and replay</p>
+  </div>
+  <div class="page-actions">
+    <p-button
+      label="Redrive Selected"
+      icon="pi pi-refresh"
+      severity="secondary"
+      variant="outlined"
+      [disabled]="selected.length === 0" />
+    <p-button
+      label="Redrive All"
+      icon="pi pi-refresh"
+      severity="danger"
+      variant="outlined" />
+  </div>
+</div>
+
+<p-card>
+  <p-table
+    [value]="messages"
+    [(selection)]="selected"
+    dataKey="id"
+    styleClass="p-datatable-sm"
+    [expandedRowKeys]="{}"
+    #dt>
+
+    <ng-template pTemplate="header">
+      <tr>
+        <th style="width:3rem"><p-tableHeaderCheckbox /></th>
+        <th>Partner</th>
+        <th>Event Type</th>
+        <th>Error Type</th>
+        <th>Error Message</th>
+        <th style="text-align:center">Attempts</th>
+        <th>Last Failed</th>
+        <th style="width:120px"></th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-msg>
+      <tr>
+        <td><p-tableCheckbox [value]="msg" /></td>
+        <td><code class="partner-code">{{ msg.partner }}</code></td>
+        <td><code class="event-code">{{ msg.eventType }}</code></td>
+        <td><p-tag [severity]="getErrorSeverity(msg.errorType)" [value]="msg.errorType" /></td>
+        <td class="error-msg text-sm">{{ msg.errorMessage }}</td>
+        <td style="text-align:center">
+          <span class="attempt-badge">{{ msg.attempts }}/3</span>
+        </td>
+        <td class="text-sm text-color-secondary">{{ msg.lastFailed }}</td>
+        <td>
+          <div class="row-actions">
+            <p-button icon="pi pi-refresh" variant="text" severity="secondary" size="small" pTooltip="Redrive" />
+            <p-button icon="pi pi-eye"     variant="text" severity="secondary" size="small" pTooltip="Inspect payload" />
+            <p-button icon="pi pi-trash"   variant="text" severity="danger"    size="small" pTooltip="Discard" />
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="8" class="empty-cell">
+          <i class="pi pi-check-circle" style="font-size:2rem;color:#16a34a;display:block;margin-bottom:.5rem"></i>
+          No messages in DLQ
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-card>

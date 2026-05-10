@@ -1,0 +1,65 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Monitoring</h1>
+    <p class="page-subtitle">Real-time platform metrics and partner health</p>
+  </div>
+  <div class="page-actions">
+    <p-button icon="pi pi-refresh" variant="outlined" severity="secondary" label="Refresh" />
+  </div>
+</div>
+
+<!-- SLO metric cards -->
+<div class="metrics-grid">
+  @for (m of metrics; track m.label) {
+    <div class="metric-card" [class.ok]="m.ok" [class.breach]="!m.ok">
+      <div class="metric-icon" [style.background]="m.color">
+        <i class="pi {{ m.icon }}"></i>
+      </div>
+      <div class="metric-body">
+        <div class="metric-value">{{ m.value }}<span class="metric-unit">{{ m.unit }}</span></div>
+        <div class="metric-label">{{ m.label }}</div>
+        <div class="metric-slo" [class.ok]="m.ok" [class.breach]="!m.ok">
+          <i class="pi" [class.pi-check]="m.ok" [class.pi-times]="!m.ok"></i>
+          {{ m.slo }}
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Partner health table -->
+<p-card styleClass="mt-4">
+  <ng-template pTemplate="header">
+    <div class="card-header-row">
+      <div>
+        <h2 class="card-title">Partner Health</h2>
+        <p class="card-subtitle">Per-partner throughput, latency, and DLQ metrics</p>
+      </div>
+    </div>
+  </ng-template>
+
+  <p-table [value]="partnerHealth" styleClass="p-datatable-sm">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Partner</th>
+        <th>Status</th>
+        <th>Throughput</th>
+        <th>p99 Latency</th>
+        <th>DLQ Rate</th>
+        <th style="text-align:right">Consumer Lag</th>
+        <th>Uptime</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-p>
+      <tr>
+        <td><code class="partner-code">{{ p.partner }}</code></td>
+        <td><p-tag [severity]="getSeverity(p.status)" [value]="p.status" /></td>
+        <td class="text-sm">{{ p.throughput }}</td>
+        <td class="text-sm" [class.latency-warn]="p.p99 !== '—' && +p.p99 > 200">{{ p.p99 }}</td>
+        <td class="text-sm" [class.dlq-warn]="p.dlqRate !== '—' && +p.dlqRate > 0.1">{{ p.dlqRate }}</td>
+        <td class="text-sm" style="text-align:right">{{ p.lag }}</td>
+        <td class="text-sm">{{ p.uptime }}</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-card>

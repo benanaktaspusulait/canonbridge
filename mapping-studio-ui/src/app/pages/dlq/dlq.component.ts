@@ -1,34 +1,67 @@
 import { Component } from '@angular/core';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
+import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
+import { AccordionModule } from 'primeng/accordion';
+
+interface DlqMessage {
+  id: string;
+  partner: string;
+  eventType: string;
+  errorType: string;
+  errorMessage: string;
+  attempts: number;
+  firstFailed: string;
+  lastFailed: string;
+  payload: string;
+}
 
 @Component({
   selector: 'app-dlq',
   standalone: true,
-  imports: [CardModule, ButtonModule],
-  template: `
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">Dead Letter Queue</h1>
-        <p class="page-subtitle">Investigate and replay failed messages.</p>
-      </div>
-      <p-button label="Redrive All" icon="pi pi-refresh" severity="danger" variant="outlined" />
-    </div>
-    <p-card>
-      <div class="placeholder-content">
-        <i class="pi pi-exclamation-triangle placeholder-icon"></i>
-        <h3>DLQ Screen — Coming Soon</h3>
-        <p>DLQ message list with error details, masked payload preview, and redrive controls.</p>
-      </div>
-    </p-card>
-  `,
-  styles: [`
-    .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:1.5rem; gap:1rem; }
-    .page-title { font-size:1.5rem; font-weight:700; margin:0 0 .25rem; }
-    .page-subtitle { font-size:.875rem; color:var(--text-color-secondary); margin:0; }
-    .placeholder-content { display:flex; flex-direction:column; align-items:center; padding:3rem; gap:1rem; text-align:center; }
-    .placeholder-icon { font-size:3rem; color:var(--red-400); opacity:.6; }
-    h3 { margin:0; } p { margin:0; color:var(--text-color-secondary); }
-  `]
+  imports: [CardModule, ButtonModule, TableModule, TagModule, TooltipModule, AccordionModule],
+  templateUrl: './dlq.component.html',
+  styleUrl: './dlq.component.scss'
 })
-export class DlqComponent {}
+export class DlqComponent {
+  selected: DlqMessage[] = [];
+
+  readonly messages: DlqMessage[] = [
+    {
+      id: 'dlq-001', partner: 'payment-gateway',  eventType: 'payment.captured',
+      errorType: 'SCHEMA_VALIDATION',
+      errorMessage: 'Required field "amount" is missing from payload',
+      attempts: 3, firstFailed: '2026-05-10 13:45', lastFailed: '2026-05-10 14:15',
+      payload: '{"transactionId":"txn-999","currency":"USD"}'
+    },
+    {
+      id: 'dlq-002', partner: 'payment-gateway',  eventType: 'payment.captured',
+      errorType: 'TRANSFORMATION_ERROR',
+      errorMessage: 'JSONata expression failed: cannot read property of undefined',
+      attempts: 3, firstFailed: '2026-05-10 12:30', lastFailed: '2026-05-10 13:00',
+      payload: '{"transactionId":"txn-888","amount":null}'
+    },
+    {
+      id: 'dlq-003', partner: 'acme-marketplace', eventType: 'order.created',
+      errorType: 'SCHEMA_VALIDATION',
+      errorMessage: 'Field "customer.email" does not match format "email"',
+      attempts: 1, firstFailed: '2026-05-10 11:00', lastFailed: '2026-05-10 11:00',
+      payload: '{"orderId":"ORD-777","customer":{"email":"not-an-email"}}'
+    },
+    {
+      id: 'dlq-004', partner: 'acme-marketplace', eventType: 'order.created',
+      errorType: 'DOWNSTREAM_ERROR',
+      errorMessage: 'Business service returned 503 after 3 retries',
+      attempts: 3, firstFailed: '2026-05-10 09:15', lastFailed: '2026-05-10 09:45',
+      payload: '{"orderId":"ORD-666","status":"A"}'
+    },
+  ];
+
+  getErrorSeverity(type: string): 'danger' | 'warn' | 'info' {
+    if (type === 'SCHEMA_VALIDATION') return 'danger';
+    if (type === 'TRANSFORMATION_ERROR') return 'warn';
+    return 'info';
+  }
+}

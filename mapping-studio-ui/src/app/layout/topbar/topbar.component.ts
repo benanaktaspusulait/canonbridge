@@ -2,6 +2,7 @@ import { Component, EventEmitter, Output } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { MenuModule } from 'primeng/menu';
+import { TooltipModule } from 'primeng/tooltip';
 import { MenuItem } from 'primeng/api';
 import { BadgeModule } from 'primeng/badge';
 import { AuthService } from '../../core/services/auth.service';
@@ -9,7 +10,7 @@ import { AuthService } from '../../core/services/auth.service';
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [ButtonModule, AvatarModule, MenuModule, BadgeModule],
+  imports: [ButtonModule, AvatarModule, MenuModule, TooltipModule, BadgeModule],
   templateUrl: './topbar.component.html',
   styleUrl: './topbar.component.scss'
 })

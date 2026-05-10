@@ -1,34 +1,60 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { DecimalPipe } from '@angular/common';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
+import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
+import { InputTextModule } from 'primeng/inputtext';
+import { TooltipModule } from 'primeng/tooltip';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+
+interface MappingVersion {
+  id: string;
+  partner: string;
+  eventType: string;
+  version: string;
+  status: 'active' | 'draft' | 'deprecated';
+  createdAt: string;
+  publishedBy: string;
+  transformations: number;
+}
 
 @Component({
   selector: 'app-mappings',
   standalone: true,
-  imports: [CardModule, ButtonModule],
-  template: `
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">Mappings</h1>
-        <p class="page-subtitle">Manage JSONata mapping versions per partner and event type.</p>
-      </div>
-      <p-button label="New Mapping" icon="pi pi-plus" />
-    </div>
-    <p-card>
-      <div class="placeholder-content">
-        <i class="pi pi-directions placeholder-icon"></i>
-        <h3>Mappings Screen — Coming Soon</h3>
-        <p>List of immutable mapping versions with publish / rollback / preview actions.</p>
-      </div>
-    </p-card>
-  `,
-  styles: [`
-    .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:1.5rem; gap:1rem; }
-    .page-title { font-size:1.5rem; font-weight:700; margin:0 0 .25rem; }
-    .page-subtitle { font-size:.875rem; color:var(--text-color-secondary); margin:0; }
-    .placeholder-content { display:flex; flex-direction:column; align-items:center; padding:3rem; gap:1rem; text-align:center; }
-    .placeholder-icon { font-size:3rem; color:var(--text-color-secondary); opacity:.4; }
-    h3 { margin:0; } p { margin:0; color:var(--text-color-secondary); }
-  `]
+  imports: [FormsModule, DecimalPipe, CardModule, ButtonModule, TableModule, TagModule,
+            InputTextModule, TooltipModule, IconFieldModule, InputIconModule],
+  templateUrl: './mappings.component.html',
+  styleUrl: './mappings.component.scss'
 })
-export class MappingsComponent {}
+export class MappingsComponent {
+  search = '';
+
+  readonly mappings: MappingVersion[] = [
+    { id: 'm1', partner: 'acme-marketplace',  eventType: 'order.created',     version: 'v2.1.0', status: 'active',     createdAt: '2026-05-10', publishedBy: 'Admin User',           transformations: 48320 },
+    { id: 'm2', partner: 'acme-marketplace',  eventType: 'order.created',     version: 'v2.0.0', status: 'deprecated', createdAt: '2026-04-01', publishedBy: 'Admin User',           transformations: 210000 },
+    { id: 'm3', partner: 'acme-marketplace',  eventType: 'order.cancelled',   version: 'v1.0.2', status: 'active',     createdAt: '2026-03-15', publishedBy: 'Integration Engineer', transformations: 5210 },
+    { id: 'm4', partner: 'logistics-xpress',  eventType: 'shipment.updated',  version: 'v1.3.0', status: 'active',     createdAt: '2026-05-09', publishedBy: 'Integration Engineer', transformations: 91200 },
+    { id: 'm5', partner: 'logistics-xpress',  eventType: 'shipment.created',  version: 'v1.0.0', status: 'active',     createdAt: '2026-02-20', publishedBy: 'Integration Engineer', transformations: 33400 },
+    { id: 'm6', partner: 'payment-gateway',   eventType: 'payment.captured',  version: 'v3.0.1', status: 'draft',      createdAt: '2026-05-08', publishedBy: 'Integration Engineer', transformations: 0 },
+    { id: 'm7', partner: 'payment-gateway',   eventType: 'payment.captured',  version: 'v3.0.0', status: 'active',     createdAt: '2026-04-22', publishedBy: 'Admin User',           transformations: 72100 },
+    { id: 'm8', partner: 'crm-connect',       eventType: 'customer.updated',  version: 'v2.0.0', status: 'deprecated', createdAt: '2026-01-10', publishedBy: 'Platform Operator',    transformations: 18900 },
+  ];
+
+  getSeverity(status: string): 'success' | 'warn' | 'secondary' | 'danger' {
+    const map: Record<string, 'success' | 'warn' | 'secondary' | 'danger'> = {
+      active: 'success', draft: 'warn', deprecated: 'secondary'
+    };
+    return map[status] ?? 'secondary';
+  }
+
+  get filtered() {
+    if (!this.search.trim()) return this.mappings;
+    const q = this.search.toLowerCase();
+    return this.mappings.filter(m =>
+      m.partner.includes(q) || m.eventType.includes(q) || m.version.includes(q)
+    );
+  }
+}

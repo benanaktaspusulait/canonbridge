@@ -1,0 +1,59 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Partners</h1>
+    <p class="page-subtitle">Manage partner integrations, health status, and event configurations</p>
+  </div>
+  <div class="page-actions">
+    <p-button label="Onboard Partner" icon="pi pi-plus" />
+  </div>
+</div>
+
+<p-card>
+  <p-table [value]="partners" styleClass="p-datatable-sm">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Partner</th>
+        <th>Status</th>
+        <th style="text-align:center">Event Types</th>
+        <th style="text-align:center">Active Mappings</th>
+        <th style="text-align:center">DLQ</th>
+        <th>Throughput</th>
+        <th>Last Seen</th>
+        <th style="width:100px"></th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-p>
+      <tr>
+        <td>
+          <div class="partner-cell">
+            <p-avatar [label]="getInitials(p.name)" shape="circle" styleClass="partner-avatar" />
+            <div>
+              <div class="partner-name">{{ p.name }}</div>
+              <code class="partner-slug">{{ p.slug }}</code>
+            </div>
+          </div>
+        </td>
+        <td>
+          <p-tag [severity]="getSeverity(p.status)" [value]="p.status" />
+        </td>
+        <td style="text-align:center">{{ p.eventTypes }}</td>
+        <td style="text-align:center">{{ p.activeMappings }}</td>
+        <td style="text-align:center">
+          @if (p.dlqCount > 0) {
+            <span class="dlq-badge">{{ p.dlqCount }}</span>
+          } @else {
+            <span class="text-color-secondary">—</span>
+          }
+        </td>
+        <td class="text-sm">{{ p.throughput }}</td>
+        <td class="text-sm text-color-secondary">{{ p.lastSeen }}</td>
+        <td>
+          <div class="row-actions">
+            <p-button icon="pi pi-cog"    variant="text" severity="secondary" size="small" pTooltip="Configure" />
+            <p-button icon="pi pi-chart-line" variant="text" severity="secondary" size="small" pTooltip="Metrics" />
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-card>

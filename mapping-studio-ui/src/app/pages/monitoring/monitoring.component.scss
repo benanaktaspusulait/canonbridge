@@ -1,0 +1,70 @@
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.metric-card {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+
+  &.breach {
+    border-color: #fca5a5;
+    background: #fff5f5;
+  }
+}
+
+.metric-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  i { font-size: 1.125rem; color: var(--text-color); opacity: 0.75; }
+}
+
+.metric-body { flex: 1; min-width: 0; }
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-color);
+  line-height: 1.2;
+}
+
+.metric-unit {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-color-secondary);
+  margin-left: 3px;
+}
+
+.metric-label {
+  font-size: 0.8125rem;
+  color: var(--text-color-secondary);
+  margin: 2px 0 6px;
+}
+
+.metric-slo {
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  &.ok     { color: #16a34a; }
+  &.breach { color: #dc2626; }
+}
+
+.latency-warn { color: #ca8a04; font-weight: 600; }
+.dlq-warn     { color: #dc2626; font-weight: 600; }
+.text-sm      { font-size: 0.875rem; }

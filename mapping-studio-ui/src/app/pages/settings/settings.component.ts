@@ -1,32 +1,43 @@
 import { Component } from '@angular/core';
 import { CardModule } from 'primeng/card';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { DividerModule } from 'primeng/divider';
+import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
+import { FormsModule } from '@angular/forms';
+import { TooltipModule } from 'primeng/tooltip';
+
+interface ApiKey {
+  id: string;
+  name: string;
+  prefix: string;
+  createdAt: string;
+  lastUsed: string;
+  status: 'active' | 'revoked';
+}
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CardModule],
-  template: `
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">Settings</h1>
-        <p class="page-subtitle">Tenant configuration, API keys, and platform settings.</p>
-      </div>
-    </div>
-    <p-card>
-      <div class="placeholder-content">
-        <i class="pi pi-cog placeholder-icon"></i>
-        <h3>Settings Screen — Coming Soon</h3>
-        <p>Tenant config, user management, API key lifecycle, and notification preferences.</p>
-      </div>
-    </p-card>
-  `,
-  styles: [`
-    .page-header { margin-bottom:1.5rem; }
-    .page-title { font-size:1.5rem; font-weight:700; margin:0 0 .25rem; }
-    .page-subtitle { font-size:.875rem; color:var(--text-color-secondary); margin:0; }
-    .placeholder-content { display:flex; flex-direction:column; align-items:center; padding:3rem; gap:1rem; text-align:center; }
-    .placeholder-icon { font-size:3rem; color:var(--text-color-secondary); opacity:.4; }
-    h3 { margin:0; } p { margin:0; color:var(--text-color-secondary); }
-  `]
+  imports: [CardModule, ButtonModule, InputTextModule, ToggleSwitchModule,
+            DividerModule, TableModule, TagModule, FormsModule, TooltipModule],
+  templateUrl: './settings.component.html',
+  styleUrl: './settings.component.scss'
 })
-export class SettingsComponent {}
+export class SettingsComponent {
+  tenantName = 'Acme Corp';
+  tenantSlug = 'acme-corp';
+  webhookUrl  = 'https://hooks.acme.com/canonbridge';
+
+  dlqAlerts   = true;
+  lagAlerts   = true;
+  emailDigest = false;
+
+  readonly apiKeys: ApiKey[] = [
+    { id: 'k1', name: 'Production Transformer', prefix: 'cb_live_xK9m…', createdAt: '2026-03-01', lastUsed: '2 min ago',  status: 'active'  },
+    { id: 'k2', name: 'CI/CD Pipeline',         prefix: 'cb_live_pQ3r…', createdAt: '2026-04-15', lastUsed: '1 day ago',  status: 'active'  },
+    { id: 'k3', name: 'Old Dev Key',             prefix: 'cb_live_aB7z…', createdAt: '2026-01-10', lastUsed: '45 days ago', status: 'revoked' },
+  ];
+}

@@ -1,0 +1,31 @@
+.error-msg {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-color-secondary);
+}
+
+.attempt-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: monospace;
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.row-actions {
+  display: flex;
+  gap: 0.125rem;
+  justify-content: flex-end;
+}
+
+.empty-cell {
+  text-align: center;
+  padding: 3rem !important;
+  color: var(--text-color-secondary);
+}
+
+.text-sm { font-size: 0.875rem; }
