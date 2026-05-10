@@ -39,10 +39,10 @@
 
 ---
 
-### **Forms & Configuration Layer**
+### **Mapping Studio UI (Angular)**
 ```
 ┌─────────────────────────────────────────┐
-│    Forms & Configuration (Angular)      │
+│    Mapping Studio UI (Angular)          │
 ├─────────────────────────────────────────┤
 │                                         │
 │  ┌──────────────┐  ┌──────────────┐   │
@@ -73,11 +73,15 @@
 - Testing: Jasmine + Karma
 
 **Purpose:**
-- Complex form handling
-- Partner onboarding
-- Mapping configuration
+- **No-code visual mapping** - Users don't need to know JSONata
+- Sample JSON upload and structure exploration
+- Visual field mapping with drag-and-drop
+- Automatic JSONata generation from visual mappings
+- Live transformation preview
+- Partner onboarding forms
 - Schema management
-- Advanced validation
+- Fixture creation and validation testing
+- Mapping version publish workflow
 
 ---
 
@@ -247,9 +251,9 @@
 | **Frontend** | TypeScript | 5.x | Type safety |
 | **Frontend** | Vite | 4.x | Build tool |
 | **Frontend** | Material-UI | 5.x | UI components |
-| **Forms** | Angular | 17.x | Complex forms |
-| **Forms** | Reactive Forms | Latest | Form handling |
-| **Forms** | Angular Material | Latest | Form UI |
+| **Mapping Studio** | Angular | 17.x | No-code visual mapping |
+| **Mapping Studio** | Reactive Forms | Latest | Form handling |
+| **Mapping Studio** | Angular Material | Latest | UI components |
 | **Transformation** | Node.js | 18+ | Runtime |
 | **Transformation** | Fastify | 4.x | HTTP framework |
 | **Transformation** | JSONata | 2.x | Data transformation |
@@ -281,8 +285,10 @@
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌──────────────────────┐  ┌──────────────────────┐        │
-│  │  React Dashboard     │  │  Angular Forms       │        │
+│  │  React Dashboard     │  │  Mapping Studio UI   │        │
 │  │  (Node.js + React)   │  │  (Angular 17)        │        │
+│  │  - Monitoring        │  │  - No-code mapping   │        │
+│  │  - Partner mgmt      │  │  - Visual builder    │        │
 │  └──────────────────────┘  └──────────────────────┘        │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
@@ -346,25 +352,21 @@
 - [ ] Dashboard components
 - [ ] Real-time metrics display
 - [ ] Partner management UI
-- [ ] Mapping Studio shell
-- [ ] Published mapping versions view
-- [ ] Validation run details view
 
-### Forms (Angular)
+### Mapping Studio UI (Angular)
 - [ ] Angular 17 project setup
 - [ ] TypeScript configuration
 - [ ] Reactive Forms setup
 - [ ] Angular Material integration
-- [ ] Form validation
-- [ ] Partner onboarding forms
-- [ ] Mapping configuration forms
-- [ ] Schema management forms
 - [ ] Sample JSON upload/paste form
 - [ ] JSON structure explorer
-- [ ] Input schema builder
-- [ ] Canonical mapping builder
-- [ ] Transform preview and fixture manager
-- [ ] Review and publish workflow
+- [ ] Visual field mapping (drag-and-drop)
+- [ ] Automatic JSONata generation
+- [ ] Live transformation preview
+- [ ] Fixture creation and validation testing
+- [ ] Mapping version publish workflow
+- [ ] Partner onboarding forms
+- [ ] Schema management forms
 - [ ] Advanced validation
 - [ ] Error handling
 
@@ -416,8 +418,8 @@ cd frontend
 npm install
 npm run dev
 
-# Forms (Angular)
-cd forms
+# Mapping Studio UI (Angular)
+cd mapping-studio-ui
 npm install
 ng serve
 
@@ -441,13 +443,13 @@ docker-compose up -d
 docker build -t etl-transformer:latest ./transformer
 docker build -t etl-business:latest ./business-service
 docker build -t etl-frontend:latest ./frontend
-docker build -t etl-forms:latest ./forms
+docker build -t etl-mapping-studio:latest ./mapping-studio-ui
 
 # Push to registry
 docker push etl-transformer:latest
 docker push etl-business:latest
 docker push etl-frontend:latest
-docker push etl-forms:latest
+docker push etl-mapping-studio:latest
 
 # Deploy with Kubernetes
 kubectl apply -f k8s/
@@ -464,7 +466,7 @@ argocd app create etl-solutions --repo <repo> --path k8s/
 | Component | Throughput | Latency | Memory | CPU |
 |-----------|-----------|---------|--------|-----|
 | React Frontend | N/A | < 100ms | 100-200MB | Low |
-| Angular Forms | N/A | < 200ms | 150-300MB | Low |
+| Mapping Studio UI | N/A | < 200ms | 150-300MB | Low |
 | Node.js Transformer | 10,000+ msg/sec | < 50ms p99 | 500MB-1GB | Medium |
 | Java Services | 5,000+ msg/sec | < 100ms p99 | 1-2GB | Medium-High |
 | PostgreSQL | 10,000+ ops/sec | < 10ms | 2-4GB | Medium |
@@ -491,7 +493,7 @@ argocd app create etl-solutions --repo <repo> --path k8s/
 
 ### Horizontal Scaling
 - React Frontend: CDN + multiple instances
-- Angular Forms: Multiple instances behind load balancer
+- Mapping Studio UI: Multiple instances behind load balancer
 - Node.js Transformer: Kubernetes auto-scaling (CPU/Memory)
 - Java Services: Kubernetes auto-scaling (CPU/Memory)
 - PostgreSQL: Read replicas + connection pooling
@@ -516,7 +518,7 @@ argocd app create etl-solutions --repo <repo> --path k8s/
 
 2. **Initialize Projects**
    - Create React project
-   - Create Angular project
+   - Create Angular Mapping Studio project
    - Create Node.js Fastify project
    - Create Java Quarkus project
 
@@ -528,7 +530,7 @@ argocd app create etl-solutions --repo <repo> --path k8s/
 
 4. **Implement Services**
    - Frontend dashboard
-   - Angular forms
+   - Mapping Studio UI (no-code visual mapping)
    - Transformer service
    - Business service
 

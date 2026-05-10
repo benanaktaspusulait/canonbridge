@@ -157,6 +157,56 @@
 
 ---
 
+### Phase 2: Mapping Studio UI (4 weeks)
+
+**Goal**: Enable business users to create mappings without code
+
+**Scope**:
+- ✅ Sample JSON upload/paste
+- ✅ JSON structure explorer
+- ✅ Field type inference
+- ✅ Input schema generation
+- ✅ Visual field mapping (drag-and-drop)
+- ✅ JSONata preview (read-only for users)
+- ✅ Transformation preview with live data
+- ✅ Fixture creation from samples
+- ✅ Validation testing
+- ✅ Mapping version publish workflow
+- ✅ Basic authentication
+
+**Key Feature**: Users don't need to know JSONata - the UI generates it automatically from visual mappings.
+
+**Out of Scope**:
+- ❌ Advanced JSONata editor (manual editing)
+- ❌ Multi-user collaboration
+- ❌ RBAC
+- ❌ Audit trail UI
+- ❌ Advanced analytics
+
+**Activities**:
+- Week 1: React setup + sample JSON upload + structure explorer
+- Week 2: Visual field mapping UI + automatic JSONata generation
+- Week 3: Preview + validation + fixtures
+- Week 4: Publish workflow + testing + documentation
+
+**Deliverables**:
+- Mapping Studio React application
+- API for mapping management
+- User guide
+- Demo video
+
+**Success Criteria**:
+- [ ] Business user can create mapping in < 30 minutes
+- [ ] No JSONata knowledge required
+- [ ] Preview shows accurate results
+- [ ] Published mappings work in transformer service
+- [ ] Generated JSONata is valid and optimized
+
+**Timeline**: 4 weeks  
+**Team**: 2 Frontend Engineers + 1 Backend Engineer
+
+---
+
 ### Phase 3: Production Hardening (4 weeks)
 
 **Goal**: Make it production-ready and reliable

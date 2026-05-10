@@ -55,6 +55,10 @@ Integration teams at growing companies spend 2-4 weeks per partner writing custo
 ### Ideal Customer Profile (ICP)
 [TO BE VALIDATED]
 
+**Deployment Model**: On-Premise / Private Cloud (Single Tenant)
+
+> 📌 **Important**: CanonBridge is designed as a **single-tenant, on-premise solution** for enterprise customers. Each customer runs their own instance. Multi-tenant SaaS is NOT in scope for MVP or Phase 1-7.
+
 **Company Characteristics**:
 - **Size**: 50-5,000 employees
 - **Industry**: E-commerce, Fintech, Logistics, B2B SaaS, Marketplaces
