@@ -143,66 +143,6 @@ code {
 .text-sm        { font-size: 0.875rem; }
 .mt-4           { margin-top: 1rem; }
 
-/* ── Step wizard (Integration Studio) ── */
-.wizard-steps {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.wizard-step {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.875rem;
-  border-radius: 999px;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--text-color-secondary);
-  background: var(--surface-card);
-  border: 1px solid var(--surface-border);
-  cursor: default;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
-
-  .step-index {
-    width: 1.375rem;
-    height: 1.375rem;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    background: var(--surface-100);
-    color: var(--text-color-secondary);
-  }
-
-  &.active {
-    color: var(--primary-color);
-    border-color: color-mix(in srgb, var(--primary-color) 38%, var(--surface-border));
-    background: color-mix(in srgb, var(--primary-color) 10%, var(--surface-card));
-
-    .step-index {
-      background: var(--primary-color);
-      color: #fff;
-    }
-  }
-
-  &.done {
-    color: var(--text-color);
-
-    .step-index {
-      background: var(--green-500, #22c55e);
-      color: #fff;
-    }
-  }
-}
-
-html.dark-mode .wizard-step.active {
-  background: color-mix(in srgb, var(--primary-color) 16%, transparent);
-}
-
 .mono-pre {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 0.75rem;

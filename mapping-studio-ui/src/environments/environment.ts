@@ -59,6 +59,8 @@ export const environment = {
   
   // Mapping Configuration
   mapping: {
+    /** Base URL for @canonbridge/transformer HTTP API (same host as transformer /health). When set, advanced JSONata rules are validated on the server against the demo payloads. */
+    transformerApiUrl: 'http://localhost:8080',
     maxFieldDepth: 10,
     previewSampleSize: 5,
     autoSaveInterval: 30000, // 30 seconds

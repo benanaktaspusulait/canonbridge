@@ -1,26 +1,53 @@
-<div class="page-header studio-header">
-  <div>
-    <h1 class="page-title">{{ 'studio.title' | i18n }}</h1>
-    <p class="page-subtitle">{{ 'studio.subtitle' | i18n }}</p>
-  </div>
-  <div class="page-actions">
-    <p-button
-      [label]="'studio.catalog' | i18n"
-      icon="pi pi-list"
-      variant="outlined"
-      severity="secondary"
-      routerLink="/mappings" />
-  </div>
-</div>
+<section class="studio-shell">
+  <header class="studio-hero">
+    <div class="studio-hero__accent" aria-hidden="true"></div>
+    <div class="studio-hero__inner">
+      <div class="studio-hero__top">
+        <span class="studio-hero__kicker">{{ 'studio.heroKicker' | i18n }}</span>
+        <div class="studio-hero__badges">
+          <p-tag
+            severity="secondary"
+            [rounded]="true"
+            [value]="
+              transformerConfigured ? ('studio.heroBadgeHybrid' | i18n) : ('studio.heroBadge' | i18n)
+            " />
+          <span class="studio-hero__step-meta" aria-live="polite">
+            {{ 'studio.stepProgress' | i18n: { current: activeStep() + 1, total: steps.length } }}
+          </span>
+        </div>
+      </div>
 
-<div class="wizard-steps" aria-label="Workflow steps">
-  @for (s of steps; track s.id) {
-    <button type="button" class="wizard-step {{ stepClass(s.id) }}" (click)="setStep(s.id)">
-      <span class="step-index">{{ s.id + 1 }}</span>
-      {{ s.labelKey | i18n }}
-    </button>
-  }
-</div>
+      <div class="studio-hero__main">
+        <div class="studio-hero__copy">
+          <h1 class="studio-page-title">{{ 'studio.title' | i18n }}</h1>
+          <p class="studio-page-lead">{{ 'studio.subtitle' | i18n }}</p>
+        </div>
+        <div class="studio-hero__actions">
+          <p-button
+            [label]="'studio.catalog' | i18n"
+            icon="pi pi-list"
+            variant="outlined"
+            severity="secondary"
+            routerLink="/mappings" />
+        </div>
+      </div>
+
+      <nav class="studio-wizard" [attr.aria-label]="'studio.wizardAria' | i18n">
+        @for (s of steps; track s.id; let i = $index) {
+          <button type="button" class="wizard-step {{ stepClass(s.id) }}" (click)="setStep(s.id)">
+            <span class="step-index">{{ s.id + 1 }}</span>
+            <span class="step-label">{{ s.labelKey | i18n }}</span>
+          </button>
+          @if (i < steps.length - 1) {
+            <span
+              class="studio-wizard__rail"
+              aria-hidden="true"
+              [class.studio-wizard__rail--done]="activeStep() > i"></span>
+          }
+        }
+      </nav>
+    </div>
+  </header>
 
 @if (activeStep() === 0) {
   <div class="step-panels">
@@ -177,113 +204,318 @@
         (onClick)="prevStep()" />
       <p-button [label]="'studio.next' | i18n" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextStep()" />
     </div>
-    <p-table [value]="rules()" styleClass="p-datatable-sm p-datatable-striped" [tableStyle]="{ 'min-width': '56rem' }">
-      <ng-template pTemplate="header">
-        <tr>
-          <th>{{ 'studio.colSourcePath' | i18n }}</th>
-          <th>{{ 'studio.colTargetKeyRule' | i18n }}</th>
-          <th>{{ 'studio.colTransform' | i18n }}</th>
-          <th>{{ 'studio.colParameters' | i18n }}</th>
-          <th style="width: 3rem"></th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-rule>
-        <tr>
-          <td>
-            <p-select
-              [options]="sourcePathOptions()"
-              [ngModel]="rule.sourcePath"
-              (ngModelChange)="patchRule(rule.id, { sourcePath: $event })"
-              optionLabel="label"
-              optionValue="value"
-              [filter]="true"
-              [filterPlaceholder]="'studio.filterPath' | i18n"
-              [placeholder]="'studio.selectPath' | i18n"
-              styleClass="w-full" />
-          </td>
-          <td>
-            <p-select
-              [options]="targetKeyOptions()"
-              [ngModel]="rule.targetKey"
-              (ngModelChange)="patchRule(rule.id, { targetKey: $event })"
-              optionLabel="label"
-              optionValue="value"
-              styleClass="w-full" />
-          </td>
-          <td>
-            <p-select
-              [options]="transformOptions()"
-              [ngModel]="rule.transform"
-              (ngModelChange)="patchRule(rule.id, { transform: $event })"
-              optionLabel="label"
-              optionValue="value"
-              styleClass="w-full" />
-          </td>
-          <td class="params-cell">
-            @switch (rule.transform) {
-              @case ('date_format') {
-                <div class="param-grid">
-                  <input
-                    pInputText
-                    [placeholder]="'studio.phDateIn' | i18n"
-                    [ngModel]="rule.paramA"
-                    (ngModelChange)="patchRule(rule.id, { paramA: $event })" />
-                  <input
-                    pInputText
-                    [placeholder]="'studio.phDateOut' | i18n"
-                    [ngModel]="rule.paramB"
-                    (ngModelChange)="patchRule(rule.id, { paramB: $event })" />
+
+    <div class="studio-mapping-layout">
+      <div class="studio-mapping-table">
+        <p-table
+          [value]="rules()"
+          dataKey="id"
+          selectionMode="single"
+          [selection]="selectedRule()"
+          (selectionChange)="onRuleSelectionChange($event)"
+          styleClass="p-datatable-sm p-datatable-striped"
+          [tableStyle]="{ 'min-width': '36rem' }"
+          [rowHover]="true">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>{{ 'studio.colSourcePath' | i18n }}</th>
+              <th>{{ 'studio.colTargetKeyRule' | i18n }}</th>
+              <th>{{ 'studio.colTransform' | i18n }}</th>
+              <th>{{ 'studio.colMode' | i18n }}</th>
+              <th style="width: 3rem"></th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-rule>
+            <tr [pSelectableRow]="rule">
+              <td>
+                <p-select
+                  [options]="sourcePathOptions()"
+                  [ngModel]="rule.sourcePath"
+                  (ngModelChange)="patchRule(rule.id, { sourcePath: $event })"
+                  optionLabel="label"
+                  optionValue="value"
+                  [filter]="true"
+                  [filterPlaceholder]="'studio.filterPath' | i18n"
+                  [placeholder]="'studio.selectPath' | i18n"
+                  styleClass="w-full" />
+              </td>
+              <td>
+                <p-select
+                  [options]="targetKeyOptions()"
+                  [ngModel]="rule.targetKey"
+                  (ngModelChange)="patchRule(rule.id, { targetKey: $event })"
+                  optionLabel="label"
+                  optionValue="value"
+                  styleClass="w-full" />
+              </td>
+              <td>
+                <p-select
+                  [options]="transformOptions()"
+                  [ngModel]="rule.transform"
+                  (ngModelChange)="patchRule(rule.id, { transform: $event })"
+                  optionLabel="label"
+                  optionValue="value"
+                  styleClass="w-full"
+                  [disabled]="ruleUsesAdvancedLogic(rule)" />
+              </td>
+              <td>
+                @if (ruleUsesAdvancedLogic(rule)) {
+                  <p-tag severity="info" [value]="'studio.mode.advanced' | i18n" />
+                } @else {
+                  <p-tag severity="secondary" [value]="'studio.mode.visual' | i18n" />
+                }
+              </td>
+              <td>
+                <p-button
+                  icon="pi pi-trash"
+                  variant="text"
+                  severity="danger"
+                  (onClick)="removeRule(rule)"
+                  [disabled]="rules().length <= 1" />
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      <div class="studio-mapping-inspector studio-inspector-surface">
+        <h3 class="inspector-title">{{ 'studio.ruleInspectorTitle' | i18n }}</h3>
+        @if (selectedRule(); as rule) {
+          <div class="studio-inspector-tabs-wrap">
+            <p-tabs [value]="ruleInspectorTab()" (valueChange)="onInspectorTabChange($event)">
+              <p-tablist>
+                <p-tab value="visual">{{ 'studio.tab.visual' | i18n }}</p-tab>
+                <p-tab value="advanced">{{ 'studio.tab.advanced' | i18n }}</p-tab>
+                <p-tab value="summary">{{ 'studio.tab.summary' | i18n }}</p-tab>
+              </p-tablist>
+              <p-tabpanels>
+              <p-tabpanel value="visual">
+                <div class="inspector-panel">
+                  @if (ruleUsesAdvancedLogic(rule)) {
+                    <p-message severity="info" [text]="'studio.visualDisabledHint' | i18n" styleClass="w-full mb-3" />
+                  }
+                  <div class="param-block">
+                    <label class="param-label">{{ 'studio.colTransform' | i18n }}</label>
+                    <p-select
+                      [options]="transformOptions()"
+                      [ngModel]="rule.transform"
+                      (ngModelChange)="patchRule(rule.id, { transform: $event })"
+                      optionLabel="label"
+                      optionValue="value"
+                      styleClass="w-full"
+                      [disabled]="ruleUsesAdvancedLogic(rule)" />
+                  </div>
+                  @switch (rule.transform) {
+                    @case ('date_format') {
+                      <div class="param-grid mt-2">
+                        <input
+                          pInputText
+                          [placeholder]="'studio.phDateIn' | i18n"
+                          [ngModel]="rule.paramA"
+                          (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                          [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        <input
+                          pInputText
+                          [placeholder]="'studio.phDateOut' | i18n"
+                          [ngModel]="rule.paramB"
+                          (ngModelChange)="patchRule(rule.id, { paramB: $event })"
+                          [disabled]="ruleUsesAdvancedLogic(rule)" />
+                      </div>
+                    }
+                    @case ('enum_map') {
+                      <input
+                        pInputText
+                        class="w-full mt-2"
+                        [placeholder]="'studio.phEnum' | i18n"
+                        [ngModel]="rule.paramA"
+                        (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                        [disabled]="ruleUsesAdvancedLogic(rule)" />
+                    }
+                    @case ('default_value') {
+                      <input
+                        pInputText
+                        class="w-full mt-2"
+                        [placeholder]="'studio.phDefault' | i18n"
+                        [ngModel]="rule.paramA"
+                        (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                        [disabled]="ruleUsesAdvancedLogic(rule)" />
+                    }
+                    @case ('combine') {
+                      <div class="param-grid mt-2">
+                        <p-select
+                          [options]="sourcePathOptions()"
+                          [ngModel]="rule.paramA"
+                          (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                          optionLabel="label"
+                          optionValue="value"
+                          [placeholder]="'studio.phSecondPath' | i18n"
+                          styleClass="w-full"
+                          [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        <input
+                          pInputText
+                          [placeholder]="'studio.phSeparator' | i18n"
+                          [ngModel]="rule.paramB"
+                          (ngModelChange)="patchRule(rule.id, { paramB: $event })"
+                          [disabled]="ruleUsesAdvancedLogic(rule)" />
+                      </div>
+                    }
+                    @case ('string_substring') {
+                      <div class="param-grid mt-2">
+                        <input
+                          pInputText
+                          [placeholder]="'studio.phSubstringStart' | i18n"
+                          [ngModel]="rule.paramA"
+                          (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                          [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        <input
+                          pInputText
+                          [placeholder]="'studio.phSubstringLen' | i18n"
+                          [ngModel]="rule.paramB"
+                          (ngModelChange)="patchRule(rule.id, { paramB: $event })"
+                          [disabled]="ruleUsesAdvancedLogic(rule)" />
+                      </div>
+                    }
+                    @case ('string_replace') {
+                      <div class="param-grid mt-2">
+                        <input
+                          pInputText
+                          [placeholder]="'studio.phReplaceFrom' | i18n"
+                          [ngModel]="rule.paramA"
+                          (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                          [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        <input
+                          pInputText
+                          [placeholder]="'studio.phReplaceTo' | i18n"
+                          [ngModel]="rule.paramB"
+                          (ngModelChange)="patchRule(rule.id, { paramB: $event })"
+                          [disabled]="ruleUsesAdvancedLogic(rule)" />
+                      </div>
+                    }
+                    @case ('array_join') {
+                      <input
+                        pInputText
+                        class="w-full mt-2"
+                        [placeholder]="'studio.phArrayDelim' | i18n"
+                        [ngModel]="rule.paramA"
+                        (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                        [disabled]="ruleUsesAdvancedLogic(rule)" />
+                    }
+                    @case ('array_element') {
+                      <input
+                        pInputText
+                        class="w-full mt-2"
+                        [placeholder]="'studio.phArrayIndex' | i18n"
+                        [ngModel]="rule.paramA"
+                        (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                        [disabled]="ruleUsesAdvancedLogic(rule)" />
+                    }
+                    @case ('conditional_value') {
+                      <div class="param-grid mt-2">
+                        <input
+                          pInputText
+                          [placeholder]="'studio.phWhenEquals' | i18n"
+                          [ngModel]="rule.paramA"
+                          (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                          [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        <input
+                          pInputText
+                          [placeholder]="'studio.phThenValue' | i18n"
+                          [ngModel]="rule.paramB"
+                          (ngModelChange)="patchRule(rule.id, { paramB: $event })"
+                          [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        <input
+                          pInputText
+                          [placeholder]="'studio.phElseValue' | i18n"
+                          [ngModel]="rule.paramC"
+                          (ngModelChange)="patchRule(rule.id, { paramC: $event })"
+                          [disabled]="ruleUsesAdvancedLogic(rule)" />
+                      </div>
+                    }
+                    @case ('template_string') {
+                      <textarea
+                        pTextarea
+                        class="w-full mt-2 mono-textarea"
+                        rows="4"
+                        [placeholder]="'studio.phTemplate' | i18n"
+                        [ngModel]="rule.paramA"
+                        (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                        [disabled]="ruleUsesAdvancedLogic(rule)"></textarea>
+                    }
+                    @default {
+                      <p class="text-color-secondary text-sm mt-2 mb-0">{{ 'studio.noExtraParams' | i18n }}</p>
+                    }
+                  }
                 </div>
-              }
-              @case ('enum_map') {
-                <input
-                  pInputText
-                  class="w-full"
-                  [placeholder]="'studio.phEnum' | i18n"
-                  [ngModel]="rule.paramA"
-                  (ngModelChange)="patchRule(rule.id, { paramA: $event })" />
-              }
-              @case ('default_value') {
-                <input
-                  pInputText
-                  class="w-full"
-                  [placeholder]="'studio.phDefault' | i18n"
-                  [ngModel]="rule.paramA"
-                  (ngModelChange)="patchRule(rule.id, { paramA: $event })" />
-              }
-              @case ('combine') {
-                <div class="param-grid">
-                  <p-select
-                    [options]="sourcePathOptions()"
-                    [ngModel]="rule.paramA"
-                    (ngModelChange)="patchRule(rule.id, { paramA: $event })"
-                    optionLabel="label"
-                    optionValue="value"
-                    [placeholder]="'studio.phSecondPath' | i18n"
-                    styleClass="w-full" />
-                  <input
-                    pInputText
-                    [placeholder]="'studio.phSeparator' | i18n"
-                    [ngModel]="rule.paramB"
-                    (ngModelChange)="patchRule(rule.id, { paramB: $event })" />
+              </p-tabpanel>
+              <p-tabpanel value="advanced">
+                <div class="inspector-panel">
+                  <p class="hint-text">{{ 'studio.advancedHint' | i18n }}</p>
+                  <textarea
+                    pTextarea
+                    class="w-full mono-textarea"
+                    rows="8"
+                    [placeholder]="'studio.advancedPlaceholder' | i18n"
+                    [ngModel]="rule.advancedExpression"
+                    (ngModelChange)="patchRule(rule.id, { advancedExpression: $event })"></textarea>
+                  <p-fieldset [legend]="'studio.insertPathTitle' | i18n" styleClass="mt-3 path-fieldset">
+                    <div class="path-chips">
+                      @for (p of pathChips(); track p) {
+                        <p-button
+                          [label]="p"
+                          size="small"
+                          variant="outlined"
+                          (onClick)="appendPathToAdvancedEditor(p)" />
+                      }
+                    </div>
+                  </p-fieldset>
                 </div>
-              }
-              @default {
-                <span class="text-color-secondary text-sm">{{ 'studio.noExtraParams' | i18n }}</span>
-              }
-            }
-          </td>
-          <td>
-            <p-button
-              icon="pi pi-trash"
-              variant="text"
-              severity="danger"
-              (onClick)="removeRule(rule)"
-              [disabled]="rules().length <= 1" />
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+              </p-tabpanel>
+              <p-tabpanel value="summary">
+                <div class="inspector-panel">
+                  <p class="hint-text">{{ 'studio.summaryHint' | i18n }}</p>
+                  <p class="studio-summary-copy">{{ ruleSummaryText(rule) }}</p>
+                  <p-button
+                    [label]="'studio.copySummary' | i18n"
+                    icon="pi pi-copy"
+                    variant="outlined"
+                    size="small"
+                    (onClick)="copyRuleSummary()" />
+                </div>
+              </p-tabpanel>
+            </p-tabpanels>
+            </p-tabs>
+          </div>
+          @if (ruleEvalErrors()[rule.id]) {
+            <p-message severity="error" [text]="'studio.ruleInspectError' | i18n" styleClass="w-full mt-2" />
+          }
+        } @else {
+          <p class="empty-hint">{{ 'studio.ruleInspectorEmpty' | i18n }}</p>
+        }
+      </div>
+    </div>
+
+    <p-fieldset [legend]="'studio.cheat.title' | i18n" styleClass="mt-4 cheat-fieldset">
+      <p-scrollpanel styleClass="cheat-scrollpanel w-full">
+        <div class="cheat-columns">
+          <div>
+            <h4 class="cheat-heading">{{ 'studio.cheat.paths' | i18n }}</h4>
+            <pre class="cheat-pre">{{ 'studio.cheat.pathsText' | i18n }}</pre>
+          </div>
+          <div>
+            <h4 class="cheat-heading">{{ 'studio.cheat.strings' | i18n }}</h4>
+            <pre class="cheat-pre">{{ 'studio.cheat.stringsText' | i18n }}</pre>
+          </div>
+          <div>
+            <h4 class="cheat-heading">{{ 'studio.cheat.arrays' | i18n }}</h4>
+            <pre class="cheat-pre">{{ 'studio.cheat.arraysText' | i18n }}</pre>
+          </div>
+          <div>
+            <h4 class="cheat-heading">{{ 'studio.cheat.logic' | i18n }}</h4>
+            <pre class="cheat-pre">{{ 'studio.cheat.logicText' | i18n }}</pre>
+          </div>
+        </div>
+      </p-scrollpanel>
+    </p-fieldset>
   </p-card>
 }
 
@@ -294,7 +526,13 @@
         <div class="card-header-row">
           <div>
             <h2 class="card-title">{{ 'studio.validateTitle' | i18n }}</h2>
-            <p class="card-subtitle">{{ 'studio.validateSubtitle' | i18n }}</p>
+            <p class="card-subtitle">
+              {{
+                transformerConfigured
+                  ? ('studio.validateSubtitleHybrid' | i18n)
+                  : ('studio.validateSubtitle' | i18n)
+              }}
+            </p>
           </div>
         </div>
       </ng-template>
@@ -330,6 +568,38 @@
       @if (published()) {
         <p-message severity="success" [text]="'studio.publishSuccess' | i18n" styleClass="w-full mt-3" />
       }
+
+      <p-divider />
+
+      <h3 class="card-title studio-section-title mt-2">{{ 'studio.altFixtureTitle' | i18n }}</h3>
+      <p class="card-subtitle mb-2">{{ 'studio.altFixtureSubtitle' | i18n }}</p>
+      <textarea
+        pTextarea
+        class="json-input w-full"
+        rows="6"
+        [ngModel]="altFixtureJson()"
+        (ngModelChange)="altFixtureJson.set($event)"
+        [placeholder]="'studio.altFixturePlaceholder' | i18n"></textarea>
+      <div class="toolbar-row mt-2">
+        <p-button [label]="'studio.testAltFixture' | i18n" icon="pi pi-bolt" variant="outlined" (onClick)="runAltFixture()" />
+      </div>
+      @if (altParseError()) {
+        <p-message severity="error" [text]="altParseError()!" styleClass="w-full mt-2" />
+      }
+      @if (altTransformerMessages().length) {
+        <div class="result-block mt-2">
+          <p-tag severity="warn" [value]="'studio.altTransformerTag' | i18n" />
+          <ul class="validation-list">
+            @for (m of altTransformerMessages(); track m) {
+              <li>{{ m }}</li>
+            }
+          </ul>
+        </div>
+      }
+      @if (altTestOutput()) {
+        <h4 class="mt-3 mb-1 text-sm text-color-secondary">{{ 'studio.altOutputTitle' | i18n }}</h4>
+        <pre class="mono-pre">{{ altTestOutput() | json }}</pre>
+      }
     </p-card>
 
     <p-card styleClass="studio-card">
@@ -349,3 +619,4 @@
     </p-card>
   </div>
 }
+</section>

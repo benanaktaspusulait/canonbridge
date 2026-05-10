@@ -40,7 +40,7 @@ export class DlqComponent {
     {
       id: 'dlq-002', partner: 'payment-gateway',  eventType: 'payment.captured',
       errorType: 'TRANSFORMATION_ERROR',
-      errorMessage: 'JSONata expression failed: cannot read property of undefined',
+      errorMessage: 'Mapping rule evaluation failed — missing field reference',
       attempts: 3, firstFailed: '2026-05-10 12:30', lastFailed: '2026-05-10 13:00',
       payload: '{"transactionId":"txn-888","amount":null}'
     },

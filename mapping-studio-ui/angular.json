@@ -24,6 +24,7 @@
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
+            "allowedCommonJsDependencies": ["jsonata"],
             "assets": [
               {
                 "glob": "**/*",
@@ -31,7 +32,8 @@
               }
             ],
             "styles": [
-              "src/styles.scss"
+              "src/styles.scss",
+              "src/integration-studio-shell.scss"
             ]
           },
           "configurations": {

@@ -16,7 +16,7 @@ Mapping Studio UI is the visual interface for CanonBridge that enables business 
 ### Key Features
 
 - ✅ **No-Code Mapping** - Visual field mapping with drag-and-drop
-- ✅ **Automatic JSONata Generation** - Users don't need to know JSONata
+- ✅ **Visual mapping workspace** — business-friendly summaries with optional advanced formulas
 - ✅ **Live Preview** - See transformation results in real-time
 - ✅ **Schema Validation** - Automatic schema generation and validation
 - ✅ **Version Management** - Immutable mapping versions with rollback
@@ -162,7 +162,7 @@ mapping-studio-ui/
 - Upload or paste sample JSON
 - Automatic JSON structure exploration
 - Visual field mapping interface
-- Automatic JSONata generation
+- Visual mapping summaries and optional advanced mapping formulas
 - Live transformation preview
 
 ### 2. Schema Management
@@ -354,7 +354,7 @@ kubectl logs -f deployment/mapping-studio-ui
    - Ensure all edge cases covered
 
 6. **Review & Publish**
-   - Review generated JSONata
+   - Review rule summaries and outputs
    - Submit for approval (if required)
    - Publish immutable version
    - Deploy to transformer service

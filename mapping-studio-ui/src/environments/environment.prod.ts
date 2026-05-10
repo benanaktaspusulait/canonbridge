@@ -59,6 +59,8 @@ export const environment = {
   
   // Mapping Configuration
   mapping: {
+    /** Inject at deploy time via file/environment replacement when Studio should hit the transformer HTTP API (default: unset). */
+    transformerApiUrl: '',
     maxFieldDepth: 10,
     previewSampleSize: 5,
     autoSaveInterval: 30000, // 30 seconds
