@@ -206,6 +206,10 @@
     "heroBadgeHybrid": "Local preview · transformer verifies JSONata",
     "stepProgress": "Step {{current}} of {{total}}",
     "wizardAria": "Workflow steps",
+    "wizard": {
+      "blockedTitle": "Complete the current step first",
+      "blockedDetail": "Finish or fix the highlighted step before jumping ahead in the workflow."
+    },
     "catalog": "Mapping catalog",
     "step": {
       "source": "Source payload",
@@ -222,8 +226,15 @@
     "treeTitle": "Field tree",
     "treeSubtitle": "Inferred hierarchy from the current JSON (read-only preview).",
     "treeEmpty": "Analyze a valid JSON document to populate the tree.",
+    "tree": {
+      "pathCopied": "Path copied to clipboard"
+    },
     "canonicalTitle": "Canonical schema",
     "canonicalSubtitle": "Declare how data must appear inside your platform: field keys, types, and whether each is required.",
+    "canonical": {
+      "needField": "Add at least one canonical field before continuing.",
+      "keyInvalid": "Use letters, numbers, underscores, or dots (e.g. order.id)."
+    },
     "addField": "Add field",
     "colTargetKey": "Target key",
     "colType": "Type",
@@ -315,14 +326,28 @@
     "validateSubtitle": "Executes transforms locally against the sample JSON and checks required canonical fields (demo-only, no API).",
     "validateSubtitleHybrid": "Runs mappings in the browser, checks required fields, and sends advanced JSONata rules to the transformer for compile/eval parity (same engine as ingestion).",
     "testMapping": "Test mapping",
+    "test": {
+      "successToast": "Test passed — output matches required fields.",
+      "failedToast": "Test failed — review validation messages and rules."
+    },
     "publishDemo": "Publish (demo)",
     "schemaOk": "Schema check passed",
     "schemaFail": "Schema check failed",
     "publishSuccess": "Demo publish recorded. In production this version would be promoted and traffic would route to the new mapping.",
+    "publish": {
+      "blocked": "Fix validation errors and run a successful test before publishing."
+    },
     "outputTitle": "Transformed output",
     "outputSubtitle": "Preview of the canonical payload after applying your rules.",
     "outputEmpty": "Run “Test mapping” to see output.",
+    "output": {
+      "copied": "Output copied to clipboard"
+    },
     "jsonPlaceholder": "{ \"your\": \"partner-json\" }",
+    "json": {
+      "fileMeta": "{{name}} · {{size}}",
+      "syntaxPreview": "Syntax-highlighted preview (read-only)"
+    },
     "invalidJson": "Invalid JSON",
     "validation": {
       "missing": "Missing required target field “{{field}}”.",

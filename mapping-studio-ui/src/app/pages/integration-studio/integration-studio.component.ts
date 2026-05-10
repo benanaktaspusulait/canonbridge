@@ -1,4 +1,16 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  HostListener,
+  OnInit,
+  ViewChild,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
+import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import {
   JsonataCheckService,
   type JsonataBatchResultEntry
@@ -23,6 +35,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TabsModule } from 'primeng/tabs';
 import { FieldsetModule } from 'primeng/fieldset';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { targetFieldsFromCanonicalPayloadProperties } from './canonical-fields-from-schema';
@@ -36,6 +50,9 @@ import {
   validateWithAjv,
   type AjvIssue
 } from './studio-ajv';
+import { highlightJsonToHtml, highlightJsonValueToHtml } from './json-highlight';
+
+const TARGET_KEY_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
 const DEMO_JSON = `{
   "customer": {
@@ -327,10 +344,13 @@ function applyVisualTransform(rule: MappingRule, payload: unknown): unknown {
 @Component({
   selector: 'app-integration-studio',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [MessageService],
   imports: [
     FormsModule,
     RouterLink,
     JsonPipe,
+    DragDropModule,
     TreeModule,
     CardModule,
     ButtonModule,
@@ -346,6 +366,7 @@ function applyVisualTransform(rule: MappingRule, payload: unknown): unknown {
     TabsModule,
     FieldsetModule,
     ScrollPanelModule,
+    ToastModule,
     I18nPipe
   ],
   templateUrl: './integration-studio.component.html',
@@ -355,6 +376,12 @@ export class IntegrationStudioComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly jsonataCheck = inject(JsonataCheckService);
   private readonly ajv = createStudioAjv();
+  private readonly sanitizer = inject(DomSanitizer);
+  private readonly toast = inject(MessageService);
+
+  @ViewChild('advancedExpr') private advancedExpr?: ElementRef<HTMLTextAreaElement>;
+
+  private sourceDebounceTimer: ReturnType<typeof setTimeout> | undefined;
 
   /** When `mapping.transformerApiUrl` is set, advanced formulas are mirrored to the transformer for validation. */
   get transformerConfigured(): boolean {
@@ -367,6 +394,12 @@ export class IntegrationStudioComponent implements OnInit {
     { id: 2, labelKey: 'studio.step.mapping' },
     { id: 3, labelKey: 'studio.step.validate' }
   ];
+
+  /** Highest step index the user may open (sequential wizard). */
+  maxUnlockedStep = signal(0);
+  testRunPending = signal(false);
+  sourceDropHighlight = signal(false);
+  sourceFileMeta = signal<{ name: string; size: string } | null>(null);
 
   activeStep = signal(0);
   sourceJson = signal(DEMO_JSON);
@@ -413,6 +446,26 @@ export class IntegrationStudioComponent implements OnInit {
   selectedFixtureDetailId = signal<string | null>(null);
 
   readonly combinedExpressionPreview = computed(() => buildCombinedMappingExpression(this.rules()));
+
+  readonly highlightedSourceHtml = computed((): SafeHtml | null => {
+    try {
+      const html = highlightJsonToHtml(this.sourceJson());
+      return this.sanitizer.bypassSecurityTrustHtml(html);
+    } catch {
+      return null;
+    }
+  });
+
+  readonly highlightedOutputHtml = computed((): SafeHtml | null => {
+    const o = this.testOutput();
+    if (!o) return null;
+    try {
+      const html = highlightJsonValueToHtml(o);
+      return this.sanitizer.bypassSecurityTrustHtml(html);
+    } catch {
+      return null;
+    }
+  });
 
   readonly transformOptions = computed(() => {
     this.i18n.translations();
@@ -465,23 +518,118 @@ export class IntegrationStudioComponent implements OnInit {
     this.selectedRule.set(this.rules()[0] ?? null);
   }
 
+  @HostListener('document:keydown', ['$event'])
+  onWizardKeydown(ev: KeyboardEvent): void {
+    const t = ev.target as HTMLElement | null;
+    if (t && ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName)) return;
+    if (ev.key === 'ArrowRight') {
+      ev.preventDefault();
+      const next = Math.min(3, this.activeStep() + 1);
+      if (next <= this.maxUnlockedStep()) this.setStep(next);
+    } else if (ev.key === 'ArrowLeft') {
+      ev.preventDefault();
+      this.setStep(Math.max(0, this.activeStep() - 1));
+    }
+  }
+
   stepClass(i: number): string {
+    const parts: string[] = [];
+    if (this.stepHasError(i)) parts.push('error');
     const a = this.activeStep();
-    if (i < a) return 'done';
-    if (i === a) return 'active';
-    return '';
+    if (i === a) parts.push('active');
+    else if (i < a) parts.push('done');
+    return parts.join(' ');
+  }
+
+  stepHasError(i: number): boolean {
+    if (i === 0) {
+      return (
+        !!this.parseError() ||
+        (this.inputSchemaValidationIssues().length > 0 && !this.parseError())
+      );
+    }
+    if (i === 1) {
+      const rows = this.targetFields();
+      if (!rows.length) return true;
+      return rows.some(r => !TARGET_KEY_PATTERN.test(r.key));
+    }
+    if (i === 3) return this.validationOk() === false;
+    return false;
+  }
+
+  private scrollStudioIntoView(): void {
+    queueMicrotask(() =>
+      document.querySelector('.studio-shell')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    );
   }
 
   setStep(i: number): void {
-    this.activeStep.set(Math.max(0, Math.min(3, i)));
+    const next = Math.max(0, Math.min(3, i));
+    if (next > this.maxUnlockedStep()) {
+      this.toast.add({
+        severity: 'warn',
+        summary: this.i18n.translate('studio.wizard.blockedTitle'),
+        detail: this.i18n.translate('studio.wizard.blockedDetail'),
+        life: 4500
+      });
+      return;
+    }
+    this.activeStep.set(next);
+    this.scrollStudioIntoView();
   }
 
   nextStep(): void {
-    this.setStep(this.activeStep() + 1);
+    const cur = this.activeStep();
+    if (cur >= 3) return;
+    if (cur === 0 && !this.treeNodes().length) return;
+    if (cur === 1) {
+      if (!this.targetFields().length) return;
+      if (this.targetFields().some(f => !TARGET_KEY_PATTERN.test(f.key))) return;
+    }
+    const n = cur + 1;
+    this.activeStep.set(n);
+    this.maxUnlockedStep.update(m => Math.max(m, n));
+    this.scrollStudioIntoView();
   }
 
   prevStep(): void {
-    this.setStep(this.activeStep() - 1);
+    this.activeStep.update(s => Math.max(0, s - 1));
+    this.scrollStudioIntoView();
+  }
+
+  onSourceJsonChange(value: string): void {
+    this.sourceJson.set(value);
+    this.parseError.set(null);
+    if (this.sourceDebounceTimer) clearTimeout(this.sourceDebounceTimer);
+    this.sourceDebounceTimer = setTimeout(() => {
+      this.analyzePayloadSoft();
+      this.sourceDebounceTimer = undefined;
+    }, 300);
+  }
+
+  /** Refresh tree + paths from JSON without clearing validation / test outputs. */
+  analyzePayloadSoft(): void {
+    this.inputSchemaValidationIssues.set([]);
+    try {
+      const parsed = JSON.parse(this.sourceJson()) as unknown;
+      const sch = this.inputSchemaDoc();
+      if (sch) {
+        const v = validateWithAjv(this.ajv, sch, parsed);
+        this.inputSchemaValidationIssues.set(v.ok ? [] : v.issues);
+      }
+      const nodes = buildTreeNodes(parsed, '');
+      const paths: string[] = [];
+      collectLeafPaths(nodes, paths);
+      this.treeNodes.set(nodes);
+      this.sourcePaths.set(paths);
+      this.parseError.set(null);
+    } catch (e) {
+      this.treeNodes.set([]);
+      this.sourcePaths.set([]);
+      this.parseError.set(
+        e instanceof Error ? e.message : this.i18n.translate('studio.invalidJson')
+      );
+    }
   }
 
   analyzePayload(): void {
@@ -493,36 +641,17 @@ export class IntegrationStudioComponent implements OnInit {
     this.validationOk.set(null);
     this.published.set(false);
     this.ruleEvalErrors.set({});
-    this.inputSchemaValidationIssues.set([]);
-    try {
-      const parsed = JSON.parse(this.sourceJson()) as unknown;
-      const sch = this.inputSchemaDoc();
-      if (sch) {
-        const v = validateWithAjv(this.ajv, sch, parsed);
-        if (v.ok) {
-          this.inputSchemaValidationIssues.set([]);
-        } else {
-          this.inputSchemaValidationIssues.set(v.issues);
-        }
-      }
-      const nodes = buildTreeNodes(parsed, '');
-      const paths: string[] = [];
-      collectLeafPaths(nodes, paths);
-      this.treeNodes.set(nodes);
-      this.sourcePaths.set(paths);
-    } catch (e) {
-      this.treeNodes.set([]);
-      this.sourcePaths.set([]);
-      this.parseError.set(
-        e instanceof Error ? e.message : this.i18n.translate('studio.invalidJson')
-      );
-    }
+    this.analyzePayloadSoft();
   }
 
   onFileSelected(ev: Event): void {
     const input = ev.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+    this.sourceFileMeta.set({
+      name: file.name,
+      size: `${(file.size / 1024).toFixed(1)} KB`
+    });
     const reader = new FileReader();
     reader.onload = () => {
       this.sourceJson.set(String(reader.result ?? ''));
@@ -532,11 +661,115 @@ export class IntegrationStudioComponent implements OnInit {
     input.value = '';
   }
 
+  onJsonDragOver(ev: DragEvent): void {
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.sourceDropHighlight.set(true);
+  }
+
+  onJsonDragLeave(ev: DragEvent): void {
+    ev.preventDefault();
+    this.sourceDropHighlight.set(false);
+  }
+
+  onJsonDrop(ev: DragEvent): void {
+    ev.preventDefault();
+    this.sourceDropHighlight.set(false);
+    const file = ev.dataTransfer?.files?.[0];
+    if (!file || !file.name.toLowerCase().endsWith('.json')) return;
+    this.sourceFileMeta.set({
+      name: file.name,
+      size: `${(file.size / 1024).toFixed(1)} KB`
+    });
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.sourceJson.set(String(reader.result ?? ''));
+      this.analyzePayload();
+    };
+    reader.readAsText(file);
+  }
+
+  onTreeNodeSelect(ev: { node?: TreeNode }): void {
+    const node = ev.node;
+    if (!node?.children?.length && node?.data && typeof (node.data as { path?: string }).path === 'string') {
+      const path = (node.data as { path: string }).path;
+      void navigator.clipboard.writeText(path).then(() => {
+        this.toast.add({
+          severity: 'success',
+          summary: this.i18n.translate('studio.tree.pathCopied'),
+          life: 2000
+        });
+      });
+    }
+  }
+
+  fieldTypeTagSeverity(t: TargetField['type']): 'info' | 'secondary' | 'warn' {
+    if (t === 'string') return 'info';
+    if (t === 'number') return 'secondary';
+    return 'warn';
+  }
+
+  isBadTargetKey(key: string): boolean {
+    return Boolean(key && !TARGET_KEY_PATTERN.test(key));
+  }
+
+  canonicalNextDisabled(): boolean {
+    const rows = this.targetFields();
+    return !rows.length || rows.some(f => !TARGET_KEY_PATTERN.test(f.key));
+  }
+
+  onTargetDrop(event: CdkDragDrop<TargetField[]>): void {
+    const copy = [...this.targetFields()];
+    moveItemInArray(copy, event.previousIndex, event.currentIndex);
+    this.targetFields.set(copy);
+  }
+
+  onRuleDrop(event: CdkDragDrop<MappingRule[]>): void {
+    const copy = [...this.rules()];
+    moveItemInArray(copy, event.previousIndex, event.currentIndex);
+    this.rules.set(copy);
+  }
+
+  selectRuleRow(rule: MappingRule): void {
+    this.onRuleSelectionChange(rule);
+  }
+
+  async copyOutputJson(): Promise<void> {
+    const o = this.testOutput();
+    if (!o) return;
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(o, null, 2));
+      this.toast.add({
+        severity: 'success',
+        summary: this.i18n.translate('studio.output.copied'),
+        life: 2500
+      });
+    } catch {
+      /* ignore */
+    }
+  }
+
+  downloadOutputJson(): void {
+    const o = this.testOutput();
+    if (!o) return;
+    const blob = new Blob([JSON.stringify(o, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'transform-output.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   addTargetField(): void {
     this.targetFields.update(rows => [
       ...rows,
       { key: `field_${rows.length + 1}`, type: 'string', required: false, description: '', source: 'manual' }
     ]);
+    const idx = this.targetFields().length - 1;
+    setTimeout(() => {
+      document.querySelector<HTMLInputElement>(`[data-studio-target-key="${idx}"]`)?.focus();
+    }, 0);
   }
 
   removeTargetAt(index: number): void {
@@ -668,10 +901,25 @@ export class IntegrationStudioComponent implements OnInit {
   appendPathToAdvancedEditor(path: string): void {
     const rule = this.selectedRule();
     if (!rule) return;
-    const cur = rule.advancedExpression.trim();
-    const sep = cur && !cur.endsWith(' ') ? ' ' : '';
     const token = normalizePathToken(path);
-    this.patchRule(rule.id, { advancedExpression: `${cur}${sep}${token}` });
+    const ta = this.advancedExpr?.nativeElement;
+    const cur = rule.advancedExpression;
+    if (ta) {
+      const start = ta.selectionStart ?? cur.length;
+      const end = ta.selectionEnd ?? cur.length;
+      const ins = (start > 0 && cur[start - 1] !== ' ' && cur[start - 1] !== '\n' ? ' ' : '') + token + ' ';
+      const next = cur.slice(0, start) + ins + cur.slice(end);
+      this.patchRule(rule.id, { advancedExpression: next });
+      queueMicrotask(() => {
+        ta.focus();
+        const pos = start + ins.length;
+        ta.setSelectionRange(pos, pos);
+      });
+    } else {
+      const trimmed = cur.trim();
+      const sep = trimmed && !trimmed.endsWith(' ') ? ' ' : '';
+      this.patchRule(rule.id, { advancedExpression: `${trimmed}${sep}${token} ` });
+    }
   }
 
   async copyRuleSummary(): Promise<void> {
@@ -755,6 +1003,7 @@ export class IntegrationStudioComponent implements OnInit {
     this.altParseError.set(null);
     this.rulesWithOutputSchemaErrors.set(new Set());
     this.canonicalSchemaIssuesDetail.set([]);
+    this.testRunPending.set(true);
     let payload: unknown;
     try {
       payload = JSON.parse(this.sourceJson());
@@ -762,71 +1011,87 @@ export class IntegrationStudioComponent implements OnInit {
       this.parseError.set(
         e instanceof Error ? e.message : this.i18n.translate('studio.invalidJson')
       );
+      this.testRunPending.set(false);
       return;
     }
 
-    const { out, errors } = await this.executeRulesOnPayload(payload);
-    const enriched = await this.enrichWithServerJsonata(payload, out, errors);
-    this.testOutput.set(out);
-    this.ruleEvalErrors.set(enriched.mergedErrors);
+    try {
+      const { out, errors } = await this.executeRulesOnPayload(payload);
+      const enriched = await this.enrichWithServerJsonata(payload, out, errors);
+      this.testOutput.set(out);
+      this.ruleEvalErrors.set(enriched.mergedErrors);
 
-    const messages = [...enriched.extraNotes];
-    let ok = true;
-    for (const f of this.targetFields()) {
-      if (!f.required) continue;
-      const v = out[f.key];
-      if (v === null || v === undefined || v === '') {
+      const messages = [...enriched.extraNotes];
+      let ok = true;
+      for (const f of this.targetFields()) {
+        if (!f.required) continue;
+        const v = out[f.key];
+        if (v === null || v === undefined || v === '') {
+          ok = false;
+          messages.push(this.i18n.translate('studio.validation.missing', { field: f.key }));
+        }
+      }
+      const errIds = Object.keys(enriched.mergedErrors);
+      if (errIds.length) {
         ok = false;
-        messages.push(this.i18n.translate('studio.validation.missing', { field: f.key }));
+        for (const id of errIds) {
+          const rule = this.rules().find(r => r.id === id);
+          const label = rule?.targetKey ?? id;
+          messages.push(this.i18n.translate('studio.validation.ruleEvalFailed', { field: label }));
+        }
       }
-    }
-    const errIds = Object.keys(enriched.mergedErrors);
-    if (errIds.length) {
-      ok = false;
-      for (const id of errIds) {
-        const rule = this.rules().find(r => r.id === id);
-        const label = rule?.targetKey ?? id;
-        messages.push(this.i18n.translate('studio.validation.ruleEvalFailed', { field: label }));
-      }
-    }
 
-    const canSch = this.canonicalSchemaDoc();
-    if (canSch) {
-      const cval = validateWithAjv(this.ajv, canSch, out);
-      if (!cval.ok) {
-        ok = false;
-        const detail: { targetKey: string | null; text: string }[] = [];
-        const hilite = new Set<string>();
-        const gen = this.i18n.translate('studio.schema.generalField');
-        for (const issue of cval.issues) {
-          const tk = instancePathToTargetKey(issue.instancePath);
-          detail.push({
-            targetKey: tk,
-            text: formatAjvIssueForList(tk ?? gen, issue.message)
-          });
-          if (tk) {
-            for (const rr of this.rules()) {
-              if (rr.targetKey === tk) {
-                hilite.add(rr.id);
+      const canSch = this.canonicalSchemaDoc();
+      if (canSch) {
+        const cval = validateWithAjv(this.ajv, canSch, out);
+        if (!cval.ok) {
+          ok = false;
+          const detail: { targetKey: string | null; text: string }[] = [];
+          const hilite = new Set<string>();
+          const gen = this.i18n.translate('studio.schema.generalField');
+          for (const issue of cval.issues) {
+            const tk = instancePathToTargetKey(issue.instancePath);
+            detail.push({
+              targetKey: tk,
+              text: formatAjvIssueForList(tk ?? gen, issue.message)
+            });
+            if (tk) {
+              for (const rr of this.rules()) {
+                if (rr.targetKey === tk) {
+                  hilite.add(rr.id);
+                }
               }
             }
           }
+          this.canonicalSchemaIssuesDetail.set(detail);
+          this.rulesWithOutputSchemaErrors.set(hilite);
+          messages.push(this.i18n.translate('studio.schema.canonicalFailedSummary'));
+        } else {
+          this.canonicalSchemaIssuesDetail.set([]);
+          this.rulesWithOutputSchemaErrors.set(new Set());
+          messages.push(this.i18n.translate('studio.schema.canonicalValidDetail'));
         }
-        this.canonicalSchemaIssuesDetail.set(detail);
-        this.rulesWithOutputSchemaErrors.set(hilite);
-        messages.push(this.i18n.translate('studio.schema.canonicalFailedSummary'));
-      } else {
-        this.canonicalSchemaIssuesDetail.set([]);
-        this.rulesWithOutputSchemaErrors.set(new Set());
-        messages.push(this.i18n.translate('studio.schema.canonicalValidDetail'));
       }
-    }
 
-    if (ok) {
-      messages.push(this.i18n.translate('studio.validation.allPresent'));
+      if (ok) {
+        messages.push(this.i18n.translate('studio.validation.allPresent'));
+        this.toast.add({
+          severity: 'success',
+          summary: this.i18n.translate('studio.test.successToast'),
+          life: 3000
+        });
+      } else {
+        this.toast.add({
+          severity: 'error',
+          summary: this.i18n.translate('studio.test.failedToast'),
+          sticky: true
+        });
+      }
+      this.validationOk.set(ok);
+      this.validationMessages.set(messages);
+    } finally {
+      this.testRunPending.set(false);
     }
-    this.validationOk.set(ok);
-    this.validationMessages.set(messages);
   }
 
   async runAltFixture(): Promise<void> {
@@ -874,6 +1139,19 @@ export class IntegrationStudioComponent implements OnInit {
     await this.runTest();
     if (this.validationOk() === true) {
       this.published.set(true);
+      this.toast.add({
+        severity: 'success',
+        summary: this.i18n.translate('studio.publishSuccess'),
+        life: 4000
+      });
+      const confetti = (await import('canvas-confetti')).default;
+      confetti({ particleCount: 130, spread: 72, origin: { y: 0.65 } });
+    } else {
+      this.toast.add({
+        severity: 'warn',
+        summary: this.i18n.translate('studio.publish.blocked'),
+        life: 5000
+      });
     }
   }
 
@@ -969,7 +1247,9 @@ export class IntegrationStudioComponent implements OnInit {
     if (!targetKey) return;
     const rule = this.rules().find(r => r.targetKey === targetKey);
     if (!rule) return;
-    this.setStep(2);
+    this.maxUnlockedStep.update(m => Math.max(m, 2));
+    this.activeStep.set(2);
+    this.scrollStudioIntoView();
     this.selectedRule.set(rule);
     this.ruleInspectorTab.set('visual');
   }

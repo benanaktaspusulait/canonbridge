@@ -206,6 +206,10 @@
     "heroBadgeHybrid": "Yerel önizleme · JSONata doğrulaması transformer ile",
     "stepProgress": "{{current}} / {{total}} adım",
     "wizardAria": "Çalışma akışı adımları",
+    "wizard": {
+      "blockedTitle": "Önce geçerli adımı tamamlayın",
+      "blockedDetail": "İleriye atlamadan önce vurgulanan adımı bitirin veya düzeltin."
+    },
     "catalog": "Eşleme kataloğu",
     "step": {
       "source": "Kaynak yük",
@@ -222,8 +226,15 @@
     "treeTitle": "Alan ağacı",
     "treeSubtitle": "Geçerli JSON’dan çıkarılan hiyerarşi (salt okunur önizleme).",
     "treeEmpty": "Ağacı doldurmak için geçerli bir JSON analiz edin.",
+    "tree": {
+      "pathCopied": "Yol panoya kopyalandı"
+    },
     "canonicalTitle": "Kanonik şema",
     "canonicalSubtitle": "Verinin platformunuzda nasıl görünmesi gerektiğini tanımlayın: alan anahtarları, tipler ve zorunluluk.",
+    "canonical": {
+      "needField": "Devam etmeden önce en az bir kanonik alan ekleyin.",
+      "keyInvalid": "Harf, rakam, alt çizgi veya nokta kullanın (ör. order.id)."
+    },
     "addField": "Alan ekle",
     "colTargetKey": "Hedef anahtar",
     "colType": "Tip",
@@ -315,14 +326,28 @@
     "validateSubtitle": "Dönüşümleri örnek JSON üzerinde yerel çalıştırır ve zorunlu kanonik alanları kontrol eder (yalnızca demo, API yok).",
     "validateSubtitleHybrid": "Eşlemeyi tarayıcıda çalıştırır, zorunlu alanları kontrol eder ve gelişmiş JSONata kurallarını ingestion ile aynı motor üzerinde derleme/değerlendirme için transformer’a gönderir.",
     "testMapping": "Eşlemeyi test et",
+    "test": {
+      "successToast": "Test geçti — çıktı zorunlu alanlarla uyumlu.",
+      "failedToast": "Test başarısız — doğrulama mesajlarını ve kuralları gözden geçirin."
+    },
     "publishDemo": "Yayınla (demo)",
     "schemaOk": "Şema kontrolü başarılı",
     "schemaFail": "Şema kontrolü başarısız",
     "publishSuccess": "Demo yayın kaydedildi. Üretimde bu sürüm yükseltilir ve trafik yeni eşlemeye yönlendirilir.",
+    "publish": {
+      "blocked": "Yayınlamadan önce doğrulama hatalarını giderin ve başarılı bir test çalıştırın."
+    },
     "outputTitle": "Dönüştürülmüş çıktı",
     "outputSubtitle": "Kurallarınız uygulandıktan sonra kanonik yükün önizlemesi.",
     "outputEmpty": "Çıktıyı görmek için “Eşlemeyi test et” çalıştırın.",
+    "output": {
+      "copied": "Çıktı panoya kopyalandı"
+    },
     "jsonPlaceholder": "{ \"ornek\": \"partner-json\" }",
+    "json": {
+      "fileMeta": "{{name}} · {{size}}",
+      "syntaxPreview": "Sözdizimi vurgulu önizleme (salt okunur)"
+    },
     "invalidJson": "Geçersiz JSON",
     "validation": {
       "missing": "Zorunlu hedef alan eksik: “{{field}}”.",

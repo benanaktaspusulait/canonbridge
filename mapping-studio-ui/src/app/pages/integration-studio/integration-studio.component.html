@@ -1,4 +1,5 @@
 <section class="studio-shell">
+  <p-toast position="top-right" />
   <header class="studio-hero">
     <div class="studio-hero__accent" aria-hidden="true"></div>
     <div class="studio-hero__inner">
@@ -32,10 +33,22 @@
         </div>
       </div>
 
-      <nav class="studio-wizard" [attr.aria-label]="'studio.wizardAria' | i18n">
+      <nav class="studio-wizard" role="navigation" [attr.aria-label]="'studio.wizardAria' | i18n">
         @for (s of steps; track s.id; let i = $index) {
-          <button type="button" class="wizard-step {{ stepClass(s.id) }}" (click)="setStep(s.id)">
-            <span class="step-index">{{ s.id + 1 }}</span>
+          <button
+            type="button"
+            class="wizard-step {{ stepClass(s.id) }}"
+            (click)="setStep(s.id)"
+            [attr.aria-current]="activeStep() === s.id ? 'step' : null">
+            <span class="step-index">
+              @if (stepHasError(s.id)) {
+                <span class="step-glyph step-glyph--warn" aria-hidden="true">!</span>
+              } @else if (activeStep() > s.id) {
+                <span class="step-glyph step-glyph--ok" aria-hidden="true">✓</span>
+              } @else {
+                {{ s.id + 1 }}
+              }
+            </span>
             <span class="step-label">{{ s.labelKey | i18n }}</span>
           </button>
           @if (i < steps.length - 1) {
@@ -114,13 +127,29 @@
       @if (parseError()) {
         <p-message severity="error" [text]="parseError()!" styleClass="w-full mt-3" />
       }
-      <textarea
-        pTextarea
-        [ngModel]="sourceJson()"
-        (ngModelChange)="sourceJson.set($event); parseError.set(null)"
-        class="json-input w-full mt-3"
-        rows="14"
-        [placeholder]="'studio.jsonPlaceholder' | i18n"></textarea>
+      @if (sourceFileMeta(); as fm) {
+        <p class="text-sm text-color-secondary mt-2 mb-0">
+          {{ 'studio.json.fileMeta' | i18n: { name: fm.name, size: fm.size } }}
+        </p>
+      }
+      <div
+        class="studio-json-drop mt-3"
+        [class.studio-json-drop--active]="sourceDropHighlight()"
+        (dragover)="onJsonDragOver($event)"
+        (dragleave)="onJsonDragLeave($event)"
+        (drop)="onJsonDrop($event)">
+        <textarea
+          pTextarea
+          [ngModel]="sourceJson()"
+          (ngModelChange)="onSourceJsonChange($event)"
+          class="json-input w-full"
+          rows="14"
+          [placeholder]="'studio.jsonPlaceholder' | i18n"></textarea>
+      </div>
+      @if (highlightedSourceHtml(); as hh) {
+        <p class="text-sm font-semibold mt-3 mb-1">{{ 'studio.json.syntaxPreview' | i18n }}</p>
+        <pre class="studio-json-hl hljs" [innerHTML]="hh"></pre>
+      }
     </p-card>
 
     <p-card styleClass="studio-card">
@@ -133,7 +162,18 @@
         </div>
       </ng-template>
       @if (treeNodes().length) {
-        <p-tree [value]="treeNodes()" styleClass="field-tree w-full" />
+        <p-tree
+          [value]="treeNodes()"
+          styleClass="field-tree w-full"
+          selectionMode="single"
+          (onNodeSelect)="onTreeNodeSelect($event)">
+          <ng-template let-node pTemplate="default">
+            <span>{{ node.label }}</span>
+            @if (node.data?.type) {
+              <p-tag [value]="node.data.type" severity="secondary" styleClass="ml-2" />
+            }
+          </ng-template>
+        </p-tree>
       } @else {
         <p class="empty-hint">{{ 'studio.treeEmpty' | i18n }}</p>
       }
@@ -176,8 +216,16 @@
         variant="outlined"
         severity="secondary"
         (onClick)="prevStep()" />
-      <p-button [label]="'studio.next' | i18n" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextStep()" />
+      <p-button
+        [label]="'studio.next' | i18n"
+        icon="pi pi-arrow-right"
+        iconPos="right"
+        (onClick)="nextStep()"
+        [disabled]="canonicalNextDisabled()" />
     </div>
+    @if (!targetFields().length) {
+      <p-message severity="warn" [text]="'studio.canonical.needField' | i18n" styleClass="w-full mb-3" />
+    }
     @if (canonicalSchemaLoadError()) {
       <p-message severity="error" [text]="canonicalSchemaLoadError()!" styleClass="w-full mb-3" />
     }
@@ -191,56 +239,78 @@
         }
       </div>
     }
-    <p-table [value]="targetFields()" styleClass="p-datatable-sm">
-      <ng-template pTemplate="header">
-        <tr>
-          <th>{{ 'studio.colTargetKey' | i18n }}</th>
-          <th>{{ 'studio.colType' | i18n }}</th>
-          <th>{{ 'studio.colRequired' | i18n }}</th>
-          <th>{{ 'studio.colDescription' | i18n }}</th>
-          <th style="width: 3rem"></th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-f let-rowIndex="rowIndex">
-        <tr [class.studio-target-from-schema]="f.source === 'schema'">
-          <td>
-            <div class="studio-target-key-cell">
-              <input pInputText class="w-full" [ngModel]="f.key" (ngModelChange)="patchTargetAt(rowIndex, { key: $event })" />
-              @if (f.source === 'schema') {
-                <p-tag severity="info" [value]="'studio.schema.fromSchemaTag' | i18n" styleClass="mt-1" />
-              }
-            </div>
-          </td>
-          <td>
-            <p-select
-              [options]="fieldTypeOptions()"
-              [ngModel]="f.type"
-              (ngModelChange)="patchTargetAt(rowIndex, { type: $event })"
-              optionLabel="label"
-              optionValue="value"
-              styleClass="w-full" />
-          </td>
-          <td>
-            <p-toggleswitch [ngModel]="f.required" (ngModelChange)="patchTargetAt(rowIndex, { required: $event })" />
-          </td>
-          <td>
-            <input
-              pInputText
-              class="w-full"
-              [ngModel]="f.description"
-              (ngModelChange)="patchTargetAt(rowIndex, { description: $event })" />
-          </td>
-          <td>
-            <p-button
-              icon="pi pi-trash"
-              variant="text"
-              severity="danger"
-              (onClick)="removeTargetAt(rowIndex)"
-              [disabled]="targetFields().length <= 1" />
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+    <div class="studio-canonical-table-wrap">
+      <table class="p-datatable-table studio-canonical-table">
+        <thead>
+          <tr>
+            <th class="studio-col-drag" aria-hidden="true"></th>
+            <th>{{ 'studio.colTargetKey' | i18n }}</th>
+            <th>{{ 'studio.colType' | i18n }}</th>
+            <th>{{ 'studio.colRequired' | i18n }}</th>
+            <th>{{ 'studio.colDescription' | i18n }}</th>
+            <th style="width: 3rem"></th>
+          </tr>
+        </thead>
+        <tbody cdkDropList (cdkDropListDropped)="onTargetDrop($event)">
+          @for (f of targetFields(); let rowIndex = $index; track rowIndex) {
+            <tr
+              cdkDrag
+              [class.studio-target-from-schema]="f.source === 'schema'"
+              [class.studio-target-required-row]="f.required">
+              <td cdkDragHandle class="studio-drag-handle" aria-label="Reorder">
+                <i class="pi pi-bars text-color-secondary"></i>
+              </td>
+              <td>
+                <div class="studio-target-key-cell">
+                  <input
+                    pInputText
+                    class="w-full"
+                    [attr.data-studio-target-key]="rowIndex"
+                    [ngModel]="f.key"
+                    (ngModelChange)="patchTargetAt(rowIndex, { key: $event })" />
+                  @if (isBadTargetKey(f.key)) {
+                    <small class="text-red-500">{{ 'studio.canonical.keyInvalid' | i18n }}</small>
+                  }
+                  @if (f.source === 'schema') {
+                    <p-tag severity="info" [value]="'studio.schema.fromSchemaTag' | i18n" styleClass="mt-1" />
+                  }
+                </div>
+              </td>
+              <td>
+                <div class="flex align-items-center gap-2 flex-wrap">
+                  <p-tag [severity]="fieldTypeTagSeverity(f.type)" [value]="f.type" />
+                  <p-select
+                    [options]="fieldTypeOptions()"
+                    [ngModel]="f.type"
+                    (ngModelChange)="patchTargetAt(rowIndex, { type: $event })"
+                    optionLabel="label"
+                    optionValue="value"
+                    styleClass="w-full" />
+                </div>
+              </td>
+              <td>
+                <p-toggleswitch [ngModel]="f.required" (ngModelChange)="patchTargetAt(rowIndex, { required: $event })" />
+              </td>
+              <td>
+                <input
+                  pInputText
+                  class="w-full"
+                  [ngModel]="f.description"
+                  (ngModelChange)="patchTargetAt(rowIndex, { description: $event })" />
+              </td>
+              <td>
+                <p-button
+                  icon="pi pi-trash"
+                  variant="text"
+                  severity="danger"
+                  (onClick)="removeTargetAt(rowIndex)"
+                  [disabled]="targetFields().length <= 1" />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </p-card>
 }
 
@@ -271,76 +341,80 @@
     </div>
 
     <div class="studio-mapping-layout">
-      <div class="studio-mapping-table">
-        <p-table
-          [value]="rules()"
-          dataKey="id"
-          selectionMode="single"
-          [selection]="selectedRule()"
-          (selectionChange)="onRuleSelectionChange($event)"
-          styleClass="p-datatable-sm p-datatable-striped"
-          [tableStyle]="{ 'min-width': '36rem' }"
-          [rowHover]="true">
-          <ng-template pTemplate="header">
+      <div
+        class="studio-mapping-table studio-rule-table-wrap"
+        [class.studio-rule-table-wrap--tall]="rules().length > 20">
+        <table class="p-datatable-table p-datatable-sm studio-rules-table">
+          <thead>
             <tr>
+              <th class="studio-col-drag" aria-hidden="true"></th>
               <th>{{ 'studio.colSourcePath' | i18n }}</th>
               <th>{{ 'studio.colTargetKeyRule' | i18n }}</th>
               <th>{{ 'studio.colTransform' | i18n }}</th>
               <th>{{ 'studio.colMode' | i18n }}</th>
               <th style="width: 3rem"></th>
             </tr>
-          </ng-template>
-          <ng-template pTemplate="body" let-rule>
-            <tr [pSelectableRow]="rule" [class.studio-rule-row--ajv]="ruleRowAjvError(rule.id)">
-              <td>
-                <p-select
-                  [options]="sourcePathOptions()"
-                  [ngModel]="rule.sourcePath"
-                  (ngModelChange)="patchRule(rule.id, { sourcePath: $event })"
-                  optionLabel="label"
-                  optionValue="value"
-                  [filter]="true"
-                  [filterPlaceholder]="'studio.filterPath' | i18n"
-                  [placeholder]="'studio.selectPath' | i18n"
-                  styleClass="w-full" />
-              </td>
-              <td>
-                <p-select
-                  [options]="targetKeyOptions()"
-                  [ngModel]="rule.targetKey"
-                  (ngModelChange)="patchRule(rule.id, { targetKey: $event })"
-                  optionLabel="label"
-                  optionValue="value"
-                  styleClass="w-full" />
-              </td>
-              <td>
-                <p-select
-                  [options]="transformOptions()"
-                  [ngModel]="rule.transform"
-                  (ngModelChange)="patchRule(rule.id, { transform: $event })"
-                  optionLabel="label"
-                  optionValue="value"
-                  styleClass="w-full"
-                  [disabled]="ruleUsesAdvancedLogic(rule)" />
-              </td>
-              <td>
-                @if (ruleUsesAdvancedLogic(rule)) {
-                  <p-tag severity="info" [value]="'studio.mode.advanced' | i18n" />
-                } @else {
-                  <p-tag severity="secondary" [value]="'studio.mode.visual' | i18n" />
-                }
-              </td>
-              <td>
-                <p-button
-                  icon="pi pi-trash"
-                  variant="text"
-                  severity="danger"
-                  (onClick)="removeRule(rule)"
-                  [disabled]="rules().length <= 1" />
-              </td>
-            </tr>
-          </ng-template>
-        </p-table>
+          </thead>
+          <tbody cdkDropList (cdkDropListDropped)="onRuleDrop($event)">
+            @for (rule of rules(); track rule.id) {
+              <tr
+                cdkDrag
+                (click)="selectRuleRow(rule)"
+                [class.studio-rule-selected]="selectedRule()?.id === rule.id"
+                [class.studio-rule-row--ajv]="ruleRowAjvError(rule.id)">
+                <td cdkDragHandle class="studio-drag-handle" (click)="$event.stopPropagation()">
+                  <i class="pi pi-bars text-color-secondary"></i>
+                </td>
+                <td (click)="$event.stopPropagation()">
+                  <p-select
+                    [options]="sourcePathOptions()"
+                    [ngModel]="rule.sourcePath"
+                    (ngModelChange)="patchRule(rule.id, { sourcePath: $event })"
+                    optionLabel="label"
+                    optionValue="value"
+                    [filter]="true"
+                    [filterPlaceholder]="'studio.filterPath' | i18n"
+                    [placeholder]="'studio.selectPath' | i18n"
+                    styleClass="w-full" />
+                </td>
+                <td (click)="$event.stopPropagation()">
+                  <p-select
+                    [options]="targetKeyOptions()"
+                    [ngModel]="rule.targetKey"
+                    (ngModelChange)="patchRule(rule.id, { targetKey: $event })"
+                    optionLabel="label"
+                    optionValue="value"
+                    styleClass="w-full" />
+                </td>
+                <td (click)="$event.stopPropagation()">
+                  <p-select
+                    [options]="transformOptions()"
+                    [ngModel]="rule.transform"
+                    (ngModelChange)="patchRule(rule.id, { transform: $event })"
+                    optionLabel="label"
+                    optionValue="value"
+                    styleClass="w-full"
+                    [disabled]="ruleUsesAdvancedLogic(rule)" />
+                </td>
+                <td>
+                  @if (ruleUsesAdvancedLogic(rule)) {
+                    <p-tag severity="info" [value]="'studio.mode.advanced' | i18n" />
+                  } @else {
+                    <p-tag severity="secondary" [value]="'studio.mode.visual' | i18n" />
+                  }
+                </td>
+                <td (click)="$event.stopPropagation()">
+                  <p-button
+                    icon="pi pi-trash"
+                    variant="text"
+                    severity="danger"
+                    (onClick)="removeRule(rule)"
+                    [disabled]="rules().length <= 1" />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
       </div>
 
       <div class="studio-mapping-inspector studio-inspector-surface">
@@ -516,6 +590,7 @@
                 <div class="inspector-panel">
                   <p class="hint-text">{{ 'studio.advancedHint' | i18n }}</p>
                   <textarea
+                    #advancedExpr
                     pTextarea
                     class="w-full mono-textarea"
                     rows="8"
