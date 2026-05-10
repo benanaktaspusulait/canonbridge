@@ -1,0 +1,181 @@
+/**
+ * Design System Variables
+ * CanonBridge Mapping Studio UI
+ */
+
+// ============================================
+// Brand Colors
+// ============================================
+$brand-primary: #2563eb;      // Blue 600
+$brand-primary-dark: #1e40af;  // Blue 700
+$brand-primary-light: #3b82f6; // Blue 500
+$brand-secondary: #7c3aed;     // Violet 600
+$brand-accent: #06b6d4;        // Cyan 500
+
+// ============================================
+// Semantic Colors
+// ============================================
+$color-success: #10b981;       // Green 500
+$color-warning: #f59e0b;       // Amber 500
+$color-error: #ef4444;         // Red 500
+$color-info: #3b82f6;          // Blue 500
+
+// ============================================
+// Neutral Colors (Light Theme)
+// ============================================
+$neutral-50: #f9fafb;
+$neutral-100: #f3f4f6;
+$neutral-200: #e5e7eb;
+$neutral-300: #d1d5db;
+$neutral-400: #9ca3af;
+$neutral-500: #6b7280;
+$neutral-600: #4b5563;
+$neutral-700: #374151;
+$neutral-800: #1f2937;
+$neutral-900: #111827;
+
+// ============================================
+// Dark Theme Colors
+// ============================================
+$dark-bg-primary: #0f172a;     // Slate 900
+$dark-bg-secondary: #1e293b;   // Slate 800
+$dark-bg-tertiary: #334155;    // Slate 700
+$dark-text-primary: #f1f5f9;   // Slate 100
+$dark-text-secondary: #cbd5e1; // Slate 300
+
+// ============================================
+// Typography
+// ============================================
+$font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+$font-family-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+
+// Font Sizes
+$font-size-xs: 0.75rem;    // 12px
+$font-size-sm: 0.875rem;   // 14px
+$font-size-base: 1rem;     // 16px
+$font-size-lg: 1.125rem;   // 18px
+$font-size-xl: 1.25rem;    // 20px
+$font-size-2xl: 1.5rem;    // 24px
+$font-size-3xl: 1.875rem;  // 30px
+$font-size-4xl: 2.25rem;   // 36px
+
+// Font Weights
+$font-weight-light: 300;
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// Line Heights
+$line-height-tight: 1.25;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.75;
+
+// ============================================
+// Spacing
+// ============================================
+$spacing-0: 0;
+$spacing-1: 0.25rem;   // 4px
+$spacing-2: 0.5rem;    // 8px
+$spacing-3: 0.75rem;   // 12px
+$spacing-4: 1rem;      // 16px
+$spacing-5: 1.25rem;   // 20px
+$spacing-6: 1.5rem;    // 24px
+$spacing-8: 2rem;      // 32px
+$spacing-10: 2.5rem;   // 40px
+$spacing-12: 3rem;     // 48px
+$spacing-16: 4rem;     // 64px
+$spacing-20: 5rem;     // 80px
+
+// ============================================
+// Border Radius
+// ============================================
+$radius-none: 0;
+$radius-sm: 0.25rem;   // 4px
+$radius-base: 0.375rem; // 6px
+$radius-md: 0.5rem;    // 8px
+$radius-lg: 0.75rem;   // 12px
+$radius-xl: 1rem;      // 16px
+$radius-2xl: 1.5rem;   // 24px
+$radius-full: 9999px;
+
+// ============================================
+// Shadows
+// ============================================
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+$shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+$shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+$shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+// ============================================
+// Z-Index Layers
+// ============================================
+$z-index-dropdown: 1000;
+$z-index-sticky: 1020;
+$z-index-fixed: 1030;
+$z-index-modal-backdrop: 1040;
+$z-index-modal: 1050;
+$z-index-popover: 1060;
+$z-index-tooltip: 1070;
+
+// ============================================
+// Transitions
+// ============================================
+$transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+$transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+$transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+// ============================================
+// Breakpoints
+// ============================================
+$breakpoint-xs: 0;
+$breakpoint-sm: 640px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1280px;
+$breakpoint-2xl: 1536px;
+
+// ============================================
+// Layout
+// ============================================
+$sidebar-width: 280px;
+$sidebar-collapsed-width: 80px;
+$topbar-height: 64px;
+$footer-height: 48px;
+
+// ============================================
+// Component Specific
+// ============================================
+
+// Buttons
+$button-height-sm: 32px;
+$button-height-base: 40px;
+$button-height-lg: 48px;
+
+// Inputs
+$input-height-sm: 32px;
+$input-height-base: 40px;
+$input-height-lg: 48px;
+$input-border-color: $neutral-300;
+$input-focus-border-color: $brand-primary;
+
+// Cards
+$card-bg: #ffffff;
+$card-border-color: $neutral-200;
+$card-shadow: $shadow-sm;
+
+// Tables
+$table-header-bg: $neutral-50;
+$table-border-color: $neutral-200;
+$table-hover-bg: $neutral-50;
+
+// Status Colors
+$status-active: $color-success;
+$status-inactive: $neutral-400;
+$status-pending: $color-warning;
+$status-error: $color-error;
+$status-draft: $neutral-500;
+$status-published: $color-success;
+

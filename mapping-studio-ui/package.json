@@ -1,12 +1,23 @@
 {
-  "name": "mapping-studio-ui",
-  "version": "0.0.0",
+  "name": "@canonbridge/mapping-studio-ui",
+  "version": "1.0.0",
+  "description": "CanonBridge Mapping Studio - No-code visual mapping interface for partner event transformations",
+  "author": "CanonBridge Team",
+  "license": "PROPRIETARY",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
+    "start": "ng serve --port 4200 --open",
+    "start:prod": "ng serve --configuration production",
+    "build": "ng build --configuration production",
+    "build:dev": "ng build --configuration development",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "lint": "ng lint",
+    "format": "prettier --write \"src/**/*.{ts,html,scss,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,html,scss,json}\"",
+    "analyze": "ng build --configuration production --stats-json && webpack-bundle-analyzer dist/mapping-studio-ui/stats.json"
   },
   "private": true,
   "packageManager": "npm@11.6.2",
