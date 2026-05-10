@@ -96,11 +96,11 @@ The management screen should be centered around Mapping Studio, not only dashboa
 
 Primary documentation:
 
-- [Mapping Studio Product Requirements](./docs/product/01-mapping-studio-product-requirements.md)
-- [Mapping Studio UX Flow](./docs/product/02-mapping-studio-ux-flow.md)
-- [Mapping Studio API and Data Model](./docs/product/03-mapping-studio-api-data-model.md)
-- [Mapping Studio Validation and Testing](./docs/product/04-mapping-studio-validation-testing.md)
-- [Mapping Studio Implementation Plan](./docs/product/05-mapping-studio-implementation-plan.md)
+- [Mapping Studio Product Requirements](./01-mapping-studio-product-requirements.md)
+- [Mapping Studio UX Flow](./02-mapping-studio-ux-flow.md)
+- [Mapping Studio API and Data Model](./03-mapping-studio-api-data-model.md)
+- [Mapping Studio Validation and Testing](./04-mapping-studio-validation-testing.md)
+- [Mapping Studio Implementation Plan](./05-mapping-studio-implementation-plan.md)
 
 ### Mapping Studio MVP
 

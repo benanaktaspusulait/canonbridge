@@ -1,43 +1,28 @@
 # Product Documentation
 
-This section defines the product behavior for the ETL Solutions management experience. The main focus is Mapping Studio: the workflow that lets a user upload or paste sample partner JSON, inspect the payload structure, define schemas, create mappings, test transformations, and publish versioned integration configuration.
+This section contains active product documentation for ETL Solutions.
 
-## Documents
+## Product Documents
 
 | Document | Purpose |
 |----------|---------|
-| [01-mapping-studio-product-requirements.md](./01-mapping-studio-product-requirements.md) | Product requirements, scope, personas, acceptance criteria |
-| [02-mapping-studio-ux-flow.md](./02-mapping-studio-ux-flow.md) | Screen-by-screen UX flow for sample JSON, schema, mapping, testing, and publishing |
-| [03-mapping-studio-api-data-model.md](./03-mapping-studio-api-data-model.md) | API contracts, domain entities, state model, and permissions |
-| [04-mapping-studio-validation-testing.md](./04-mapping-studio-validation-testing.md) | Validation pipeline, fixture strategy, test coverage, and quality gates |
-| [05-mapping-studio-implementation-plan.md](./05-mapping-studio-implementation-plan.md) | Delivery plan, architecture integration, milestones, and risks |
+| [overview.md](./overview.md) | Product overview, value proposition, use cases, status |
+| [roadmap.md](./roadmap.md) | Product fit, Mapping Studio strategy, roadmap, metrics |
+| [saas-requirements.md](./saas-requirements.md) | Multi-tenancy, billing, tenant onboarding, security |
 
-## Product Boundary
+## Mapping Studio Documents
 
-Mapping Studio is not a separate ETL engine. It is the management layer for producing safe, reviewable, versioned configuration consumed by the transformer service.
+Mapping Studio is the management UI for configuring partner integrations from sample JSON.
 
-It owns:
+| Document | Purpose |
+|----------|---------|
+| [01-mapping-studio-product-requirements.md](./01-mapping-studio-product-requirements.md) | Product requirements, personas, acceptance criteria |
+| [02-mapping-studio-ux-flow.md](./02-mapping-studio-ux-flow.md) | Screen-by-screen UX flow for sample JSON, schema, mapping, preview, review, publish |
+| [03-mapping-studio-api-data-model.md](./03-mapping-studio-api-data-model.md) | API contracts, domain entities, state model, permissions |
+| [04-mapping-studio-validation-testing.md](./04-mapping-studio-validation-testing.md) | Validation pipeline, fixtures, quality gates, test strategy |
+| [05-mapping-studio-implementation-plan.md](./05-mapping-studio-implementation-plan.md) | Delivery plan, architecture integration, milestones, risks |
 
-- Sample payload capture
-- JSON structure inspection
-- Input schema drafting
-- Source-to-canonical field mapping
-- JSONata generation and manual override
-- Fixture creation
-- Transformation preview
-- Validation runs
-- Review and publish workflow
-- Audit history for mapping changes
-
-It does not own:
-
-- Runtime Kafka consumption
-- Business event processing
-- Outbox publishing
-- Long-running data repair jobs
-- Partner authentication protocols outside the raw-event boundary
-
-## MVP Flow
+## Mapping Studio MVP Flow
 
 ```text
 Create partner/event
@@ -52,19 +37,16 @@ Create partner/event
     -> Publish immutable mapping version
 ```
 
-## Primary Users
+## Product Boundary
 
-- Integration engineers create and maintain mappings.
-- Business analysts review business meaning and field choices.
-- Platform architects govern canonical models and schema evolution.
-- SRE/operators inspect published versions and investigate failed transformations.
-- Tenant admins control access, approvals, and audit scope.
+Mapping Studio owns design-time configuration: samples, schemas, mapping rules, fixtures, validation runs, approvals, and published artifacts.
 
-## Success Criteria
+It does not own runtime Kafka consumption, business event processing, outbox publishing, or long-running data repair jobs.
 
-- A new partner event can be configured from sample JSON without writing adapter code.
-- Generated artifacts are compatible with the transformer service project structure.
-- Every published mapping version has fixtures, validation results, owner, reviewer, and audit history.
-- A non-developer can inspect field names, sample values, and required/optional choices without reading raw JSON only.
-- Runtime failures can be traced back to the mapping version, schema version, sample payload, and validation run that produced the published config.
+## See Also
+
+- [Architecture Overview](../architecture/01-overview.md)
+- [Transformation Layer](../architecture/05-transformation-layer.md)
+- [Mapping Versioning](../implementation/03-mapping-versioning.md)
+- [Transformer Node.js Guide](../implementation/TRANSFORMER_NODEJS_GUIDE.md)
 

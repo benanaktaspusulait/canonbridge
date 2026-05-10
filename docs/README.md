@@ -1,274 +1,110 @@
-# ETL Solutions - Complete Product Documentation
+# ETL Solutions Documentation
 
-**ETL Solutions** is a production-grade event transformation platform that enables rapid partner onboarding and reduces time-to-market for integration projects.
+This is the single active entry point for the ETL Solutions documentation. All documentation lives under `docs/`; root-level Markdown files have been moved here or archived to avoid duplicate navigation.
 
-## 🎯 What is ETL Solutions?
+## Start Here
 
-ETL Solutions transforms partner-specific JSON payloads into canonical business events using:
-- **JSONata** for flexible, configurable transformations
-- **Kafka** for reliable, scalable event streaming
-- **Node.js** for high-performance processing
-- **Ajv** for strict schema validation
+| Need | Read |
+|------|------|
+| Product overview | [product/overview.md](./product/overview.md) |
+| Product fit and roadmap | [product/roadmap.md](./product/roadmap.md) |
+| Mapping Studio management UI | [product/README.md](./product/README.md) |
+| First-time setup and concepts | [getting-started.md](./getting-started.md) |
+| Technology stack | [architecture/tech-stack.md](./architecture/tech-stack.md) |
+| Implementation plan | [implementation/roadmap.md](./implementation/roadmap.md) |
+| Archived/deprecated docs | [archive/README.md](./archive/README.md) |
 
-**Key Benefits**:
-- ✅ Onboard new partners in days, not weeks
-- ✅ Change mappings without code deployment
-- ✅ Handle 10,000+ messages/second
-- ✅ Zero data loss with idempotent processing
-- ✅ Production-ready with comprehensive monitoring
+## Active Documentation Map
 
-## 📚 Documentation Structure
+### Product
 
-This documentation is organized into logical sections for easy navigation and maintenance.
+- [Product Overview](./product/overview.md)
+- [Product Roadmap](./product/roadmap.md)
+- [SaaS Requirements](./product/saas-requirements.md)
+- [Mapping Studio Docs](./product/README.md)
 
-**For Product Overview**: See [PRODUCT_ROADMAP.md](./product/roadmap.md)
+Mapping Studio is the core management workflow: upload or paste sample JSON, inspect the inferred JSON tree, generate an input schema, map source fields to canonical fields, preview transformations, create fixtures, review, and publish immutable mapping versions.
 
-### 1. **Product** (`./product/`)
-Management UI and Mapping Studio product behavior.
+### Architecture
 
-- **[Product Documentation](./product/README.md)** - Product documentation index
-- **[Mapping Studio Requirements](./product/01-mapping-studio-product-requirements.md)** - Product scope, personas, functional requirements
-- **[Mapping Studio UX Flow](./product/02-mapping-studio-ux-flow.md)** - Sample JSON, schema builder, mapping, preview, review, publish screens
-- **[Mapping Studio API and Data Model](./product/03-mapping-studio-api-data-model.md)** - Domain model, endpoints, state transitions, artifact export
-- **[Mapping Studio Validation and Testing](./product/04-mapping-studio-validation-testing.md)** - Validation pipeline, fixtures, publish gates, test strategy
-- **[Mapping Studio Implementation Plan](./product/05-mapping-studio-implementation-plan.md)** - Delivery phases, modules, risks, definition of done
+- [Architecture Overview](./architecture/01-overview.md)
+- [Core Principles](./architecture/02-core-principles.md)
+- [Technology Decisions](./architecture/03-technology-decisions.md)
+- [Tech Stack](./architecture/tech-stack.md)
+- [Message Design](./architecture/04-message-design.md)
+- [Transformation Layer](./architecture/05-transformation-layer.md)
+- [Business Layer](./architecture/06-business-layer.md)
+- [Error Handling](./architecture/07-error-handling.md)
+- [Ordering and Dependencies](./architecture/08-ordering-dependencies.md)
+- [Outbox Pattern](./architecture/09-outbox-pattern.md)
+- [Risk Mitigation](./architecture/10-risk-mitigation.md)
 
-### 2. **Architecture** (`./architecture/`)
-Core architectural decisions and design principles.
+### Implementation
 
-- **[01-overview.md](./architecture/01-overview.md)** - Purpose and high-level architecture
-- **[02-core-principles.md](./architecture/02-core-principles.md)** - Main architectural principles
-- **[03-technology-decisions.md](./architecture/03-technology-decisions.md)** - Technology choices and rationale
-- **[04-message-design.md](./architecture/04-message-design.md)** - Message envelope and topic design
-- **[05-transformation-layer.md](./architecture/05-transformation-layer.md)** - JSONata and mapping strategy
-- **[06-business-layer.md](./architecture/06-business-layer.md)** - Business service and idempotency
-- **[07-error-handling.md](./architecture/07-error-handling.md)** - Error classification and DLQ strategy
-- **[08-ordering-dependencies.md](./architecture/08-ordering-dependencies.md)** - Kafka ordering and parent-child dependencies
-- **[09-outbox-pattern.md](./architecture/09-outbox-pattern.md)** - Transactional outbox pattern
-- **[10-risk-mitigation.md](./architecture/10-risk-mitigation.md)** - Risk analysis and mitigations
+- [Implementation Roadmap](./implementation/roadmap.md)
+- [Project Structure](./implementation/01-project-structure.md)
+- [Configuration](./implementation/02-configuration.md)
+- [Mapping Versioning](./implementation/03-mapping-versioning.md)
+- [Schema Validation](./implementation/04-schema-validation.md)
+- [Worker Pool](./implementation/05-worker-pool.md)
+- [Graceful Shutdown](./implementation/06-graceful-shutdown.md)
+- [Health Checks](./implementation/07-health-checks.md)
+- [Logging and Masking](./implementation/08-logging-masking.md)
+- [Metrics and Observability](./implementation/09-metrics-observability.md)
+- [Security](./implementation/10-security.md)
+- [Frontend React Guide](./implementation/FRONTEND_REACT_GUIDE.md)
+- [Forms Angular Guide](./implementation/FORMS_ANGULAR_GUIDE.md)
+- [Transformer Node.js Guide](./implementation/TRANSFORMER_NODEJS_GUIDE.md)
+- [Business Services Java/Quarkus Guide](./implementation/SERVICES_JAVA_QUARKUS_GUIDE.md)
 
-### 3. **Implementation** (`./implementation/`)
-Implementation patterns, code organization, and best practices.
+### Deployment
 
-- **[01-project-structure.md](./implementation/01-project-structure.md)** - Recommended project structure
-- **[02-configuration.md](./implementation/02-configuration.md)** - Configuration management
-- **[03-mapping-versioning.md](./implementation/03-mapping-versioning.md)** - Mapping versioning and deployment
-- **[04-schema-validation.md](./implementation/04-schema-validation.md)** - Schema validation with Ajv
-- **[05-worker-pool.md](./implementation/05-worker-pool.md)** - Worker pool implementation
-- **[06-graceful-shutdown.md](./implementation/06-graceful-shutdown.md)** - Graceful shutdown and rebalance handling
-- **[07-health-checks.md](./implementation/07-health-checks.md)** - Health check strategy
-- **[08-logging-masking.md](./implementation/08-logging-masking.md)** - Structured logging and PII masking
-- **[09-metrics-observability.md](./implementation/09-metrics-observability.md)** - Metrics and observability
-- **[10-security.md](./implementation/10-security.md)** - Security considerations
+- [Deployment Checklist](./deployment/01-deployment-checklist.md)
+- [Canary Deployment](./deployment/02-canary-deployment.md)
+- [Blue-Green Deployment](./deployment/03-blue-green-deployment.md)
+- [Rollback Procedure](./deployment/04-rollback-procedure.md)
+- [Database Migrations](./deployment/05-database-migrations.md)
+- [Kubernetes Manifests](./deployment/06-kubernetes-manifests.md)
+- [CI/CD Pipeline](./deployment/07-ci-cd-pipeline.md)
+- [Docker Compose Local](./deployment/DOCKER_COMPOSE_LOCAL.md)
+- [Kubernetes Deployment Guide](./deployment/KUBERNETES_DEPLOYMENT_GUIDE.md)
 
-### 4. **Operations** (`./operations/`)
-Operational procedures and runbooks.
+### Operations
 
-- **[01-monitoring-dashboards.md](./operations/01-monitoring-dashboards.md)** - Monitoring and dashboards
-- **[02-alerting-strategy.md](./operations/02-alerting-strategy.md)** - Alerting and thresholds
-- **[03-troubleshooting.md](./operations/03-troubleshooting.md)** - Troubleshooting procedures
-- **[04-scaling.md](./operations/04-scaling.md)** - Scaling procedures
-- **[05-maintenance.md](./operations/05-maintenance.md)** - Maintenance procedures
-- **[06-disaster-recovery.md](./operations/06-disaster-recovery.md)** - Disaster recovery procedures
-- **[07-performance-tuning.md](./operations/07-performance-tuning.md)** - Performance tuning
-- **[08-runbook.md](./operations/08-runbook.md)** - Quick reference runbook
+- [Monitoring Dashboards](./operations/01-monitoring-dashboards.md)
+- [Alerting Strategy](./operations/02-alerting-strategy.md)
+- [Troubleshooting](./operations/03-troubleshooting.md)
+- [Scaling](./operations/04-scaling.md)
+- [Maintenance](./operations/05-maintenance.md)
+- [Disaster Recovery](./operations/06-disaster-recovery.md)
+- [Performance Tuning](./operations/07-performance-tuning.md)
+- [Runbook](./operations/08-runbook.md)
 
-### 5. **Deployment** (`./deployment/`)
-Deployment strategies and procedures.
+### Testing
 
-- **[01-deployment-checklist.md](./deployment/01-deployment-checklist.md)** - Pre-deployment checklist
-- **[02-canary-deployment.md](./deployment/02-canary-deployment.md)** - Canary deployment strategy
-- **[03-blue-green-deployment.md](./deployment/03-blue-green-deployment.md)** - Blue-green deployment
-- **[04-rollback-procedure.md](./deployment/04-rollback-procedure.md)** - Rollback procedures
-- **[05-database-migrations.md](./deployment/05-database-migrations.md)** - Database migration strategy
-- **[06-kubernetes-manifests.md](./deployment/06-kubernetes-manifests.md)** - Kubernetes deployment examples
-- **[07-ci-cd-pipeline.md](./deployment/07-ci-cd-pipeline.md)** - CI/CD pipeline setup
+- [Unit Tests](./testing/01-unit-tests.md)
+- [Integration Tests](./testing/02-integration-tests.md)
+- [End-to-End Tests](./testing/03-e2e-tests.md)
+- [Load Tests](./testing/04-load-tests.md)
+- [Chaos Tests](./testing/05-chaos-tests.md)
+- [Contract Tests](./testing/06-contract-tests.md)
+- [Test Environment](./testing/07-test-environment.md)
 
-### 6. **Testing** (`./testing/`)
-Testing strategies and examples.
+## Role-Based Paths
 
-- **[01-unit-tests.md](./testing/01-unit-tests.md)** - Unit testing strategy
-- **[02-integration-tests.md](./testing/02-integration-tests.md)** - Integration testing
-- **[03-e2e-tests.md](./testing/03-e2e-tests.md)** - End-to-end testing
-- **[04-load-tests.md](./testing/04-load-tests.md)** - Load testing
-- **[05-chaos-tests.md](./testing/05-chaos-tests.md)** - Chaos and failure injection testing
-- **[06-contract-tests.md](./testing/06-contract-tests.md)** - Contract testing
-- **[07-test-environment.md](./testing/07-test-environment.md)** - Test environment setup
+| Role | Path |
+|------|------|
+| Product Manager | [product/overview.md](./product/overview.md) -> [product/roadmap.md](./product/roadmap.md) -> [product/README.md](./product/README.md) |
+| Frontend Developer | [product/02-mapping-studio-ux-flow.md](./product/02-mapping-studio-ux-flow.md) -> [implementation/FRONTEND_REACT_GUIDE.md](./implementation/FRONTEND_REACT_GUIDE.md) -> [implementation/FORMS_ANGULAR_GUIDE.md](./implementation/FORMS_ANGULAR_GUIDE.md) |
+| Backend Developer | [architecture/05-transformation-layer.md](./architecture/05-transformation-layer.md) -> [implementation/TRANSFORMER_NODEJS_GUIDE.md](./implementation/TRANSFORMER_NODEJS_GUIDE.md) -> [implementation/03-mapping-versioning.md](./implementation/03-mapping-versioning.md) |
+| DevOps/SRE | [deployment/DOCKER_COMPOSE_LOCAL.md](./deployment/DOCKER_COMPOSE_LOCAL.md) -> [deployment/KUBERNETES_DEPLOYMENT_GUIDE.md](./deployment/KUBERNETES_DEPLOYMENT_GUIDE.md) -> [operations/08-runbook.md](./operations/08-runbook.md) |
+| QA | [testing/07-test-environment.md](./testing/07-test-environment.md) -> [testing/01-unit-tests.md](./testing/01-unit-tests.md) -> [testing/03-e2e-tests.md](./testing/03-e2e-tests.md) |
 
-## 🎯 Quick Navigation
+## Maintenance Rules
 
-### By Role
+- Keep active documentation under `docs/`.
+- Use `docs/README.md` as the only active navigation hub.
+- Move deprecated or duplicate summaries to `docs/archive/`.
+- Do not create new root-level Markdown files.
+- Update this index whenever a new active document is added.
 
-**Architects & Tech Leads**
-- Start with: [Architecture Overview](./architecture/01-overview.md)
-- Then read: [Core Principles](./architecture/02-core-principles.md)
-- Reference: [Risk Mitigation](./architecture/10-risk-mitigation.md)
-
-**Developers**
-- Start with: [Project Structure](./implementation/01-project-structure.md)
-- Then read: [Configuration](./implementation/02-configuration.md)
-- Reference: [Testing Strategy](./testing/)
-
-**DevOps/SRE**
-- Start with: [Deployment Checklist](./deployment/01-deployment-checklist.md)
-- Then read: [Monitoring](./operations/01-monitoring-dashboards.md)
-- Reference: [Runbook](./operations/08-runbook.md)
-
-**Product Managers**
-- Start with: [Mapping Studio Requirements](./product/01-mapping-studio-product-requirements.md)
-- Then read: [Mapping Studio UX Flow](./product/02-mapping-studio-ux-flow.md)
-- Reference: [Product Roadmap](./product/roadmap.md)
-
-### By Task
-
-**Onboarding a New Partner**
-1. [Mapping Studio Requirements](./product/01-mapping-studio-product-requirements.md)
-2. [Mapping Studio UX Flow](./product/02-mapping-studio-ux-flow.md)
-3. [Mapping Versioning](./implementation/03-mapping-versioning.md)
-4. [Configuration](./implementation/02-configuration.md)
-
-**Uploading Sample JSON and Building a Mapping**
-1. [Mapping Studio UX Flow](./product/02-mapping-studio-ux-flow.md)
-2. [Mapping Studio API and Data Model](./product/03-mapping-studio-api-data-model.md)
-3. [Mapping Studio Validation and Testing](./product/04-mapping-studio-validation-testing.md)
-
-**Deploying to Production**
-1. [Deployment Checklist](./deployment/01-deployment-checklist.md)
-2. [Canary Deployment](./deployment/02-canary-deployment.md)
-3. [Monitoring](./operations/01-monitoring-dashboards.md)
-
-**Investigating Issues**
-1. [Troubleshooting](./operations/03-troubleshooting.md)
-2. [Runbook](./operations/08-runbook.md)
-3. [Monitoring](./operations/01-monitoring-dashboards.md)
-
-**Scaling the System**
-1. [Scaling Procedures](./operations/04-scaling.md)
-2. [Performance Tuning](./operations/07-performance-tuning.md)
-3. [Capacity Planning](./architecture/10-risk-mitigation.md)
-
-## 📋 Implementation Phases
-
-### Phase 1: MVP (Weeks 1-4)
-- Kafka consumer/producer
-- JSONata transformation
-- Ajv validation
-- DLQ and retry topics
-- Graceful shutdown
-- Health checks
-- Structured logging
-
-**Documentation**: [Architecture](./architecture/), [Implementation](./implementation/01-06)
-
-### Phase 2: Production Hardening (Weeks 5-8)
-- Worker pool
-- Circuit breaker
-- Partner rate limiting
-- Pending dependency table
-- Outbox pattern
-- Comprehensive monitoring
-- Chaos testing
-
-**Documentation**: [Implementation](./implementation/), [Testing](./testing/05)
-
-### Phase 3: Operational Excellence (Weeks 9-12)
-- Schema registry
-- Canary deployment
-- Advanced observability
-- Automated remediation
-- Self-healing capabilities
-
-**Documentation**: [Deployment](./deployment/02), [Operations](./operations/)
-
-## 🔍 Key Concepts
-
-### Message Flow
-```
-Partner System
-    ↓
-Kafka Raw Topic
-    ↓
-Transformer (JSONata + Ajv)
-    ↓
-Kafka Canonical Topic
-    ↓
-Business Service (Idempotent)
-    ↓
-Database + Outbox
-    ↓
-Kafka Business Events
-    ↓
-Downstream Services
-```
-
-### Error Handling
-```
-Invalid Data → DLQ
-Temporary Failure → Retry Topics
-Missing Parent → Pending Table
-Duplicate Event → Idempotent Success
-```
-
-### Deployment Strategy
-```
-Code Changes → CI/CD → Canary (5%) → 25% → 50% → 100%
-                                ↓
-                          Monitor Metrics
-                                ↓
-                          Auto-Rollback if Issues
-```
-
-## 📊 Document Statistics
-
-| Metric | Value |
-|--------|-------|
-| Total Sections | 35+ |
-| Code Examples | 50+ |
-| Tables | 30+ |
-| Checklists | 10+ |
-| Diagrams | 15+ |
-| Decision Points | 40+ |
-
-## 🚀 Getting Started
-
-1. **Read the Overview**: Start with [Architecture Overview](./architecture/01-overview.md)
-2. **Understand the Principles**: Review [Core Principles](./architecture/02-core-principles.md)
-3. **Plan Implementation**: Follow [Implementation Phases](#implementation-phases)
-4. **Set Up Development**: Use [Test Environment](./testing/07-test-environment.md)
-5. **Deploy Safely**: Follow [Deployment Checklist](./deployment/01-deployment-checklist.md)
-
-## 📝 Document Maintenance
-
-This documentation should be updated when:
-- New architectural decisions are made
-- Lessons learned from production
-- Technology versions change
-- New operational procedures are discovered
-- Performance tuning insights are gained
-- New failure scenarios are encountered
-
-**Recommended Review Cycle**: Quarterly
-
-## 🔗 Related Resources
-
-- **Original Comprehensive Document**: `_archive/nodejs-jsonata-kafka-integration-architecture-v6.md`
-- **Improvements Summary**: `_archive/DOCUMENT_IMPROVEMENTS.md`
-- **Git Ignore**: `.gitignore`
-
-## 📞 Support
-
-For questions or clarifications:
-1. Check the relevant documentation section
-2. Review the troubleshooting guide
-3. Consult the runbook for operational issues
-4. Contact the architecture team for design questions
-
-## 📄 License
-
-This documentation is part of the ETL Solutions project.
-
----
-
-**Last Updated**: May 10, 2026  
-**Version**: 1.0  
-**Status**: Production Ready

@@ -778,4 +778,4 @@ npm run docker:run
 
 ---
 
-**See Also**: [TECH_STACK_FINAL.md](../architecture/tech-stack.md), [Architecture Overview](../architecture/01-overview.md)
+**See Also**: [Tech Stack](../architecture/tech-stack.md), [Architecture Overview](../architecture/01-overview.md)

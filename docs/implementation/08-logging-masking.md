@@ -1,25 +1,67 @@
-# 08 logging masking
+# Logging and Masking
 
-This document covers implementation details for 08 logging masking.
+## Purpose
 
-## Overview
+Logs must help debug partner integration failures without leaking sensitive payload data. ETL Solutions uses structured logs with correlation IDs, partner metadata, mapping versions, and masked error context.
 
-[Content to be added]
+## Required Log Fields
 
-## Key Concepts
+- `timestamp`
+- `level`
+- `service`
+- `tenantId`
+- `partnerId`
+- `eventType`
+- `correlationId`
+- `messageId`
+- `mappingVersion`
+- `schemaVersion`
+- `stage`
+- `errorCode`
 
-[Content to be added]
+## Do Not Log
 
-## Implementation Examples
+- Full raw partner payloads.
+- Full canonical payloads with PII.
+- API keys, secrets, tokens, credentials.
+- Unmasked DLQ payload content.
 
-[Content to be added]
+## Masking Rules
 
-## Best Practices
+Mask fields matching:
 
-[Content to be added]
+- Email, phone, address, national ID, tax ID.
+- Card number, IBAN, account number.
+- Auth headers and tokens.
+- Tenant-defined sensitive paths.
 
----
+Example:
 
-**See Also**:
-- [Project Structure](./01-project-structure.md)
-- [Configuration](./02-configuration.md)
+```json
+{
+  "customer": {
+    "email": "***@example.com",
+    "phone": "***"
+  }
+}
+```
+
+## Log Events
+
+- `message_received`
+- `mapping_resolved`
+- `input_validation_failed`
+- `transformation_failed`
+- `canonical_validation_failed`
+- `canonical_published`
+- `dlq_written`
+- `retry_scheduled`
+- `shutdown_started`
+- `shutdown_completed`
+
+## See Also
+
+- [Security](./10-security.md)
+- [Troubleshooting](../operations/03-troubleshooting.md)
+- [Mapping Studio API and Data Model](../product/03-mapping-studio-api-data-model.md)
+

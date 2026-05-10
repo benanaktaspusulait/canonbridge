@@ -581,7 +581,7 @@ Total Duration: 32 weeks (8 months)
 
 ## 🔗 Related Documents
 
-- [Complete Documentation Summary](./COMPLETE_DOCUMENTATION_SUMMARY.md)
+- [Complete Documentation Summary](../archive/complete-documentation-summary.md)
 - [Product Transformation](../archive/product-transformation.md)
 - [Getting Started](../getting-started.md)
 - [Quick Start](../README.md)

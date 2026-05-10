@@ -68,9 +68,8 @@ See [../getting-started.md](../getting-started.md) for detailed walkthrough.
 |----------|---------|
 | [../getting-started.md](../getting-started.md) | Quick start guide (5-30 minutes) |
 | [roadmap.md](roadmap.md) | Product vision and timeline |
-| [../README.md](../README.md) | Navigation by role |
 | [../README.md](../README.md) | Complete documentation index |
-| [./](./) | Mapping Studio product and UX documentation |
+| [README.md](README.md) | Mapping Studio product and UX documentation |
 | [../architecture/](../architecture/) | Architecture decisions |
 | [../implementation/](../implementation/) | Implementation patterns |
 | [../operations/](../operations/) | Operational procedures |
@@ -347,7 +346,6 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ### Documentation
 - [../getting-started.md](../getting-started.md) - Quick start
 - [../README.md](../README.md) - Full documentation
-- [../README.md](../README.md) - Navigation by role
 
 ### Community
 - GitHub Issues
@@ -394,7 +392,7 @@ Built with:
 
 ---
 
-**Questions?** Check [../README.md](../README.md) or [../README.md](../README.md)
+**Questions?** Check [../README.md](../README.md)
 
 **Ready to get started?** → [../getting-started.md](../getting-started.md)
 

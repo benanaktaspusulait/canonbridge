@@ -350,4 +350,4 @@ npm run preview
 
 ---
 
-**See Also**: [TECH_STACK_FINAL.md](../architecture/tech-stack.md)
+**See Also**: [Tech Stack](../architecture/tech-stack.md)
