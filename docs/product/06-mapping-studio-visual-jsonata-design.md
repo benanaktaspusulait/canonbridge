@@ -1,50 +1,49 @@
-# CanonBridge Mapping Studio UI - Kapsamli Gorsel JSONata Tasarimi
+# CanonBridge Mapping Studio UI — comprehensive visual JSONata design
 
-> Bu dokuman, CanonBridge Mapping Studio'nun kullanici arayuzunu ve JSONata
-> becerilerinin gorsel olarak nasil sunulacagini tarif eder. Amac: kullanici
-> JSONata bilmeden mapping tasarlayabilmeli; ileri seviye kullanici isterse
-> ozel formulle JSONata yazabilmelidir.
+> This document describes the Mapping Studio user interface and how JSONata
+> capabilities are exposed visually. Goal: users can design mappings without knowing JSONata;
+> advanced users can still write JSONata with a custom formula mode when needed.
 >
-> Tarih: 10 Mayis 2026
+> Date: May 10, 2026
 
-## Icindekiler
+## Table of contents
 
-1. [Temel Prensip](#1-temel-prensip)
-2. [Ekran Tasarimlari](#2-ekran-tasarimlari)
-3. [Donusum Tipleri](#3-donusum-tipleri)
-4. [JSONata Yeteneklerinin Gorsel Karsiliklari](#4-jsonata-yeteneklerinin-gorsel-karsiliklari)
+1. [Core principle](#1-core-principle)
+2. [Screen designs](#2-screen-designs)
+3. [Transform types](#3-transform-types)
+4. [Visual equivalents of JSONata capabilities](#4-visual-equivalents-of-jsonata-capabilities)
 5. [JSONata Generator Service API](#5-jsonata-generator-service-api)
-6. [Kullanici Tipleri ve Izinler](#6-kullanici-tipleri-ve-izinler)
-7. [Ozel Formul Modu](#7-ozel-formul-modu)
-8. [Test ve Dogrulama](#8-test-ve-dogrulama)
-9. [Mimari Etkisi](#9-mimari-etkisi)
+6. [User types and permissions](#6-user-types-and-permissions)
+7. [Custom formula mode](#7-custom-formula-mode)
+8. [Testing and validation](#8-testing-and-validation)
+9. [Architecture impact](#9-architecture-impact)
 
-## 1. Temel Prensip
+## 1. Core principle
 
 ```text
-Kullanici JSONata bilmez, yazmaz, gormez (istemezse).
-Tum temel JSONata yetenekleri gorsel secimlerle kullanilabilir.
-Ileri seviye kullanicilar Ozel Formul modu ile JSONata yazabilir.
-Her gorsel secim, arka planda versioned visual_config ve JSONata script'ine donusur.
+The user does not know, write, or see JSONata (unless they want to).
+All core JSONata capabilities are available through visual choices.
+Advanced users can write JSONata in Custom Formula mode.
+Every visual selection becomes a versioned visual_config and JSONata script in the background.
 ```
 
-Mapping Studio iki seviyeli bir urun deneyimi sunar:
+Mapping Studio offers a two-level product experience:
 
-- **No-code mod**: Business Analyst ve operasyon kullanicilari sadece alan secer, donusum tipi belirler, onizleme/test sonucunu gorur.
-- **Advanced mod**: Integration Developer ve Admin rolleri JSONata script'ini gorur, editor uzerinden ozel formul yazabilir, helper function kullanimini inceleyebilir.
+- **No-code mode**: Business analysts and operations users select fields, pick a transform type, and see preview/test results.
+- **Advanced mode**: Integration developers and admins see the JSONata script, write custom formulas in the editor, and inspect helper usage.
 
-### JSONata Notasyonu
+### JSONata notation
 
-Bu dokumanda iki notasyon kullanilir:
+This document uses two notations:
 
-- **Native JSONata**: Runtime'da dogrudan calisacak ifade.
-- **Generator helper**: UI tarafinda okunurluk icin kullanilan ara kavram. Runtime'a cikmadan once native JSONata'ya compile edilmeli veya transformer runtime'a kontrollu custom function olarak register edilmelidir.
+- **Native JSONata**: Expression that runs directly in the runtime.
+- **Generator helper**: Intermediate concept in the UI for readability. It must compile to native JSONata before runtime, or be registered as a controlled custom function in the transformer runtime.
 
-Ornek: UI'daki "Enum Esleme" paneli urun dilinde `$switch` gibi dusunulebilir, ancak generated script native JSONata lookup/conditional kullanmalidir.
+Example: the UI “Enum mapping” panel can be thought of like `$switch` in product language, but the generated script should use native JSONata lookup/conditional.
 
-## 2. Ekran Tasarimlari
+## 2. Screen designs
 
-### 2.1 Ana Ekran: Mapping Listesi
+### 2.1 Main screen: mapping list
 
 ```text
 +----------------------------------------------------------------------------+
@@ -78,13 +77,13 @@ Ornek: UI'daki "Enum Esleme" paneli urun dilinde `$switch` gibi dusunulebilir, a
 +----------------------------------------------------------------------------+
 ```
 
-Ana ekranin asil gorevi kullaniciya uc seyi ayni anda gostermektir:
+The main screen’s job is to show three things at once:
 
-- Kaynak JSON agaci
-- Canonical hedef schema
-- Aktif mapping kurallari ve validasyon durumu
+- Source JSON tree
+- Canonical target schema
+- Active mapping rules and validation state
 
-### 2.2 Mapping Duzenleme Ekrani
+### 2.2 Mapping edit screen
 
 ```text
 +----------------------------------------------------------------------------+
@@ -112,7 +111,7 @@ Ana ekranin asil gorevi kullaniciya uc seyi ayni anda gostermektir:
 +----------------------------------------------------------------------------+
 ```
 
-Mapping editor tek bir hedef alanin nasil uretilecegini tanimlar. Her editor formu ayni sozlesmeyi uretir:
+The mapping editor defines how a single target field is produced. Every editor form emits the same contract:
 
 ```json
 {
@@ -123,9 +122,9 @@ Mapping editor tek bir hedef alanin nasil uretilecegini tanimlar. Her editor for
 }
 ```
 
-### 2.3 Donusum Tipi Secimi
+### 2.3 Transform type picker
 
-Donusum tipi secicisi sunlari desteklemelidir:
+The transform type selector should support:
 
 - Direct mapping
 - Constant value
@@ -141,85 +140,85 @@ Donusum tipi secicisi sunlari desteklemelidir:
 - Lookup
 - Advanced JSONata formula
 
-## 3. Donusum Tipleri
+## 3. Transform types
 
-### 3.1 Direct Mapping
+### 3.1 Direct mapping
 
-Kaynak alan oldugu gibi hedef alana aktarilir.
+The source field is copied as-is to the target field.
 
 ```jsonata
 order_header.order_id
 ```
 
-Gorsel panel:
+Visual panel:
 
-| Alan | Kontrol |
+| Field | Control |
 |------|---------|
 | Source field | SourceFieldSelector |
 | Target field | TargetFieldSelector |
-| Null davranisi | Optional: pass-through, null, error |
+| Null behavior | Optional: pass-through, null, error |
 
-### 3.2 Format Donusumu
+### 3.2 Format conversion
 
-Format donusumu tarih, sayi, metin ve boolean kategorilerini kapsar.
+Format conversion covers date, number, text, and boolean categories.
 
-#### Tarih Donusumu
+#### Date conversion
 
-Gorsel panel:
+Visual panel:
 
-| Ayar | Degerler |
+| Setting | Values |
 |------|----------|
 | Input format | ISO 8601, Unix ms, Unix seconds, custom picture |
 | Output format | ISO 8601, Unix ms, custom picture |
 | Timezone | Preserve, UTC, selected timezone |
 
-Native JSONata ornegi:
+Native JSONata example:
 
 ```jsonata
 $fromMillis($toMillis(order_header.order_date, "[Y0001]-[M01]-[D01]"))
 ```
 
-Unix seconds input icin:
+For Unix seconds input:
 
 ```jsonata
 $fromMillis($number(order_header.created_at) * 1000)
 ```
 
-#### Sayi Donusumu
+#### Number conversion
 
-Gorsel panel:
+Visual panel:
 
-| Ayar | Degerler |
+| Setting | Values |
 |------|----------|
 | Target type | number, integer, decimal string |
 | Rounding | floor, ceil, round, none |
 | Decimal places | integer input |
 
-Native JSONata ornegi:
+Native JSONata example:
 
 ```jsonata
 $floor($number(item.qty))
 ```
 
-Decimal output icin:
+For decimal output:
 
 ```jsonata
 $round($number(item.price), 2)
 ```
 
-### 3.3 Enum Esleme
+### 3.3 Enum mapping
 
-Kaynak enum degerleri canonical enum degerlerine cevrilir.
+Source enum values are mapped to canonical enum values.
 
-Gorsel panel:
+Visual panel:
 
-| Alan | Kontrol |
+| Field | Control |
 |------|---------|
 | Mapping table | from/to editable rows |
 | Unmatched behavior | default value, error, pass-through, null |
 | Case sensitivity | checkbox |
 
-Native JSONata ornegi:
+Native JSONata example:
 
 ```jsonata
 (
@@ -232,7 +231,7 @@ Native JSONata ornegi:
 )
 ```
 
-DLQ'ya dusmesi gereken durumda generator runtime helper kullanabilir:
+When the outcome should land in DLQ, the generator may use a runtime helper:
 
 ```jsonata
 (
@@ -241,37 +240,37 @@ DLQ'ya dusmesi gereken durumda generator runtime helper kullanabilir:
 )
 ```
 
-### 3.4 Varsayilan Deger
+### 3.4 Default value
 
-Kaynak alan bos, null veya eksikse alternatif deger uretilir.
+When the source field is empty, null, or missing, an alternate value is produced.
 
-Gorsel panel:
+Visual panel:
 
-| Ayar | Degerler |
+| Setting | Values |
 |------|----------|
 | Strategy | constant, fallback field, null, error |
 | Nullish values | null, empty string, missing, zero, false |
 | Constant value | typed input |
 
-Native JSONata ornegi:
+Native JSONata example:
 
 ```jsonata
 ($exists(customer.email) and customer.email != "") ? customer.email : "no-reply@test.com"
 ```
 
-Fallback field ornegi:
+Fallback field example:
 
 ```jsonata
 ($exists(customer.email) and customer.email != "") ? customer.email : customer.backup_email
 ```
 
-### 3.5 Kosullu Deger
+### 3.5 Conditional value
 
-If/else, else-if zinciri ve compound condition desteklenir.
+If/else, else-if chains, and compound conditions are supported.
 
-Gorsel panel:
+Visual panel:
 
-| Alan | Kontrol |
+| Field | Control |
 |------|---------|
 | IF field | SourceFieldSelector |
 | Operator | equals, notEquals, gt, gte, lt, lte, contains, exists, regex |
@@ -279,13 +278,13 @@ Gorsel panel:
 | THEN result | constant, field, formula |
 | ELSE result | constant, field, formula |
 
-Native JSONata ornegi:
+Native JSONata example:
 
 ```jsonata
 order_detail.total_amount > 1000 ? "HIGH" : "NORMAL"
 ```
 
-Else-if ornegi:
+Else-if example:
 
 ```jsonata
 order_detail.total_amount > 10000 ? "CRITICAL" :
@@ -294,26 +293,26 @@ order_detail.total_amount > 100 ? "MEDIUM" :
 "LOW"
 ```
 
-### 3.6 Alan Birlestirme
+### 3.6 Field concatenation
 
-Birden fazla alan ve sabit metin tek string'e donusturulur.
+Multiple fields and literal text are combined into one string.
 
-Gorsel panel:
+Visual panel:
 
-| Alan | Kontrol |
+| Field | Control |
 |------|---------|
 | Parts | ordered field/constant rows |
 | Separator | none, space, comma, dash, custom |
 | Skip empty | checkbox |
 | Trim result | checkbox |
 
-Native JSONata ornegi:
+Native JSONata example:
 
 ```jsonata
 customer.address_line1 & ", " & customer.city & ", " & customer.country
 ```
 
-Bos alanlari atlama ornegi:
+Example skipping empty fields:
 
 ```jsonata
 $join(
@@ -326,36 +325,36 @@ $join(
 )
 ```
 
-### 3.7 Matematiksel Islem
+### 3.7 Mathematical operation
 
-Toplama, cikarma, carpma, bolme, mod, yuvarlama ve array aggregate desteklenir.
+Addition, subtraction, multiplication, division, mod, rounding, and array aggregates are supported.
 
-Gorsel panel:
+Visual panel:
 
-| Ayar | Degerler |
+| Setting | Values |
 |------|----------|
 | Operation | add, subtract, multiply, divide, mod, sum, min, max, average |
 | Operands | field, constant, array field |
 | Output rounding | none, floor, ceil, round |
 | Decimal places | integer input |
 
-Native JSONata ornegi:
+Native JSONata example:
 
 ```jsonata
 $round($number(item.qty) * $number(item.price), 2)
 ```
 
-Array toplam ornegi:
+Array sum example:
 
 ```jsonata
 $sum(order_detail.line_items.($number(price)))
 ```
 
-### 3.8 String Islemi
+### 3.8 String operation
 
-Metin normalize etme, temizleme, parcalama ve regex islemleri desteklenir.
+Normalize, clean, split, and regex operations are supported.
 
-Gorsel panel:
+Visual panel:
 
 | Operation | Native JSONata pattern |
 |-----------|------------------------|
@@ -369,11 +368,11 @@ Gorsel panel:
 | Contains | `$contains(customer.email, "@")` |
 | Regex match | `$match(customer.email, /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i)` |
 
-Title case native JSONata'da dogrudan built-in degildir. Generator bunu ya custom helper olarak register etmeli ya da Advanced Formula altinda sinirli bir helper setiyle sunmalidir.
+Title case is not a built-in in native JSONata. The generator should register a custom helper or expose a limited helper set under Advanced Formula.
 
-### 3.9 Array Islemleri
+### 3.9 Array operations
 
-Array map, filter, sort, count, sum, distinct, first, last ve nth desteklenir.
+Array map, filter, sort, count, sum, distinct, first, last, and nth are supported.
 
 #### Map
 
@@ -387,7 +386,7 @@ order_detail.line_items.{
 }
 ```
 
-#### Filter + Map
+#### Filter + map
 
 ```jsonata
 order_detail.line_items[status = "ACTIVE"].{
@@ -399,7 +398,7 @@ order_detail.line_items[status = "ACTIVE"].{
 
 #### Sort
 
-JSONata order-by operatorunde `<` ascending, `>` descending olarak kullanilir.
+In JSONata order-by, `<` is ascending and `>` is descending.
 
 ```jsonata
 order_detail.line_items^(<created_at)
@@ -411,7 +410,7 @@ Descending:
 order_detail.line_items^(>created_at)
 ```
 
-#### First, Last, Nth
+#### First, last, nth
 
 ```jsonata
 order_detail.line_items[0].product_code
@@ -425,9 +424,9 @@ order_detail.line_items[-1].product_code
 order_detail.line_items[3].product_code
 ```
 
-### 3.10 Nested Object
+### 3.10 Nested object
 
-Hedef alan object ise alt alan mapping'leri ayni editor mantigiyla tanimlanir.
+When the target field is an object, child field mappings use the same editor model.
 
 ```jsonata
 {
@@ -444,12 +443,12 @@ Hedef alan object ise alt alan mapping'leri ayni editor mantigiyla tanimlanir.
 
 ### 3.11 Lookup
 
-Lookup iki sekilde sunulabilir:
+Lookup can be offered in two ways:
 
-- Static lookup: mapping config icindeki lookup tablosu.
-- Managed lookup: runtime tarafinda versioned reference data.
+- **Static lookup**: lookup table inside mapping config.
+- **Managed lookup**: versioned reference data at runtime.
 
-Static lookup ornegi:
+Static lookup example:
 
 ```jsonata
 $lookup({
@@ -458,66 +457,66 @@ $lookup({
 }, item.product_code)
 ```
 
-Managed lookup generator helper gerektirir:
+Managed lookup requires a generator helper:
 
 ```jsonata
 $lookupRef("product-catalog", item.product_code)
 ```
 
-`$lookupRef` native JSONata degildir; transformer runtime'a custom function olarak eklenmelidir.
+`$lookupRef` is not native JSONata; it must be added to the transformer runtime as a custom function.
 
-## 4. JSONata Yeteneklerinin Gorsel Karsiliklari
+## 4. Visual equivalents of JSONata capabilities
 
-| # | JSONata yetenegi | Gorsel karsilik | Donusum tipi | Not |
+| # | JSONata capability | Visual equivalent | Transform type | Note |
 |---|------------------|-----------------|--------------|-----|
-| 1 | `field` | Kaynak alan secimi | Direct mapping | Native |
-| 2 | `"string"`, `123`, `true` | Sabit deger | Constant value | Native |
-| 3 | `$number(value)` | Sayi donusumu | Format conversion | Native |
-| 4 | `$string(value)` | Metin donusumu | Format conversion | Native |
-| 5 | `$boolean(value)` | Boolean donusumu | Format conversion | Native |
-| 6 | `$toMillis(date, picture)` | Tarih parse | Format conversion | Native |
-| 7 | `$fromMillis(ms, picture, timezone)` | Tarih formatla | Format conversion | Native |
-| 8 | `$now()` | Simdiki zaman | Constant/date | Native |
-| 9 | `$millis()` | Simdiki zaman ms | Constant/date | Native |
+| 1 | `field` | Source field selection | Direct mapping | Native |
+| 2 | `"string"`, `123`, `true` | Constant value | Constant value | Native |
+| 3 | `$number(value)` | Number conversion | Format conversion | Native |
+| 4 | `$string(value)` | Text conversion | Format conversion | Native |
+| 5 | `$boolean(value)` | Boolean conversion | Format conversion | Native |
+| 6 | `$toMillis(date, picture)` | Date parse | Format conversion | Native |
+| 7 | `$fromMillis(ms, picture, timezone)` | Date format | Format conversion | Native |
+| 8 | `$now()` | Current time | Constant/date | Native |
+| 9 | `$millis()` | Current time ms | Constant/date | Native |
 | 10 | `$lookup(obj, key)` | Enum/lookup | Enum mapping | Native |
-| 11 | `$exists(value)` | Eksik/null kontrolu | Default/condition | Native |
+| 11 | `$exists(value)` | Missing/null check | Default/condition | Native |
 | 12 | `condition ? then : else` | If/else | Conditional value | Native |
-| 13 | `a & b` | Alan birlestirme | Concatenation | Native |
-| 14 | `$join(array, sep)` | Dizi birlestirme | Concatenation | Native |
-| 15 | `+ - * / %` | Matematik | Mathematical operation | Native |
-| 16 | `$round`, `$floor`, `$ceil`, `$abs` | Yuvarlama | Mathematical operation | Native |
-| 17 | `$uppercase`, `$lowercase` | Harf donusumu | String operation | Native |
-| 18 | `$trim`, `$pad` | Bosluk/doldurma | String operation | Native |
-| 19 | `$replace` | Degistir | String operation | Native |
-| 20 | `$substring` | Alt string | String operation | Native |
-| 21 | `$split` | Bol | String operation | Native |
-| 22 | `$length` | Uzunluk | String operation | Native |
-| 23 | `$match` | Regex eslesme | String operation | Native |
-| 24 | `$contains` | Icerir | String operation | Native |
-| 25 | `array.{...}` | Her elemani donustur | Array map | Native |
-| 26 | `array[condition]` | Filtrele | Array filter | Native |
-| 27 | `array^(<field)` | Artan sirala | Array sort | Native |
-| 28 | `array^(>field)` | Azalan sirala | Array sort | Native |
-| 29 | `$count(array)` | Eleman sayisi | Array count | Native |
-| 30 | `$sum(array.field)` | Toplam | Array sum | Native |
-| 31 | `$max`, `$min` | Maks/min | Array aggregate | Native |
-| 32 | `$average` | Ortalama | Array aggregate | Native |
-| 33 | `$distinct` | Tekillestir | Array distinct | Native |
-| 34 | `array[n]` | Belirli indeks | Array nth | Native |
-| 35 | `array[0]`, `array[-1]` | Ilk/son eleman | Array first/last | Native |
-| 36 | `{ "key": value }` | Ic ice nesne | Nested object | Native |
-| 37 | `$merge([obj1, obj2])` | Nesne birlestir | Nested object | Native |
-| 38 | `$keys(obj)` | Alan listesi | Advanced formula | Native |
-| 39 | `$type(value)` | Tip kontrolu | Advanced formula | Native |
-| 40 | `$error(message)` | Hata uret | Advanced formula | Native |
+| 13 | `a & b` | Field concatenation | Concatenation | Native |
+| 14 | `$join(array, sep)` | Array join | Concatenation | Native |
+| 15 | `+ - * / %` | Math | Mathematical operation | Native |
+| 16 | `$round`, `$floor`, `$ceil`, `$abs` | Rounding | Mathematical operation | Native |
+| 17 | `$uppercase`, `$lowercase` | Case conversion | String operation | Native |
+| 18 | `$trim`, `$pad` | Padding/whitespace | String operation | Native |
+| 19 | `$replace` | Replace | String operation | Native |
+| 20 | `$substring` | Substring | String operation | Native |
+| 21 | `$split` | Split | String operation | Native |
+| 22 | `$length` | Length | String operation | Native |
+| 23 | `$match` | Regex match | String operation | Native |
+| 24 | `$contains` | Contains | String operation | Native |
+| 25 | `array.{...}` | Transform each element | Array map | Native |
+| 26 | `array[condition]` | Filter | Array filter | Native |
+| 27 | `array^(<field)` | Sort ascending | Array sort | Native |
+| 28 | `array^(>field)` | Sort descending | Array sort | Native |
+| 29 | `$count(array)` | Element count | Array count | Native |
+| 30 | `$sum(array.field)` | Sum | Array sum | Native |
+| 31 | `$max`, `$min` | Max/min | Array aggregate | Native |
+| 32 | `$average` | Average | Array aggregate | Native |
+| 33 | `$distinct` | Distinct | Array distinct | Native |
+| 34 | `array[n]` | Specific index | Array nth | Native |
+| 35 | `array[0]`, `array[-1]` | First/last element | Array first/last | Native |
+| 36 | `{ "key": value }` | Nested object | Nested object | Native |
+| 37 | `$merge([obj1, obj2])` | Merge objects | Nested object | Native |
+| 38 | `$keys(obj)` | Field list | Advanced formula | Native |
+| 39 | `$type(value)` | Type check | Advanced formula | Native |
+| 40 | `$error(message)` | Raise error | Advanced formula | Native |
 | 41 | `$assert(condition, message)` | Assertion | Advanced formula | Native |
-| 42 | `$eval(expr)` | Dinamik degerlendirme | Advanced formula | Riskli, varsayilan kapali |
+| 42 | `$eval(expr)` | Dynamic evaluation | Advanced formula | Risky, default off |
 | 43 | `$lookupRef(table, key)` | Managed reference lookup | Lookup | Custom helper |
-| 44 | `$titlecase(value)` | Bas harfleri buyut | String operation | Custom helper |
+| 44 | `$titlecase(value)` | Title case | String operation | Custom helper |
 
 ## 5. JSONata Generator Service API
 
-### 5.1 Generate Endpoint
+### 5.1 Generate endpoint
 
 ```http
 POST /api/mapping/generate
@@ -691,7 +690,7 @@ Response:
 }
 ```
 
-### 5.2 Test Endpoint
+### 5.2 Test endpoint
 
 ```http
 POST /api/mapping/test
@@ -723,7 +722,7 @@ Response:
 }
 ```
 
-### 5.3 Save Draft Endpoint
+### 5.3 Save draft endpoint
 
 ```http
 POST /api/mapping-drafts
@@ -742,31 +741,31 @@ Request:
 }
 ```
 
-### 5.4 Publish Endpoint
+### 5.4 Publish endpoint
 
 ```http
 POST /api/mapping-drafts/{draftId}/publish
 ```
 
-Publish isleminden once:
+Before publish:
 
-- JSONata syntax validation gecmeli.
-- En az bir valid fixture gecmeli.
-- Required canonical alanlar mapped veya waived olmali.
-- Generated artifact transformer service layout ile uyumlu olmali.
-- Admin veya Lead Developer onayi bulunmali.
+- JSONata syntax validation must pass.
+- At least one valid fixture must pass.
+- Required canonical fields must be mapped or explicitly waived.
+- Generated artifacts must match the transformer service layout.
+- Admin or lead developer approval must be recorded.
 
-## 6. Kullanici Tipleri ve Izinler
+## 6. User types and permissions
 
-| Rol | Yetkiler |
+| Role | Permissions |
 |-----|----------|
-| Business Analyst | Mapping listesini gorur, yeni mapping ekler, duzenler, test eder, taslak kaydeder. JSONata gormez. Yayinlayamaz. |
-| Integration Developer | Business Analyst yetkileri + Advanced Formula modu + generated JSONata goruntuleme + mapping silme. |
-| Lead Developer / Admin | Her sey + yayinlama onayi + version yonetimi + kullanici/izin yonetimi. |
+| Business analyst | View mapping list, add/edit mappings, test, save draft. Cannot see JSONata. Cannot publish. |
+| Integration developer | Business analyst permissions + Advanced Formula mode + view generated JSONata + delete mappings. |
+| Lead developer / admin | Everything + publish approval + version management + user/permission management. |
 
-## 7. Ozel Formul Modu
+## 7. Custom formula mode
 
-Advanced Formula modu sadece yetkili rollerde acilmalidir.
+Advanced Formula mode should only be enabled for authorized roles.
 
 ```text
 +--------------------------------------------------------------------------+
@@ -784,7 +783,7 @@ Advanced Formula modu sadece yetkili rollerde acilmalidir.
 +--------------------------------------------------------------------------+
 ```
 
-Editor beklentileri:
+Editor expectations:
 
 - Syntax highlighting
 - Autocomplete for source fields
@@ -793,17 +792,17 @@ Editor beklentileri:
 - Read-only generated JSONata preview for no-code mappings
 - Diff view between generated formula versions
 
-`$eval` ve benzeri dinamik fonksiyonlar varsayilan olarak kapali olmalidir. Kullanilacaksa feature flag, role permission ve audit log zorunlu olmalidir.
+`$eval` and similar dynamic functions should be off by default. If enabled, require feature flag, role permission, and audit logging.
 
-## 8. Test ve Dogrulama
+## 8. Testing and validation
 
-### 8.1 Test Akisi
+### 8.1 Test flow
 
 ```text
-Kullanici mapping'i duzenler
+User edits mapping
         |
         v
-Test butonu
+Test button
         |
         v
 POST /api/mapping/test
@@ -812,53 +811,53 @@ POST /api/mapping/test
 JSONata evaluate + canonical schema validation
         |
         v
-UI sonucu gosterir
+UI shows result
 ```
 
-Sonuc durumlari:
+Result states:
 
-- **Pass**: Output canonical schema'ya uygun.
-- **Warning**: Output valid ancak riskli bos alan, fallback veya pass-through var.
-- **Fail**: JSONata syntax/runtime hatasi veya canonical validation hatasi var.
+- **Pass**: Output conforms to canonical schema.
+- **Warning**: Output is valid but has risky empty fields, fallbacks, or pass-through.
+- **Fail**: JSONata syntax/runtime error or canonical validation error.
 
-### 8.2 Sample Veri Kaynaklari
+### 8.2 Sample data sources
 
-| Kaynak | Kullanimi |
+| Source | Usage |
 |--------|-----------|
-| Manual JSON | Kullanici editor ile sample girer. |
-| Uploaded sample | Partner payload dosyasi yuklenir. |
-| Recent messages | Son N partner mesaji test icin kullanilir. |
-| DLQ messages | Hata alan payload mapping duzeltme icin acilir. |
-| Saved fixtures | Regression test senaryolari olarak saklanir. |
+| Manual JSON | User enters sample in the editor. |
+| Uploaded sample | Partner payload file uploaded. |
+| Recent messages | Last N partner messages used for testing. |
+| DLQ messages | Failed payloads opened to fix mappings. |
+| Saved fixtures | Stored as regression scenarios. |
 
-### 8.3 Fixture Tipleri
+### 8.3 Fixture types
 
 - Happy path
-- Eksik optional alanlar
-- Hatalı format
-- Bos array
-- Null degerler
-- Cok uzun string
-- Negatif sayi
+- Missing optional fields
+- Invalid format
+- Empty array
+- Null values
+- Very long string
+- Negative number
 - Unknown enum
 - Duplicate line item
 
-### 8.4 Quality Gates
+### 8.4 Quality gates
 
-Publish oncesi minimum gate'ler:
+Minimum gates before publish:
 
 - JSONata syntax valid.
 - Generated JSONata deterministic.
 - Required canonical fields covered.
 - At least one valid fixture passed.
-- Invalid fixture expected failure ile passed.
-- Runtime duration threshold altinda.
-- PII masking preview/test loglarinda aktif.
-- Audit log kaydi olustu.
+- Invalid fixture cases fail as expected.
+- Runtime duration under threshold.
+- PII masking active in preview/test logs.
+- Audit log entry created.
 
-## 9. Mimari Etkisi
+## 9. Architecture impact
 
-### 9.1 Yeni UI Bilesenleri
+### 9.1 New UI components
 
 ```text
 canonbridge-ui/
@@ -899,7 +898,7 @@ canonbridge-ui/
         ValidationBadge.tsx
 ```
 
-### 9.2 Yeni Backend Bilesenleri
+### 9.2 New backend components
 
 ```text
 partner-transformer-service/
@@ -915,7 +914,7 @@ partner-transformer-service/
       mapping-studio.ts
 ```
 
-### 9.3 Veri Akisi
+### 9.3 Data flow
 
 ```text
 User
@@ -935,7 +934,7 @@ Transformer
   -> mapping cache refresh
 ```
 
-### 9.4 Mapping Storage
+### 9.4 Mapping storage
 
 ```sql
 CREATE TABLE mapping_definitions (
@@ -969,17 +968,17 @@ CREATE TABLE mapping_test_results (
 );
 ```
 
-### 9.5 Uygulama Sirasi
+### 9.5 Implementation order
 
-1. Visual config type modelini tanimla.
-2. Direct, default, enum, conditional, string, math generatorlarini yaz.
-3. Array map/filter/sort generatorlarini ekle.
-4. Nested object composition'i ekle.
-5. Test endpoint'i JSONata evaluate + schema validation ile bagla.
-6. UI'da source tree, target schema ve mapping editor panellerini kur.
-7. Advanced Formula editorunu role-gated yap.
-8. Publish gate'lerini ve audit log'u ekle.
+1. Define the visual config type model.
+2. Implement generators for direct, default, enum, conditional, string, and math.
+3. Add array map/filter/sort generators.
+4. Add nested object composition.
+5. Wire the test endpoint to JSONata evaluate + schema validation.
+6. Build source tree, target schema, and mapping editor panels in the UI.
+7. Gate the Advanced Formula editor by role.
+8. Add publish gates and audit logging.
 
-## Son Not
+## Closing note
 
-Mapping Studio'nun urun vaadi JSONata'yi saklamak degil, JSONata'nin gucunu guvenli ve tekrar edilebilir bir urun deneyimine cevirmektir. Business Analyst icin sistem "alan sec, kural sec, test et" kadar basit gorunmeli; Integration Developer icin ise generated JSONata, fixture, validation ve publish pipeline'i tam kontrol edilebilir olmalidir.
+The product promise of Mapping Studio is not to hide JSONata, but to channel JSONata’s power into a safe, repeatable product experience. For business analysts the system should feel as simple as “pick field, pick rule, test”; for integration developers, generated JSONata, fixtures, validation, and the publish pipeline must remain fully controllable.

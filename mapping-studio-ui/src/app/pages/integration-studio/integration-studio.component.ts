@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { JsonPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -15,6 +15,8 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { MessageModule } from 'primeng/message';
 import { InputTextModule } from 'primeng/inputtext';
+import { I18nPipe } from '../../core/i18n/i18n.pipe';
+import { I18nService } from '../../core/i18n/i18n.service';
 
 export type TransformKind =
   | 'direct'
@@ -208,17 +210,20 @@ function applyDateFormat(value: unknown, inFmt: string, outFmt: string): string 
     TooltipModule,
     ToggleSwitchModule,
     MessageModule,
-    InputTextModule
+    InputTextModule,
+    I18nPipe
   ],
   templateUrl: './integration-studio.component.html',
   styleUrl: './integration-studio.component.scss'
 })
 export class IntegrationStudioComponent implements OnInit {
+  private readonly i18n = inject(I18nService);
+
   readonly steps = [
-    { id: 0, label: 'Source payload' },
-    { id: 1, label: 'Canonical schema' },
-    { id: 2, label: 'Field mapping' },
-    { id: 3, label: 'Validate & publish' }
+    { id: 0, labelKey: 'studio.step.source' },
+    { id: 1, labelKey: 'studio.step.canonical' },
+    { id: 2, labelKey: 'studio.step.mapping' },
+    { id: 3, labelKey: 'studio.step.validate' }
   ];
 
   activeStep = signal(0);
@@ -235,20 +240,29 @@ export class IntegrationStudioComponent implements OnInit {
   validationMessages = signal<string[]>([]);
   published = signal(false);
 
-  readonly transformOptions: { label: string; value: TransformKind }[] = [
-    { label: 'Direct map', value: 'direct' },
-    { label: 'Format date', value: 'date_format' },
-    { label: 'Enum map', value: 'enum_map' },
-    { label: 'Number coercion', value: 'number_coerce' },
-    { label: 'Default value', value: 'default_value' },
-    { label: 'Combine fields', value: 'combine' }
-  ];
+  readonly transformOptions = computed(() => {
+    this.i18n.translations();
+    const kinds: TransformKind[] = [
+      'direct',
+      'date_format',
+      'enum_map',
+      'number_coerce',
+      'default_value',
+      'combine'
+    ];
+    return kinds.map(value => ({
+      value,
+      label: this.i18n.translate(`studio.transform.${value}`)
+    }));
+  });
 
-  readonly fieldTypeOptions = [
-    { label: 'String', value: 'string' },
-    { label: 'Number', value: 'number' },
-    { label: 'Date', value: 'date' }
-  ];
+  readonly fieldTypeOptions = computed(() => {
+    this.i18n.translations();
+    return (['string', 'number', 'date'] as const).map(value => ({
+      value,
+      label: this.i18n.translate(`studio.fieldType.${value}`)
+    }));
+  });
 
   readonly sourcePathOptions = computed(() =>
     this.sourcePaths().map(p => ({ label: p, value: p }))
@@ -296,7 +310,9 @@ export class IntegrationStudioComponent implements OnInit {
     } catch (e) {
       this.treeNodes.set([]);
       this.sourcePaths.set([]);
-      this.parseError.set(e instanceof Error ? e.message : 'Invalid JSON');
+      this.parseError.set(
+        e instanceof Error ? e.message : this.i18n.translate('studio.invalidJson')
+      );
     }
   }
 
@@ -359,7 +375,9 @@ export class IntegrationStudioComponent implements OnInit {
     try {
       payload = JSON.parse(this.sourceJson());
     } catch (e) {
-      this.parseError.set(e instanceof Error ? e.message : 'Invalid JSON');
+      this.parseError.set(
+        e instanceof Error ? e.message : this.i18n.translate('studio.invalidJson')
+      );
       return;
     }
 
@@ -408,11 +426,11 @@ export class IntegrationStudioComponent implements OnInit {
       const v = out[f.key];
       if (v === null || v === undefined || v === '') {
         ok = false;
-        messages.push(`Missing required target field “${f.key}”.`);
+        messages.push(this.i18n.translate('studio.validation.missing', { field: f.key }));
       }
     }
     if (ok) {
-      messages.push('All required canonical fields are present.');
+      messages.push(this.i18n.translate('studio.validation.allPresent'));
     }
     this.validationOk.set(ok);
     this.validationMessages.set(messages);

@@ -1,53 +1,61 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">Dashboard</h1>
-    <p class="page-subtitle">
-      Operational snapshot of CanonBridge — metrics below are illustrative for demo purposes.
-    </p>
+    <h1 class="page-title">{{ 'dashboard.title' | i18n }}</h1>
+    <p class="page-subtitle">{{ 'dashboard.subtitle' | i18n }}</p>
   </div>
   <div class="page-actions">
-    <p-button label="Integration Studio" icon="pi pi-objects-column" routerLink="/studio" />
-    <p-button label="Monitoring" icon="pi pi-chart-line" variant="outlined" severity="secondary" routerLink="/monitoring" />
+    <p-button [label]="'dashboard.studio' | i18n" icon="pi pi-objects-column" routerLink="/studio" />
+    <p-button
+      [label]="'dashboard.monitoring' | i18n"
+      icon="pi pi-chart-line"
+      variant="outlined"
+      severity="secondary"
+      routerLink="/monitoring" />
   </div>
 </div>
 
-<!-- Stat cards -->
 <div class="stats-grid">
-  @for (stat of stats; track stat.label) {
+  @for (stat of stats; track stat.labelKey) {
     <div class="stat-card">
       <div class="stat-icon" [style.background]="stat.iconBg">
         <i class="pi {{ stat.icon }}"></i>
       </div>
       <div class="stat-body">
         <div class="stat-value">{{ stat.value }}</div>
-        <div class="stat-label">{{ stat.label }}</div>
-        <div class="stat-change" [class]="stat.changeType">{{ stat.change }}</div>
+        <div class="stat-label">{{ stat.labelKey | i18n }}</div>
+        <div class="stat-change" [class]="stat.changeType">{{ stat.changeKey | i18n }}</div>
       </div>
     </div>
   }
 </div>
 
-<!-- Recent mappings -->
 <p-card styleClass="mt-4">
   <ng-template pTemplate="header">
     <div class="card-header-row">
       <div>
-        <h2 class="card-title">Recent Mappings</h2>
-        <p class="card-subtitle">Latest mapping activity across all partners</p>
+        <h2 class="card-title">{{ 'dashboard.recentTitle' | i18n }}</h2>
+        <p class="card-subtitle">{{ 'dashboard.recentSubtitle' | i18n }}</p>
       </div>
-      <p-button label="View All" icon="pi pi-arrow-right" iconPos="right" variant="outlined" severity="secondary" size="small" routerLink="/mappings" />
+      <p-button
+        [label]="'dashboard.viewAll' | i18n"
+        icon="pi pi-arrow-right"
+        iconPos="right"
+        variant="outlined"
+        severity="secondary"
+        size="small"
+        routerLink="/mappings" />
     </div>
   </ng-template>
 
   <p-table [value]="recentMappings" styleClass="p-datatable-sm">
     <ng-template pTemplate="header">
       <tr>
-        <th>Partner</th>
-        <th>Event Type</th>
-        <th>Version</th>
-        <th>Status</th>
-        <th>Last Modified</th>
-        <th>By</th>
+        <th>{{ 'table.partner' | i18n }}</th>
+        <th>{{ 'table.eventType' | i18n }}</th>
+        <th>{{ 'table.version' | i18n }}</th>
+        <th>{{ 'table.status' | i18n }}</th>
+        <th>{{ 'table.lastModified' | i18n }}</th>
+        <th>{{ 'table.by' | i18n }}</th>
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-m>
@@ -55,7 +63,9 @@
         <td><code class="partner-code">{{ m.partner }}</code></td>
         <td><code class="event-code">{{ m.eventType }}</code></td>
         <td><span class="version-badge">{{ m.version }}</span></td>
-        <td><p-tag [severity]="getSeverity(m.status)" [value]="m.status" /></td>
+        <td>
+          <p-tag [severity]="getSeverity(m.status)" [value]="('status.' + m.status) | i18n" />
+        </td>
         <td class="text-color-secondary text-sm">{{ m.lastModified }}</td>
         <td class="text-color-secondary text-sm">{{ m.modifiedBy }}</td>
       </tr>

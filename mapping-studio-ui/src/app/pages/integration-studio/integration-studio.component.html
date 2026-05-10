@@ -1,13 +1,15 @@
 <div class="page-header studio-header">
   <div>
-    <h1 class="page-title">Integration Studio</h1>
-    <p class="page-subtitle">
-      Model partner payloads, define your canonical contract, map fields with no-code transforms, then validate
-      — all in-browser for this demo.
-    </p>
+    <h1 class="page-title">{{ 'studio.title' | i18n }}</h1>
+    <p class="page-subtitle">{{ 'studio.subtitle' | i18n }}</p>
   </div>
   <div class="page-actions">
-    <p-button label="Mapping catalog" icon="pi pi-list" variant="outlined" severity="secondary" routerLink="/mappings" />
+    <p-button
+      [label]="'studio.catalog' | i18n"
+      icon="pi pi-list"
+      variant="outlined"
+      severity="secondary"
+      routerLink="/mappings" />
   </div>
 </div>
 
@@ -15,7 +17,7 @@
   @for (s of steps; track s.id) {
     <button type="button" class="wizard-step {{ stepClass(s.id) }}" (click)="setStep(s.id)">
       <span class="step-index">{{ s.id + 1 }}</span>
-      {{ s.label }}
+      {{ s.labelKey | i18n }}
     </button>
   }
 </div>
@@ -26,18 +28,26 @@
       <ng-template pTemplate="header">
         <div class="card-header-row">
           <div>
-            <h2 class="card-title">Ingest sample payload</h2>
-            <p class="card-subtitle">
-              Paste JSON from a partner system or load a file. The structure is parsed into a field tree for mapping.
-            </p>
+            <h2 class="card-title">{{ 'studio.ingestTitle' | i18n }}</h2>
+            <p class="card-subtitle">{{ 'studio.ingestSubtitle' | i18n }}</p>
           </div>
         </div>
       </ng-template>
       <div class="toolbar-row">
         <input #fileIn type="file" accept="application/json,.json" class="sr-only" (change)="onFileSelected($event)" />
-        <p-button label="Load JSON file" icon="pi pi-upload" variant="outlined" severity="secondary" (onClick)="fileIn.click()" />
-        <p-button label="Analyze payload" icon="pi pi-sync" (onClick)="analyzePayload()" />
-        <p-button label="Next" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextStep()" [disabled]="!treeNodes().length" />
+        <p-button
+          [label]="'studio.loadFile' | i18n"
+          icon="pi pi-upload"
+          variant="outlined"
+          severity="secondary"
+          (onClick)="fileIn.click()" />
+        <p-button [label]="'studio.analyze' | i18n" icon="pi pi-sync" (onClick)="analyzePayload()" />
+        <p-button
+          [label]="'studio.next' | i18n"
+          icon="pi pi-arrow-right"
+          iconPos="right"
+          (onClick)="nextStep()"
+          [disabled]="!treeNodes().length" />
       </div>
       @if (parseError()) {
         <p-message severity="error" [text]="parseError()!" styleClass="w-full mt-3" />
@@ -48,22 +58,22 @@
         (ngModelChange)="sourceJson.set($event); parseError.set(null)"
         class="json-input w-full mt-3"
         rows="14"
-        placeholder='{ "your": "partner-json" }'></textarea>
+        [placeholder]="'studio.jsonPlaceholder' | i18n"></textarea>
     </p-card>
 
     <p-card styleClass="studio-card">
       <ng-template pTemplate="header">
         <div class="card-header-row">
           <div>
-            <h2 class="card-title">Field tree</h2>
-            <p class="card-subtitle">Inferred hierarchy from the current JSON (read-only preview).</p>
+            <h2 class="card-title">{{ 'studio.treeTitle' | i18n }}</h2>
+            <p class="card-subtitle">{{ 'studio.treeSubtitle' | i18n }}</p>
           </div>
         </div>
       </ng-template>
       @if (treeNodes().length) {
         <p-tree [value]="treeNodes()" styleClass="field-tree w-full" />
       } @else {
-        <p class="empty-hint">Analyze a valid JSON document to populate the tree.</p>
+        <p class="empty-hint">{{ 'studio.treeEmpty' | i18n }}</p>
       }
     </p-card>
   </div>
@@ -74,25 +84,33 @@
     <ng-template pTemplate="header">
       <div class="card-header-row">
         <div>
-          <h2 class="card-title">Canonical schema</h2>
-          <p class="card-subtitle">
-            Declare how data must appear inside your platform: field keys, types, and whether each is required.
-          </p>
+          <h2 class="card-title">{{ 'studio.canonicalTitle' | i18n }}</h2>
+          <p class="card-subtitle">{{ 'studio.canonicalSubtitle' | i18n }}</p>
         </div>
       </div>
     </ng-template>
     <div class="toolbar-row mb-3">
-      <p-button label="Add field" icon="pi pi-plus" variant="outlined" severity="secondary" (onClick)="addTargetField()" />
-      <p-button label="Back" icon="pi pi-arrow-left" variant="outlined" severity="secondary" (onClick)="prevStep()" />
-      <p-button label="Next" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextStep()" />
+      <p-button
+        [label]="'studio.addField' | i18n"
+        icon="pi pi-plus"
+        variant="outlined"
+        severity="secondary"
+        (onClick)="addTargetField()" />
+      <p-button
+        [label]="'studio.back' | i18n"
+        icon="pi pi-arrow-left"
+        variant="outlined"
+        severity="secondary"
+        (onClick)="prevStep()" />
+      <p-button [label]="'studio.next' | i18n" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextStep()" />
     </div>
     <p-table [value]="targetFields()" styleClass="p-datatable-sm">
       <ng-template pTemplate="header">
         <tr>
-          <th>Target key</th>
-          <th>Type</th>
-          <th>Required</th>
-          <th>Description</th>
+          <th>{{ 'studio.colTargetKey' | i18n }}</th>
+          <th>{{ 'studio.colType' | i18n }}</th>
+          <th>{{ 'studio.colRequired' | i18n }}</th>
+          <th>{{ 'studio.colDescription' | i18n }}</th>
           <th style="width: 3rem"></th>
         </tr>
       </ng-template>
@@ -103,7 +121,7 @@
           </td>
           <td>
             <p-select
-              [options]="fieldTypeOptions"
+              [options]="fieldTypeOptions()"
               [ngModel]="f.type"
               (ngModelChange)="patchTargetAt(rowIndex, { type: $event })"
               optionLabel="label"
@@ -139,26 +157,33 @@
     <ng-template pTemplate="header">
       <div class="card-header-row">
         <div>
-          <h2 class="card-title">Transform rules</h2>
-          <p class="card-subtitle">
-            Connect source paths to canonical keys. Choose a transformation: direct copy, date reformat, enum translation,
-            numeric coercion, defaults, or combining two source fields.
-          </p>
+          <h2 class="card-title">{{ 'studio.rulesTitle' | i18n }}</h2>
+          <p class="card-subtitle">{{ 'studio.rulesSubtitle' | i18n }}</p>
         </div>
       </div>
     </ng-template>
     <div class="toolbar-row mb-3">
-      <p-button label="Add rule" icon="pi pi-plus" variant="outlined" severity="secondary" (onClick)="addRule()" />
-      <p-button label="Back" icon="pi pi-arrow-left" variant="outlined" severity="secondary" (onClick)="prevStep()" />
-      <p-button label="Next" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextStep()" />
+      <p-button
+        [label]="'studio.addRule' | i18n"
+        icon="pi pi-plus"
+        variant="outlined"
+        severity="secondary"
+        (onClick)="addRule()" />
+      <p-button
+        [label]="'studio.back' | i18n"
+        icon="pi pi-arrow-left"
+        variant="outlined"
+        severity="secondary"
+        (onClick)="prevStep()" />
+      <p-button [label]="'studio.next' | i18n" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextStep()" />
     </div>
     <p-table [value]="rules()" styleClass="p-datatable-sm p-datatable-striped" [tableStyle]="{ 'min-width': '56rem' }">
       <ng-template pTemplate="header">
         <tr>
-          <th>Source path</th>
-          <th>Target key</th>
-          <th>Transform</th>
-          <th>Parameters</th>
+          <th>{{ 'studio.colSourcePath' | i18n }}</th>
+          <th>{{ 'studio.colTargetKeyRule' | i18n }}</th>
+          <th>{{ 'studio.colTransform' | i18n }}</th>
+          <th>{{ 'studio.colParameters' | i18n }}</th>
           <th style="width: 3rem"></th>
         </tr>
       </ng-template>
@@ -172,8 +197,8 @@
               optionLabel="label"
               optionValue="value"
               [filter]="true"
-              filterPlaceholder="Search path"
-              placeholder="Select path"
+              [filterPlaceholder]="'studio.filterPath' | i18n"
+              [placeholder]="'studio.selectPath' | i18n"
               styleClass="w-full" />
           </td>
           <td>
@@ -187,7 +212,7 @@
           </td>
           <td>
             <p-select
-              [options]="transformOptions"
+              [options]="transformOptions()"
               [ngModel]="rule.transform"
               (ngModelChange)="patchRule(rule.id, { transform: $event })"
               optionLabel="label"
@@ -200,12 +225,12 @@
                 <div class="param-grid">
                   <input
                     pInputText
-                    placeholder="Input pattern (e.g. yyyy-MM-dd)"
+                    [placeholder]="'studio.phDateIn' | i18n"
                     [ngModel]="rule.paramA"
                     (ngModelChange)="patchRule(rule.id, { paramA: $event })" />
                   <input
                     pInputText
-                    placeholder="Output pattern (e.g. dd/MM/yyyy)"
+                    [placeholder]="'studio.phDateOut' | i18n"
                     [ngModel]="rule.paramB"
                     (ngModelChange)="patchRule(rule.id, { paramB: $event })" />
                 </div>
@@ -214,7 +239,7 @@
                 <input
                   pInputText
                   class="w-full"
-                  placeholder="A=AKTIF,B=PASIF,C=ASKIDA"
+                  [placeholder]="'studio.phEnum' | i18n"
                   [ngModel]="rule.paramA"
                   (ngModelChange)="patchRule(rule.id, { paramA: $event })" />
               }
@@ -222,7 +247,7 @@
                 <input
                   pInputText
                   class="w-full"
-                  placeholder="Value when source is empty"
+                  [placeholder]="'studio.phDefault' | i18n"
                   [ngModel]="rule.paramA"
                   (ngModelChange)="patchRule(rule.id, { paramA: $event })" />
               }
@@ -234,17 +259,17 @@
                     (ngModelChange)="patchRule(rule.id, { paramA: $event })"
                     optionLabel="label"
                     optionValue="value"
-                    placeholder="Second path"
+                    [placeholder]="'studio.phSecondPath' | i18n"
                     styleClass="w-full" />
                   <input
                     pInputText
-                    placeholder="Separator (space)"
+                    [placeholder]="'studio.phSeparator' | i18n"
                     [ngModel]="rule.paramB"
                     (ngModelChange)="patchRule(rule.id, { paramB: $event })" />
                 </div>
               }
               @default {
-                <span class="text-color-secondary text-sm">No extra parameters</span>
+                <span class="text-color-secondary text-sm">{{ 'studio.noExtraParams' | i18n }}</span>
               }
             }
           </td>
@@ -268,18 +293,21 @@
       <ng-template pTemplate="header">
         <div class="card-header-row">
           <div>
-            <h2 class="card-title">Run validation</h2>
-            <p class="card-subtitle">
-              Executes transforms locally against the sample JSON and checks required canonical fields (demo-only, no API).
-            </p>
+            <h2 class="card-title">{{ 'studio.validateTitle' | i18n }}</h2>
+            <p class="card-subtitle">{{ 'studio.validateSubtitle' | i18n }}</p>
           </div>
         </div>
       </ng-template>
       <div class="toolbar-row">
-        <p-button label="Back" icon="pi pi-arrow-left" variant="outlined" severity="secondary" (onClick)="prevStep()" />
-        <p-button label="Test mapping" icon="pi pi-play" (onClick)="runTest()" />
         <p-button
-          label="Publish (demo)"
+          [label]="'studio.back' | i18n"
+          icon="pi pi-arrow-left"
+          variant="outlined"
+          severity="secondary"
+          (onClick)="prevStep()" />
+        <p-button [label]="'studio.testMapping' | i18n" icon="pi pi-play" (onClick)="runTest()" />
+        <p-button
+          [label]="'studio.publishDemo' | i18n"
           icon="pi pi-cloud-upload"
           severity="success"
           (onClick)="publishDemo()"
@@ -289,7 +317,9 @@
         <div class="result-block mt-3">
           <p-tag
             [severity]="validationOk() ? 'success' : 'danger'"
-            [value]="validationOk() ? 'Schema check passed' : 'Schema check failed'" />
+            [value]="
+              validationOk() ? ('studio.schemaOk' | i18n) : ('studio.schemaFail' | i18n)
+            " />
           <ul class="validation-list">
             @for (msg of validationMessages(); track msg) {
               <li>{{ msg }}</li>
@@ -298,10 +328,7 @@
         </div>
       }
       @if (published()) {
-        <p-message
-          severity="success"
-          text="Demo publish recorded. In production this version would be promoted and traffic would route to the new mapping."
-          styleClass="w-full mt-3" />
+        <p-message severity="success" [text]="'studio.publishSuccess' | i18n" styleClass="w-full mt-3" />
       }
     </p-card>
 
@@ -309,15 +336,15 @@
       <ng-template pTemplate="header">
         <div class="card-header-row">
           <div>
-            <h2 class="card-title">Transformed output</h2>
-            <p class="card-subtitle">Preview of the canonical payload after applying your rules.</p>
+            <h2 class="card-title">{{ 'studio.outputTitle' | i18n }}</h2>
+            <p class="card-subtitle">{{ 'studio.outputSubtitle' | i18n }}</p>
           </div>
         </div>
       </ng-template>
       @if (testOutput()) {
         <pre class="mono-pre">{{ testOutput() | json }}</pre>
       } @else {
-        <p class="empty-hint">Run “Test mapping” to see output.</p>
+        <p class="empty-hint">{{ 'studio.outputEmpty' | i18n }}</p>
       }
     </p-card>
   </div>

@@ -1,6 +1,6 @@
 # CanonBridge - Implementation Status
 
-> 📋 **See [MASTER_ROADMAP.md](../../MASTER_ROADMAP.md) for the official project plan**
+> 📋 **See [MASTER_ROADMAP.md](../project/MASTER_ROADMAP.md) for the official project plan**
 
 **Date**: May 10, 2026  
 **Phase**: 0 - Validation & Strategy  
@@ -13,7 +13,7 @@
 | Phase | Status | Progress |
 |-------|--------|----------|
 | **Phase 0: Validation** | 🔄 Current | 0% |
-| **Phase 1: MVP** | ⏳ Planned | 0% |
+| **Phase 1: MVP** | 🔄 Started (scaffold) | ~15% |
 | **Phase 2: Mapping Studio UI** | ⏳ Planned | 0% |
 | **Phase 3: Production Hardening** | ⏳ Planned | 0% |
 | **Phase 4+: Advanced Features** | ⏳ Planned | 0% |
@@ -34,6 +34,11 @@
 - ✅ Brand identity defined
 - ✅ MVP scope defined
 - ✅ Strategy document created
+
+### Phase 1 scaffold (in progress)
+
+- ✅ Transformer service MVP scaffold: [`services/transformer/`](../../services/transformer/) — HTTP `POST /v1/transform`, optional Kafka consumer (see service README)
+- ⏳ CI wiring, end-to-end Kafka smoke test, production-hardening items per MVP definition
 
 ---
 
@@ -185,9 +190,9 @@
 ## 📚 Key Documents
 
 ### Start Here
-- [MASTER_ROADMAP.md](../../MASTER_ROADMAP.md) - Official project plan
-- [STRATEGY.md](../../STRATEGY.md) - Validation and go-to-market
-- [MVP_DEFINITION.md](../../MVP_DEFINITION.md) - What we build first
+- [MASTER_ROADMAP.md](../project/MASTER_ROADMAP.md) - Official project plan
+- [STRATEGY.md](../project/STRATEGY.md) - Validation and go-to-market
+- [MVP_DEFINITION.md](../project/MVP_DEFINITION.md) - What we build first
 
 ### Documentation
 - [Documentation Hub](../README.md) - All documentation

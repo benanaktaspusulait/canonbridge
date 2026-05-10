@@ -3,6 +3,7 @@ import { CardModule } from 'primeng/card';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ButtonModule } from 'primeng/button';
+import { I18nPipe } from '../../core/i18n/i18n.pipe';
 
 interface PartnerHealth {
   partner: string;
@@ -15,10 +16,10 @@ interface PartnerHealth {
 }
 
 interface MetricCard {
-  label: string;
+  labelKey: string;
+  sloKey: string;
   value: string;
   unit: string;
-  slo: string;
   ok: boolean;
   icon: string;
   color: string;
@@ -27,18 +28,66 @@ interface MetricCard {
 @Component({
   selector: 'app-monitoring',
   standalone: true,
-  imports: [CardModule, TableModule, TagModule, ButtonModule],
+  imports: [CardModule, TableModule, TagModule, ButtonModule, I18nPipe],
   templateUrl: './monitoring.component.html',
   styleUrl: './monitoring.component.scss'
 })
 export class MonitoringComponent {
   readonly metrics: MetricCard[] = [
-    { label: 'Throughput',       value: '1,284',  unit: 'msg/sec', slo: 'SLO: > 100/sec',  ok: true,  icon: 'pi-send',               color: '#dbeafe' },
-    { label: 'p99 Latency',      value: '87',     unit: 'ms',      slo: 'SLO: < 200ms',    ok: true,  icon: 'pi-bolt',               color: '#dcfce7' },
-    { label: 'DLQ Rate',         value: '0.09',   unit: '%',       slo: 'SLO: < 0.1%',     ok: true,  icon: 'pi-exclamation-circle', color: '#fef9c3' },
-    { label: 'Consumer Lag',     value: '234',    unit: 'msgs',    slo: 'SLO: < 1,000',    ok: true,  icon: 'pi-clock',              color: '#f3e8ff' },
-    { label: 'Error Rate',       value: '0.12',   unit: '%',       slo: 'SLO: < 1%',       ok: true,  icon: 'pi-times-circle',       color: '#ffedd5' },
-    { label: 'Uptime',           value: '99.97',  unit: '%',       slo: 'SLO: > 99.9%',    ok: true,  icon: 'pi-check-circle',       color: '#dcfce7' },
+    {
+      labelKey: 'monitoring.metric.throughput.label',
+      sloKey: 'monitoring.metric.throughput.slo',
+      value: '1,284',
+      unit: 'msg/sec',
+      ok: true,
+      icon: 'pi-send',
+      color: '#dbeafe'
+    },
+    {
+      labelKey: 'monitoring.metric.p99.label',
+      sloKey: 'monitoring.metric.p99.slo',
+      value: '87',
+      unit: 'ms',
+      ok: true,
+      icon: 'pi-bolt',
+      color: '#dcfce7'
+    },
+    {
+      labelKey: 'monitoring.metric.dlq.label',
+      sloKey: 'monitoring.metric.dlq.slo',
+      value: '0.09',
+      unit: '%',
+      ok: true,
+      icon: 'pi-exclamation-circle',
+      color: '#fef9c3'
+    },
+    {
+      labelKey: 'monitoring.metric.lag.label',
+      sloKey: 'monitoring.metric.lag.slo',
+      value: '234',
+      unit: 'msgs',
+      ok: true,
+      icon: 'pi-clock',
+      color: '#f3e8ff'
+    },
+    {
+      labelKey: 'monitoring.metric.error.label',
+      sloKey: 'monitoring.metric.error.slo',
+      value: '0.12',
+      unit: '%',
+      ok: true,
+      icon: 'pi-times-circle',
+      color: '#ffedd5'
+    },
+    {
+      labelKey: 'monitoring.metric.uptime.label',
+      sloKey: 'monitoring.metric.uptime.slo',
+      value: '99.97',
+      unit: '%',
+      ok: true,
+      icon: 'pi-check-circle',
+      color: '#dcfce7'
+    }
   ];
 
   readonly partnerHealth: PartnerHealth[] = [

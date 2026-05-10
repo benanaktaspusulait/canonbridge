@@ -1,20 +1,16 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">Dead Letter Queue</h1>
-    <p class="page-subtitle">{{ messages.length }} failed messages — investigate and replay</p>
+    <h1 class="page-title">{{ 'dlq.title' | i18n }}</h1>
+    <p class="page-subtitle">{{ 'dlq.subtitle' | i18n: { count: messages.length } }}</p>
   </div>
   <div class="page-actions">
     <p-button
-      label="Redrive Selected"
+      [label]="'dlq.redriveSelected' | i18n"
       icon="pi pi-refresh"
       severity="secondary"
       variant="outlined"
       [disabled]="selected.length === 0" />
-    <p-button
-      label="Redrive All"
-      icon="pi pi-refresh"
-      severity="danger"
-      variant="outlined" />
+    <p-button [label]="'dlq.redriveAll' | i18n" icon="pi pi-refresh" severity="danger" variant="outlined" />
   </div>
 </div>
 
@@ -26,16 +22,15 @@
     styleClass="p-datatable-sm"
     [expandedRowKeys]="{}"
     #dt>
-
     <ng-template pTemplate="header">
       <tr>
         <th style="width:3rem"><p-tableHeaderCheckbox /></th>
-        <th>Partner</th>
-        <th>Event Type</th>
-        <th>Error Type</th>
-        <th>Error Message</th>
-        <th style="text-align:center">Attempts</th>
-        <th>Last Failed</th>
+        <th>{{ 'table.partner' | i18n }}</th>
+        <th>{{ 'table.eventType' | i18n }}</th>
+        <th>{{ 'dlq.colErrorType' | i18n }}</th>
+        <th>{{ 'dlq.colErrorMessage' | i18n }}</th>
+        <th style="text-align:center">{{ 'dlq.colAttempts' | i18n }}</th>
+        <th>{{ 'dlq.colLastFailed' | i18n }}</th>
         <th style="width:120px"></th>
       </tr>
     </ng-template>
@@ -53,9 +48,24 @@
         <td class="text-sm text-color-secondary">{{ msg.lastFailed }}</td>
         <td>
           <div class="row-actions">
-            <p-button icon="pi pi-refresh" variant="text" severity="secondary" size="small" pTooltip="Redrive" />
-            <p-button icon="pi pi-eye"     variant="text" severity="secondary" size="small" pTooltip="Inspect payload" />
-            <p-button icon="pi pi-trash"   variant="text" severity="danger"    size="small" pTooltip="Discard" />
+            <p-button
+              icon="pi pi-refresh"
+              variant="text"
+              severity="secondary"
+              size="small"
+              [pTooltip]="'dlq.tooltipRedrive' | i18n" />
+            <p-button
+              icon="pi pi-eye"
+              variant="text"
+              severity="secondary"
+              size="small"
+              [pTooltip]="'dlq.tooltipInspect' | i18n" />
+            <p-button
+              icon="pi pi-trash"
+              variant="text"
+              severity="danger"
+              size="small"
+              [pTooltip]="'dlq.tooltipDiscard' | i18n" />
           </div>
         </td>
       </tr>
@@ -65,7 +75,7 @@
       <tr>
         <td colspan="8" class="empty-cell">
           <i class="pi pi-check-circle" style="font-size:2rem;color:#16a34a;display:block;margin-bottom:.5rem"></i>
-          No messages in DLQ
+          {{ 'dlq.empty' | i18n }}
         </td>
       </tr>
     </ng-template>

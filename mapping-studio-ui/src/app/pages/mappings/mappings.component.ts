@@ -10,6 +10,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
+import { I18nPipe } from '../../core/i18n/i18n.pipe';
 
 interface MappingVersion {
   id: string;
@@ -26,7 +27,7 @@ interface MappingVersion {
   selector: 'app-mappings',
   standalone: true,
   imports: [RouterLink, FormsModule, DecimalPipe, CardModule, ButtonModule, TableModule, TagModule,
-            InputTextModule, TooltipModule, IconFieldModule, InputIconModule],
+            InputTextModule, TooltipModule, IconFieldModule, InputIconModule, I18nPipe],
   templateUrl: './mappings.component.html',
   styleUrl: './mappings.component.scss'
 })

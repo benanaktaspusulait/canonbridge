@@ -1,10 +1,10 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">Partners</h1>
-    <p class="page-subtitle">Manage partner integrations, health status, and event configurations</p>
+    <h1 class="page-title">{{ 'partners.title' | i18n }}</h1>
+    <p class="page-subtitle">{{ 'partners.subtitle' | i18n }}</p>
   </div>
   <div class="page-actions">
-    <p-button label="Onboard Partner" icon="pi pi-plus" />
+    <p-button [label]="'partners.onboard' | i18n" icon="pi pi-plus" />
   </div>
 </div>
 
@@ -12,13 +12,13 @@
   <p-table [value]="partners" styleClass="p-datatable-sm">
     <ng-template pTemplate="header">
       <tr>
-        <th>Partner</th>
-        <th>Status</th>
-        <th style="text-align:center">Event Types</th>
-        <th style="text-align:center">Active Mappings</th>
-        <th style="text-align:center">DLQ</th>
-        <th>Throughput</th>
-        <th>Last Seen</th>
+        <th>{{ 'partners.colPartner' | i18n }}</th>
+        <th>{{ 'partners.colStatus' | i18n }}</th>
+        <th style="text-align:center">{{ 'partners.colEvents' | i18n }}</th>
+        <th style="text-align:center">{{ 'partners.colMappings' | i18n }}</th>
+        <th style="text-align:center">{{ 'partners.colDlq' | i18n }}</th>
+        <th>{{ 'partners.colThroughput' | i18n }}</th>
+        <th>{{ 'partners.colLastSeen' | i18n }}</th>
         <th style="width:100px"></th>
       </tr>
     </ng-template>
@@ -34,7 +34,7 @@
           </div>
         </td>
         <td>
-          <p-tag [severity]="getSeverity(p.status)" [value]="p.status" />
+          <p-tag [severity]="getSeverity(p.status)" [value]="('partners.status.' + p.status) | i18n" />
         </td>
         <td style="text-align:center">{{ p.eventTypes }}</td>
         <td style="text-align:center">{{ p.activeMappings }}</td>
@@ -49,8 +49,18 @@
         <td class="text-sm text-color-secondary">{{ p.lastSeen }}</td>
         <td>
           <div class="row-actions">
-            <p-button icon="pi pi-cog"    variant="text" severity="secondary" size="small" pTooltip="Configure" />
-            <p-button icon="pi pi-chart-line" variant="text" severity="secondary" size="small" pTooltip="Metrics" />
+            <p-button
+              icon="pi pi-cog"
+              variant="text"
+              severity="secondary"
+              size="small"
+              [pTooltip]="'partners.configure' | i18n" />
+            <p-button
+              icon="pi pi-chart-line"
+              variant="text"
+              severity="secondary"
+              size="small"
+              [pTooltip]="'partners.metrics' | i18n" />
           </div>
         </td>
       </tr>

@@ -1,0 +1,271 @@
+{
+  "app": {
+    "title": "CanonBridge — Mapping Studio"
+  },
+  "layout": {
+    "demoBanner": {
+      "strong": "Demo environment",
+      "text": "— illustrative data only. No live API or partner traffic."
+    }
+  },
+  "nav": {
+    "section": {
+      "main": "Main"
+    },
+    "dashboard": "Dashboard",
+    "studio": "Studio",
+    "mappings": "Mappings",
+    "partners": "Partners",
+    "dlq": "DLQ",
+    "monitoring": "Monitoring",
+    "settings": "Settings"
+  },
+  "sidebar": {
+    "logoSub": "Mapping Studio"
+  },
+  "topbar": {
+    "demo": "Demo",
+    "demoTitle": "No live APIs are called in this build",
+    "toggleSidebar": "Toggle sidebar",
+    "notifications": "Notifications",
+    "documentation": "Documentation",
+    "language": "Language",
+    "profile": "Profile",
+    "apiKeys": "API Keys",
+    "signOut": "Sign out",
+    "darkMode": "Night mode",
+    "lightMode": "Day mode"
+  },
+  "login": {
+    "tagline": "Canonical integration without hand-written mappers",
+    "feature1": "Ingest partner JSON, model fields visually, ship canonical output",
+    "feature2": "Versioned mappings with test-before-publish guardrails",
+    "feature3": "Operational resilience: DLQ, replay, and observability hooks",
+    "feature4": "Optional advanced mode for precise transformation control",
+    "signIn": "Sign in",
+    "welcome": "Welcome back. Please enter your credentials.",
+    "demoMode": "Demo mode",
+    "demoModeHint": "— select a test account below",
+    "quickFill": "Quick fill — demo account",
+    "selectAccount": "Select a demo account...",
+    "orManual": "or enter manually",
+    "email": "Email address",
+    "password": "Password",
+    "forgot": "Forgot password?",
+    "submit": "Sign in",
+    "footer": "CanonBridge Mapping Studio © 2026",
+    "documentation": "Documentation"
+  },
+  "auth": {
+    "invalidCredentials": "Invalid email or password.",
+    "enterCredentials": "Please enter your email and password."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Operational snapshot of CanonBridge — metrics below are illustrative for demo purposes.",
+    "studio": "Integration Studio",
+    "monitoring": "Monitoring",
+    "recentTitle": "Recent Mappings",
+    "recentSubtitle": "Latest mapping activity across all partners",
+    "viewAll": "View All",
+    "stat": {
+      "msgProcessed": { "label": "Messages Processed", "change": "+12.3% vs yesterday" },
+      "activeMappings": { "label": "Active Mappings", "change": "+2 this week" },
+      "dlq": { "label": "DLQ Messages", "change": "+5 in last hour" },
+      "lag": { "label": "Consumer Lag", "change": "Within SLO target" },
+      "p99": { "label": "Transformation p99", "change": "SLO: < 200ms" },
+      "partners": { "label": "Active Partners", "change": "3 tenants" }
+    }
+  },
+  "table": {
+    "partner": "Partner",
+    "eventType": "Event Type",
+    "version": "Version",
+    "status": "Status",
+    "lastModified": "Last Modified",
+    "by": "By",
+    "transformations": "Transformations",
+    "published": "Published"
+  },
+  "status": {
+    "active": "active",
+    "draft": "draft",
+    "deprecated": "deprecated"
+  },
+  "mappings": {
+    "title": "Mappings",
+    "subtitle": "Versioned transformation definitions per partner and event — catalog view (demo data).",
+    "studio": "Integration Studio",
+    "newDemo": "New mapping (demo)",
+    "searchPlaceholder": "Search partner, event type…",
+    "filter": "Filter",
+    "export": "Export",
+    "preview": "Preview",
+    "rollback": "Rollback",
+    "empty": "No mappings found."
+  },
+  "partners": {
+    "title": "Partners",
+    "subtitle": "Manage partner integrations, health status, and event configurations",
+    "onboard": "Onboard Partner",
+    "colPartner": "Partner",
+    "colStatus": "Status",
+    "colEvents": "Event Types",
+    "colMappings": "Active Mappings",
+    "colDlq": "DLQ",
+    "colThroughput": "Throughput",
+    "colLastSeen": "Last Seen",
+    "configure": "Configure",
+    "metrics": "Metrics",
+    "status": {
+      "active": "active",
+      "inactive": "inactive",
+      "degraded": "degraded"
+    }
+  },
+  "dlq": {
+    "title": "Dead Letter Queue",
+    "subtitle": "{{count}} failed messages — investigate and replay",
+    "redriveSelected": "Redrive Selected",
+    "redriveAll": "Redrive All",
+    "colErrorType": "Error Type",
+    "colErrorMessage": "Error Message",
+    "colAttempts": "Attempts",
+    "colLastFailed": "Last Failed",
+    "tooltipRedrive": "Redrive",
+    "tooltipInspect": "Inspect payload",
+    "tooltipDiscard": "Discard",
+    "empty": "No messages in DLQ"
+  },
+  "monitoring": {
+    "title": "Monitoring",
+    "subtitle": "Real-time platform metrics and partner health",
+    "refresh": "Refresh",
+    "partnerHealth": "Partner Health",
+    "partnerHealthSub": "Per-partner throughput, latency, and DLQ metrics",
+    "colStatus": "Status",
+    "colThroughput": "Throughput",
+    "colP99": "p99",
+    "colP99Latency": "p99 Latency",
+    "colDlqRate": "DLQ Rate",
+    "colLag": "Lag",
+    "colUptime": "Uptime",
+    "metric": {
+      "throughput": { "label": "Throughput", "slo": "SLO: > 100/sec" },
+      "p99": { "label": "p99 Latency", "slo": "SLO: < 200ms" },
+      "dlq": { "label": "DLQ Rate", "slo": "SLO: < 0.1%" },
+      "lag": { "label": "Consumer Lag", "slo": "SLO: < 1,000" },
+      "error": { "label": "Error Rate", "slo": "SLO: < 1%" },
+      "uptime": { "label": "Uptime", "slo": "SLO: > 99.9%" }
+    },
+    "healthStatus": {
+      "healthy": "healthy",
+      "degraded": "degraded",
+      "down": "down"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Tenant configuration, API keys, and notification preferences",
+    "tenant": "Tenant",
+    "tenantSub": "Basic tenant information",
+    "tenantName": "Tenant Name",
+    "tenantSlug": "Tenant Slug",
+    "tenantSlugHint": "Used in Kafka topic names and API paths",
+    "webhookUrl": "Webhook URL",
+    "webhookHint": "Receives platform event notifications",
+    "saveChanges": "Save Changes",
+    "notificationsTitle": "Notifications",
+    "notificationsSub": "Alert and digest preferences",
+    "dlqAlerts": "DLQ Alerts",
+    "dlqAlertsDesc": "Notify when DLQ messages exceed threshold",
+    "lagAlerts": "Consumer Lag Alerts",
+    "lagAlertsDesc": "Notify when consumer lag exceeds SLO",
+    "emailDigest": "Daily Email Digest",
+    "emailDigestDesc": "Receive a daily summary of platform activity",
+    "apiKeysTitle": "API Keys",
+    "apiKeysSub": "Manage service authentication keys",
+    "generateKey": "Generate Key",
+    "colName": "Name",
+    "colKeyPrefix": "Key Prefix",
+    "colCreated": "Created",
+    "colLastUsed": "Last Used",
+    "revoke": "Revoke",
+    "keyStatus": {
+      "active": "active",
+      "revoked": "revoked"
+    }
+  },
+  "studio": {
+    "title": "Integration Studio",
+    "subtitle": "Model partner payloads, define your canonical contract, map fields with no-code transforms, then validate — all in-browser for this demo.",
+    "catalog": "Mapping catalog",
+    "step": {
+      "source": "Source payload",
+      "canonical": "Canonical schema",
+      "mapping": "Field mapping",
+      "validate": "Validate & publish"
+    },
+    "ingestTitle": "Ingest sample payload",
+    "ingestSubtitle": "Paste JSON from a partner system or load a file. The structure is parsed into a field tree for mapping.",
+    "loadFile": "Load JSON file",
+    "analyze": "Analyze payload",
+    "next": "Next",
+    "back": "Back",
+    "treeTitle": "Field tree",
+    "treeSubtitle": "Inferred hierarchy from the current JSON (read-only preview).",
+    "treeEmpty": "Analyze a valid JSON document to populate the tree.",
+    "canonicalTitle": "Canonical schema",
+    "canonicalSubtitle": "Declare how data must appear inside your platform: field keys, types, and whether each is required.",
+    "addField": "Add field",
+    "colTargetKey": "Target key",
+    "colType": "Type",
+    "colRequired": "Required",
+    "colDescription": "Description",
+    "rulesTitle": "Transform rules",
+    "rulesSubtitle": "Connect source paths to canonical keys. Choose a transformation: direct copy, date reformat, enum translation, numeric coercion, defaults, or combining two source fields.",
+    "addRule": "Add rule",
+    "colSourcePath": "Source path",
+    "colTargetKeyRule": "Target key",
+    "colTransform": "Transform",
+    "colParameters": "Parameters",
+    "filterPath": "Search path",
+    "selectPath": "Select path",
+    "phDateIn": "Input pattern (e.g. yyyy-MM-dd)",
+    "phDateOut": "Output pattern (e.g. dd/MM/yyyy)",
+    "phEnum": "A=ACTIVE,B=INACTIVE,C=PENDING",
+    "phDefault": "Value when source is empty",
+    "phSecondPath": "Second path",
+    "phSeparator": "Separator (space)",
+    "noExtraParams": "No extra parameters",
+    "validateTitle": "Run validation",
+    "validateSubtitle": "Executes transforms locally against the sample JSON and checks required canonical fields (demo-only, no API).",
+    "testMapping": "Test mapping",
+    "publishDemo": "Publish (demo)",
+    "schemaOk": "Schema check passed",
+    "schemaFail": "Schema check failed",
+    "publishSuccess": "Demo publish recorded. In production this version would be promoted and traffic would route to the new mapping.",
+    "outputTitle": "Transformed output",
+    "outputSubtitle": "Preview of the canonical payload after applying your rules.",
+    "outputEmpty": "Run “Test mapping” to see output.",
+    "jsonPlaceholder": "{ \"your\": \"partner-json\" }",
+    "invalidJson": "Invalid JSON",
+    "validation": {
+      "missing": "Missing required target field “{{field}}”.",
+      "allPresent": "All required canonical fields are present."
+    },
+    "transform": {
+      "direct": "Direct map",
+      "date_format": "Format date",
+      "enum_map": "Enum map",
+      "number_coerce": "Number coercion",
+      "default_value": "Default value",
+      "combine": "Combine fields"
+    },
+    "fieldType": {
+      "string": "String",
+      "number": "Number",
+      "date": "Date"
+    }
+  }
+}

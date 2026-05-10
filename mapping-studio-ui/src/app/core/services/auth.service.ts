@@ -61,7 +61,7 @@ export class AuthService {
           sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
           resolve({ success: true });
         } else {
-          resolve({ success: false, error: 'Invalid email or password.' });
+          resolve({ success: false, error: 'auth.invalidCredentials' });
         }
       }, 600); // simulate network delay
     });

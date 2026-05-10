@@ -8,7 +8,7 @@
     @if (!collapsed) {
       <div class="logo-text">
         <span class="logo-name">CanonBridge</span>
-        <span class="logo-sub">Mapping Studio</span>
+        <span class="logo-sub">{{ 'sidebar.logoSub' | i18n }}</span>
       </div>
     }
   </div>
@@ -16,18 +16,18 @@
   <!-- Main navigation -->
   <div class="nav-section">
     @if (!collapsed) {
-      <span class="nav-section-label">Main</span>
+      <span class="nav-section-label">{{ 'nav.section.main' | i18n }}</span>
     }
     @for (item of navItems; track item.route) {
       <a
         [routerLink]="item.route"
         routerLinkActive="active"
         class="nav-item"
-        [pTooltip]="collapsed ? item.label : ''"
+        [pTooltip]="collapsed ? (item.labelKey | i18n) : ''"
         tooltipPosition="right">
         <i class="pi {{ item.icon }}"></i>
         @if (!collapsed) {
-          <span class="nav-label">{{ item.label }}</span>
+          <span class="nav-label">{{ item.labelKey | i18n }}</span>
           @if (item.badge) {
             <span class="nav-badge {{ item.badgeSeverity }}">{{ item.badge }}</span>
           }
@@ -50,11 +50,11 @@
         [routerLink]="item.route"
         routerLinkActive="active"
         class="nav-item"
-        [pTooltip]="collapsed ? item.label : ''"
+        [pTooltip]="collapsed ? (item.labelKey | i18n) : ''"
         tooltipPosition="right">
         <i class="pi {{ item.icon }}"></i>
         @if (!collapsed) {
-          <span class="nav-label">{{ item.label }}</span>
+          <span class="nav-label">{{ item.labelKey | i18n }}</span>
         }
       </a>
     }

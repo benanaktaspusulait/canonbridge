@@ -9,6 +9,7 @@ import { MessageModule } from 'primeng/message';
 import { DividerModule } from 'primeng/divider';
 import { SelectModule } from 'primeng/select';
 import { AuthService } from '../../../core/services/auth.service';
+import { I18nPipe } from '../../../core/i18n/i18n.pipe';
 
 interface DemoAccount {
   label: string;
@@ -28,7 +29,8 @@ interface DemoAccount {
     PasswordModule,
     MessageModule,
     DividerModule,
-    SelectModule
+    SelectModule,
+    I18nPipe
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
@@ -37,7 +39,7 @@ export class LoginComponent {
   email = '';
   password = '';
   loading = signal(false);
-  errorMessage = signal('');
+  errorKey = signal<string | null>(null);
 
   readonly demoAccounts: DemoAccount[] = [
     { label: 'Admin User', email: 'admin@canonbridge.io', password: 'admin123', roleLabel: 'admin' },
@@ -53,17 +55,17 @@ export class LoginComponent {
     if (!account) return;
     this.email = account.email;
     this.password = account.password;
-    this.errorMessage.set('');
+    this.errorKey.set(null);
   }
 
   async onSubmit(): Promise<void> {
     if (!this.email || !this.password) {
-      this.errorMessage.set('Please enter your email and password.');
+      this.errorKey.set('auth.enterCredentials');
       return;
     }
 
     this.loading.set(true);
-    this.errorMessage.set('');
+    this.errorKey.set(null);
 
     const result = await this.auth.login({ email: this.email, password: this.password });
 
@@ -72,7 +74,7 @@ export class LoginComponent {
     if (result.success) {
       this.router.navigate(['/dashboard']);
     } else {
-      this.errorMessage.set(result.error ?? 'Login failed. Please try again.');
+      this.errorKey.set(result.error ?? 'auth.invalidCredentials');
     }
   }
 }

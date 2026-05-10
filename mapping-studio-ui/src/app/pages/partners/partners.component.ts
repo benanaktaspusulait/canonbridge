@@ -5,6 +5,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { AvatarModule } from 'primeng/avatar';
+import { I18nPipe } from '../../core/i18n/i18n.pipe';
 
 interface Partner {
   id: string;
@@ -21,7 +22,7 @@ interface Partner {
 @Component({
   selector: 'app-partners',
   standalone: true,
-  imports: [CardModule, ButtonModule, TableModule, TagModule, TooltipModule, AvatarModule],
+  imports: [CardModule, ButtonModule, TableModule, TagModule, TooltipModule, AvatarModule, I18nPipe],
   templateUrl: './partners.component.html',
   styleUrl: './partners.component.scss'
 })

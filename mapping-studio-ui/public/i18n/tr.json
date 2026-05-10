@@ -1,0 +1,271 @@
+{
+  "app": {
+    "title": "CanonBridge — Mapping Studio"
+  },
+  "layout": {
+    "demoBanner": {
+      "strong": "Demo ortamı",
+      "text": "— yalnızca örnek veri. Canlı API veya partner trafiği yok."
+    }
+  },
+  "nav": {
+    "section": {
+      "main": "Ana menü"
+    },
+    "dashboard": "Kontrol paneli",
+    "studio": "Studio",
+    "mappings": "Eşlemeler",
+    "partners": "Ortaklar",
+    "dlq": "DLQ",
+    "monitoring": "İzleme",
+    "settings": "Ayarlar"
+  },
+  "sidebar": {
+    "logoSub": "Mapping Studio"
+  },
+  "topbar": {
+    "demo": "Demo",
+    "demoTitle": "Bu sürümde canlı API çağrısı yapılmaz",
+    "toggleSidebar": "Kenar çubuğunu aç/kapat",
+    "notifications": "Bildirimler",
+    "documentation": "Dokümantasyon",
+    "language": "Dil",
+    "profile": "Profil",
+    "apiKeys": "API anahtarları",
+    "signOut": "Çıkış",
+    "darkMode": "Gece modu",
+    "lightMode": "Gündüz modu"
+  },
+  "login": {
+    "tagline": "Elle yazılmış mapper’lar olmadan kurumsal entegrasyon",
+    "feature1": "Partner JSON’unu alın, alanları görsel olarak modelleyin, kanonik çıktıyı üretin",
+    "feature2": "Yayın öncesi test korumalı, sürümlü eşlemeler",
+    "feature3": "Dayanıklılık: DLQ, yeniden oynatma ve gözlemlenebilirlik",
+    "feature4": "Dönüşümleri ince ayar için isteğe bağlı gelişmiş mod",
+    "signIn": "Giriş yap",
+    "welcome": "Tekrar hoş geldiniz. Kimlik bilgilerinizi girin.",
+    "demoMode": "Demo modu",
+    "demoModeHint": "— aşağıdan bir test hesabı seçin",
+    "quickFill": "Hızlı doldur — demo hesabı",
+    "selectAccount": "Demo hesabı seçin...",
+    "orManual": "veya elle girin",
+    "email": "E-posta",
+    "password": "Şifre",
+    "forgot": "Şifremi unuttum?",
+    "submit": "Giriş yap",
+    "footer": "CanonBridge Mapping Studio © 2026",
+    "documentation": "Dokümantasyon"
+  },
+  "auth": {
+    "invalidCredentials": "Geçersiz e-posta veya şifre.",
+    "enterCredentials": "Lütfen e-posta ve şifrenizi girin."
+  },
+  "dashboard": {
+    "title": "Kontrol paneli",
+    "subtitle": "CanonBridge operasyon özeti — aşağıdaki metrikler demo amaçlıdır.",
+    "studio": "Integration Studio",
+    "monitoring": "İzleme",
+    "recentTitle": "Son eşlemeler",
+    "recentSubtitle": "Tüm ortaklardaki son eşleme aktivitesi",
+    "viewAll": "Tümünü gör",
+    "stat": {
+      "msgProcessed": { "label": "İşlenen mesajlar", "change": "düne göre +%12,3" },
+      "activeMappings": { "label": "Aktif eşlemeler", "change": "bu hafta +2" },
+      "dlq": { "label": "DLQ mesajları", "change": "son saatte +5" },
+      "lag": { "label": "Tüketici gecikmesi", "change": "SLO hedefi içinde" },
+      "p99": { "label": "Dönüşüm p99", "change": "SLO: < 200 ms" },
+      "partners": { "label": "Aktif ortaklar", "change": "3 kiracı" }
+    }
+  },
+  "table": {
+    "partner": "Ortak",
+    "eventType": "Olay tipi",
+    "version": "Sürüm",
+    "status": "Durum",
+    "lastModified": "Son değişiklik",
+    "by": "Kullanıcı",
+    "transformations": "Dönüşümler",
+    "published": "Yayınlanma"
+  },
+  "status": {
+    "active": "aktif",
+    "draft": "taslak",
+    "deprecated": "kullanım dışı"
+  },
+  "mappings": {
+    "title": "Eşlemeler",
+    "subtitle": "Ortak ve olay başına sürümlü dönüşüm tanımları — katalog görünümü (demo veri).",
+    "studio": "Integration Studio",
+    "newDemo": "Yeni eşleme (demo)",
+    "searchPlaceholder": "Ortak veya olay tipi ara…",
+    "filter": "Filtrele",
+    "export": "Dışa aktar",
+    "preview": "Önizleme",
+    "rollback": "Geri al",
+    "empty": "Eşleme bulunamadı."
+  },
+  "partners": {
+    "title": "Ortaklar",
+    "subtitle": "Ortak entegrasyonları, sağlık durumu ve olay yapılandırmaları",
+    "onboard": "Ortak ekle",
+    "colPartner": "Ortak",
+    "colStatus": "Durum",
+    "colEvents": "Olay tipleri",
+    "colMappings": "Aktif eşlemeler",
+    "colDlq": "DLQ",
+    "colThroughput": "Verim",
+    "colLastSeen": "Son görülme",
+    "configure": "Yapılandır",
+    "metrics": "Metrikler",
+    "status": {
+      "active": "aktif",
+      "inactive": "pasif",
+      "degraded": "bozulmuş"
+    }
+  },
+  "dlq": {
+    "title": "Ölü harf kuyruğu",
+    "subtitle": "{{count}} başarısız mesaj — inceleyin ve yeniden gönderin",
+    "redriveSelected": "Seçilenleri yeniden gönder",
+    "redriveAll": "Tümünü yeniden gönder",
+    "colErrorType": "Hata tipi",
+    "colErrorMessage": "Hata mesajı",
+    "colAttempts": "Denemeler",
+    "colLastFailed": "Son hata",
+    "tooltipRedrive": "Yeniden gönder",
+    "tooltipInspect": "Yükü incele",
+    "tooltipDiscard": "Sil",
+    "empty": "DLQ’da mesaj yok"
+  },
+  "monitoring": {
+    "title": "İzleme",
+    "subtitle": "Gerçek zamanlı platform metrikleri ve ortak sağlığı",
+    "refresh": "Yenile",
+    "partnerHealth": "Ortak sağlığı",
+    "partnerHealthSub": "Ortak başına verim, gecikme ve DLQ metrikleri",
+    "colStatus": "Durum",
+    "colThroughput": "Verim",
+    "colP99": "p99",
+    "colP99Latency": "p99 gecikme",
+    "colDlqRate": "DLQ oranı",
+    "colLag": "Gecikme",
+    "colUptime": "Çalışma süresi",
+    "metric": {
+      "throughput": { "label": "Verim", "slo": "SLO: > 100/sn" },
+      "p99": { "label": "p99 gecikme", "slo": "SLO: < 200 ms" },
+      "dlq": { "label": "DLQ oranı", "slo": "SLO: <%0,1" },
+      "lag": { "label": "Tüketici gecikmesi", "slo": "SLO: < 1.000" },
+      "error": { "label": "Hata oranı", "slo": "SLO: <%1" },
+      "uptime": { "label": "Çalışma süresi", "slo": "SLO: > %99,9" }
+    },
+    "healthStatus": {
+      "healthy": "sağlıklı",
+      "degraded": "bozulmuş",
+      "down": "kapalı"
+    }
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "subtitle": "Kiracı yapılandırması, API anahtarları ve bildirim tercihleri",
+    "tenant": "Kiracı",
+    "tenantSub": "Temel kiracı bilgisi",
+    "tenantName": "Kiracı adı",
+    "tenantSlug": "Kiracı kısa adı",
+    "tenantSlugHint": "Kafka konu adları ve API yollarında kullanılır",
+    "webhookUrl": "Webhook URL",
+    "webhookHint": "Platform olay bildirimlerini alır",
+    "saveChanges": "Değişiklikleri kaydet",
+    "notificationsTitle": "Bildirimler",
+    "notificationsSub": "Uyarı ve özet tercihleri",
+    "dlqAlerts": "DLQ uyarıları",
+    "dlqAlertsDesc": "DLQ eşiği aşıldığında bildir",
+    "lagAlerts": "Tüketici gecikmesi uyarıları",
+    "lagAlertsDesc": "Gecikme SLO’yu aştığında bildir",
+    "emailDigest": "Günlük e-posta özeti",
+    "emailDigestDesc": "Günlük platform aktivitesi özeti al",
+    "apiKeysTitle": "API anahtarları",
+    "apiKeysSub": "Servis kimlik doğrulama anahtarlarını yönet",
+    "generateKey": "Anahtar üret",
+    "colName": "Ad",
+    "colKeyPrefix": "Anahtar öneki",
+    "colCreated": "Oluşturulma",
+    "colLastUsed": "Son kullanım",
+    "revoke": "İptal et",
+    "keyStatus": {
+      "active": "aktif",
+      "revoked": "iptal"
+    }
+  },
+  "studio": {
+    "title": "Integration Studio",
+    "subtitle": "Partner yükünü modelleyin, kurumsal şemanızı tanımlayın, kod yazmadan dönüşümleri eşleyin ve doğrulayın — bu demo tamamen tarayıcıda çalışır.",
+    "catalog": "Eşleme kataloğu",
+    "step": {
+      "source": "Kaynak yük",
+      "canonical": "Kanonik şema",
+      "mapping": "Alan eşlemesi",
+      "validate": "Doğrula ve yayınla"
+    },
+    "ingestTitle": "Örnek yükü al",
+    "ingestSubtitle": "Partner sisteminden JSON yapıştırın veya dosya yükleyin. Yapı, eşleme için alan ağacına dönüştürülür.",
+    "loadFile": "JSON dosyası yükle",
+    "analyze": "Yükü analiz et",
+    "next": "İleri",
+    "back": "Geri",
+    "treeTitle": "Alan ağacı",
+    "treeSubtitle": "Geçerli JSON’dan çıkarılan hiyerarşi (salt okunur önizleme).",
+    "treeEmpty": "Ağacı doldurmak için geçerli bir JSON analiz edin.",
+    "canonicalTitle": "Kanonik şema",
+    "canonicalSubtitle": "Verinin platformunuzda nasıl görünmesi gerektiğini tanımlayın: alan anahtarları, tipler ve zorunluluk.",
+    "addField": "Alan ekle",
+    "colTargetKey": "Hedef anahtar",
+    "colType": "Tip",
+    "colRequired": "Zorunlu",
+    "colDescription": "Açıklama",
+    "rulesTitle": "Dönüşüm kuralları",
+    "rulesSubtitle": "Kaynak yolları kanonik anahtarlara bağlayın. Dönüşüm seçin: doğrudan kopya, tarih biçimi, enum çevirisi, sayıya zorlama, varsayılanlar veya iki alanı birleştirme.",
+    "addRule": "Kural ekle",
+    "colSourcePath": "Kaynak yol",
+    "colTargetKeyRule": "Hedef anahtar",
+    "colTransform": "Dönüşüm",
+    "colParameters": "Parametreler",
+    "filterPath": "Yol ara",
+    "selectPath": "Yol seç",
+    "phDateIn": "Giriş deseni (ör. yyyy-MM-dd)",
+    "phDateOut": "Çıkış deseni (ör. dd/MM/yyyy)",
+    "phEnum": "A=AKTIF,B=PASIF,C=ASKIDA",
+    "phDefault": "Kaynak boşsa değer",
+    "phSecondPath": "İkinci yol",
+    "phSeparator": "Ayraç (boşluk)",
+    "noExtraParams": "Ek parametre yok",
+    "validateTitle": "Doğrulamayı çalıştır",
+    "validateSubtitle": "Dönüşümleri örnek JSON üzerinde yerel çalıştırır ve zorunlu kanonik alanları kontrol eder (yalnızca demo, API yok).",
+    "testMapping": "Eşlemeyi test et",
+    "publishDemo": "Yayınla (demo)",
+    "schemaOk": "Şema kontrolü başarılı",
+    "schemaFail": "Şema kontrolü başarısız",
+    "publishSuccess": "Demo yayın kaydedildi. Üretimde bu sürüm yükseltilir ve trafik yeni eşlemeye yönlendirilir.",
+    "outputTitle": "Dönüştürülmüş çıktı",
+    "outputSubtitle": "Kurallarınız uygulandıktan sonra kanonik yükün önizlemesi.",
+    "outputEmpty": "Çıktıyı görmek için “Eşlemeyi test et” çalıştırın.",
+    "jsonPlaceholder": "{ \"ornek\": \"partner-json\" }",
+    "invalidJson": "Geçersiz JSON",
+    "validation": {
+      "missing": "Zorunlu hedef alan eksik: “{{field}}”.",
+      "allPresent": "Tüm zorunlu kanonik alanlar mevcut."
+    },
+    "transform": {
+      "direct": "Doğrudan eşle",
+      "date_format": "Tarih biçimi",
+      "enum_map": "Enum eşlemesi",
+      "number_coerce": "Sayıya dönüştür",
+      "default_value": "Varsayılan değer",
+      "combine": "Alanları birleştir"
+    },
+    "fieldType": {
+      "string": "Metin",
+      "number": "Sayı",
+      "date": "Tarih"
+    }
+  }
+}

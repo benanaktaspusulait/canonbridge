@@ -489,11 +489,10 @@ NODE_OPTIONS=--max_old_space_size=4096 npm run build
 
 ## 📚 Documentation
 
-- [User Guide](./docs/USER_GUIDE.md) - End-user documentation
-- [Developer Guide](./docs/DEVELOPER_GUIDE.md) - Development guidelines
-- [API Documentation](./docs/API.md) - API reference
-- [Component Library](./docs/COMPONENTS.md) - Component documentation
-- [Architecture](../../docs/architecture/tech-stack.md) - System architecture
+- [Documentation hub](../../docs/README.md) - CanonBridge docs index
+- [Mapping Studio (product)](../../docs/product/README.md) - Requirements, UX, API model
+- [Design system](../../docs/product/mapping-studio-design-system.md) - Tokens, components, layout
+- [Architecture](../../docs/architecture/tech-stack.md) - System technology stack
 
 ---
 

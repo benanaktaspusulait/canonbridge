@@ -5,6 +5,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { AccordionModule } from 'primeng/accordion';
+import { I18nPipe } from '../../core/i18n/i18n.pipe';
 
 interface DlqMessage {
   id: string;
@@ -21,7 +22,7 @@ interface DlqMessage {
 @Component({
   selector: 'app-dlq',
   standalone: true,
-  imports: [CardModule, ButtonModule, TableModule, TagModule, TooltipModule, AccordionModule],
+  imports: [CardModule, ButtonModule, TableModule, TagModule, TooltipModule, AccordionModule, I18nPipe],
   templateUrl: './dlq.component.html',
   styleUrl: './dlq.component.scss'
 })

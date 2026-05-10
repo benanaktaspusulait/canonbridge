@@ -1,104 +1,99 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">Settings</h1>
-    <p class="page-subtitle">Tenant configuration, API keys, and notification preferences</p>
+    <h1 class="page-title">{{ 'settings.title' | i18n }}</h1>
+    <p class="page-subtitle">{{ 'settings.subtitle' | i18n }}</p>
   </div>
 </div>
 
 <div class="settings-grid">
-
-  <!-- Tenant -->
   <p-card>
     <ng-template pTemplate="header">
       <div class="section-header">
         <i class="pi pi-building section-icon"></i>
         <div>
-          <div class="section-title">Tenant</div>
-          <div class="section-subtitle">Basic tenant information</div>
+          <div class="section-title">{{ 'settings.tenant' | i18n }}</div>
+          <div class="section-subtitle">{{ 'settings.tenantSub' | i18n }}</div>
         </div>
       </div>
     </ng-template>
 
     <div class="field">
-      <label class="field-label">Tenant Name</label>
+      <label class="field-label">{{ 'settings.tenantName' | i18n }}</label>
       <input pInputText [(ngModel)]="tenantName" class="w-full" />
     </div>
     <div class="field">
-      <label class="field-label">Tenant Slug</label>
+      <label class="field-label">{{ 'settings.tenantSlug' | i18n }}</label>
       <input pInputText [(ngModel)]="tenantSlug" class="w-full" />
-      <small class="field-hint">Used in Kafka topic names and API paths</small>
+      <small class="field-hint">{{ 'settings.tenantSlugHint' | i18n }}</small>
     </div>
     <div class="field">
-      <label class="field-label">Webhook URL</label>
+      <label class="field-label">{{ 'settings.webhookUrl' | i18n }}</label>
       <input pInputText [(ngModel)]="webhookUrl" class="w-full" placeholder="https://…" />
-      <small class="field-hint">Receives platform event notifications</small>
+      <small class="field-hint">{{ 'settings.webhookHint' | i18n }}</small>
     </div>
 
     <p-divider />
     <div class="card-footer">
-      <p-button label="Save Changes" icon="pi pi-check" size="small" />
+      <p-button [label]="'settings.saveChanges' | i18n" icon="pi pi-check" size="small" />
     </div>
   </p-card>
 
-  <!-- Notifications -->
   <p-card>
     <ng-template pTemplate="header">
       <div class="section-header">
         <i class="pi pi-bell section-icon"></i>
         <div>
-          <div class="section-title">Notifications</div>
-          <div class="section-subtitle">Alert and digest preferences</div>
+          <div class="section-title">{{ 'settings.notificationsTitle' | i18n }}</div>
+          <div class="section-subtitle">{{ 'settings.notificationsSub' | i18n }}</div>
         </div>
       </div>
     </ng-template>
 
     <div class="toggle-row">
       <div>
-        <div class="toggle-label">DLQ Alerts</div>
-        <div class="toggle-desc">Notify when DLQ messages exceed threshold</div>
+        <div class="toggle-label">{{ 'settings.dlqAlerts' | i18n }}</div>
+        <div class="toggle-desc">{{ 'settings.dlqAlertsDesc' | i18n }}</div>
       </div>
       <p-toggleswitch [(ngModel)]="dlqAlerts" />
     </div>
     <p-divider styleClass="my-3" />
     <div class="toggle-row">
       <div>
-        <div class="toggle-label">Consumer Lag Alerts</div>
-        <div class="toggle-desc">Notify when consumer lag exceeds SLO</div>
+        <div class="toggle-label">{{ 'settings.lagAlerts' | i18n }}</div>
+        <div class="toggle-desc">{{ 'settings.lagAlertsDesc' | i18n }}</div>
       </div>
       <p-toggleswitch [(ngModel)]="lagAlerts" />
     </div>
     <p-divider styleClass="my-3" />
     <div class="toggle-row">
       <div>
-        <div class="toggle-label">Daily Email Digest</div>
-        <div class="toggle-desc">Receive a daily summary of platform activity</div>
+        <div class="toggle-label">{{ 'settings.emailDigest' | i18n }}</div>
+        <div class="toggle-desc">{{ 'settings.emailDigestDesc' | i18n }}</div>
       </div>
       <p-toggleswitch [(ngModel)]="emailDigest" />
     </div>
   </p-card>
-
 </div>
 
-<!-- API Keys -->
 <p-card styleClass="mt-4">
   <ng-template pTemplate="header">
     <div class="card-header-row">
       <div>
-        <h2 class="card-title">API Keys</h2>
-        <p class="card-subtitle">Manage service authentication keys</p>
+        <h2 class="card-title">{{ 'settings.apiKeysTitle' | i18n }}</h2>
+        <p class="card-subtitle">{{ 'settings.apiKeysSub' | i18n }}</p>
       </div>
-      <p-button label="Generate Key" icon="pi pi-plus" size="small" />
+      <p-button [label]="'settings.generateKey' | i18n" icon="pi pi-plus" size="small" />
     </div>
   </ng-template>
 
   <p-table [value]="apiKeys" styleClass="p-datatable-sm">
     <ng-template pTemplate="header">
       <tr>
-        <th>Name</th>
-        <th>Key Prefix</th>
-        <th>Status</th>
-        <th>Created</th>
-        <th>Last Used</th>
+        <th>{{ 'settings.colName' | i18n }}</th>
+        <th>{{ 'settings.colKeyPrefix' | i18n }}</th>
+        <th>{{ 'table.status' | i18n }}</th>
+        <th>{{ 'settings.colCreated' | i18n }}</th>
+        <th>{{ 'settings.colLastUsed' | i18n }}</th>
         <th style="width:80px"></th>
       </tr>
     </ng-template>
@@ -109,7 +104,7 @@
         <td>
           <p-tag
             [severity]="k.status === 'active' ? 'success' : 'secondary'"
-            [value]="k.status" />
+            [value]="('settings.keyStatus.' + k.status) | i18n" />
         </td>
         <td class="text-sm text-color-secondary">{{ k.createdAt }}</td>
         <td class="text-sm text-color-secondary">{{ k.lastUsed }}</td>
@@ -119,7 +114,7 @@
             variant="text"
             severity="danger"
             size="small"
-            pTooltip="Revoke"
+            [pTooltip]="'settings.revoke' | i18n"
             [disabled]="k.status === 'revoked'" />
         </td>
       </tr>

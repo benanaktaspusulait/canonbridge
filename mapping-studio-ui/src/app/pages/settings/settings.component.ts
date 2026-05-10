@@ -8,6 +8,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { FormsModule } from '@angular/forms';
 import { TooltipModule } from 'primeng/tooltip';
+import { I18nPipe } from '../../core/i18n/i18n.pipe';
 
 interface ApiKey {
   id: string;
@@ -22,7 +23,7 @@ interface ApiKey {
   selector: 'app-settings',
   standalone: true,
   imports: [CardModule, ButtonModule, InputTextModule, ToggleSwitchModule,
-            DividerModule, TableModule, TagModule, FormsModule, TooltipModule],
+            DividerModule, TableModule, TagModule, FormsModule, TooltipModule, I18nPipe],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss'
 })

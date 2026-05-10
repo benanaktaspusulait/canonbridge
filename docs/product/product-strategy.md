@@ -1,63 +1,62 @@
-# CanonBridge — Ürün Stratejisi ve Mimari Tartışma Notları
+# CanonBridge — Product strategy and architecture discussion notes
 
-> Bu doküman, CanonBridge entegrasyon platformunun mimari tasarımı,
-> ürün stratejisi, iş modeli ve go-to-market yaklaşımı üzerine yapılan
-> kapsamlı tartışmanın özetidir.
+> This document summarizes a detailed discussion of CanonBridge’s integration platform architecture,
+> product strategy, business model, and go-to-market approach.
 >
-> Tarih: 10 Mayıs 2026
+> Date: May 10, 2026
 
 ---
 
-## İçindekiler
+## Table of contents
 
-1. [Proje Künyesi](#1-proje-künyesi)
-2. [Mimari Özet](#2-mimari-özet)
-3. [Problemin Tanımı](#3-problemin-tanımı)
-4. [Rekabet Analizi](#4-rekabet-analizi)
-5. [İş Modeli](#5-iş-modeli)
-6. [Rekabet Avantajı: Built-in Reliability](#6-rekabet-avantajı-built-in-reliability)
-7. [Minimum Bakım İçin Gerekli Eklemeler](#7-minimum-bakım-için-gerekli-eklemeler)
-8. [Go-to-Market Stratejisi](#8-go-to-market-stratejisi)
-9. [Riskler ve Mitigasyon](#9-riskler-ve-mitigasyon)
+1. [Project profile](#1-project-profile)
+2. [Architecture summary](#2-architecture-summary)
+3. [Problem definition](#3-problem-definition)
+4. [Competitive analysis](#4-competitive-analysis)
+5. [Business model](#5-business-model)
+6. [Competitive advantage: built-in reliability](#6-competitive-advantage-built-in-reliability)
+7. [Additions required for minimum maintenance](#7-additions-required-for-minimum-maintenance)
+8. [Go-to-market strategy](#8-go-to-market-strategy)
+9. [Risks and mitigation](#9-risks-and-mitigation)
 
 ---
 
-## 1. Proje Künyesi
+## 1. Project profile
 
-| Başlık | Detay |
+| Field | Detail |
 |---|---|
-| **Ürün Adı** | CanonBridge |
+| **Product name** | CanonBridge |
 | **GitHub** | https://github.com/benanaktaspusulait/canonbridge |
-| **Konumlandırma** | Multi-partner entegrasyon platformu (ETL) |
-| **Hedef Kitle** | Entegrasyon firmaları, kurumsal şirketler |
-| **Lisans** | Proprietary |
-| **Durum** | Planning & Design Phase |
-| **Rol** | Contractor — Ürün Sahibi ve Mimar |
+| **Positioning** | Multi-partner integration platform (ETL) |
+| **Target audience** | Integration firms, enterprise companies |
+| **License** | Proprietary |
+| **Status** | Planning & design phase |
+| **Role** | Contractor — product owner and architect |
 
 ---
 
-## 2. Mimari Özet
+## 2. Architecture summary
 
-### 2.1 Teknoloji Stack'i
+### 2.1 Technology stack
 
-| Katman | Teknoloji |
+| Layer | Technology |
 |---|---|
 | Transformation | Node.js + TypeScript + JSONata + Ajv |
-| Business Services | Java + Quarkus |
-| Message Queue | Apache Kafka |
+| Business services | Java + Quarkus |
+| Message queue | Apache Kafka |
 | Database | PostgreSQL |
 | Orchestration | Kubernetes |
 | Monitoring | Prometheus + Grafana |
-| Frontend (sonra) | React (Mapping Studio UI) |
+| Frontend (later) | React (Mapping Studio UI) |
 
-### 2.2 Temel Mimari Akış
+### 2.2 Core architecture flow
 
 ```
-Partner / Dış Sistem
+Partner / external system
         ↓
 Kafka raw topic (partner.raw.events)
         ↓
-Node.js JSONata Transformer Service
+Node.js JSONata transformer service
     - Kafka consumer
     - Mapping cache (JSONata)
     - Schema cache (Ajv)
@@ -66,7 +65,7 @@ Node.js JSONata Transformer Service
         ↓
 Kafka canonical topic (canonical.events)
         ↓
-Business Consumer Service (Java/Quarkus)
+Business consumer service (Java/Quarkus)
     - Idempotency (processed_events)
     - Parent-child dependency (pending table)
     - DB transaction
@@ -78,359 +77,358 @@ Business DB
     - pending_order_lines
     - outbox_events
         ↓
-Outbox Publisher / CDC
+Outbox publisher / CDC
         ↓
 Kafka business events (business.events)
         ↓
 Downstream services
 ```
 
-### 2.3 Temel Prensipler
+### 2.3 Core principles
 
-- **Partner-specific complexity dışarıda kalır** — Transformation Layer'da izole edilir
-- **Core business logic clean canonical event alır** — Business Layer'da standart format
-- **JSONata dönüşüm motorudur, iş kuralı motoru değildir** — Sadece payload shaping
-- **Mapping'ler immutable ve versioned'dır** — `partnerId/eventType/inbound/v1.jsonata`
-- **Her canonical event schema validation'dan geçer** — Ajv ile zorunlu doğrulama
-- **At-least-once delivery + idempotent consumers** — Exactly-once iddiası yok
+- **Partner-specific complexity stays outside** — isolated in the transformation layer
+- **Core business logic receives clean canonical events** — standard format in the business layer
+- **JSONata is the transformation engine, not the business-rules engine** — payload shaping only
+- **Mappings are immutable and versioned** — `partnerId/eventType/inbound/v1.jsonata`
+- **Every canonical event passes schema validation** — mandatory Ajv validation
+- **At-least-once delivery + idempotent consumers** — no exactly-once claim
 
-### 2.4 Neden Node.js + JSONata?
+### 2.4 Why Node.js + JSONata?
 
-| Geleneksel Yaklaşım | CanonBridge Yaklaşımı |
+| Traditional approach | CanonBridge approach |
 |---|---|
 | CompanyAClient, CompanyARequestMapper, CompanyAResponseMapper, CompanyAValidator, CompanyAErrorMapper | Generic transformation engine + partner-specific JSONata mappings |
-| Her yeni partner için yeni sınıflar | Her yeni partner için yeni JSONata dosyası |
-| Kod değişikliği = redeploy | Mapping değişikliği = dosya güncelleme |
-| 200 alan = 400 satır kod | 200 alan = 200 satır JSONata |
+| New classes for every new partner | New JSONata file for every new partner |
+| Code change = redeploy | Mapping change = file update |
+| 200 fields = 400 lines of code | 200 fields = 200 lines of JSONata |
 
 ---
 
-## 3. Problemin Tanımı
+## 3. Problem definition
 
-### 3.1 Çözülen Problem
+### 3.1 Problem being solved
 
-Entegrasyon firmaları ve kurumsal şirketler, her yeni dış sistem entegrasyonunda
-sıfırdan adapter, mapper, validator kodu yazmak zorunda kalır. Bu:
+Integration firms and enterprises must write adapter, mapper, and validator code from scratch for every new external system. That is:
 
-- **Tekrarlayan iş** — Aynı pattern, farklı format
-- **Hataya açık** — Her seferinde manuel mapping
-- **Pahalı** — Proje başına 6 ay, 5–10 geliştirici
-- **Ölçeklenemez** — 15 sisteme entegre olunca 15 ayrı kod tabanı
-- **Bakımı zor** — Her değişiklikte tüm adapter'ları güncelle
+- **Repetitive** — same pattern, different format
+- **Error-prone** — manual mapping each time
+- **Expensive** — ~6 months and 5–10 developers per project
+- **Does not scale** — 15 systems means 15 separate codebases
+- **Hard to maintain** — every change touches all adapters
 
-### 3.2 Mevcut Durum (CanonBridge Olmadan)
-
-```
-Proje A (Otomotiv):
-    → Sıfırdan adapter kodu
-    → 6 ay development
-    → 5 geliştirici
-    → Teslim
-
-Proje B (Perakende):
-    → Sıfırdan adapter kodu
-    → 6 ay development
-    → 5 geliştirici
-    → Teslim
-
-Proje C (Banka):
-    → Sıfırdan adapter kodu...
-```
-
-**Sonuç:** Her projede aynı iş yeniden yapılır. Ölçeklenemez. Kazanç: işçilik saat ücreti.
-
-### 3.3 Hedef Durum (CanonBridge ile)
+### 3.2 Current state (without CanonBridge)
 
 ```
-Platform kurulumu (bir kez)
+Project A (automotive):
+    → Adapter code from scratch
+    → 6 months development
+    → 5 developers
+    → Delivery
+
+Project B (retail):
+    → Adapter code from scratch
+    → 6 months development
+    → 5 developers
+    → Delivery
+
+Project C (bank):
+    → Adapter code from scratch...
+```
+
+**Outcome:** The same work is redone every project. It does not scale. Revenue is hourly consulting.
+
+### 3.3 Target state (with CanonBridge)
+
+```
+Platform setup (once)
         ↓
-Proje A (Otomotiv):
+Project A (automotive):
     → Partner config + JSONata mapping
-    → 2–4 hafta
-    → 1–2 geliştirici
+    → 2–4 weeks
+    → 1–2 developers
 
-Proje B (Perakende):
+Project B (retail):
     → Partner config + JSONata mapping
-    → 2–4 hafta
-    → 1–2 geliştirici
+    → 2–4 weeks
+    → 1–2 developers
 
-Proje C (Banka):
+Project C (bank):
     → Partner config + JSONata mapping...
 ```
 
-**Sonuç:** Platform bir kez yazılır, her projede sadece mapping eklenir. Kazanç: Ölçeklenebilir ürün geliri.
+**Outcome:** The platform is built once; each project adds mappings only. Revenue is scalable product income.
 
-### 3.4 Gerçek Senaryo
+### 3.4 Real-world scenario
 
 ```
-Tek bir firma için çalışan entegrasyon platformu:
+Integration platform for a single enterprise:
 
-Dış sistemler:
-    API-1:  Ticaret Bakanlığı     → farklı format
-    API-2:  Banka X               → farklı format
-    API-3:  Banka Y               → farklı format
-    API-4:  Lojistik A            → farklı format
-    API-5:  Lojistik B            → farklı format
-    API-6:  E-fatura sağlayıcısı  → farklı format
-    API-7:  E-arşiv sağlayıcısı   → farklı format
-    API-8:  CRM                   → farklı format
-    API-9:  ERP                   → farklı format
-    API-10: Ödeme geçidi          → farklı format
-    ...15 farklı nokta
+External systems:
+    API-1:  Government trade registry     → different format
+    API-2:  Bank X                        → different format
+    API-3:  Bank Y                        → different format
+    API-4:  Logistics A                   → different format
+    API-5:  Logistics B                   → different format
+    API-6:  E-invoice provider            → different format
+    API-7:  E-archive provider            → different format
+    API-8:  CRM                           → different format
+    API-9:  ERP                           → different format
+    API-10: Payment gateway               → different format
+    ...15 different endpoints
 
-Hepsi → CanonBridge → Tek canonical format → Core business logic
+All → CanonBridge → one canonical format → core business logic
 ```
 
 ---
 
-## 4. Rekabet Analizi
+## 4. Competitive analysis
 
-### 4.1 Büyük iPaaS Platformlarına Karşı Fark
+### 4.1 Versus large iPaaS platforms
 
-| Boyut | MuleSoft/Boomi/Workato | CanonBridge |
+| Dimension | MuleSoft/Boomi/Workato | CanonBridge |
 |---|---|---|
-| **Odak** | Her şeyi bağlamak (hub-and-spoke) | Dönüşüm pipeline'ı |
-| **Kullanıcı** | Düşük kod, görsel arayüz | Geliştirici dostu, mapping as code |
-| **Dönüşüm** | Sınırlı görsel mapping | JSONata — güçlü, versiyonlanabilir, test edilebilir |
-| **Reliability** | Temel hata yönetimi | DLQ + Retry + Circuit Breaker + Idempotency + Outbox + Pending |
-| **Deployment** | Sadece kendi cloud'ları | İstenen her yere (on-premise, AWS, Azure, GCP, OpenShift) |
-| **Fiyat** | Çok pahalı ($100K+/yıl) | Uygun (€12K–50K/yıl) |
-| **Ağırlık** | Ağır, bürokratik | Hafif, container-native |
-| **Mapping yönetimi** | UI'da manuel | Git'te versiyonlu, CI'da testli |
-| **Kontrat koruma** | Temel | Ajv JSON Schema ile zorunlu validasyon |
-| **Vendor lock-in** | Yüksek (kapalı sistem) | Düşük (açık standartlar: JSONata, JSON Schema, Kafka) |
+| **Focus** | Connect everything (hub-and-spoke) | Transformation pipeline |
+| **User** | Low-code, visual UI | Developer-first, mapping as code |
+| **Transformation** | Limited visual mapping | JSONata — powerful, versionable, testable |
+| **Reliability** | Basic error handling | DLQ + retry + circuit breaker + idempotency + outbox + pending |
+| **Deployment** | Their clouds only | Anywhere (on-premise, AWS, Azure, GCP, OpenShift) |
+| **Price** | Very expensive ($100K+/year) | Affordable (€12K–50K/year) |
+| **Weight** | Heavy, bureaucratic | Lightweight, container-native |
+| **Mapping management** | Manual in UI | Versioned in Git, tested in CI |
+| **Contract protection** | Basic | Mandatory Ajv JSON Schema validation |
+| **Vendor lock-in** | High (closed system) | Low (open standards: JSONata, JSON Schema, Kafka) |
 
-### 4.2 CanonBridge'in Farklılaştığı Noktalar
+### 4.2 Where CanonBridge differentiates
 
-1. **"Kod olarak mapping" (Mapping as Code)**
-   - JSONata mapping'ler Git'te versiyonlanır
-   - CI'da otomatik test edilir
-   - Code review sürecine dahil edilir
-   - Rollback tek komutla
+1. **Mapping as code**
+   - JSONata mappings are versioned in Git
+   - Automatically tested in CI
+   - Included in code review
+   - Rollback in one step
 
-2. **Built-in Reliability** — DLQ, retry, circuit breaker, idempotency, outbox, pending table, poison pill koruması, graceful shutdown
+2. **Built-in reliability** — DLQ, retry, circuit breaker, idempotency, outbox, pending table, poison-pill protection, graceful shutdown
 
-3. **Kontrat Koruma** — Ajv JSON Schema ile her canonical event validate edilir
+3. **Contract protection** — every canonical event validated with Ajv JSON Schema
 
-4. **Hibrit Deployment** — On-premise, AWS EKS, Azure AKS, Google GKE, OpenShift, Docker Compose
+4. **Hybrid deployment** — on-premise, AWS EKS, Azure AKS, Google GKE, OpenShift, Docker Compose
 
-5. **Hafif ve Geliştirici Dostu** — Container-native, CI/CD entegre, kara kutu değil
+5. **Lightweight and developer-friendly** — container-native, CI/CD integrated, not a black box
 
-### 4.3 Pazar Konumlandırması
+### 4.3 Market positioning
 
 ```
-Yüksek fiyat
+High price
     │
     │  MuleSoft ●
     │  Boomi ●
     │  Workato ●
     │
-    │       CanonBridge ●  ← Hedef konum
+    │       CanonBridge ●  ← Target position
     │
-    │  Apache Camel ● (ücretsiz, açık kaynak)
+    │  Apache Camel ● (free, open source)
     │
     └──────────────────────────────
-    Düşük reliability    Yüksek reliability
+    Low reliability    High reliability
 ```
 
 ---
 
-## 5. İş Modeli
+## 5. Business model
 
-### 5.1 Model: Ürün + Danışmanlık (SaaS Değil)
+### 5.1 Model: product + consulting (not SaaS)
 
-**Neden SaaS değil?**
-- Tek kişilik ekip, 7/24 altyapı nöbeti imkansız
-- Kurumsal firmalar verilerini dışarı vermek istemez
-- On-premise satışı çok daha hızlı: "Kendi sunucunuza kuralım"
+**Why not SaaS?**
+- Solo team — 24/7 ops on-call is not realistic
+- Enterprises often refuse to send data outside
+- On-premise sales cycle can be faster: “we install on your servers”
 
-**Neden Ürün + Danışmanlık?**
-- Platform lisansı recurring revenue sağlar
-- Danışmanlık yüksek tek seferlik gelir getirir
-- 5–10 müşteri yeterli, scale etme baskısı yok
+**Why product + consulting?**
+- Platform license gives recurring revenue
+- Consulting yields high one-time fees
+- 5–10 customers are enough — no pressure to hyper-scale
 
-### 5.2 Deployment Modeli: Customer-Managed
+### 5.2 Deployment model: customer-managed
 
-**"Nereye isterseniz oraya kurarım"**
+**“We install wherever you want”**
 
 ```
-Senin sağladığın:
-  ✅ Helm chart (veya kustomize)
-  ✅ Docker Compose (küçük kurulumlar)
-  ✅ Konfigürasyon şablonları
-  ✅ Migration script'leri
-  ✅ Kafka topic oluşturma script'leri
-  ✅ Prometheus + Grafana dashboard'ları
-  ✅ CI/CD pipeline örnekleri
-  ✅ Kurulum dokümantasyonu
-  ✅ 1–2 hafta onsite/remote kurulum desteği
+You provide:
+  ✅ Helm chart (or Kustomize)
+  ✅ Docker Compose (small installs)
+  ✅ Configuration templates
+  ✅ Migration scripts
+  ✅ Kafka topic creation scripts
+  ✅ Prometheus + Grafana dashboards
+  ✅ Example CI/CD pipelines
+  ✅ Installation documentation
+  ✅ 1–2 weeks onsite/remote install support
 
-Müşterinin sağlaması:
-  ✅ Kubernetes cluster (veya container runtime)
-  ✅ PostgreSQL (veya managed DB)
-  ✅ Kafka (veya managed Kafka)
-  ✅ Storage (PVC), Network / ingress, SSL sertifikaları
+Customer provides:
+  ✅ Kubernetes cluster (or container runtime)
+  ✅ PostgreSQL (or managed DB)
+  ✅ Kafka (or managed Kafka)
+  ✅ Storage (PVC), network / ingress, TLS certificates
 ```
 
-### 5.3 Gelir Kaynakları
+### 5.3 Revenue streams
 
-| Kalem | Türü | Açıklama |
+| Line item | Type | Description |
 |---|---|---|
-| **Platform Lisansı** | Yıllık recurring | Platformu kullanma hakkı, güncellemeler |
-| **Kurulum** | Tek seferlik | Helm chart deploy, konfigürasyon, entegrasyon |
-| **Mapping Yazımı** | Proje bazlı | Partner başına JSONata mapping geliştirme |
-| **Eğitim** | Tek seferlik | Geliştirici ve operasyon eğitimi |
-| **Premium Destek** | Yıllık recurring | SLA'lı öncelikli destek |
+| **Platform license** | Annual recurring | Right to use the platform, updates |
+| **Installation** | One-time | Helm deploy, configuration, integration |
+| **Mapping development** | Per project | JSONata mapping per partner |
+| **Training** | One-time | Developer and operations training |
+| **Premium support** | Annual recurring | Priority SLA support |
 
-### 5.4 Fiyatlandırma Tablosu
+### 5.4 Pricing table
 
-| Kalem | Starter | Professional | Enterprise |
+| Line item | Starter | Professional | Enterprise |
 |---|---|---|---|
-| **Partner sayısı** | 5 | 20 | Limitsiz |
-| **Event tipi** | 10 | 50 | Limitsiz |
-| **Ortam** | 1 (prod) | 3 (dev/staging/prod) | Limitsiz |
-| **HA** | Yok | Var | HA + DR |
-| **Temel destek** | 48h email | 8h Slack | 7/24 2h SLA |
-| **Lisans/yıl** | €12,000 | €25,000 | €50,000 |
-| **Premium destek/yıl** | €0 | €8,000 | €15,000 |
+| **Partner count** | 5 | 20 | Unlimited |
+| **Event types** | 10 | 50 | Unlimited |
+| **Environments** | 1 (prod) | 3 (dev/staging/prod) | Unlimited |
+| **HA** | No | Yes | HA + DR |
+| **Basic support** | 48h email | 8h Slack | 24/7 2h SLA |
+| **License / year** | €12,000 | €25,000 | €50,000 |
+| **Premium support / year** | €0 | €8,000 | €15,000 |
 
-**Opsiyonel Hizmetler:**
+**Optional services:**
 
-| Hizmet | Fiyat Aralığı |
+| Service | Price range |
 |---|---|
-| Kurulum (temel) | €5,000 |
-| Kurulum (kurumsal HA) | €15,000 |
-| Kurulum (kompleks, özel adapter) | €25,000+ |
-| Mapping yazımı (basit, 10–20 alan) | €1,500 / partner |
-| Mapping yazımı (orta, 50+ alan) | €4,000 / partner |
-| Mapping yazımı (kompleks, çok seviyeli) | €8,000+ / partner |
-| Geliştirici eğitimi (3 gün) | €3,000 |
-| Operasyon eğitimi (2 gün) | €2,500 |
-| İleri seviye eğitim (1 gün) | €2,000 |
-| Günlük danışmanlık | €800 / gün |
+| Installation (basic) | €5,000 |
+| Installation (enterprise HA) | €15,000 |
+| Installation (complex, custom adapter) | €25,000+ |
+| Mapping (simple, 10–20 fields) | €1,500 / partner |
+| Mapping (medium, 50+ fields) | €4,000 / partner |
+| Mapping (complex, multi-level) | €8,000+ / partner |
+| Developer training (3 days) | €3,000 |
+| Operations training (2 days) | €2,500 |
+| Advanced training (1 day) | €2,000 |
+| Daily consulting | €800 / day |
 
-### 5.5 Örnek Müşteri Faturası
+### 5.5 Sample customer invoice
 
-**ABC Otomotiv Distribütörü — 10 bayi entegrasyonu, HA kurulum**
+**ABC automotive distributor — 10 dealer integrations, HA install**
 
 ```
-Platform Lisansı (Professional):       €25,000 / yıl
-Premium Destek:                        €8,000 / yıl
-Kurumsal Kurulum (HA):                 €15,000 (tek sefer)
-10 bayi mapping'i (orta kompleks):     €40,000 (tek sefer)
-Eğitim (geliştirici + operasyon):      €5,500 (tek sefer)
+Platform license (Professional):       €25,000 / year
+Premium support:                        €8,000 / year
+Enterprise installation (HA):          €15,000 (one-time)
+10 dealer mappings (medium complexity):  €40,000 (one-time)
+Training (developers + operations):     €5,500 (one-time)
 ─────────────────────────────────────────────────
-İlk yıl toplam:                        €93,500
-Sonraki yıllar recurring:              €33,000 / yıl
+First year total:                       €93,500
+Following years recurring:              €33,000 / year
 ```
 
-### 5.6 5 Müşterili Portföy Simülasyonu
+### 5.6 Five-customer portfolio simulation
 
-| Müşteri | Lisans/Yıl | Destek/Yıl | Kurulum* | Mapping* | İlk Yıl |
+| Customer | License/year | Support/year | Install* | Mapping* | Year 1 |
 |---|---|---|---|---|---|
-| Otomotiv A (Professional) | €25K | €8K | €15K | €40K | €88K |
-| Banka B (Enterprise) | €50K | €15K | €25K | €60K | €150K |
-| Lojistik C (Starter) | €12K | €0 | €5K | €15K | €32K |
-| Ent. Firması D (Professional) | €25K | €8K | €15K | €50K | €98K |
-| Perakende E (Professional) | €25K | €8K | €10K | €30K | €73K |
-| **Toplam** | **€137K** | **€39K** | **€70K** | **€195K** | **€441K** |
+| Automotive A (Professional) | €25K | €8K | €15K | €40K | €88K |
+| Bank B (Enterprise) | €50K | €15K | €25K | €60K | €150K |
+| Logistics C (Starter) | €12K | €0 | €5K | €15K | €32K |
+| Integration firm D (Professional) | €25K | €8K | €15K | €50K | €98K |
+| Retail E (Professional) | €25K | €8K | €10K | €30K | €73K |
+| **Total** | **€137K** | **€39K** | **€70K** | **€195K** | **€441K** |
 
-`*` Tek seferlik · **Sonraki yıllar recurring: €176K/yıl**
+`*` One-time · **Following years recurring: €176K/year**
 
-### 5.7 Lisans Yönetimi
+### 5.7 License management
 
 ```
-Lisans Mekanizması:
-  - License key (JWT veya signed token)
-  - Tier bilgisi key içinde (starter/professional/enterprise)
-  - Limitler key içinde (maxPartner, maxEventType, expiryDate)
-  - Platform başlangıçta key'i doğrular
-  - Süre dolunca: grace period 30 gün + uyarı log'ları
-  - Hard stop yok, ama log'da her mesajda uyarı
-  - Yenileme: yeni key gönder, yeniden başlatmaya gerek yok (reload endpoint)
+Licensing mechanism:
+  - License key (JWT or signed token)
+  - Tier in the key (starter/professional/enterprise)
+  - Limits in the key (maxPartner, maxEventType, expiryDate)
+  - Platform validates key at startup
+  - On expiry: 30-day grace period + warning logs
+  - No hard stop, but warning on every message in logs
+  - Renewal: send new key, restart not required (reload endpoint)
 ```
 
 ---
 
-## 6. Rekabet Avantajı: Built-in Reliability
+## 6. Competitive advantage: built-in reliability
 
-### 6.1 Hata Yönetimi Karşılaştırması
+### 6.1 Error-handling comparison
 
-| Senaryo | Büyük iPaaS | CanonBridge |
+| Scenario | Large iPaaS | CanonBridge |
 |---|---|---|
-| **Geçici hata** | Basit retry | 3 seviyeli retry topic (1m, 5m, 30m) + backpressure |
-| **Kalıcı hata** | DLQ (temel) | DLQ + PII mask + encrypted payload + redrive CLI |
-| **Sistem çökmesi** | Manuel müdahale | Circuit breaker otomatik → pause consumer → /health/ready 503 → recover |
-| **Duplicate event** | Best effort | `processed_events` tablosu zorunlu, DB transaction içinde |
-| **DB write + event atomik** | Yok (ek ücret) | Outbox pattern built-in, aynı transaction'da |
-| **Parent eksik** | Manuel çözüm | Pending table otomatik, parent gelince işler |
-| **Bozuk mesaj (poison pill)** | Consumer çökebilir | Try/catch wrapper, tek mesaj sistemi durduramaz |
-| **Pod kill** | Veri kaybı riski | Graceful shutdown + manual offset commit + worker drain |
-| **Partition sıralama** | Yok | Ordered mode offset tracking |
-| **Bir partner flood** | Sistem yavaşlar | Partner rate limiting + per-partner in-flight limit |
-| **DLQ şişmesi** | Operasyon körlüğü | DLQ alert + retention policy + redrive |
+| **Transient failure** | Simple retry | Three-tier retry topics (1m, 5m, 30m) + backpressure |
+| **Permanent failure** | DLQ (basic) | DLQ + PII mask + encrypted payload + redrive CLI |
+| **System crash** | Manual intervention | Circuit breaker → pause consumer → /health/ready 503 → recover |
+| **Duplicate event** | Best effort | Mandatory `processed_events` table inside DB transaction |
+| **Atomic DB write + event** | Not included (extra cost) | Built-in outbox pattern, same transaction |
+| **Missing parent** | Manual workaround | Automatic pending table, processes when parent arrives |
+| **Poison message** | Consumer may crash | Try/catch wrapper; one message cannot stop the system |
+| **Pod kill** | Data loss risk | Graceful shutdown + manual offset commit + worker drain |
+| **Partition ordering** | None | Ordered mode offset tracking |
+| **One partner floods** | Whole system slows | Partner rate limiting + per-partner in-flight limit |
+| **DLQ grows** | Ops blind spot | DLQ alert + retention policy + redrive |
 
-### 6.2 Müşteriye Anlatım (Value Proposition)
-
-```
-"Sisteminiz gece 3'te hata verdiğinde,
-MuleSoft size email atar. Sabah gelir bakar, çözersiniz.
-
-CanonBridge o sırada:
-
-✅ Geçici hataysa kendi kendine tekrar dener
-✅ Kalıcı hataysa DLQ'ya atar, PII maskeler, size metadata verir
-✅ Bir partner tüm sistemi yavaşlatırsa circuit breaker devreye girer
-✅ Sipariş kalemi siparişten önce gelirse pending tabloda bekler
-✅ Aynı mesaj iki kez gelirse sessizce atlar (idempotent)
-✅ Pod restart'ında mesaj kaybolmaz (graceful shutdown)
-✅ Worker timeout olursa task iptal edilir, DLQ'ya düşer
-
-Sabah geldiğinizde her şey ya işlenmiş,
-ya da DLQ'da sizi bekliyor olur.
-
-Size sadece DLQ'dakileri incelemek kalır."
-```
-
-### 6.3 Reliability Mimarisi — Tam Akış
+### 6.2 Customer narrative (value proposition)
 
 ```
-Mesaj geldi
+“When your system fails at 3 a.m.,
+MuleSoft sends you an email. You fix it in the morning.
+
+Meanwhile CanonBridge:
+
+✅ Retries automatically if the failure is transient
+✅ Sends permanent failures to DLQ, masks PII, gives you metadata
+✅ If one partner slows everything, the circuit breaker kicks in
+✅ If a line item arrives before the order, it waits in the pending table
+✅ If the same message arrives twice, it is skipped (idempotent)
+✅ No message loss on pod restart (graceful shutdown)
+✅ Worker timeouts cancel the task and route to DLQ
+
+In the morning everything is either processed
+or waiting for you in the DLQ.
+
+You only review what is in the DLQ.”
+```
+
+### 6.3 Reliability architecture — full flow
+
+```
+Message arrives
     ↓
-Poison pill koruması (try/catch wrapper)
+Poison-pill protection (try/catch wrapper)
     ↓
-JSON parse + envelope validasyonu
+JSON parse + envelope validation
     ↓
-Partner ve mapping çözümleme
+Resolve partner and mapping
     ↓
-Input schema validasyonu (opsiyonel)
+Input schema validation (optional)
     ↓
-JSONata dönüşümü (worker pool, timeout korumalı)
+JSONata transform (worker pool, timeout protected)
     ↓
-Canonical schema validasyonu (zorunlu, Ajv)
+Canonical schema validation (mandatory, Ajv)
     ↓
-EntityId / partition key validasyonu
+EntityId / partition key validation
     ↓
 Kafka produce (canonical topic)
     ↓
-Başarılı → offset commit
-Başarısız → hata sınıflandır:
-    ├── Geçici → retry topic (1m → 5m → 30m → DLQ)
-    ├── Kalıcı → DLQ (metadata + masked payload)
+Success → offset commit
+Failure → classify error:
+    ├── Transient → retry topic (1m → 5m → 30m → DLQ)
+    ├── Permanent → DLQ (metadata + masked payload)
     ├── Circuit breaker → pause consumer
     └── Worker timeout → retry → DLQ
 
-Business Service:
+Business service:
     ↓
-Canonical event consume
+Consume canonical event
     ↓
-Idempotency kontrolü (processed_events)
-    ├── Zaten işlenmiş → skip, success
-    └── Yeni → devam
+Idempotency check (processed_events)
+    ├── Already processed → skip, success
+    └── New → continue
         ↓
-    Parent-child kontrolü
-    ├── Parent var → işle
-    └── Parent yok → pending table
+    Parent-child check
+    ├── Parent exists → process
+    └── Parent missing → pending table
         ↓
     DB transaction:
         - Domain update
@@ -442,63 +440,63 @@ Idempotency kontrolü (processed_events)
 
 ---
 
-## 7. Minimum Bakım İçin Gerekli Eklemeler
+## 7. Additions required for minimum maintenance
 
-### 7.1 Self-Healing Mechanisms
+### 7.1 Self-healing mechanisms
 
-| Bileşen | Hata | Otomatik Davranış |
+| Component | Failure | Automatic behavior |
 |---|---|---|
-| Worker | Crash | Main thread detect eder, yeni worker başlatır, in-flight task retry |
-| Worker | Timeout | Task iptal, retry, max retry sonrası DLQ |
-| Consumer | Stall (no heartbeat) | Health check fail, K8s liveness probe restart |
-| DB pool | Tükenme | Circuit breaker, bağlantı yeniden deneme, /health/ready 503 |
-| Outbox publisher | Takılma | Auto-restart, deduplicate (event_id unique) |
-| Pending table | Şişme | Scheduled cleanup job, expired → DLQ |
+| Worker | Crash | Main thread detects, starts new worker, retries in-flight task |
+| Worker | Timeout | Cancel task, retry, DLQ after max retries |
+| Consumer | Stall (no heartbeat) | Health check fails, K8s liveness restart |
+| DB pool | Exhaustion | Circuit breaker, reconnect attempts, /health/ready 503 |
+| Outbox publisher | Stuck | Auto-restart, deduplicate (event_id unique) |
+| Pending table | Growth | Scheduled cleanup job, expired → DLQ |
 | Kafka producer | Timeout | Circuit breaker, retry topic, cooldown |
 
-### 7.2 Platform Upgrade Strategy
+### 7.2 Platform upgrade strategy
 
 ```
-Upgrade Yöntemi: Rolling update (Kubernetes)
+Upgrade method: rolling update (Kubernetes)
   - Helm chart upgrade
-  - RollingUpdate stratejisi (maxUnavailable: 0, maxSurge: 1)
-  - Pod'lar sırayla değişir
-  - Graceful shutdown ile eski pod drain olur
+  - RollingUpdate (maxUnavailable: 0, maxSurge: 1)
+  - Pods replaced sequentially
+  - Graceful shutdown drains old pods
 
-DB Migration:
-  - Flyway veya Liquibase
-  - Her sürüm için migration script'i
-  - Rollback script'i de bulunur
-  - Migration başarısız olursa deployment durur
+DB migration:
+  - Flyway or Liquibase
+  - Migration script per release
+  - Rollback script available
+  - Failed migration stops deployment
 
-Mapping Uyumluluğu:
-  - Yeni platform sürümü eski mapping'leri destekler
-  - CI'da tüm mapping fixture'ları test edilir
+Mapping compatibility:
+  - New platform version supports old mappings
+  - All mapping fixtures tested in CI
 
-Canary (Opsiyonel, ileri aşama):
-  - Yeni sürümü canary pod olarak devreye al
-  - Trafiğin %10'unu yönlendir
-  - Metrikleri izle, sorun yoksa %100'e çıkar
+Canary (optional, later):
+  - Deploy new version as canary pod
+  - Route 10% of traffic
+  - Watch metrics, then go to 100%
 
-Downtime: Sıfır (rolling update ile)
+Downtime: zero (with rolling update)
 ```
 
-### 7.3 Remote Support & Diagnostics
+### 7.3 Remote support and diagnostics
 
 ```
-support-bundle.sh Script'i:
-  Tek komutla şunları toplar:
-    - Son 1 saatlik log'lar (masked)
+support-bundle.sh script:
+  Collects in one command:
+    - Last hour of logs (masked)
     - Prometheus metrics snapshot
     - Kafka consumer group status
     - DB connection pool status
     - Worker pool status
-    - Konfigürasyon (secrets maskelenmiş)
-    - Son 100 DLQ mesajı (metadata only)
-  → Tar.gz olarak paketler
-  → Müşteri sana gönderir
+    - Configuration (secrets masked)
+    - Last 100 DLQ messages (metadata only)
+  → Packages as .tar.gz
+  → Customer sends to you
 
-Health Check Detayı:
+Health check detail:
   GET /health/ready?detail=true →
     {
       "status": "ready",
@@ -514,108 +512,108 @@ Health Check Detayı:
     }
 ```
 
-### 7.4 Audit Logging
+### 7.4 Audit logging
 
 ```
-Audit Event'leri:
-  - mapping.deployed (hangi mapping, hangi versiyon, kim)
-  - mapping.rollback (hangi mapping, eski versiyon, kim)
-  - schema.updated (hangi schema, hangi değişiklik, kim)
-  - dlq.redrive (hangi mesaj, hangi mapping versiyonu, kim onayladı)
-  - license.renewed (hangi tier, ne zaman)
-  - license.expiring (grace period başladı)
-  - config.updated (hangi ayar, eski/yeni değer, kim)
+Audit events:
+  - mapping.deployed (which mapping, version, who)
+  - mapping.rollback (which mapping, old version, who)
+  - schema.updated (which schema, change, who)
+  - dlq.redrive (which message, mapping version, who approved)
+  - license.renewed (which tier, when)
+  - license.expiring (grace period started)
+  - config.updated (which setting, old/new value, who)
 ```
 
-### 7.5 Backup & Disaster Recovery
+### 7.5 Backup and disaster recovery
 
 ```
-Yedeklenmesi Gerekenler:
-  1. PostgreSQL veritabanı → pg_dump, günlük, 30 gün retention
-  2. Mapping dosyaları → Git'te zaten var
-  3. Schema dosyaları → Git'te zaten var
-  4. Platform konfigürasyonu → GitOps (Helm values)
+Must back up:
+  1. PostgreSQL → pg_dump, daily, 30-day retention
+  2. Mapping files → already in Git
+  3. Schema files → already in Git
+  4. Platform configuration → GitOps (Helm values)
 
-RPO: DB 24 saat, Mapping/Schema anlık, Kafka 7 gün replay
-RTO: DB restore 1–2 saat, Platform restart 5 dakika
+RPO: DB 24h, mapping/schema instant, Kafka 7-day replay
+RTO: DB restore 1–2h, platform restart 5 minutes
 ```
 
-### 7.6 Platform Configuration Reference
+### 7.6 Platform configuration reference
 
 ```
-Runtime değişiklik (restart gerektirmez):
+Change at runtime (no restart):
   - WORKER_COUNT, WORKER_TASK_TIMEOUT_MS
   - CB_FAILURE_THRESHOLD, CB_COOLDOWN_MS
   - PARTNER_MAX_IN_FLIGHT, PARTNER_MAX_PAYLOAD_BYTES
 
-Restart gerektiren:
+Requires restart:
   - WORKER_MAX_OLD_SPACE_MB
   - KAFKA_BROKERS, DB_HOST
 
-Runtime değişiklik için: POST /admin/config/reload
+Runtime changes: POST /admin/config/reload
 ```
 
 ---
 
-## 8. Go-to-Market Stratejisi
+## 8. Go-to-market strategy
 
-### 8.1 Faz 1: Temel Atma
-
-```
-✅ Mimari doküman tamam
-✅ GitHub reposu oluşturuldu
-🔄 Otomotiv projesinde Java developer olarak çalış
-   → Piyasayı öğren, Fabric'in limitlerini not al
-🔄 CanonBridge MVP'sini boş zamanlarda kodla
-```
-
-### 8.2 Faz 2: MVP ve İlk Referans
+### 8.1 Phase 1: foundation
 
 ```
-□ CanonBridge MVP'sini tamamla (transformer + Kafka + DLQ + health + Helm)
-□ İlk referansı bul (otomotiv projesindeki bağlantılar)
-□ İlk kurulum + danışmanlık paketini sat
+✅ Architecture docs complete
+✅ GitHub repo created
+🔄 Work as Java developer on automotive project
+   → Learn the market, note Fabric limits
+🔄 Build CanonBridge MVP in spare time
 ```
 
-### 8.3 Faz 3: Büyüme
+### 8.2 Phase 2: MVP and first reference
 
 ```
-□ 3–5 kurumsal müşteri
-□ Yıllık €100K+ recurring revenue
+□ Finish CanonBridge MVP (transformer + Kafka + DLQ + health + Helm)
+□ Find first reference (connections from automotive project)
+□ Sell first installation + consulting package
+```
+
+### 8.3 Phase 3: growth
+
+```
+□ 3–5 enterprise customers
+□ €100K+ annual recurring revenue
 □ Mapping Studio UI (React) MVP
-□ Referans vakalar, vaka çalışmaları
+□ Reference cases, case studies
 ```
 
-### 8.4 Faz 4: Olgunlaşma
+### 8.4 Phase 4: maturity
 
 ```
-□ 5–10 müşteri
-□ Yıllık €150K+ recurring revenue
-□ Tam özellikli Mapping Studio UI
-□ Opsiyonel managed hosting
-□ Partner ağı (diğer contractor'lar mapping yazabilir)
+□ 5–10 customers
+□ €150K+ annual recurring revenue
+□ Full Mapping Studio UI
+□ Optional managed hosting
+□ Partner network (other contractors can write mappings)
 ```
 
 ---
 
-## 9. Riskler ve Mitigasyon
+## 9. Risks and mitigation
 
-| Risk | Olasılık | Etki | Mitigasyon |
+| Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| **Tek kişilik ekip** | Gerçek | Orta | Danışmanlık modeli (SaaS yok), müşteri sayısı sınırlı |
-| **Satış döngüsü uzun** | Yüksek | Yüksek | Contractor geliriyle bridge; küçük firmalardan başla |
-| **Rakip açık kaynak** | Orta | Orta | Reliability + support + deployment kolaylığı fark yaratır |
-| **Partner format değişimi** | Yüksek | Düşük | Mapping Studio rollback + DLQ replay bunu çözer |
-| **İlk müşteri bulamama** | Orta | Yüksek | Mevcut bağlantılarla referans kur, ilk kurulum indirimli |
-| **Platform bakım yükü** | Orta | Orta | Self-healing + iyi monitoring → az müdahale gerekir |
+| **Solo team** | Real | Medium | Consulting model (not SaaS), limited customer count |
+| **Long sales cycle** | High | High | Bridge with contractor income; start with smaller firms |
+| **Competing open source** | Medium | Medium | Reliability + support + easier deployment differentiate |
+| **Partner format changes** | High | Low | Mapping Studio rollback + DLQ replay address this |
+| **No first customer** | Medium | High | Use existing relationships; discounted first install |
+| **Platform maintenance load** | Medium | Medium | Self-healing + good monitoring → less intervention |
 
 ---
 
-## Bağlantılı Dokümanlar
+## Related documents
 
-- [İş Modeli ve Fiyatlandırma](./business-model.md)
-- [Rekabet Analizi](./competitive-analysis.md)
-- [Platform Upgrade Stratejisi](../deployment/08-platform-upgrade.md)
-- [Support ve Diagnostics](../operations/13-support-diagnostics.md)
-- [Mimari Genel Bakış](../architecture/01-overview.md)
-- [ADR Klasörü](../adr/)
+- [Business model and pricing](./business-model.md)
+- [Competitive analysis](./competitive-analysis.md)
+- [Platform upgrade strategy](../deployment/08-platform-upgrade.md)
+- [Support and diagnostics](../operations/13-support-diagnostics.md)
+- [Architecture overview](../architecture/01-overview.md)
+- [ADR folder](../adr/)

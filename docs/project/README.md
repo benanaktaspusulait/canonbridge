@@ -9,21 +9,25 @@ This folder contains core project planning and strategy documents.
 ### Start Here
 
 1. **[PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md)** - Quick project overview
-2. **[MASTER_ROADMAP.md](./MASTER_ROADMAP.md)** - Official project plan and timeline
+2. **[PROJECT_STATUS.md](./PROJECT_STATUS.md)** - Current status and documentation inventory
+3. **[MASTER_ROADMAP.md](./MASTER_ROADMAP.md)** - Official project plan and timeline
 
 ### Planning & Strategy
 
-3. **[BRAND_IDENTITY.md](./BRAND_IDENTITY.md)** - Project name, vision, and messaging
-4. **[MVP_DEFINITION.md](./MVP_DEFINITION.md)** - Minimum viable product scope
-5. **[STRATEGY.md](./STRATEGY.md)** - Customer validation and go-to-market plan
-6. **[PERFORMANCE_TARGETS.md](./PERFORMANCE_TARGETS.md)** - Performance goals by phase
+4. **[BRAND_IDENTITY.md](./BRAND_IDENTITY.md)** - Project name, vision, and messaging
+5. **[MVP_DEFINITION.md](./MVP_DEFINITION.md)** - Minimum viable product scope
+6. **[STRATEGY.md](./STRATEGY.md)** - Customer validation and go-to-market plan
+7. **[EXECUTION_BACKLOG.md](./EXECUTION_BACKLOG.md)** - Execution backlog, done criteria, and quick links
+8. **[CUSTOMER_DISCOVERY_KIT.md](./CUSTOMER_DISCOVERY_KIT.md)** - Phase 0 customer interview kit and templates
+9. **[PERFORMANCE_TARGETS.md](./PERFORMANCE_TARGETS.md)** - Performance goals by phase
 
 ### Historical & Reference
 
-7. **[DOCUMENTATION_ANALYSIS_REPORT.md](./DOCUMENTATION_ANALYSIS_REPORT.md)** - Issues found in documentation
-8. **[FIXES_APPLIED.md](./FIXES_APPLIED.md)** - Documentation fixes completed
-9. **[CLEANUP_COMPLETE.md](./CLEANUP_COMPLETE.md)** - Final cleanup report
-10. **[PHASE2_COMPLETE.md](./PHASE2_COMPLETE.md)** - Infrastructure planning summary (deprecated)
+10. **[WORK_SUMMARY.md](./WORK_SUMMARY.md)** - Log of documentation and repository organization work
+11. **[DOCUMENTATION_ANALYSIS_REPORT.md](./DOCUMENTATION_ANALYSIS_REPORT.md)** - Issues found in documentation
+12. **[FIXES_APPLIED.md](./FIXES_APPLIED.md)** - Documentation fixes completed
+13. **[CLEANUP_COMPLETE.md](./CLEANUP_COMPLETE.md)** - Final cleanup report
+14. **[PHASE2_COMPLETE.md](./PHASE2_COMPLETE.md)** - Infrastructure planning summary (deprecated)
 
 ---
 

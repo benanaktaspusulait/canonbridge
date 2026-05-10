@@ -1,39 +1,41 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">Monitoring</h1>
-    <p class="page-subtitle">Real-time platform metrics and partner health</p>
+    <h1 class="page-title">{{ 'monitoring.title' | i18n }}</h1>
+    <p class="page-subtitle">{{ 'monitoring.subtitle' | i18n }}</p>
   </div>
   <div class="page-actions">
-    <p-button icon="pi pi-refresh" variant="outlined" severity="secondary" label="Refresh" />
+    <p-button
+      icon="pi pi-refresh"
+      variant="outlined"
+      severity="secondary"
+      [label]="'monitoring.refresh' | i18n" />
   </div>
 </div>
 
-<!-- SLO metric cards -->
 <div class="metrics-grid">
-  @for (m of metrics; track m.label) {
+  @for (m of metrics; track m.labelKey) {
     <div class="metric-card" [class.ok]="m.ok" [class.breach]="!m.ok">
       <div class="metric-icon" [style.background]="m.color">
         <i class="pi {{ m.icon }}"></i>
       </div>
       <div class="metric-body">
         <div class="metric-value">{{ m.value }}<span class="metric-unit">{{ m.unit }}</span></div>
-        <div class="metric-label">{{ m.label }}</div>
+        <div class="metric-label">{{ m.labelKey | i18n }}</div>
         <div class="metric-slo" [class.ok]="m.ok" [class.breach]="!m.ok">
           <i class="pi" [class.pi-check]="m.ok" [class.pi-times]="!m.ok"></i>
-          {{ m.slo }}
+          {{ m.sloKey | i18n }}
         </div>
       </div>
     </div>
   }
 </div>
 
-<!-- Partner health table -->
 <p-card styleClass="mt-4">
   <ng-template pTemplate="header">
     <div class="card-header-row">
       <div>
-        <h2 class="card-title">Partner Health</h2>
-        <p class="card-subtitle">Per-partner throughput, latency, and DLQ metrics</p>
+        <h2 class="card-title">{{ 'monitoring.partnerHealth' | i18n }}</h2>
+        <p class="card-subtitle">{{ 'monitoring.partnerHealthSub' | i18n }}</p>
       </div>
     </div>
   </ng-template>
@@ -41,19 +43,21 @@
   <p-table [value]="partnerHealth" styleClass="p-datatable-sm">
     <ng-template pTemplate="header">
       <tr>
-        <th>Partner</th>
-        <th>Status</th>
-        <th>Throughput</th>
-        <th>p99 Latency</th>
-        <th>DLQ Rate</th>
-        <th style="text-align:right">Consumer Lag</th>
-        <th>Uptime</th>
+        <th>{{ 'table.partner' | i18n }}</th>
+        <th>{{ 'monitoring.colStatus' | i18n }}</th>
+        <th>{{ 'monitoring.colThroughput' | i18n }}</th>
+        <th>{{ 'monitoring.colP99Latency' | i18n }}</th>
+        <th>{{ 'monitoring.colDlqRate' | i18n }}</th>
+        <th style="text-align:right">{{ 'monitoring.metric.lag.label' | i18n }}</th>
+        <th>{{ 'monitoring.colUptime' | i18n }}</th>
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-p>
       <tr>
         <td><code class="partner-code">{{ p.partner }}</code></td>
-        <td><p-tag [severity]="getSeverity(p.status)" [value]="p.status" /></td>
+        <td>
+          <p-tag [severity]="getSeverity(p.status)" [value]="('monitoring.healthStatus.' + p.status) | i18n" />
+        </td>
         <td class="text-sm">{{ p.throughput }}</td>
         <td class="text-sm" [class.latency-warn]="p.p99 !== '—' && +p.p99 > 200">{{ p.p99 }}</td>
         <td class="text-sm" [class.dlq-warn]="p.dlqRate !== '—' && +p.dlqRate > 0.1">{{ p.dlqRate }}</td>

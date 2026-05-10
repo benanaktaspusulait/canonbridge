@@ -94,7 +94,7 @@ Large iPaaS platforms do not offer this. Mappings are GUI-only, hard to version,
 
 Every feature of the reliability model — multi-tier retry, DLQ with metadata, idempotency, outbox pattern, pending dependency table, poison pill protection, graceful shutdown — is designed into the platform architecture, not bolted on.
 
-See the full comparison in [Product Strategy — Reliability](./product-strategy.md#6-rekabet-avantajı-built-in-reliability).
+See the full comparison in [Product Strategy — Reliability](./product-strategy.md#6-competitive-advantage-built-in-reliability).
 
 ### 3. Deployment Flexibility
 

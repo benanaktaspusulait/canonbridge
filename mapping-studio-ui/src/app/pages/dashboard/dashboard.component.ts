@@ -5,9 +5,11 @@ import { TagModule } from 'primeng/tag';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { BadgeModule } from 'primeng/badge';
+import { I18nPipe } from '../../core/i18n/i18n.pipe';
 
 interface StatCard {
-  label: string;
+  labelKey: string;
+  changeKey: string;
   value: string;
   change: string;
   changeType: 'positive' | 'negative' | 'neutral';
@@ -27,56 +29,62 @@ interface RecentMapping {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink, CardModule, TagModule, ButtonModule, TableModule, BadgeModule],
+  imports: [RouterLink, CardModule, TagModule, ButtonModule, TableModule, BadgeModule, I18nPipe],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent {
   readonly stats: StatCard[] = [
     {
-      label: 'Messages Processed',
+      labelKey: 'dashboard.stat.msgProcessed.label',
+      changeKey: 'dashboard.stat.msgProcessed.change',
       value: '1,284,390',
-      change: '+12.3% vs yesterday',
+      change: '',
       changeType: 'positive',
       icon: 'pi-send',
       iconBg: '#dbeafe'
     },
     {
-      label: 'Active Mappings',
+      labelKey: 'dashboard.stat.activeMappings.label',
+      changeKey: 'dashboard.stat.activeMappings.change',
       value: '47',
-      change: '+2 this week',
+      change: '',
       changeType: 'positive',
       icon: 'pi-directions',
       iconBg: '#dcfce7'
     },
     {
-      label: 'DLQ Messages',
+      labelKey: 'dashboard.stat.dlq.label',
+      changeKey: 'dashboard.stat.dlq.change',
       value: '12',
-      change: '+5 in last hour',
+      change: '',
       changeType: 'negative',
       icon: 'pi-exclamation-triangle',
       iconBg: '#fee2e2'
     },
     {
-      label: 'Consumer Lag',
+      labelKey: 'dashboard.stat.lag.label',
+      changeKey: 'dashboard.stat.lag.change',
       value: '234',
-      change: 'Within SLO target',
+      change: '',
       changeType: 'neutral',
       icon: 'pi-clock',
       iconBg: '#fef9c3'
     },
     {
-      label: 'Transformation p99',
+      labelKey: 'dashboard.stat.p99.label',
+      changeKey: 'dashboard.stat.p99.change',
       value: '87ms',
-      change: 'SLO: < 200ms',
+      change: '',
       changeType: 'positive',
       icon: 'pi-bolt',
       iconBg: '#f3e8ff'
     },
     {
-      label: 'Active Partners',
+      labelKey: 'dashboard.stat.partners.label',
+      changeKey: 'dashboard.stat.partners.change',
       value: '8',
-      change: '3 tenants',
+      change: '',
       changeType: 'neutral',
       icon: 'pi-building',
       iconBg: '#ffedd5'

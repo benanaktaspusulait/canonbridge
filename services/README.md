@@ -6,7 +6,7 @@ Runtime service implementations live here.
 
 | Directory | Technology | Status |
 |-----------|-----------|--------|
-| `transformer/` | Node.js + TypeScript + JSONata | Planned |
+| `transformer/` | Node.js + TypeScript + JSONata | Implemented (MVP scaffold: HTTP + optional Kafka) |
 | `business-service/` | Java + Quarkus | Planned |
 
 ## Contracts
