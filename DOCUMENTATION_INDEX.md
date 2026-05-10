@@ -14,9 +14,12 @@ Start here to understand the product vision and roadmap:
 
 1. **[README.md](./README.md)** - Product overview and key features
 2. **[PRODUCT_ROADMAP.md](./PRODUCT_ROADMAP.md)** - 5-phase product roadmap (20 weeks)
-3. **[PRODUCT_TRANSFORMATION.md](./PRODUCT_TRANSFORMATION.md)** - How we transformed architecture into a product
-4. **[SAAS_REQUIREMENTS.md](./SAAS_REQUIREMENTS.md)** - SaaS multi-tenancy requirements
-5. **[QUICK_START.md](./QUICK_START.md)** - Role-based navigation guide
+3. **[docs/product/README.md](./docs/product/README.md)** - Mapping Studio product documentation
+4. **[docs/product/01-mapping-studio-product-requirements.md](./docs/product/01-mapping-studio-product-requirements.md)** - Management UI product requirements
+5. **[docs/product/02-mapping-studio-ux-flow.md](./docs/product/02-mapping-studio-ux-flow.md)** - Sample JSON to mapping UX flow
+6. **[PRODUCT_TRANSFORMATION.md](./PRODUCT_TRANSFORMATION.md)** - How we transformed architecture into a product
+7. **[SAAS_REQUIREMENTS.md](./SAAS_REQUIREMENTS.md)** - SaaS multi-tenancy requirements
+8. **[QUICK_START.md](./QUICK_START.md)** - Role-based navigation guide
 
 ### For Architects & Technical Leads
 
@@ -38,16 +41,21 @@ Understand the system design and technology decisions:
 
 Build the React dashboard and Angular forms:
 
-1. **[docs/implementation/FRONTEND_REACT_GUIDE.md](./docs/implementation/FRONTEND_REACT_GUIDE.md)** - React 18 + Vite setup
+1. **[docs/product/02-mapping-studio-ux-flow.md](./docs/product/02-mapping-studio-ux-flow.md)** - Mapping Studio UX contract
+
+2. **[docs/implementation/FRONTEND_REACT_GUIDE.md](./docs/implementation/FRONTEND_REACT_GUIDE.md)** - React 18 + Vite setup
    - Project structure
    - Dependencies
    - Component examples
+   - Mapping Studio shell and routes
    - Testing setup
    - Development workflow
 
-2. **[docs/implementation/FORMS_ANGULAR_GUIDE.md](./docs/implementation/FORMS_ANGULAR_GUIDE.md)** - Angular 17 setup
+3. **[docs/implementation/FORMS_ANGULAR_GUIDE.md](./docs/implementation/FORMS_ANGULAR_GUIDE.md)** - Angular 17 setup
    - Project structure
    - Reactive Forms
+   - Sample JSON upload and schema builder
+   - Mapping builder and transform preview
    - Custom validators
    - Service layer
    - Testing setup
@@ -125,6 +133,17 @@ Test the platform:
 ---
 
 ## 🗂️ Documentation by Topic
+
+### Product and Mapping Studio
+
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| [Product Documentation](./docs/product/README.md) | Mapping Studio documentation hub | Everyone |
+| [Mapping Studio Requirements](./docs/product/01-mapping-studio-product-requirements.md) | Product scope, personas, requirements | Product, Frontend, Backend |
+| [Mapping Studio UX Flow](./docs/product/02-mapping-studio-ux-flow.md) | Sample JSON to schema/mapping/publish screens | Product, Frontend, QA |
+| [Mapping Studio API and Data Model](./docs/product/03-mapping-studio-api-data-model.md) | Endpoints, entities, state model, artifact export | Backend, Frontend, Architects |
+| [Mapping Studio Validation and Testing](./docs/product/04-mapping-studio-validation-testing.md) | Validation pipeline, fixtures, publish gates | QA, Backend, Product |
+| [Mapping Studio Implementation Plan](./docs/product/05-mapping-studio-implementation-plan.md) | Delivery phases, modules, risks | Leads, Project Managers |
 
 ### Architecture & Design
 
@@ -204,6 +223,9 @@ Test the platform:
 |----------|---------|----------|
 | [README](./README.md) | Product overview | Everyone |
 | [Product Roadmap](./PRODUCT_ROADMAP.md) | 5-phase roadmap | Product, Executives |
+| [Mapping Studio Requirements](./docs/product/01-mapping-studio-product-requirements.md) | Management UI requirements | Product, Frontend, Backend |
+| [Mapping Studio UX Flow](./docs/product/02-mapping-studio-ux-flow.md) | Sample JSON to mapping UX | Product, Frontend, QA |
+| [Mapping Studio API and Data Model](./docs/product/03-mapping-studio-api-data-model.md) | Management API and data model | Backend, Architects |
 | [Product Transformation](./PRODUCT_TRANSFORMATION.md) | Architecture to product | Product, Architects |
 | [SaaS Requirements](./SAAS_REQUIREMENTS.md) | Multi-tenancy | Product, Architects |
 | [Tech Stack Final](./TECH_STACK_FINAL.md) | Technology choices | Architects, Tech Leads |
@@ -233,9 +255,15 @@ Test the platform:
 3. Reference: [Architecture Overview](./docs/architecture/01-overview.md)
 
 #### Build the Angular forms
-1. Read: [Forms Angular Guide](./docs/implementation/FORMS_ANGULAR_GUIDE.md)
-2. Follow: Project structure and setup
-3. Reference: [Architecture Overview](./docs/architecture/01-overview.md)
+1. Read: [Mapping Studio UX Flow](./docs/product/02-mapping-studio-ux-flow.md)
+2. Read: [Forms Angular Guide](./docs/implementation/FORMS_ANGULAR_GUIDE.md)
+3. Follow: Project structure and setup
+4. Reference: [Architecture Overview](./docs/architecture/01-overview.md)
+
+#### Configure a partner from sample JSON
+1. Read: [Mapping Studio Requirements](./docs/product/01-mapping-studio-product-requirements.md)
+2. Read: [Mapping Studio UX Flow](./docs/product/02-mapping-studio-ux-flow.md)
+3. Read: [Mapping Studio Validation and Testing](./docs/product/04-mapping-studio-validation-testing.md)
 
 #### Build the Node.js transformer
 1. Read: [Transformer Node.js Guide](./docs/implementation/TRANSFORMER_NODEJS_GUIDE.md)
@@ -276,8 +304,8 @@ Test the platform:
 
 ## 📊 Documentation Statistics
 
-- **Total Files**: 55 markdown files
-- **Total Lines**: 15,000+
+- **Total Files**: 66 markdown files
+- **Total Lines**: 18,000+
 - **Code Examples**: 50+
 - **Diagrams**: 40+
 - **Tables**: 30+
@@ -286,7 +314,7 @@ Test the platform:
 - **Deployment Guides**: 9 files
 - **Operations Guides**: 8 files
 - **Testing Guides**: 7 files
-- **Product Documents**: 7 files
+- **Product Documents**: 13 files
 
 ---
 
@@ -295,10 +323,11 @@ Test the platform:
 ### How to Update Documentation
 
 1. **Architecture Changes**: Update `docs/architecture/` files
-2. **Implementation Changes**: Update `docs/implementation/` files
-3. **Deployment Changes**: Update `docs/deployment/` files
-4. **Operational Changes**: Update `docs/operations/` files
-5. **Testing Changes**: Update `docs/testing/` files
+2. **Product Changes**: Update `docs/product/` and root product files
+3. **Implementation Changes**: Update `docs/implementation/` files
+4. **Deployment Changes**: Update `docs/deployment/` files
+5. **Operational Changes**: Update `docs/operations/` files
+6. **Testing Changes**: Update `docs/testing/` files
 
 ### Version Control
 

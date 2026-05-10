@@ -33,16 +33,24 @@ This guide helps you quickly find what you need.
 ### I'm a Product Manager
 ```
 1. Read: docs/README.md
-2. Then: docs/architecture/01-overview.md
-3. Success: docs/architecture/10-risk-mitigation.md (Success Criteria)
+2. Then: docs/product/01-mapping-studio-product-requirements.md
+3. UX: docs/product/02-mapping-studio-ux-flow.md
+4. Success: PRODUCT_ROADMAP.md
 ```
 
 ## 🎯 Common Tasks
 
 ### "How do I onboard a new partner?"
-→ `docs/architecture/04-message-design.md`  
-→ `docs/implementation/03-mapping-versioning.md`  
+→ `docs/product/01-mapping-studio-product-requirements.md`
+→ `docs/product/02-mapping-studio-ux-flow.md`
+→ `docs/architecture/04-message-design.md`
+→ `docs/implementation/03-mapping-versioning.md`
 → `docs/implementation/02-configuration.md`
+
+### "How do I upload sample JSON and create a mapping?"
+→ `docs/product/02-mapping-studio-ux-flow.md`
+→ `docs/product/03-mapping-studio-api-data-model.md`
+→ `docs/product/04-mapping-studio-validation-testing.md`
 
 ### "How do I deploy to production?"
 → `docs/deployment/01-deployment-checklist.md`  
@@ -69,8 +77,9 @@ This guide helps you quickly find what you need.
 ```
 docs/
 ├── README.md                    ← Start here for navigation
+├── product/                     ← Mapping Studio product docs
 ├── architecture/                ← Design decisions (10 files)
-├── implementation/              ← Code patterns (10 files)
+├── implementation/              ← Code patterns (14 files)
 ├── operations/                  ← Runbooks & procedures (8 files)
 ├── deployment/                  ← Deployment strategies (7 files)
 └── testing/                     ← Testing strategies (7 files)
@@ -142,12 +151,14 @@ Code → CI/CD → Canary (5%) → 25% → 50% → 100%
 | File | Purpose |
 |------|---------|
 | `docs/README.md` | Main navigation hub |
+| `docs/product/README.md` | Mapping Studio documentation hub |
+| `docs/product/02-mapping-studio-ux-flow.md` | Sample JSON to mapping UX |
 | `docs/architecture/01-overview.md` | Start here for understanding |
 | `docs/implementation/01-project-structure.md` | Project layout |
 | `docs/deployment/01-deployment-checklist.md` | Pre-deployment |
 | `docs/operations/08-runbook.md` | Quick reference |
 | `.gitignore` | Git configuration |
-| `DOCUMENTATION_STRUCTURE.md` | This documentation structure |
+| `DOCUMENTATION_INDEX.md` | Complete documentation map |
 
 ## 💡 Pro Tips
 
@@ -155,7 +166,7 @@ Code → CI/CD → Canary (5%) → 25% → 50% → 100%
 2. **Follow the links**: Each document has "Next Steps" and "See Also"
 3. **Check your role**: Different sections for architects, developers, DevOps
 4. **Use the runbook**: `docs/operations/08-runbook.md` for quick answers
-5. **Reference the original**: `nodejs-jsonata-kafka-integration-architecture-v6.md` for comprehensive details
+5. **Reference the archive**: `_archive/nodejs-jsonata-kafka-integration-architecture-v6.md` for comprehensive historical details
 
 ## 🎓 Learning Paths
 
@@ -190,13 +201,13 @@ A: Check `docs/README.md` for the navigation guide.
 A: Yes! See `docs/operations/08-runbook.md`
 
 **Q: What if I need the full details?**  
-A: See `nodejs-jsonata-kafka-integration-architecture-v6.md`
+A: See `_archive/nodejs-jsonata-kafka-integration-architecture-v6.md`
 
 **Q: How do I contribute to the docs?**  
-A: Follow the structure in `DOCUMENTATION_STRUCTURE.md`
+A: Follow the structure in `DOCUMENTATION_INDEX.md`
 
 **Q: What's the status of each section?**  
-A: Check `DOCUMENTATION_STRUCTURE.md` for completion status
+A: Check `DOCUMENTATION_INDEX.md` for completion status
 
 ## 🚦 Status
 

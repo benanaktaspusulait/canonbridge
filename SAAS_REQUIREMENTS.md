@@ -216,8 +216,13 @@ Monthly Invoices:
 
 4. First Integration
    ├── Create first partner
-   ├── Upload mapping
-   ├── Test transformation
+   ├── Upload or paste sample JSON
+   ├── Inspect inferred JSON structure
+   ├── Generate input schema
+   ├── Map source fields to canonical fields
+   ├── Test transformation preview
+   ├── Submit mapping for review
+   ├── Publish versioned mapping
    └── Deploy to production
 ```
 

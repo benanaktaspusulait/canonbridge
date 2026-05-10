@@ -70,6 +70,7 @@ See [GETTING_STARTED.md](GETTING_STARTED.md) for detailed walkthrough.
 | [PRODUCT_ROADMAP.md](PRODUCT_ROADMAP.md) | Product vision and timeline |
 | [QUICK_START.md](QUICK_START.md) | Navigation by role |
 | [docs/README.md](docs/README.md) | Complete documentation index |
+| [docs/product/](docs/product/) | Mapping Studio product and UX documentation |
 | [docs/architecture/](docs/architecture/) | Architecture decisions |
 | [docs/implementation/](docs/implementation/) | Implementation patterns |
 | [docs/operations/](docs/operations/) | Operational procedures |

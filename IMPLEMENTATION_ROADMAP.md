@@ -31,7 +31,15 @@ This document outlines the complete implementation roadmap for the ETL Solutions
    - 09-outbox-pattern.md - Outbox implementation
    - 10-risk-mitigation.md - Risk management
 
-2. **Implementation** (`docs/implementation/`)
+2. **Product** (`docs/product/`)
+   - README.md - Mapping Studio documentation hub
+   - 01-mapping-studio-product-requirements.md - Product requirements
+   - 02-mapping-studio-ux-flow.md - Sample JSON to mapping UX
+   - 03-mapping-studio-api-data-model.md - API and data model
+   - 04-mapping-studio-validation-testing.md - Validation and testing
+   - 05-mapping-studio-implementation-plan.md - Implementation plan
+
+3. **Implementation** (`docs/implementation/`)
    - 01-project-structure.md - Directory layout
    - 02-configuration.md - Configuration management
    - 03-mapping-versioning.md - Mapping versions
@@ -47,7 +55,7 @@ This document outlines the complete implementation roadmap for the ETL Solutions
    - **SERVICES_JAVA_QUARKUS_GUIDE.md** - Java/Quarkus implementation
    - **TRANSFORMER_NODEJS_GUIDE.md** - Node.js/Fastify implementation
 
-3. **Deployment** (`docs/deployment/`)
+4. **Deployment** (`docs/deployment/`)
    - 01-deployment-checklist.md - Pre-deployment checklist
    - 02-canary-deployment.md - Canary strategy
    - 03-blue-green-deployment.md - Blue-green strategy
@@ -58,7 +66,7 @@ This document outlines the complete implementation roadmap for the ETL Solutions
    - **KUBERNETES_DEPLOYMENT_GUIDE.md** - Complete K8s guide
    - **DOCKER_COMPOSE_LOCAL.md** - Local development setup
 
-4. **Operations** (`docs/operations/`)
+5. **Operations** (`docs/operations/`)
    - 01-monitoring-dashboards.md - Monitoring setup
    - 02-alerting-strategy.md - Alerting rules
    - 03-troubleshooting.md - Troubleshooting guide
@@ -68,7 +76,7 @@ This document outlines the complete implementation roadmap for the ETL Solutions
    - 07-performance-tuning.md - Performance optimization
    - 08-runbook.md - Operational runbook
 
-5. **Testing** (`docs/testing/`)
+6. **Testing** (`docs/testing/`)
    - 01-unit-tests.md - Unit testing strategy
    - 02-integration-tests.md - Integration testing
    - 03-e2e-tests.md - End-to-end testing
@@ -133,6 +141,9 @@ This document outlines the complete implementation roadmap for the ETL Solutions
 - [ ] Metrics visualization
 - [ ] Partner management UI
 - [ ] Configuration UI
+- [ ] Mapping Studio route and shell
+- [ ] Published mapping versions list
+- [ ] Validation run details view
 - [ ] Real-time updates with WebSocket
 
 #### 3.3 API Integration
@@ -168,6 +179,14 @@ This document outlines the complete implementation roadmap for the ETL Solutions
 - [ ] Mapping configuration form
 - [ ] Schema management form
 - [ ] Dynamic form generation
+- [ ] Sample JSON paste/upload form
+- [ ] JSON structure explorer
+- [ ] Input schema builder
+- [ ] Canonical mapping builder
+- [ ] JSONata code view
+- [ ] Transform preview
+- [ ] Fixture manager
+- [ ] Review and publish form
 
 #### 4.3 Validation & Services
 - [ ] Custom validators
@@ -175,6 +194,10 @@ This document outlines the complete implementation roadmap for the ETL Solutions
 - [ ] Partner service
 - [ ] Mapping service
 - [ ] Schema service
+- [ ] Sample payload service
+- [ ] Field inventory service
+- [ ] Validation run service
+- [ ] Artifact export service
 
 #### 4.4 Testing & Build
 - [ ] Unit tests with Jasmine/Karma

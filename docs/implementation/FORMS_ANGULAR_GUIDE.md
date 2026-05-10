@@ -2,7 +2,13 @@
 
 ## 🎯 Overview
 
-The forms layer provides complex form handling for partner onboarding, mapping configuration, and schema management using Angular 17 with Reactive Forms.
+The forms layer provides complex form handling for partner onboarding, Mapping Studio, mapping configuration, and schema management using Angular 17 with Reactive Forms.
+
+Mapping Studio product behavior is defined in:
+
+- [Mapping Studio Product Requirements](../product/01-mapping-studio-product-requirements.md)
+- [Mapping Studio UX Flow](../product/02-mapping-studio-ux-flow.md)
+- [Mapping Studio Validation and Testing](../product/04-mapping-studio-validation-testing.md)
 
 ## 🏗️ Project Structure
 
@@ -12,13 +18,17 @@ forms/
 │   ├── app/
 │   │   ├── modules/
 │   │   │   ├── partner-onboarding/
+│   │   │   ├── mapping-studio/
 │   │   │   ├── mapping-config/
 │   │   │   ├── schema-management/
 │   │   │   └── shared/
 │   │   ├── services/
 │   │   │   ├── partner.service.ts
+│   │   │   ├── sample-payload.service.ts
+│   │   │   ├── field-inventory.service.ts
 │   │   │   ├── mapping.service.ts
 │   │   │   ├── schema.service.ts
+│   │   │   ├── validation-run.service.ts
 │   │   │   └── validation.service.ts
 │   │   ├── models/
 │   │   │   ├── partner.model.ts
@@ -97,6 +107,22 @@ ng generate service services/validation
 ```
 
 ## 📋 Key Components
+
+### Mapping Studio Form Modules
+
+The Mapping Studio form experience should cover the complete sample JSON to publish workflow:
+
+- Draft setup form.
+- Sample JSON paste/upload form.
+- JSON structure explorer with field details.
+- Input schema builder.
+- Canonical mapping builder.
+- JSONata code view.
+- Transform preview.
+- Fixture manager.
+- Review and publish form.
+
+These modules should follow the UX contract in [Mapping Studio UX Flow](../product/02-mapping-studio-ux-flow.md). Expensive parsing, schema inference, preview execution, and validation runs should happen through backend APIs rather than browser-only logic.
 
 ### Partner Onboarding Form
 
@@ -462,8 +488,17 @@ ng lint
 - [ ] Angular project setup
 - [ ] Material UI integration
 - [ ] Partner onboarding form
+- [ ] Mapping Studio wizard
+- [ ] Sample JSON paste/upload form
+- [ ] JSON structure explorer
 - [ ] Mapping configuration form
 - [ ] Schema management form
+- [ ] Input schema builder
+- [ ] Canonical mapping builder
+- [ ] JSONata code view
+- [ ] Transform preview
+- [ ] Fixture manager
+- [ ] Review and publish form
 - [ ] Custom validators
 - [ ] Async validators
 - [ ] Error handling

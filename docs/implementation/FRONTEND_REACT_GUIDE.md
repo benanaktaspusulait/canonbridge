@@ -2,7 +2,13 @@
 
 ## 🎯 Overview
 
-The frontend layer provides dashboards, monitoring, and real-time metrics visualization using React 18 with TypeScript.
+The frontend layer provides dashboards, monitoring, partner management, Mapping Studio navigation, and real-time metrics visualization using React 18 with TypeScript.
+
+Mapping Studio product behavior is defined in:
+
+- [Mapping Studio Product Requirements](../product/01-mapping-studio-product-requirements.md)
+- [Mapping Studio UX Flow](../product/02-mapping-studio-ux-flow.md)
+- [Mapping Studio API and Data Model](../product/03-mapping-studio-api-data-model.md)
 
 ## 🏗️ Project Structure
 
@@ -13,17 +19,20 @@ frontend/
 │   │   ├── Dashboard/
 │   │   ├── Monitoring/
 │   │   ├── Partners/
+│   │   ├── MappingStudio/
 │   │   ├── Metrics/
 │   │   └── Common/
 │   ├── pages/
 │   │   ├── Home.tsx
 │   │   ├── Dashboard.tsx
 │   │   ├── Partners.tsx
+│   │   ├── MappingStudio.tsx
 │   │   ├── Monitoring.tsx
 │   │   └── Settings.tsx
 │   ├── services/
 │   │   ├── api.ts
 │   │   ├── auth.ts
+│   │   ├── mappingStudio.ts
 │   │   └── metrics.ts
 │   ├── store/
 │   │   ├── slices/
@@ -32,6 +41,7 @@ frontend/
 │   ├── types/
 │   │   ├── api.ts
 │   │   ├── metrics.ts
+│   │   ├── mapping-studio.ts
 │   │   └── partner.ts
 │   ├── utils/
 │   │   ├── formatters.ts
@@ -156,6 +166,33 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 ```
 
 ## 📊 Key Components
+
+### Mapping Studio Shell
+
+The React application should own navigation, route protection, draft lists, published version lists, validation run details, and the surrounding page shell. Complex schema/mapping forms may live directly in React or be implemented as Angular form modules, but the user experience should follow the Mapping Studio product docs.
+
+Core routes:
+
+```text
+/mapping-studio
+/mapping-studio/drafts/:draftId
+/mapping-studio/drafts/:draftId/samples
+/mapping-studio/drafts/:draftId/schema
+/mapping-studio/drafts/:draftId/mapping
+/mapping-studio/drafts/:draftId/preview
+/mapping-studio/drafts/:draftId/review
+/mapping-studio/versions
+/mapping-studio/validation-runs/:validationRunId
+```
+
+Core responsibilities:
+
+- List drafts and published versions.
+- Launch create/clone draft flows.
+- Render Mapping Studio wizard steps.
+- Show validation run status and errors.
+- Link runtime DLQ context to draft fixes when available.
+- Enforce route-level permissions.
 
 ### Dashboard Component
 
@@ -300,6 +337,10 @@ npm run preview
 - [ ] Dashboard component
 - [ ] Metrics visualization
 - [ ] Partner management UI
+- [ ] Mapping Studio route and shell
+- [ ] Mapping draft list
+- [ ] Published mapping version list
+- [ ] Validation run detail view
 - [ ] Real-time updates
 - [ ] Authentication integration
 - [ ] Unit tests

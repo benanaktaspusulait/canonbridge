@@ -346,6 +346,9 @@
 - [ ] Dashboard components
 - [ ] Real-time metrics display
 - [ ] Partner management UI
+- [ ] Mapping Studio shell
+- [ ] Published mapping versions view
+- [ ] Validation run details view
 
 ### Forms (Angular)
 - [ ] Angular 17 project setup
@@ -356,6 +359,12 @@
 - [ ] Partner onboarding forms
 - [ ] Mapping configuration forms
 - [ ] Schema management forms
+- [ ] Sample JSON upload/paste form
+- [ ] JSON structure explorer
+- [ ] Input schema builder
+- [ ] Canonical mapping builder
+- [ ] Transform preview and fixture manager
+- [ ] Review and publish workflow
 - [ ] Advanced validation
 - [ ] Error handling
 

@@ -90,6 +90,37 @@ A successful validation should show:
 - Basic dashboard metrics for throughput, failures, and latency.
 - A measured comparison against the current custom-adapter approach.
 
+## Management UI Strategy: Mapping Studio
+
+The management screen should be centered around Mapping Studio, not only dashboards. Mapping Studio is the workflow where users upload or paste sample partner JSON, inspect the inferred JSON tree, define an input schema, map source fields to canonical fields, preview the generated JSONata transformation, save fixtures, run validation, and publish an immutable mapping version.
+
+Primary documentation:
+
+- [Mapping Studio Product Requirements](./docs/product/01-mapping-studio-product-requirements.md)
+- [Mapping Studio UX Flow](./docs/product/02-mapping-studio-ux-flow.md)
+- [Mapping Studio API and Data Model](./docs/product/03-mapping-studio-api-data-model.md)
+- [Mapping Studio Validation and Testing](./docs/product/04-mapping-studio-validation-testing.md)
+- [Mapping Studio Implementation Plan](./docs/product/05-mapping-studio-implementation-plan.md)
+
+### Mapping Studio MVP
+
+The first management UI release should prove this loop:
+
+```text
+sample JSON -> inferred field tree -> input schema -> canonical mapping -> preview -> fixtures -> review -> publish
+```
+
+MVP capabilities:
+
+- Paste or upload sample JSON.
+- Display JSON tree with paths, inferred types, sample values, arrays, nullability, and conflicts.
+- Let users mark fields required/optional and generate Ajv-compatible JSON Schema.
+- Let users map source fields to canonical fields using direct rules, defaults, constants, conversions, and manual JSONata override.
+- Preview transformed canonical output and validation errors.
+- Save valid/invalid fixtures.
+- Block publish unless validation gates pass.
+- Publish immutable mapping versions with audit trail and artifact export.
+
 ## 📈 Product Strategy
 
 ### Target Value Proposition
@@ -176,7 +207,7 @@ A successful validation should show:
 - [ ] Advanced observability (tracing)
 - [ ] Automated remediation
 - [ ] Multi-partner support
-- [ ] Partner onboarding UI
+- [ ] Mapping Studio partner onboarding UI
 - [ ] Mapping validation CLI
 - [ ] DLQ replay tooling
 

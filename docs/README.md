@@ -23,7 +23,17 @@ This documentation is organized into logical sections for easy navigation and ma
 
 **For Product Overview**: See [PRODUCT_ROADMAP.md](../PRODUCT_ROADMAP.md)
 
-### 1. **Architecture** (`./architecture/`)
+### 1. **Product** (`./product/`)
+Management UI and Mapping Studio product behavior.
+
+- **[Product Documentation](./product/README.md)** - Product documentation index
+- **[Mapping Studio Requirements](./product/01-mapping-studio-product-requirements.md)** - Product scope, personas, functional requirements
+- **[Mapping Studio UX Flow](./product/02-mapping-studio-ux-flow.md)** - Sample JSON, schema builder, mapping, preview, review, publish screens
+- **[Mapping Studio API and Data Model](./product/03-mapping-studio-api-data-model.md)** - Domain model, endpoints, state transitions, artifact export
+- **[Mapping Studio Validation and Testing](./product/04-mapping-studio-validation-testing.md)** - Validation pipeline, fixtures, publish gates, test strategy
+- **[Mapping Studio Implementation Plan](./product/05-mapping-studio-implementation-plan.md)** - Delivery phases, modules, risks, definition of done
+
+### 2. **Architecture** (`./architecture/`)
 Core architectural decisions and design principles.
 
 - **[01-overview.md](./architecture/01-overview.md)** - Purpose and high-level architecture
@@ -37,7 +47,7 @@ Core architectural decisions and design principles.
 - **[09-outbox-pattern.md](./architecture/09-outbox-pattern.md)** - Transactional outbox pattern
 - **[10-risk-mitigation.md](./architecture/10-risk-mitigation.md)** - Risk analysis and mitigations
 
-### 2. **Implementation** (`./implementation/`)
+### 3. **Implementation** (`./implementation/`)
 Implementation patterns, code organization, and best practices.
 
 - **[01-project-structure.md](./implementation/01-project-structure.md)** - Recommended project structure
@@ -51,7 +61,7 @@ Implementation patterns, code organization, and best practices.
 - **[09-metrics-observability.md](./implementation/09-metrics-observability.md)** - Metrics and observability
 - **[10-security.md](./implementation/10-security.md)** - Security considerations
 
-### 3. **Operations** (`./operations/`)
+### 4. **Operations** (`./operations/`)
 Operational procedures and runbooks.
 
 - **[01-monitoring-dashboards.md](./operations/01-monitoring-dashboards.md)** - Monitoring and dashboards
@@ -63,7 +73,7 @@ Operational procedures and runbooks.
 - **[07-performance-tuning.md](./operations/07-performance-tuning.md)** - Performance tuning
 - **[08-runbook.md](./operations/08-runbook.md)** - Quick reference runbook
 
-### 4. **Deployment** (`./deployment/`)
+### 5. **Deployment** (`./deployment/`)
 Deployment strategies and procedures.
 
 - **[01-deployment-checklist.md](./deployment/01-deployment-checklist.md)** - Pre-deployment checklist
@@ -74,7 +84,7 @@ Deployment strategies and procedures.
 - **[06-kubernetes-manifests.md](./deployment/06-kubernetes-manifests.md)** - Kubernetes deployment examples
 - **[07-ci-cd-pipeline.md](./deployment/07-ci-cd-pipeline.md)** - CI/CD pipeline setup
 
-### 5. **Testing** (`./testing/`)
+### 6. **Testing** (`./testing/`)
 Testing strategies and examples.
 
 - **[01-unit-tests.md](./testing/01-unit-tests.md)** - Unit testing strategy
@@ -105,15 +115,22 @@ Testing strategies and examples.
 - Reference: [Runbook](./operations/08-runbook.md)
 
 **Product Managers**
-- Start with: [Architecture Overview](./architecture/01-overview.md)
-- Then read: [Implementation Phases](#implementation-phases)
+- Start with: [Mapping Studio Requirements](./product/01-mapping-studio-product-requirements.md)
+- Then read: [Mapping Studio UX Flow](./product/02-mapping-studio-ux-flow.md)
+- Reference: [Product Roadmap](../PRODUCT_ROADMAP.md)
 
 ### By Task
 
 **Onboarding a New Partner**
-1. [Message Design](./architecture/04-message-design.md)
-2. [Mapping Versioning](./implementation/03-mapping-versioning.md)
-3. [Configuration](./implementation/02-configuration.md)
+1. [Mapping Studio Requirements](./product/01-mapping-studio-product-requirements.md)
+2. [Mapping Studio UX Flow](./product/02-mapping-studio-ux-flow.md)
+3. [Mapping Versioning](./implementation/03-mapping-versioning.md)
+4. [Configuration](./implementation/02-configuration.md)
+
+**Uploading Sample JSON and Building a Mapping**
+1. [Mapping Studio UX Flow](./product/02-mapping-studio-ux-flow.md)
+2. [Mapping Studio API and Data Model](./product/03-mapping-studio-api-data-model.md)
+3. [Mapping Studio Validation and Testing](./product/04-mapping-studio-validation-testing.md)
 
 **Deploying to Production**
 1. [Deployment Checklist](./deployment/01-deployment-checklist.md)
@@ -234,8 +251,8 @@ This documentation should be updated when:
 
 ## 🔗 Related Resources
 
-- **Original Comprehensive Document**: `nodejs-jsonata-kafka-integration-architecture-v6.md`
-- **Improvements Summary**: `DOCUMENT_IMPROVEMENTS.md`
+- **Original Comprehensive Document**: `_archive/nodejs-jsonata-kafka-integration-architecture-v6.md`
+- **Improvements Summary**: `_archive/DOCUMENT_IMPROVEMENTS.md`
 - **Git Ignore**: `.gitignore`
 
 ## 📞 Support
