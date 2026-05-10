@@ -62,6 +62,29 @@
     </div>
   </header>
 
+  <section class="studio-command-strip" aria-label="Mapping health summary">
+    <article class="studio-command-card studio-command-card--primary">
+      <span class="studio-command-card__label">{{ 'studio.command.sourceFields' | i18n }}</span>
+      <strong>{{ sourcePathOptions().length }}</strong>
+      <small>{{ 'studio.command.sourceFieldsHint' | i18n }}</small>
+    </article>
+    <article class="studio-command-card">
+      <span class="studio-command-card__label">{{ 'studio.command.requiredTargets' | i18n }}</span>
+      <strong>{{ requiredTargetFields().length }}</strong>
+      <small>{{ missingRequiredFields().length }} {{ 'studio.command.missing' | i18n }}</small>
+    </article>
+    <article class="studio-command-card">
+      <span class="studio-command-card__label">{{ 'studio.command.mappingCoverage' | i18n }}</span>
+      <strong>{{ mappingCompletionPercent() }}%</strong>
+      <small>{{ mappedTargetKeys().size }} / {{ targetFields().length }} {{ 'studio.command.mapped' | i18n }}</small>
+    </article>
+    <article class="studio-command-card">
+      <span class="studio-command-card__label">{{ 'studio.command.advancedRules' | i18n }}</span>
+      <strong>{{ advancedRuleCount() }}</strong>
+      <small>{{ 'studio.command.advancedHint' | i18n }}</small>
+    </article>
+  </section>
+
 @if (activeStep() === 0) {
   <div class="step-panels">
     <p-card styleClass="studio-card">
@@ -241,6 +264,14 @@
     }
     <div class="studio-canonical-table-wrap">
       <table class="p-datatable-table studio-canonical-table">
+        <colgroup>
+          <col class="studio-col--drag" />
+          <col class="studio-col--target" />
+          <col class="studio-col--type" />
+          <col class="studio-col--required" />
+          <col class="studio-col--description" />
+          <col class="studio-col--action" />
+        </colgroup>
         <thead>
           <tr>
             <th class="studio-col-drag" aria-hidden="true"></th>
@@ -660,6 +691,134 @@
 }
 
 @if (activeStep() === 3) {
+  <div class="studio-review-grid">
+    <p-card styleClass="studio-card studio-review-card">
+      <ng-template pTemplate="header">
+        <div class="card-header-row">
+          <div>
+            <h2 class="card-title">{{ 'studio.unfinished.title' | i18n }}</h2>
+            <p class="card-subtitle">{{ 'studio.unfinished.subtitle' | i18n }}</p>
+          </div>
+        </div>
+      </ng-template>
+
+      <div class="studio-readiness-panel" [class.studio-readiness-panel--ok]="!missingRequiredFields().length">
+        <div class="studio-readiness-icon">
+          <i class="pi" [class.pi-check]="!missingRequiredFields().length" [class.pi-exclamation-triangle]="missingRequiredFields().length"></i>
+        </div>
+        <div>
+          <h3>
+            {{
+              missingRequiredFields().length
+                ? ('studio.unfinished.needsWorkTitle' | i18n)
+                : ('studio.unfinished.readyTitle' | i18n)
+            }}
+          </h3>
+          <p>
+            {{
+              missingRequiredFields().length
+                ? ('studio.unfinished.needsWorkText' | i18n: { count: missingRequiredFields().length })
+                : ('studio.unfinished.readyText' | i18n)
+            }}
+          </p>
+        </div>
+      </div>
+
+      @if (missingRequiredFields().length) {
+        <div class="studio-work-list">
+          @for (field of missingRequiredFields(); track field.key) {
+            <button type="button" class="studio-work-item" (click)="openRuleForTarget(field.key)">
+              <span>
+                <strong>{{ field.key }}</strong>
+                <small>{{ field.description || ('studio.unfinished.noDescription' | i18n) }}</small>
+              </span>
+              <p-tag severity="danger" [value]="'studio.unfinished.required' | i18n" />
+              <i class="pi pi-arrow-right" aria-hidden="true"></i>
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="studio-work-list">
+          @for (field of targetFields(); track field.key) {
+            <button type="button" class="studio-work-item studio-work-item--done" (click)="openRuleForTarget(field.key)">
+              <span>
+                <strong>{{ field.key }}</strong>
+                <small>{{ field.required ? ('studio.unfinished.requiredDone' | i18n) : ('studio.unfinished.optionalField' | i18n) }}</small>
+              </span>
+              <p-tag [severity]="field.required ? 'success' : 'secondary'" [value]="field.required ? ('studio.unfinished.mapped' | i18n) : ('studio.unfinished.optional' | i18n)" />
+              <i class="pi pi-arrow-right" aria-hidden="true"></i>
+            </button>
+          }
+        </div>
+      }
+
+      <div class="toolbar-row studio-review-actions">
+        <p-button
+          [label]="'studio.back' | i18n"
+          icon="pi pi-arrow-left"
+          variant="outlined"
+          severity="secondary"
+          (onClick)="prevStep()" />
+        <p-button
+          [label]="'studio.unfinished.continue' | i18n"
+          icon="pi pi-arrow-right"
+          iconPos="right"
+          (onClick)="nextStep()"
+          [disabled]="missingRequiredFields().length > 0" />
+      </div>
+    </p-card>
+
+    <p-card styleClass="studio-card studio-review-card">
+      <ng-template pTemplate="header">
+        <div class="card-header-row">
+          <div>
+            <h2 class="card-title">{{ 'studio.unfinished.coverageTitle' | i18n }}</h2>
+            <p class="card-subtitle">{{ 'studio.unfinished.coverageSubtitle' | i18n }}</p>
+          </div>
+        </div>
+      </ng-template>
+
+      <div class="studio-coverage-meter">
+        <div class="studio-coverage-meter__header">
+          <span>{{ 'studio.command.mappingCoverage' | i18n }}</span>
+          <strong>{{ mappingCompletionPercent() }}%</strong>
+        </div>
+        <div class="studio-coverage-meter__track">
+          <span [style.width.%]="mappingCompletionPercent()"></span>
+        </div>
+      </div>
+
+      <div class="studio-quality-list">
+        <div>
+          <span>{{ 'studio.unfinished.requiredCoverage' | i18n }}</span>
+          <strong>{{ requiredTargetFields().length - missingRequiredFields().length }} / {{ requiredTargetFields().length }}</strong>
+        </div>
+        <div>
+          <span>{{ 'studio.unfinished.visualRules' | i18n }}</span>
+          <strong>{{ rules().length - advancedRuleCount() }}</strong>
+        </div>
+        <div>
+          <span>{{ 'studio.unfinished.advancedRules' | i18n }}</span>
+          <strong>{{ advancedRuleCount() }}</strong>
+        </div>
+        <div>
+          <span>{{ 'studio.unfinished.lastValidation' | i18n }}</span>
+          <strong>
+            {{
+              validationOk() === null
+                ? ('studio.unfinished.notRun' | i18n)
+                : validationOk()
+                  ? ('studio.unfinished.passed' | i18n)
+                  : ('studio.unfinished.failed' | i18n)
+            }}
+          </strong>
+        </div>
+      </div>
+    </p-card>
+  </div>
+}
+
+@if (activeStep() === 4) {
   <div class="step-panels validate-grid">
     <p-card styleClass="studio-card">
       <ng-template pTemplate="header">

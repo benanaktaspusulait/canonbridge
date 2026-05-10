@@ -392,7 +392,8 @@ export class IntegrationStudioComponent implements OnInit {
     { id: 0, labelKey: 'studio.step.source' },
     { id: 1, labelKey: 'studio.step.canonical' },
     { id: 2, labelKey: 'studio.step.mapping' },
-    { id: 3, labelKey: 'studio.step.validate' }
+    { id: 3, labelKey: 'studio.step.unfinished' },
+    { id: 4, labelKey: 'studio.step.validate' }
   ];
 
   /** Highest step index the user may open (sequential wizard). */
@@ -513,6 +514,30 @@ export class IntegrationStudioComponent implements OnInit {
 
   readonly pathChips = computed(() => this.sourcePaths().slice(0, 12));
 
+  readonly requiredTargetFields = computed(() => this.targetFields().filter(f => f.required));
+
+  readonly mappedTargetKeys = computed(() => {
+    const keys = new Set<string>();
+    for (const rule of this.rules()) {
+      if (rule.targetKey && rule.sourcePath) keys.add(rule.targetKey);
+    }
+    return keys;
+  });
+
+  readonly missingRequiredFields = computed(() => {
+    const mapped = this.mappedTargetKeys();
+    return this.requiredTargetFields().filter(f => !mapped.has(f.key));
+  });
+
+  readonly advancedRuleCount = computed(() =>
+    this.rules().filter(rule => this.ruleUsesAdvancedLogic(rule)).length
+  );
+
+  readonly mappingCompletionPercent = computed(() => {
+    const total = Math.max(1, this.targetFields().length);
+    return Math.round((this.mappedTargetKeys().size / total) * 100);
+  });
+
   ngOnInit(): void {
     this.analyzePayload();
     this.selectedRule.set(this.rules()[0] ?? null);
@@ -524,7 +549,7 @@ export class IntegrationStudioComponent implements OnInit {
     if (t && ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName)) return;
     if (ev.key === 'ArrowRight') {
       ev.preventDefault();
-      const next = Math.min(3, this.activeStep() + 1);
+      const next = Math.min(4, this.activeStep() + 1);
       if (next <= this.maxUnlockedStep()) this.setStep(next);
     } else if (ev.key === 'ArrowLeft') {
       ev.preventDefault();
@@ -553,7 +578,8 @@ export class IntegrationStudioComponent implements OnInit {
       if (!rows.length) return true;
       return rows.some(r => !TARGET_KEY_PATTERN.test(r.key));
     }
-    if (i === 3) return this.validationOk() === false;
+    if (i === 3) return this.missingRequiredFields().length > 0 || Object.keys(this.ruleEvalErrors()).length > 0;
+    if (i === 4) return this.validationOk() === false;
     return false;
   }
 
@@ -564,7 +590,7 @@ export class IntegrationStudioComponent implements OnInit {
   }
 
   setStep(i: number): void {
-    const next = Math.max(0, Math.min(3, i));
+    const next = Math.max(0, Math.min(4, i));
     if (next > this.maxUnlockedStep()) {
       this.toast.add({
         severity: 'warn',
@@ -580,11 +606,20 @@ export class IntegrationStudioComponent implements OnInit {
 
   nextStep(): void {
     const cur = this.activeStep();
-    if (cur >= 3) return;
+    if (cur >= 4) return;
     if (cur === 0 && !this.treeNodes().length) return;
     if (cur === 1) {
       if (!this.targetFields().length) return;
       if (this.targetFields().some(f => !TARGET_KEY_PATTERN.test(f.key))) return;
+    }
+    if (cur === 3 && this.missingRequiredFields().length) {
+      this.toast.add({
+        severity: 'warn',
+        summary: this.i18n.translate('studio.unfinished.blockedTitle'),
+        detail: this.i18n.translate('studio.unfinished.blockedDetail'),
+        life: 4500
+      });
+      return;
     }
     const n = cur + 1;
     this.activeStep.set(n);
@@ -793,6 +828,29 @@ export class IntegrationStudioComponent implements OnInit {
     const added = this.rules().find(r => r.id === newRule.id) ?? null;
     this.selectedRule.set(added);
     this.ruleInspectorTab.set('visual');
+  }
+
+  openRuleForTarget(targetKey: string): void {
+    let rule = this.rules().find(r => r.targetKey === targetKey) ?? null;
+    if (!rule) {
+      const newRule: MappingRule = {
+        id: `r_${Date.now()}`,
+        sourcePath: this.sourcePaths()[0] ?? '',
+        targetKey,
+        transform: 'direct',
+        paramA: '',
+        paramB: '',
+        paramC: '',
+        advancedExpression: ''
+      };
+      this.rules.update(rs => [...rs, newRule]);
+      rule = newRule;
+    }
+    this.maxUnlockedStep.update(m => Math.max(m, 2));
+    this.activeStep.set(2);
+    this.selectedRule.set(rule);
+    this.ruleInspectorTab.set('visual');
+    this.scrollStudioIntoView();
   }
 
   removeRule(rule: MappingRule): void {
