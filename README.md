@@ -277,15 +277,18 @@ See [docs/project/STRATEGY.md](./docs/project/STRATEGY.md) for validation plan a
 | **Backend Engineers** | [MVP Definition](./docs/project/MVP_DEFINITION.md) · [Transformer Guide](./docs/implementation/TRANSFORMER_NODEJS_GUIDE.md) |
 | **Frontend Engineers** | [Mapping Studio](./docs/product/README.md) · [React Guide](./docs/implementation/FRONTEND_REACT_GUIDE.md) |
 | **DevOps / SRE** | [Deployment Guide](./docs/deployment/setup-guide.md) · [Runbook](./docs/operations/08-runbook.md) |
+| **By Phase** | [Documentation by Phase](./docs/DOCUMENTATION_BY_PHASE.md) - Which docs to read for each phase |
 | **Everyone** | [Master Roadmap](./docs/project/MASTER_ROADMAP.md) · [Documentation Hub](./docs/README.md) |
 
 **Core Documents**:
+- [Project Status](./PROJECT_STATUS.md) - Current status and next steps
 - [Master Roadmap](./docs/project/MASTER_ROADMAP.md) - Official project plan
 - [Project Summary](./docs/project/PROJECT_SUMMARY.md) - Quick overview
 - [Brand Identity](./docs/project/BRAND_IDENTITY.md) - Name, vision, messaging
 - [MVP Definition](./docs/project/MVP_DEFINITION.md) - What we build first
 - [Strategy](./docs/project/STRATEGY.md) - Validation and go-to-market
 - [Performance Targets](./docs/project/PERFORMANCE_TARGETS.md) - Performance goals
+- [Documentation Fixes](./docs/project/DOCUMENTATION_FIXES_COMPLETE.md) - Recent improvements
 
 ---
 

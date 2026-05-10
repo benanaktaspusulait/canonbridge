@@ -18,6 +18,7 @@ This is the central hub for all CanonBridge documentation. Whether you're a busi
 
 | I want to... | Go here | Time |
 |--------------|---------|------|
+| **See docs by phase** | [Documentation by Phase](./DOCUMENTATION_BY_PHASE.md) | 5 min |
 | **Create my first integration** | [Getting Started](./getting-started.md) | 10 min |
 | **See what's possible** | [Product Overview](./product/overview.md) | 5 min |
 | **Understand the project** | [Project Summary](./project/PROJECT_SUMMARY.md) | 10 min |
@@ -71,12 +72,14 @@ This is the central hub for all CanonBridge documentation. Whether you're a busi
 
 ### Project Planning & Strategy
 
+- **[Documentation by Phase](./DOCUMENTATION_BY_PHASE.md)** - Which docs to read for each phase ⭐
 - [Project Summary](./project/PROJECT_SUMMARY.md) - Quick overview
 - [Master Roadmap](./project/MASTER_ROADMAP.md) - Official project plan
 - [Brand Identity](./project/BRAND_IDENTITY.md) - Name, vision, messaging
 - [MVP Definition](./project/MVP_DEFINITION.md) - What we build first
 - [Strategy](./project/STRATEGY.md) - Validation and go-to-market
 - [Performance Targets](./project/PERFORMANCE_TARGETS.md) - Performance goals
+- [Documentation Fixes](./project/DOCUMENTATION_FIXES_COMPLETE.md) - Recent improvements
 
 ### Product
 
@@ -145,6 +148,14 @@ Mapping Studio is the core management workflow: upload or paste sample JSON, ins
 - [Disaster Recovery](./operations/06-disaster-recovery.md)
 - [Performance Tuning](./operations/07-performance-tuning.md)
 - [Runbook](./operations/08-runbook.md)
+- [Failure Scenarios](./operations/09-failure-scenarios.md)
+- [Schema Evolution](./operations/09-schema-evolution.md)
+- [Production Readiness](./operations/10-production-readiness.md)
+- [Replay & Recovery](./operations/10-replay-recovery.md)
+- [Support Diagnostics](./operations/11-support-diagnostics.md)
+- [Security Operations](./operations/12-security-operations.md)
+- [Cost & Capacity Planning](./operations/13-cost-capacity-planning.md)
+- [Audit Logging](./operations/14-audit-logging.md)
 
 ### Testing
 
