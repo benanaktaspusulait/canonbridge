@@ -8,7 +8,7 @@
 > - Customer validation has not been completed
 > - All performance claims are targets, not measured results
 > 
-> See [MASTER_ROADMAP.md](../MASTER_ROADMAP.md) for current phase.
+> See [project/MASTER_ROADMAP.md](./project/MASTER_ROADMAP.md) for current phase.
 
 This is the central hub for all CanonBridge documentation. Whether you're a business user creating integrations, a developer understanding the architecture, or a DevOps engineer deploying to production - start here.
 
@@ -20,11 +20,11 @@ This is the central hub for all CanonBridge documentation. Whether you're a busi
 |--------------|---------|------|
 | **Create my first integration** | [Getting Started](./getting-started.md) | 10 min |
 | **See what's possible** | [Product Overview](./product/overview.md) | 5 min |
+| **Understand the project** | [Project Summary](./project/PROJECT_SUMMARY.md) | 10 min |
+| **See the roadmap** | [Master Roadmap](./project/MASTER_ROADMAP.md) | 15 min |
 | **Learn the Mapping Studio** | [Mapping Studio Guide](./product/README.md) | 15 min |
-| **Design visual transformations** | [Visual JSONata Design](./product/06-mapping-studio-visual-jsonata-design.md) | 20 min |
-| **Understand the magic** | [Architecture Overview](./architecture/01-overview.md) | 20 min |
+| **Understand the architecture** | [Architecture Overview](./architecture/01-overview.md) | 20 min |
 | **Deploy to production** | [Deployment Guide](./deployment/setup-guide.md) | 1 hour |
-| **See the roadmap** | [Product Roadmap](./product/roadmap.md) | 5 min |
 | **Check implementation status** | [Implementation Status](./implementation/status.md) | 5 min |
 
 ---
@@ -40,21 +40,24 @@ This is the central hub for all CanonBridge documentation. Whether you're a busi
 
 ### 📊 For Product Managers
 **You understand the value and roadmap:**
-1. [Product Overview](./product/overview.md) - Features and benefits
-2. [Product Roadmap](./product/roadmap.md) - What's coming next
-3. [SaaS Requirements](./product/saas-requirements.md) - Enterprise features
+1. [Project Summary](./project/PROJECT_SUMMARY.md) - Quick overview
+2. [Product Overview](./product/overview.md) - Features and benefits
+3. [Master Roadmap](./project/MASTER_ROADMAP.md) - What's coming next
+4. [Strategy](./project/STRATEGY.md) - Validation and go-to-market
 
 ### 💻 For Developers
-**You understand the magic:**
+**You understand the architecture:**
 1. [Architecture Overview](./architecture/01-overview.md) - How it works
-2. [Transformation Layer](./architecture/05-transformation-layer.md) - JSONata deep dive
-3. [Implementation Guides](./implementation/) - Build and extend
+2. [MVP Definition](./project/MVP_DEFINITION.md) - What we build first
+3. [Transformation Layer](./architecture/05-transformation-layer.md) - JSONata deep dive
+4. [Implementation Guides](./implementation/) - Build and extend
 
 ### 🔧 For DevOps Engineers
 **You deploy and monitor:**
 1. [Setup Guide](./deployment/setup-guide.md) - Local and production setup
 2. [Kubernetes Guide](./deployment/KUBERNETES_DEPLOYMENT_GUIDE.md) - K8s deployment
 3. [Operations Runbook](./operations/08-runbook.md) - Day-to-day operations
+4. [Performance Targets](./project/PERFORMANCE_TARGETS.md) - What to aim for
 
 ### 🧪 For QA Engineers
 **You test and validate:**
@@ -65,6 +68,15 @@ This is the central hub for all CanonBridge documentation. Whether you're a busi
 ---
 
 ## 📚 Active Documentation Map
+
+### Project Planning & Strategy
+
+- [Project Summary](./project/PROJECT_SUMMARY.md) - Quick overview
+- [Master Roadmap](./project/MASTER_ROADMAP.md) - Official project plan
+- [Brand Identity](./project/BRAND_IDENTITY.md) - Name, vision, messaging
+- [MVP Definition](./project/MVP_DEFINITION.md) - What we build first
+- [Strategy](./project/STRATEGY.md) - Validation and go-to-market
+- [Performance Targets](./project/PERFORMANCE_TARGETS.md) - Performance goals
 
 ### Product
 

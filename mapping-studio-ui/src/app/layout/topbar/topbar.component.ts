@@ -1,5 +1,4 @@
 import { Component, EventEmitter, Output } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { MenuModule } from 'primeng/menu';
@@ -10,7 +9,7 @@ import { AuthService } from '../../core/services/auth.service';
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [RouterLink, ButtonModule, AvatarModule, MenuModule, BadgeModule],
+  imports: [ButtonModule, AvatarModule, MenuModule, BadgeModule],
   templateUrl: './topbar.component.html',
   styleUrl: './topbar.component.scss'
 })

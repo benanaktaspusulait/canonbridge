@@ -48,7 +48,7 @@ services:
     environment:
       BOOTSTRAP_SERVER: kafka:29092
     volumes:
-      - ./docker/kafka/create-topics.sh:/create-topics.sh:ro
+      - ./infrastructure/docker/kafka/create-topics.sh:/create-topics.sh:ro
     command: ["bash", "/create-topics.sh"]
     restart: "no"
 
@@ -93,7 +93,7 @@ services:
       POSTGRES_PASSWORD: canonbridge_password
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U canonbridge_user -d canonbridge_db"]
       interval: 10s
@@ -115,7 +115,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infrastructure/docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
 
   grafana:
@@ -129,6 +129,8 @@ services:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
     volumes:
+      - ./infrastructure/docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infrastructure/docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana
 
 volumes:

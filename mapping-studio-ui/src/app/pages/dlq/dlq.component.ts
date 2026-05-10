@@ -12,7 +12,7 @@ import { ButtonModule } from 'primeng/button';
         <h1 class="page-title">Dead Letter Queue</h1>
         <p class="page-subtitle">Investigate and replay failed messages.</p>
       </div>
-      <p-button label="Redrive All" icon="pi pi-refresh" severity="warning" variant="outlined" />
+      <p-button label="Redrive All" icon="pi pi-refresh" severity="danger" variant="outlined" />
     </div>
     <p-card>
       <div class="placeholder-content">

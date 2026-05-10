@@ -23,7 +23,6 @@ interface DemoAccount {
   imports: [
     FormsModule,
     NgIf,
-    RouterLink,
     ButtonModule,
     InputTextModule,
     PasswordModule,

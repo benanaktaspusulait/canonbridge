@@ -8,7 +8,7 @@
 > - **Performance Claims**: Target values based on architecture, not measured results
 > - **Timeline**: Estimates require validation
 >
-> See [MASTER_ROADMAP.md](./MASTER_ROADMAP.md) for current phase and [STRATEGY.md](./STRATEGY.md) for validation plan.
+> See [docs/project/MASTER_ROADMAP.md](./docs/project/MASTER_ROADMAP.md) for current phase and [docs/project/STRATEGY.md](./docs/project/STRATEGY.md) for validation plan.
 
 CanonBridge eliminates the engineering bottleneck of multi-partner integrations. Instead of writing custom adapter code for every new partner, business users define field mappings visually and publish in minutes. The platform handles transformation, validation, ordering, retry, and observability automatically.
 
@@ -263,7 +263,7 @@ Full rationale with tradeoffs: [docs/adr/](./docs/adr/)
 2. Go/no-go decision based on validation
 3. If go: Build MVP (Phase 1, 4 weeks)
 
-See [STRATEGY.md](./STRATEGY.md) for validation plan and success criteria.
+See [docs/project/STRATEGY.md](./docs/project/STRATEGY.md) for validation plan and success criteria.
 
 ---
 
@@ -271,48 +271,42 @@ See [STRATEGY.md](./STRATEGY.md) for validation plan and success criteria.
 
 | Audience | Start Here |
 |---|---|
-| **New to Project** | [PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md) · [Getting Started](./docs/getting-started.md) |
-| **Product Managers** | [STRATEGY.md](./STRATEGY.md) · [Product Overview](./docs/product/overview.md) |
+| **New to Project** | [Project Summary](./docs/project/PROJECT_SUMMARY.md) · [Getting Started](./docs/getting-started.md) |
+| **Product Managers** | [Strategy](./docs/project/STRATEGY.md) · [Product Overview](./docs/product/overview.md) |
 | **Architects / CTOs** | [Architecture Overview](./docs/architecture/01-overview.md) · [ADRs](./docs/adr/) |
-| **Backend Engineers** | [MVP Definition](./MVP_DEFINITION.md) · [Transformer Guide](./docs/implementation/TRANSFORMER_NODEJS_GUIDE.md) |
+| **Backend Engineers** | [MVP Definition](./docs/project/MVP_DEFINITION.md) · [Transformer Guide](./docs/implementation/TRANSFORMER_NODEJS_GUIDE.md) |
 | **Frontend Engineers** | [Mapping Studio](./docs/product/README.md) · [React Guide](./docs/implementation/FRONTEND_REACT_GUIDE.md) |
 | **DevOps / SRE** | [Deployment Guide](./docs/deployment/setup-guide.md) · [Runbook](./docs/operations/08-runbook.md) |
-| **Everyone** | [MASTER_ROADMAP.md](./MASTER_ROADMAP.md) · [Documentation Hub](./docs/README.md) |
+| **Everyone** | [Master Roadmap](./docs/project/MASTER_ROADMAP.md) · [Documentation Hub](./docs/README.md) |
 
 **Core Documents**:
-- [MASTER_ROADMAP.md](./MASTER_ROADMAP.md) - Official project plan
-- [BRAND_IDENTITY.md](./BRAND_IDENTITY.md) - Name, vision, messaging
-- [MVP_DEFINITION.md](./MVP_DEFINITION.md) - What we build first
-- [STRATEGY.md](./STRATEGY.md) - Validation and go-to-market
-- [PERFORMANCE_TARGETS.md](./PERFORMANCE_TARGETS.md) - Performance goals
-- [PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md) - Quick overview
+- [Master Roadmap](./docs/project/MASTER_ROADMAP.md) - Official project plan
+- [Project Summary](./docs/project/PROJECT_SUMMARY.md) - Quick overview
+- [Brand Identity](./docs/project/BRAND_IDENTITY.md) - Name, vision, messaging
+- [MVP Definition](./docs/project/MVP_DEFINITION.md) - What we build first
+- [Strategy](./docs/project/STRATEGY.md) - Validation and go-to-market
+- [Performance Targets](./docs/project/PERFORMANCE_TARGETS.md) - Performance goals
 
 ---
 
-## Quick Start (Local)
+## Quick Start
 
+> ⚠️ **Project Status**: Phase 0 - Validation & Strategy  
+> No code exists yet. Examples are for future reference.
+
+**Current Actions**:
+1. Read [docs/project/PROJECT_SUMMARY.md](./docs/project/PROJECT_SUMMARY.md) - Quick overview
+2. Read [docs/project/MASTER_ROADMAP.md](./docs/project/MASTER_ROADMAP.md) - Project plan
+3. See [docs/project/STRATEGY.md](./docs/project/STRATEGY.md) - Validation plan
+
+**When Implementation Begins** (Phase 1+):
 ```bash
-# Start all infrastructure
+# Example infrastructure (for future use)
+cd examples
 docker-compose up -d
-
-# Services available at:
-# Grafana:    http://localhost:3000  (admin/admin)
-# Prometheus: http://localhost:9090
-# Kafka UI:   http://localhost:8080
-# Kafka:      localhost:9092
-# Schema Registry: docker-compose --profile schema-registry up -d
-# PostgreSQL: localhost:5432
 ```
 
-Validate the planning-level schemas and sample mapping fixture:
-
-```bash
-npm install --no-package-lock
-npm run test:schema-compatibility
-npm run test:mapping-fixtures
-```
-
-Full setup: [docs/deployment/DOCKER_COMPOSE_LOCAL.md](./docs/deployment/DOCKER_COMPOSE_LOCAL.md)
+See [docs/deployment/setup-guide.md](./docs/deployment/setup-guide.md) for details.
 
 ---
 
