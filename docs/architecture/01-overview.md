@@ -81,7 +81,7 @@ Downstream services
 
 ## Problem Statement
 
-### The Old Way (Without Integration Magic)
+### The Old Way (Without CanonBridge)
 
 Every partner needs custom code:
 
@@ -109,7 +109,7 @@ CompanyBErrorMapper.java (150 lines)
 - ❌ Business blocked by engineering capacity
 - ❌ Tight coupling to partner formats
 
-### The New Way (With Integration Magic)
+### The New Way (With CanonBridge)
 
 **Zero custom code per partner:**
 
@@ -136,7 +136,7 @@ Canonical schema validation (automatic)
 - **New way:** Platform build once × 8 weeks × $10k/week = **$80,000**
 - **Savings:** **$920,000 + ongoing velocity gains**
 
-## When to Use Integration Magic
+## When to Use CanonBridge
 
 **Perfect fit when:**
 
@@ -158,7 +158,7 @@ Canonical schema validation (automatic)
 - Logistics: Consolidate 30+ shipping carriers
 - SaaS: Integrate customer data from various sources
 
-## When NOT to Use Integration Magic
+## When NOT to Use CanonBridge
 
 **May be overkill if:**
 

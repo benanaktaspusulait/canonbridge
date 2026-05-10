@@ -271,13 +271,21 @@ See [STRATEGY.md](./STRATEGY.md) for validation plan and success criteria.
 
 | Audience | Start Here |
 |---|---|
+| **New to Project** | [PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md) · [Getting Started](./docs/getting-started.md) |
+| **Product Managers** | [STRATEGY.md](./STRATEGY.md) · [Product Overview](./docs/product/overview.md) |
 | **Architects / CTOs** | [Architecture Overview](./docs/architecture/01-overview.md) · [ADRs](./docs/adr/) |
-| **Backend Engineers** | [Transformer Guide](./docs/implementation/TRANSFORMER_NODEJS_GUIDE.md) · [Quarkus Guide](./docs/implementation/SERVICES_JAVA_QUARKUS_GUIDE.md) |
-| **DevOps / SRE** | [Deployment Guide](./docs/deployment/setup-guide.md) · [Runbook](./docs/operations/08-runbook.md) · [DR](./docs/operations/06-disaster-recovery.md) |
-| **Product / Business** | [Product Overview](./docs/product/overview.md) · [Mapping Studio](./docs/product/01-mapping-studio-product-requirements.md) |
-| **Security** | [Security Controls](./docs/implementation/10-security.md) · [Threat Model](./docs/adr/ADR-009-security-threat-model.md) |
-| **Data Teams** | [Data Governance](./docs/governance/01-data-governance.md) · [Schema Strategy](./docs/governance/02-schema-registry.md) |
-| **Everyone** | [Documentation Hub](./docs/README.md) · [Getting Started](./docs/getting-started.md) |
+| **Backend Engineers** | [MVP Definition](./MVP_DEFINITION.md) · [Transformer Guide](./docs/implementation/TRANSFORMER_NODEJS_GUIDE.md) |
+| **Frontend Engineers** | [Mapping Studio](./docs/product/README.md) · [React Guide](./docs/implementation/FRONTEND_REACT_GUIDE.md) |
+| **DevOps / SRE** | [Deployment Guide](./docs/deployment/setup-guide.md) · [Runbook](./docs/operations/08-runbook.md) |
+| **Everyone** | [MASTER_ROADMAP.md](./MASTER_ROADMAP.md) · [Documentation Hub](./docs/README.md) |
+
+**Core Documents**:
+- [MASTER_ROADMAP.md](./MASTER_ROADMAP.md) - Official project plan
+- [BRAND_IDENTITY.md](./BRAND_IDENTITY.md) - Name, vision, messaging
+- [MVP_DEFINITION.md](./MVP_DEFINITION.md) - What we build first
+- [STRATEGY.md](./STRATEGY.md) - Validation and go-to-market
+- [PERFORMANCE_TARGETS.md](./PERFORMANCE_TARGETS.md) - Performance goals
+- [PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md) - Quick overview
 
 ---
 
