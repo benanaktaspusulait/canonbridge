@@ -58,9 +58,29 @@ This runbook gives operators quick actions for common production issues.
 | Business service | Domain team |
 | Security/data leak | Security team |
 
+## Self-Healing Reference
+
+Most failures recover automatically. This table is for awareness — operator action is only needed for sustained failures.
+
+| Component | Failure | Auto Recovery |
+|---|---|---|
+| Worker thread | Crash | Main thread detects, spawns replacement, in-flight task retried |
+| Worker thread | Timeout | Task cancelled → retry topic or DLQ |
+| Kafka consumer | Connection lost | Client reconnects (exponential backoff, max 30s) |
+| Kafka consumer | Stall | Liveness probe → Kubernetes restarts pod |
+| Kafka producer | Timeout | Circuit breaker opens → consumer pauses → readiness 503 |
+| Circuit breaker | Open | Cooldown period → half-open → resumes consuming |
+| DB pool | Exhaustion | Wait with timeout → circuit breaker → /health/ready 503 |
+| Outbox publisher | Crash | Kubernetes restarts → pending records published in burst |
+| Pending table | Excessive growth | Scheduled cleanup archives expired events to DLQ |
+
+For full self-healing details: [Support and Diagnostics](./11-support-diagnostics.md#self-healing-mechanisms)
+
 ## See Also
 
 - [Troubleshooting](./03-troubleshooting.md)
 - [Rollback Procedure](../deployment/04-rollback-procedure.md)
 - [Disaster Recovery](./06-disaster-recovery.md)
+- [Failure Scenarios](./09-failure-scenarios.md)
+- [Support and Diagnostics](./11-support-diagnostics.md)
 

@@ -212,14 +212,124 @@ The architecture is successful when:
 
 ---
 
+## Full Reliability Flow
+
+Every message passes through the following pipeline. Each stage has explicit failure handling.
+
+```
+Incoming Kafka message
+        │
+        ▼
+┌───────────────────────────────┐
+│  Poison pill wrapper          │ ← try/catch around entire pipeline
+│  Any unhandled exception →    │   captured here, never crashes consumer
+│  DLQ route                    │
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│  JSON parse + envelope        │
+│  validation                   │ ← fail → DLQ (ENVELOPE_PARSE_ERROR)
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│  Partner + mapping            │
+│  resolution                   │ ← fail → DLQ (MAPPING_NOT_FOUND)
+│  (cache or DB lookup)         │
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│  Input schema validation      │
+│  (optional, Ajv)              │ ← fail → DLQ (INPUT_SCHEMA_VIOLATION)
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│  JSONata transformation       │
+│  (worker pool, timeout guard) │ ← timeout → retry → DLQ (TRANSFORM_TIMEOUT)
+│                               │   error → DLQ (TRANSFORM_ERROR)
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│  Canonical schema validation  │
+│  (mandatory, Ajv)             │ ← fail → DLQ (CANONICAL_SCHEMA_VIOLATION)
+└───────────────┬───────────────┘
+                │
+                ▼
+┌───────────────────────────────┐
+│  Kafka produce                │
+│  (canonical topic)            │ ── temporary failure ──► retry.1m
+│                               │                           → retry.5m
+│                               │                           → retry.30m
+│                               │                           → DLQ (EXHAUSTED)
+│                               │ ── permanent failure ───► DLQ (PRODUCE_ERROR)
+│                               │ ── circuit breaker ─────► pause consumer
+└───────────────┬───────────────┘
+                │ (success)
+                ▼
+        Commit offset
+        (only here, never earlier)
+
+─────────────────────────────────────────────────────────────────
+
+Business Consumer Service:
+
+Incoming canonical event
+        │
+        ▼
+┌───────────────────────────────┐
+│  Idempotency check            │
+│  processed_events lookup      │ ── already processed ──► skip (idempotent success)
+└───────────────┬───────────────┘
+                │ (new event)
+                ▼
+┌───────────────────────────────┐
+│  Parent-child dependency      │
+│  check                        │ ── parent missing ──► pending table
+│                               │                       (retry when parent arrives)
+└───────────────┬───────────────┘
+                │ (parent present)
+                ▼
+┌───────────────────────────────┐
+│  DB transaction               │
+│  ├─ domain table write        │ ── fail → rollback → redelivery
+│  ├─ processed_events insert   │   (manual offset commit protects)
+│  └─ outbox_events insert      │
+└───────────────┬───────────────┘
+                │ (COMMIT)
+                ▼
+        Commit Kafka offset
+
+─────────────────────────────────────────────────────────────────
+
+Outbox Publisher:
+
+        Poll outbox_events WHERE status = PENDING
+                │
+                ▼
+        Produce to business.events
+                │
+                ▼
+        UPDATE outbox_events SET status = PUBLISHED
+        (if this fails: record stays PENDING, re-published next poll → idempotency downstream)
+```
+
 ## Next Steps
 
 1. Review [Implementation](../implementation/)
 2. Study [Testing](../testing/)
 3. Plan [Deployment](../deployment/)
+4. Review [Failure Scenarios](../operations/09-failure-scenarios.md) for per-failure operator guidance
 
 ---
 
 **See Also**:
 - [Core Principles](./02-core-principles.md)
 - [Overview](./01-overview.md)
+- [Sequence Diagrams](./11-sequence-diagrams.md)
+- [ADR-004: Manual Offset Commit](../adr/ADR-004-manual-kafka-offset-commit.md)
+- [ADR-005: Outbox Pattern](../adr/ADR-005-outbox-pattern.md)
+- [ADR-008: Idempotency](../adr/ADR-008-event-id-idempotency.md)
