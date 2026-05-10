@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This guide helps tune throughput, latency, resource usage, and Kafka lag for ETL Solutions.
+This guide helps tune throughput, latency, resource usage, and Kafka lag for CanonBridge.
 
 ## First Principles
 

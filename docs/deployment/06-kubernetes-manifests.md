@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document lists the Kubernetes resources expected for ETL Solutions. Full examples live in [Kubernetes Deployment Guide](./KUBERNETES_DEPLOYMENT_GUIDE.md).
+This document lists the Kubernetes resources expected for CanonBridge. Full examples live in [Kubernetes Deployment Guide](./KUBERNETES_DEPLOYMENT_GUIDE.md).
 
 ## Required Resources
 

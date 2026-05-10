@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes scaling strategies for the ETL Solutions platform, including horizontal and vertical scaling, auto-scaling configuration, and capacity planning.
+This document describes scaling strategies for the CanonBridge platform, including horizontal and vertical scaling, auto-scaling configuration, and capacity planning.
 
 ## Scaling Architecture
 
@@ -54,7 +54,7 @@ spec:
         target:
           type: Utilization
           averageUtilization: 70
-    
+
     # Memory-based scaling
     - type: Resource
       resource:
@@ -62,7 +62,7 @@ spec:
         target:
           type: Utilization
           averageUtilization: 80
-    
+
     # Custom metric: Kafka consumer lag
     - type: Pods
       pods:
@@ -71,7 +71,7 @@ spec:
         target:
           type: AverageValue
           averageValue: "1000"
-    
+
     # Custom metric: Queue depth
     - type: Pods
       pods:
@@ -80,7 +80,7 @@ spec:
         target:
           type: AverageValue
           averageValue: "100"
-  
+
   behavior:
     scaleUp:
       stabilizationWindowSeconds: 60
@@ -92,7 +92,7 @@ spec:
           value: 2
           periodSeconds: 60
       selectPolicy: Max
-    
+
     scaleDown:
       stabilizationWindowSeconds: 300
       policies:
@@ -127,14 +127,14 @@ spec:
         target:
           type: Utilization
           averageUtilization: 70
-    
+
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
           averageUtilization: 80
-    
+
     # Custom metric: Request rate
     - type: Pods
       pods:
@@ -143,7 +143,7 @@ spec:
         target:
           type: AverageValue
           averageValue: "100"
-    
+
     # Custom metric: Database connection pool usage
     - type: Pods
       pods:
@@ -152,7 +152,7 @@ spec:
         target:
           type: AverageValue
           averageValue: "70"
-  
+
   behavior:
     scaleUp:
       stabilizationWindowSeconds: 60
@@ -190,7 +190,7 @@ spec:
         target:
           type: Utilization
           averageUtilization: 70
-    
+
     - type: Resource
       resource:
         name: memory
@@ -420,13 +420,13 @@ data:
     quarkus.datasource.jdbc.max-size=50
     quarkus.datasource.jdbc.min-size=10
     quarkus.datasource.jdbc.initial-size=10
-    
+
     # Connection timeout
     quarkus.datasource.jdbc.acquisition-timeout=30
-    
+
     # Idle timeout
     quarkus.datasource.jdbc.idle-removal-interval=5M
-    
+
     # Validation
     quarkus.datasource.jdbc.validation-query-sql=SELECT 1
 ```
@@ -518,7 +518,7 @@ nodeGroups:
     tags:
       k8s.io/cluster-autoscaler/enabled: "true"
       k8s.io/cluster-autoscaler/etl-solutions: "owned"
-  
+
   # High-memory nodes for transformer
   - name: transformer-nodes
     instanceType: r5.2xlarge
@@ -535,7 +535,7 @@ nodeGroups:
     tags:
       k8s.io/cluster-autoscaler/enabled: "true"
       k8s.io/cluster-autoscaler/etl-solutions: "owned"
-  
+
   # High-CPU nodes for business service
   - name: business-service-nodes
     instanceType: c5.2xlarge
@@ -730,7 +730,7 @@ export default function () {
   };
 
   const res = http.post('http://transformer-service/transform', payload, params);
-  
+
   check(res, {
     'status is 200': (r) => r.status === 200,
     'response time < 500ms': (r) => r.timings.duration < 500,
@@ -783,5 +783,5 @@ export default function () {
 
 ---
 
-**Last Updated**: May 10, 2026  
+**Last Updated**: May 10, 2026
 **Version**: 1.0

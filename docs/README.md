@@ -1,20 +1,60 @@
-# ETL Solutions Documentation
+# Integration Magic Documentation
 
-This is the single active entry point for the ETL Solutions documentation. All documentation lives under `docs/`; root-level Markdown files have been moved here or archived to avoid duplicate navigation.
+**🪄 Complete guide to solving integration problems without code**
 
-## Start Here
+This is the central hub for all Integration Magic documentation. Whether you're a business user creating integrations, a developer understanding the architecture, or a DevOps engineer deploying to production - start here.
 
-| Need | Read |
-|------|------|
-| Product overview | [product/overview.md](./product/overview.md) |
-| Product fit and roadmap | [product/roadmap.md](./product/roadmap.md) |
-| Mapping Studio management UI | [product/README.md](./product/README.md) |
-| First-time setup and concepts | [getting-started.md](./getting-started.md) |
-| Technology stack | [architecture/tech-stack.md](./architecture/tech-stack.md) |
-| Implementation plan | [implementation/roadmap.md](./implementation/roadmap.md) |
-| Archived/deprecated docs | [archive/README.md](./archive/README.md) |
+---
 
-## Active Documentation Map
+## 🚀 Quick Navigation
+
+| I want to... | Go here | Time |
+|--------------|---------|------|
+| **Create my first integration** | [Getting Started](./getting-started.md) | 10 min |
+| **See what's possible** | [Product Overview](./product/overview.md) | 5 min |
+| **Learn the Mapping Studio** | [Mapping Studio Guide](./product/README.md) | 15 min |
+| **Understand the magic** | [Architecture Overview](./architecture/01-overview.md) | 20 min |
+| **Deploy to production** | [Deployment Guide](./deployment/setup-guide.md) | 1 hour |
+| **See the roadmap** | [Product Roadmap](./product/roadmap.md) | 5 min |
+| **Check implementation status** | [Implementation Status](./implementation/status.md) | 5 min |
+
+---
+
+## 👥 Documentation by Role
+
+### 🎨 For Business Users (No Code!)
+**You create integrations without coding:**
+1. [Getting Started](./getting-started.md) - Your first integration in 10 minutes
+2. [Mapping Studio Guide](./product/README.md) - Master the visual interface
+3. [Common Patterns](./product/02-mapping-studio-ux-flow.md) - Tips and tricks
+
+### 📊 For Product Managers
+**You understand the value and roadmap:**
+1. [Product Overview](./product/overview.md) - Features and benefits
+2. [Product Roadmap](./product/roadmap.md) - What's coming next
+3. [SaaS Requirements](./product/saas-requirements.md) - Enterprise features
+
+### 💻 For Developers
+**You understand the magic:**
+1. [Architecture Overview](./architecture/01-overview.md) - How it works
+2. [Transformation Layer](./architecture/05-transformation-layer.md) - JSONata deep dive
+3. [Implementation Guides](./implementation/) - Build and extend
+
+### 🔧 For DevOps Engineers
+**You deploy and monitor:**
+1. [Setup Guide](./deployment/setup-guide.md) - Local and production setup
+2. [Kubernetes Guide](./deployment/KUBERNETES_DEPLOYMENT_GUIDE.md) - K8s deployment
+3. [Operations Runbook](./operations/08-runbook.md) - Day-to-day operations
+
+### 🧪 For QA Engineers
+**You test and validate:**
+1. [Test Environment](./testing/07-test-environment.md) - Setup test environment
+2. [Testing Strategy](./testing/) - All test types
+3. [Contract Tests](./testing/06-contract-tests.md) - API contracts
+
+---
+
+## 📚 Active Documentation Map
 
 ### Product
 
@@ -42,6 +82,8 @@ Mapping Studio is the core management workflow: upload or paste sample JSON, ins
 ### Implementation
 
 - [Implementation Roadmap](./implementation/roadmap.md)
+- [Implementation Status](./implementation/status.md)
+- [Implementation-Ready Assets](./implementation/implementation-ready-assets.md)
 - [Project Structure](./implementation/01-project-structure.md)
 - [Configuration](./implementation/02-configuration.md)
 - [Mapping Versioning](./implementation/03-mapping-versioning.md)
@@ -60,6 +102,7 @@ Mapping Studio is the core management workflow: upload or paste sample JSON, ins
 ### Deployment
 
 - [Deployment Checklist](./deployment/01-deployment-checklist.md)
+- [Local Setup Guide](./deployment/setup-guide.md)
 - [Canary Deployment](./deployment/02-canary-deployment.md)
 - [Blue-Green Deployment](./deployment/03-blue-green-deployment.md)
 - [Rollback Procedure](./deployment/04-rollback-procedure.md)
@@ -97,14 +140,13 @@ Mapping Studio is the core management workflow: upload or paste sample JSON, ins
 | Product Manager | [product/overview.md](./product/overview.md) -> [product/roadmap.md](./product/roadmap.md) -> [product/README.md](./product/README.md) |
 | Frontend Developer | [product/02-mapping-studio-ux-flow.md](./product/02-mapping-studio-ux-flow.md) -> [implementation/FRONTEND_REACT_GUIDE.md](./implementation/FRONTEND_REACT_GUIDE.md) -> [implementation/FORMS_ANGULAR_GUIDE.md](./implementation/FORMS_ANGULAR_GUIDE.md) |
 | Backend Developer | [architecture/05-transformation-layer.md](./architecture/05-transformation-layer.md) -> [implementation/TRANSFORMER_NODEJS_GUIDE.md](./implementation/TRANSFORMER_NODEJS_GUIDE.md) -> [implementation/03-mapping-versioning.md](./implementation/03-mapping-versioning.md) |
-| DevOps/SRE | [deployment/DOCKER_COMPOSE_LOCAL.md](./deployment/DOCKER_COMPOSE_LOCAL.md) -> [deployment/KUBERNETES_DEPLOYMENT_GUIDE.md](./deployment/KUBERNETES_DEPLOYMENT_GUIDE.md) -> [operations/08-runbook.md](./operations/08-runbook.md) |
+| DevOps/SRE | [deployment/setup-guide.md](./deployment/setup-guide.md) -> [deployment/DOCKER_COMPOSE_LOCAL.md](./deployment/DOCKER_COMPOSE_LOCAL.md) -> [deployment/KUBERNETES_DEPLOYMENT_GUIDE.md](./deployment/KUBERNETES_DEPLOYMENT_GUIDE.md) -> [operations/08-runbook.md](./operations/08-runbook.md) |
 | QA | [testing/07-test-environment.md](./testing/07-test-environment.md) -> [testing/01-unit-tests.md](./testing/01-unit-tests.md) -> [testing/03-e2e-tests.md](./testing/03-e2e-tests.md) |
 
 ## Maintenance Rules
 
 - Keep active documentation under `docs/`.
 - Use `docs/README.md` as the only active navigation hub.
-- Move deprecated or duplicate summaries to `docs/archive/`.
+- Move deprecated, generated, or duplicate summaries to `docs/archive/`.
 - Do not create new root-level Markdown files.
 - Update this index whenever a new active document is added.
-

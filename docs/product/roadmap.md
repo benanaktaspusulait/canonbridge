@@ -78,7 +78,7 @@ Priority gaps:
 Before expanding the roadmap, validate one narrow scenario:
 
 ```text
-Can ETL Solutions onboard a new partner event by changing only config, schema, mapping, and fixtures, while preserving observability and safe failure handling?
+Can CanonBridge onboard a new partner event by changing only config, schema, mapping, and fixtures, while preserving observability and safe failure handling?
 ```
 
 A successful validation should show:
@@ -272,7 +272,7 @@ MVP capabilities:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                   ETL Solutions Platform                │
+│                 CanonBridge Platform                    │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │

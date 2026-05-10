@@ -1,5 +1,5 @@
 ================================================================================
-ETL SOLUTIONS - DOCUMENTATION ORGANIZATION SUMMARY
+CANONBRIDGE - DOCUMENTATION ORGANIZATION SUMMARY
 ================================================================================
 
 PROJECT STATUS: ✅ PHASE 1 COMPLETE - DOCUMENTATION ORGANIZED

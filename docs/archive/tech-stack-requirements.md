@@ -1,8 +1,8 @@
-# Tech Stack Requirements for ETL Solutions
+# Tech Stack Requirements for CanonBridge
 
 ## 🏗️ Architecture Overview
 
-ETL Solutions must support multiple deployment models and tech stacks based on customer needs.
+CanonBridge must support multiple deployment models and tech stacks based on customer needs.
 
 ## 📦 Core Technology Stack
 

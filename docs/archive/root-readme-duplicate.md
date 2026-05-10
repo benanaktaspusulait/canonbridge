@@ -1,8 +1,8 @@
-# ETL Solutions
+# CanonBridge
 
 **Transform partner data into business events in minutes, not weeks.**
 
-ETL Solutions is a production-grade event transformation platform that enables rapid partner onboarding and reduces time-to-market for integration projects.
+CanonBridge is a production-grade event transformation platform that enables rapid partner onboarding and reduces time-to-market for integration projects.
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/status-Documentation_Complete-green.svg)](PRODUCT_ROADMAP.md)
@@ -12,7 +12,7 @@ ETL Solutions is a production-grade event transformation platform that enables r
 
 ## 🚀 Quick Start
 
-### New to ETL Solutions?
+### New to CanonBridge?
 
 **Start here**: [START_HERE.md](./START_HERE.md) - Choose your role and get personalized guidance
 
@@ -28,7 +28,7 @@ ETL Solutions is a production-grade event transformation platform that enables r
 
 ---
 
-## 🎯 Why ETL Solutions?
+## 🎯 Why CanonBridge?
 
 ### The Problem
 - ❌ Building custom adapters for each partner
@@ -185,7 +185,7 @@ Kubernetes (for production)
 ```bash
 # Clone repository
 git clone <repo-url>
-cd etlsolutions
+cd canonbridge
 
 # Start infrastructure with Docker Compose
 docker-compose up -d
@@ -202,7 +202,7 @@ curl http://localhost:8080/health/ready   # Business Service
 ## 📦 Project Structure
 
 ```
-etlsolutions/
+canonbridge/
 ├── README.md                    # This file
 ├── START_HERE.md                # Entry point
 ├── GETTING_STARTED.md           # Quick start guide
@@ -352,7 +352,7 @@ Built with:
 
 **Made with ❤️ for integration engineers**
 
-**Last Updated**: May 10, 2026  
-**Version**: 1.0.0  
+**Last Updated**: May 10, 2026
+**Version**: 1.0.0
 **Status**: ✅ Documentation Complete, Ready for Implementation
 

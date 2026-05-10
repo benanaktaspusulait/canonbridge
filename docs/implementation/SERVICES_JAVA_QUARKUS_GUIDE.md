@@ -85,7 +85,7 @@ business-service/
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -94,7 +94,7 @@ business-service/
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>ETL Business Service</name>
+    <name>CanonBridge Business Service</name>
     <description>Business logic processing service</description>
 
     <parent>
@@ -308,9 +308,9 @@ quarkus.http.host=0.0.0.0
 
 # Database
 quarkus.datasource.db-kind=postgresql
-quarkus.datasource.username=etl_user
-quarkus.datasource.password=etl_password
-quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5432/etl_db
+quarkus.datasource.username=etluser
+quarkus.datasource.password=etlpass
+quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5432/etldb
 quarkus.datasource.jdbc.max-size=20
 quarkus.datasource.jdbc.min-size=5
 
@@ -345,7 +345,7 @@ quarkus.micrometer.binder.system.enabled=true
 quarkus.log.level=INFO
 quarkus.log.console.format=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{2.}] (%t) %s%e%n
 quarkus.log.file.enable=true
-quarkus.log.file.path=/var/log/etl/business-service.log
+quarkus.log.file.path=/var/log/etl-solutions/business-service.log
 
 # OpenTelemetry
 quarkus.otel.enabled=true
@@ -459,7 +459,7 @@ public class IdempotencyService {
                 .status(IdempotencyKey.Status.PROCESSING)
                 .createdAt(LocalDateTime.now())
                 .build());
-        
+
         key.setStatus(IdempotencyKey.Status.PROCESSING);
         idempotencyKeyRepository.persist(key);
     }
@@ -468,7 +468,7 @@ public class IdempotencyService {
     public void markProcessed(String idempotencyKey, String result) {
         IdempotencyKey key = idempotencyKeyRepository.findByKey(idempotencyKey)
             .orElseThrow(() -> new IllegalStateException("Idempotency key not found"));
-        
+
         key.setStatus(IdempotencyKey.Status.PROCESSED);
         key.setResult(result);
         key.setProcessedAt(LocalDateTime.now());
@@ -479,7 +479,7 @@ public class IdempotencyService {
     public void markFailed(String idempotencyKey, String errorMessage) {
         IdempotencyKey key = idempotencyKeyRepository.findByKey(idempotencyKey)
             .orElseThrow(() -> new IllegalStateException("Idempotency key not found"));
-        
+
         key.setStatus(IdempotencyKey.Status.FAILED);
         key.setErrorMessage(errorMessage);
         idempotencyKeyRepository.persist(key);
@@ -599,7 +599,7 @@ public class EventProcessingService {
     }
 
     private String generateIdempotencyKey(CanonicalEvent event) {
-        return event.getPartnerId() + ":" + event.getEventType() + ":" + 
+        return event.getPartnerId() + ":" + event.getEventType() + ":" +
                event.getKafkaPartition() + ":" + event.getKafkaOffset();
     }
 }
@@ -724,7 +724,7 @@ import static org.hamcrest.Matchers.is;
 public class EventProcessingIntegrationTest {
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15")
-        .withDatabaseName("etl_test")
+        .withDatabaseName("etldb_test")
         .withUsername("test")
         .withPassword("test");
 

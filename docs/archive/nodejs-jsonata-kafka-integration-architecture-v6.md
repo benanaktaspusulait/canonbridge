@@ -5107,11 +5107,11 @@ test('rejects missing required field', () => {
 ```ts
 test('duplicate event is treated as success', async () => {
   const event = { eventId: 'evt-1', ... };
-  
+
   // First processing
   const result1 = await processEvent(event);
   expect(result1.success).toBe(true);
-  
+
   // Duplicate
   const result2 = await processEvent(event);
   expect(result2.success).toBe(true);
@@ -5135,9 +5135,9 @@ test('transforms raw event to canonical', async () => {
     eventType: 'OrderCreated',
     payload: { order_id: 'ORD-1' }
   };
-  
+
   const result = await transformer.transform(rawEvent);
-  
+
   expect(result.canonical.eventId).toBe('evt-1');
   expect(result.canonical.payload.orderId).toBe('ORD-1');
   expect(result.valid).toBe(true);
@@ -5150,10 +5150,10 @@ test('transforms raw event to canonical', async () => {
 test('consumes raw, produces canonical', async () => {
   // Produce raw event
   await rawTopic.produce(rawEvent);
-  
+
   // Run transformer
   await transformer.run();
-  
+
   // Verify canonical event
   const canonical = await canonicalTopic.consume();
   expect(canonical.eventId).toBe(rawEvent.eventId);
@@ -5165,15 +5165,15 @@ test('consumes raw, produces canonical', async () => {
 ```ts
 test('processes canonical event idempotently', async () => {
   const canonical = { eventId: 'evt-1', ... };
-  
+
   // First processing
   await businessService.process(canonical);
   const order1 = await db.getOrder('ORD-1');
-  
+
   // Duplicate
   await businessService.process(canonical);
   const order2 = await db.getOrder('ORD-1');
-  
+
   expect(order1).toEqual(order2);
 });
 ```
@@ -5191,21 +5191,21 @@ test('full flow: raw → canonical → business event', async () => {
   // 1. Produce raw event
   const rawEvent = createRawEvent();
   await rawTopic.produce(rawEvent);
-  
+
   // 2. Transformer processes
   await transformer.run();
-  
+
   // 3. Verify canonical
   const canonical = await canonicalTopic.consume();
   expect(canonical.valid).toBe(true);
-  
+
   // 4. Business service processes
   await businessService.run();
-  
+
   // 5. Verify business event
   const businessEvent = await businessEventTopic.consume();
   expect(businessEvent.eventType).toBe('OrderProcessed');
-  
+
   // 6. Verify DB state
   const order = await db.getOrder(canonical.payload.orderId);
   expect(order.status).toBe('PROCESSED');
@@ -5217,19 +5217,19 @@ test('full flow: raw → canonical → business event', async () => {
 ```ts
 test('duplicate event is handled idempotently', async () => {
   const rawEvent = createRawEvent();
-  
+
   // Produce twice
   await rawTopic.produce(rawEvent);
   await rawTopic.produce(rawEvent);
-  
+
   // Process
   await transformer.run();
   await businessService.run();
-  
+
   // Verify only one business event
   const events = await businessEventTopic.consumeAll();
   expect(events.length).toBe(1);
-  
+
   // Verify DB state is correct
   const order = await db.getOrder(rawEvent.payload.orderId);
   expect(order.processedCount).toBe(1);
@@ -5243,27 +5243,27 @@ test('child event waits for parent', async () => {
   // Produce child first
   const childEvent = createOrderLineEvent('ORD-1');
   await rawTopic.produce(childEvent);
-  
+
   // Process
   await transformer.run();
   await businessService.run();
-  
+
   // Verify child is pending
   const pending = await db.getPendingOrderLines('ORD-1');
   expect(pending.length).toBe(1);
-  
+
   // Produce parent
   const parentEvent = createOrderEvent('ORD-1');
   await rawTopic.produce(parentEvent);
-  
+
   // Process again
   await transformer.run();
   await businessService.run();
-  
+
   // Verify both are processed
   const order = await db.getOrder('ORD-1');
   expect(order.lines.length).toBe(1);
-  
+
   // Verify pending is cleared
   const stillPending = await db.getPendingOrderLines('ORD-1');
   expect(stillPending.length).toBe(0);
@@ -5281,13 +5281,13 @@ Load tests verify the system handles volume.
 ```ts
 test('transforms 10k messages in < 5 seconds', async () => {
   const messages = generateMessages(10000);
-  
+
   const start = Date.now();
   for (const msg of messages) {
     await transformer.transform(msg);
   }
   const duration = Date.now() - start;
-  
+
   expect(duration).toBeLessThan(5000);
 });
 ```
@@ -5297,13 +5297,13 @@ test('transforms 10k messages in < 5 seconds', async () => {
 ```ts
 test('worker pool processes 1000 messages concurrently', async () => {
   const messages = generateMessages(1000);
-  
+
   const start = Date.now();
   await Promise.all(
     messages.map(msg => workerPool.process(msg))
   );
   const duration = Date.now() - start;
-  
+
   const throughput = 1000 / (duration / 1000);
   expect(throughput).toBeGreaterThan(100); // 100 msg/sec
 });
@@ -5314,20 +5314,20 @@ test('worker pool processes 1000 messages concurrently', async () => {
 ```ts
 test('memory does not grow unbounded', async () => {
   const initialMemory = process.memoryUsage().heapUsed;
-  
+
   for (let i = 0; i < 100; i++) {
     const messages = generateMessages(1000);
     await Promise.all(
       messages.map(msg => transformer.transform(msg))
     );
-    
+
     // Force GC if available
     if (global.gc) global.gc();
   }
-  
+
   const finalMemory = process.memoryUsage().heapUsed;
   const growth = finalMemory - initialMemory;
-  
+
   // Memory should not grow more than 50MB
   expect(growth).toBeLessThan(50 * 1024 * 1024);
 });
@@ -5345,9 +5345,9 @@ Chaos tests verify failure handling.
 test('worker timeout sends message to DLQ', async () => {
   const slowMapping = 'slow_expression_that_takes_10_seconds';
   const event = createEventWithMapping(slowMapping);
-  
+
   const result = await transformer.transform(event, { timeoutMs: 1000 });
-  
+
   expect(result.action).toBe('DLQ');
   expect(result.error).toContain('WORKER_TIMEOUT');
 });
@@ -5358,10 +5358,10 @@ test('worker timeout sends message to DLQ', async () => {
 ```ts
 test('Kafka produce failure triggers retry', async () => {
   kafkaProducer.simulateFailure();
-  
+
   const event = createEvent();
   const result = await transformer.transform(event);
-  
+
   expect(result.action).toBe('RETRY');
   expect(result.retryCount).toBe(1);
 });
@@ -5372,12 +5372,12 @@ test('Kafka produce failure triggers retry', async () => {
 ```ts
 test('circuit breaker opens after repeated failures', async () => {
   kafkaProducer.simulateFailure();
-  
+
   // Trigger multiple failures
   for (let i = 0; i < 15; i++) {
     await transformer.transform(createEvent());
   }
-  
+
   expect(circuitBreaker.state).toBe('OPEN');
   expect(kafkaConsumer.isPaused()).toBe(true);
 });
@@ -5388,21 +5388,21 @@ test('circuit breaker opens after repeated failures', async () => {
 ```ts
 test('graceful shutdown drains worker pool', async () => {
   const messages = generateMessages(100);
-  
+
   // Start processing
   const processing = Promise.all(
     messages.map(msg => transformer.transform(msg))
   );
-  
+
   // Trigger shutdown after 100ms
   setTimeout(() => transformer.shutdown(), 100);
-  
+
   // Wait for completion
   const results = await processing;
-  
+
   // Verify all messages were processed
   expect(results.filter(r => r.success).length).toBe(100);
-  
+
   // Verify offsets were committed
   expect(kafkaConsumer.committedOffsets()).toBeGreaterThan(0);
 });
@@ -5419,10 +5419,10 @@ Contract tests verify producer/consumer compatibility.
 ```ts
 test('transformer produces valid canonical events', async () => {
   const rawEvents = loadFixtures('raw-events');
-  
+
   for (const raw of rawEvents) {
     const canonical = await transformer.transform(raw);
-    
+
     // Validate against canonical schema
     const valid = canonicalSchema.validate(canonical);
     expect(valid.errors).toEqual([]);
@@ -5435,7 +5435,7 @@ test('transformer produces valid canonical events', async () => {
 ```ts
 test('business service accepts all canonical events', async () => {
   const canonicalEvents = loadFixtures('canonical-events');
-  
+
   for (const event of canonicalEvents) {
     const result = await businessService.process(event);
     expect(result.success).toBe(true);
@@ -5547,11 +5547,11 @@ Tests should emit metrics and logs.
 ```ts
 test('measures transform duration', async () => {
   const metrics = new Metrics();
-  
+
   const start = Date.now();
   await transformer.transform(event, { metrics });
   const duration = Date.now() - start;
-  
+
   expect(metrics.get('transform_duration_ms')).toBe(duration);
 });
 ```
@@ -5564,9 +5564,9 @@ test('logs transformation steps', async () => {
   const logger = {
     info: (msg) => logs.push(msg)
   };
-  
+
   await transformer.transform(event, { logger });
-  
+
   expect(logs).toContain('envelope_validated');
   expect(logs).toContain('mapping_resolved');
   expect(logs).toContain('jsonata_transformed');
@@ -5798,7 +5798,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: transformer
-  namespace: etl
+  namespace: canonbridge
 spec:
   replicas: 3
   strategy:

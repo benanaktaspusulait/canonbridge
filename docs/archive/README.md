@@ -16,7 +16,11 @@ Use [../README.md](../README.md) for the active documentation index.
 | [product-transformation.md](./product-transformation.md) | Historical architecture-to-product summary |
 | [documentation-status.md](./documentation-status.md) | Historical root-level status report |
 | [root-readme-duplicate.md](./root-readme-duplicate.md) | Historical duplicate root README |
+| [root-readme-generated.md](./root-readme-generated.md) | Generated duplicate root README |
+| [phase2-complete-generated.md](./phase2-complete-generated.md) | Generated phase completion summary superseded by [../implementation/status.md](../implementation/status.md) |
+| [project-status-generated.md](./project-status-generated.md) | Generated root status summary superseded by [../implementation/status.md](../implementation/status.md) |
 | [nodejs-jsonata-kafka-integration-architecture-v6.md](./nodejs-jsonata-kafka-integration-architecture-v6.md) | Original monolithic architecture reference |
+| [k8s-readme-duplicate.md](./k8s-readme-duplicate.md) | Duplicate Kubernetes quick reference; active guidance lives in [../deployment/KUBERNETES_DEPLOYMENT_GUIDE.md](../deployment/KUBERNETES_DEPLOYMENT_GUIDE.md) |
 | [tech-stack-requirements.md](./tech-stack-requirements.md) | Superseded by [../architecture/tech-stack.md](../architecture/tech-stack.md) |
 | [documentation-structure.md](./documentation-structure.md) | Superseded by [../README.md](../README.md) |
 | [document-improvements.md](./document-improvements.md) | Historical improvement notes |

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: etl-solutions
+  labels:
+    name: etl-solutions
+    environment: production
+    app: etl-solutions

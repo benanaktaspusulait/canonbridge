@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines routine maintenance procedures for the ETL Solutions platform, including scheduled maintenance, updates, backups, and system health checks.
+This document outlines routine maintenance procedures for the CanonBridge platform, including scheduled maintenance, updates, backups, and system health checks.
 
 ## Maintenance Schedule
 
@@ -51,7 +51,7 @@ This document outlines routine maintenance procedures for the ETL Solutions plat
 #!/bin/bash
 # daily-health-check.sh
 
-echo "=== ETL Solutions Daily Health Check ==="
+echo "=== CanonBridge Daily Health Check ==="
 echo "Date: $(date)"
 echo ""
 
@@ -534,7 +534,7 @@ data:
     # Weekly maintenance window
     # Every Sunday 2:00 AM - 4:00 AM UTC
     0 2 * * 0
-    
+
     # Monthly maintenance window
     # First Sunday of month 2:00 AM - 6:00 AM UTC
     0 2 1-7 * 0
@@ -608,5 +608,5 @@ echo "=== Maintenance Mode Enabled ==="
 
 ---
 
-**Last Updated**: May 10, 2026  
+**Last Updated**: May 10, 2026
 **Version**: 1.0

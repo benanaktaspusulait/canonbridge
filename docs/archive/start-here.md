@@ -1,8 +1,8 @@
-# 🚀 ETL Solutions - START HERE
+# 🚀 CanonBridge - START HERE
 
 ## Welcome! 👋
 
-This is your entry point to the ETL Solutions documentation. Choose your path below.
+This is your entry point to the CanonBridge documentation. Choose your path below.
 
 ---
 
@@ -108,7 +108,7 @@ For a complete overview of all documentation, see:
 ## 🗂️ Documentation Structure
 
 ```
-etlsolutions/
+canonbridge/
 ├── START_HERE.md (this file)
 ├── README.md (product overview)
 ├── QUICK_START.md (role-based navigation)
@@ -231,6 +231,6 @@ etlsolutions/
 
 ---
 
-**Last Updated**: May 10, 2026  
-**Version**: 1.0  
+**Last Updated**: May 10, 2026
+**Version**: 1.0
 **Status**: ✅ Complete and Ready for Implementation

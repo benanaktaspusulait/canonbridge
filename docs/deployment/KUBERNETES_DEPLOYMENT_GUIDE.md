@@ -2,7 +2,7 @@
 
 ## 🎯 Overview
 
-Complete Kubernetes deployment configuration for the ETL Solutions platform with multi-service orchestration, networking, storage, and monitoring.
+Complete Kubernetes deployment configuration for the CanonBridge platform with multi-service orchestration, networking, storage, and monitoring.
 
 ## 🏗️ Kubernetes Architecture
 
@@ -163,10 +163,10 @@ metadata:
   namespace: etl-solutions
 type: Opaque
 stringData:
-  POSTGRES_USER: etl_user
+  POSTGRES_USER: etluser
   POSTGRES_PASSWORD: "your-secure-password-here"
-  POSTGRES_DB: etl_db
-  DATABASE_URL: "postgresql://etl_user:your-secure-password-here@postgres-service:5432/etl_db"
+  POSTGRES_DB: etldb
+  DATABASE_URL: "postgresql://etluser:your-secure-password-here@postgres-service:5432/etldb"
 ```
 
 ### 4. PersistentVolumeClaim - PostgreSQL
@@ -316,7 +316,7 @@ spec:
         app: transformer
         version: v1
     spec:
-      serviceAccountName: etl-service-account
+      serviceAccountName: etl-solutions-service-account
       containers:
       - name: transformer
         image: etl-transformer:latest
@@ -408,7 +408,7 @@ spec:
         app: business-service
         version: v1
     spec:
-      serviceAccountName: etl-service-account
+      serviceAccountName: etl-solutions-service-account
       containers:
       - name: business-service
         image: etl-business-service:latest
@@ -549,7 +549,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: etl-ingress
+  name: etl-solutions-ingress
   namespace: etl-solutions
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
@@ -559,10 +559,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - etl.example.com
-    secretName: etl-tls-cert
+    - app.etl-solutions.example.com
+    secretName: etl-solutions-tls-cert
   rules:
-  - host: etl.example.com
+  - host: app.etl-solutions.example.com
     http:
       paths:
       - path: /
@@ -616,13 +616,13 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: etl-service-account
+  name: etl-solutions-service-account
   namespace: etl-solutions
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: etl-role
+  name: etl-solutions-role
   namespace: etl-solutions
 rules:
 - apiGroups: [""]
@@ -635,15 +635,15 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: etl-rolebinding
+  name: etl-solutions-rolebinding
   namespace: etl-solutions
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: etl-role
+  name: etl-solutions-role
 subjects:
 - kind: ServiceAccount
-  name: etl-service-account
+  name: etl-solutions-service-account
   namespace: etl-solutions
 ```
 

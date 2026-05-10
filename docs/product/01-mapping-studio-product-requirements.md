@@ -4,7 +4,7 @@
 
 Mapping Studio is the management screen that turns messy partner JSON into trusted canonical events. It should let users upload or paste sample JSON, inspect the JSON structure, choose field types and requirements, map partner fields to canonical fields, test the transformation, and publish an immutable versioned mapping package.
 
-The product exists because the highest-value workflow in ETL Solutions is not the dashboard. The highest-value workflow is teaching the platform how a new partner event should be understood, validated, transformed, and operated safely.
+The product exists because the highest-value workflow in CanonBridge is not the dashboard. The highest-value workflow is teaching the platform how a new partner event should be understood, validated, transformed, and operated safely.
 
 ## Problem
 
@@ -25,7 +25,7 @@ This creates slow onboarding, hidden mapping mistakes, inconsistent schema gover
 ## Product Thesis
 
 ```text
-If ETL Solutions can turn sample partner JSON into a reviewed, tested, versioned mapping package, partner onboarding becomes a repeatable product workflow instead of a custom engineering project.
+If CanonBridge can turn sample partner JSON into a reviewed, tested, versioned mapping package, partner onboarding becomes a repeatable product workflow instead of a custom engineering project.
 ```
 
 ## Primary Personas

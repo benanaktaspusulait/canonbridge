@@ -2,49 +2,60 @@
 
 ## Purpose
 
-This document defines the architecture for a configurable integration/transformation platform where multiple partner systems send JSON payloads with different formats, while the core business logic remains mostly the same.
+This document defines the architecture for **CanonBridge**, a configurable partner-event transformation platform.
 
-The main goal is to avoid writing large amounts of partner-specific adapter/client code by introducing a generic transformation service using:
+**The Vision:**
+Business users upload sample JSON, drag-and-drop field mappings, and publish integrations in minutes. Behind this simple interface lies enterprise-grade architecture that handles:
+- Multiple partner formats automatically
+- Real-time data transformation
+- Error handling and retry logic
+- Automatic scaling
+- Complete observability
 
-- Node.js
-- TypeScript
-- JSONata
-- Kafka
-- Ajv JSON Schema validation
-- Worker pool
-- Retry / DLQ
-- Idempotent business processing
-- Outbox pattern
-- Observability and structured logging
+**The Magic:**
+Users see simplicity. The system delivers enterprise reliability.
 
-## Core Design Principle
+## The Core Philosophy
 
 ```text
-Partner-specific complexity should stay outside the core business service.
-Core business logic should receive clean canonical events.
+Integration complexity should be invisible to users.
+Business users should create integrations without code.
+Developers should focus on core product, not adapters.
 ```
 
 ## High-Level Architecture
 
+### What Users See (Simple)
+
+```text
+1. Upload sample JSON
+2. Drag & drop field mapping
+3. Preview transformation
+4. Click publish
+5. Monitor in real-time
+```
+
+### What Happens Behind the Scenes (Complex, but Automatic)
+
 ```text
 Partner / Source System
         ↓
-Kafka raw topic
+Kafka raw topic (reliable ingestion)
         ↓
 Node.js JSONata Transformer Service
         - Kafka consumer
-        - Mapping cache
+        - Mapping cache (fast lookups)
         - Schema cache
-        - Worker pool
-        - Ajv validation
-        - Retry / DLQ handling
+        - Worker pool (parallel processing)
+        - Ajv validation (catch bad data)
+        - Retry / DLQ handling (never lose data)
         ↓
 Kafka canonical topic
         ↓
 Business Consumer Service
-        - Idempotency
+        - Idempotency (handle duplicates)
         - Ordering / dependency handling
-        - DB transaction
+        - DB transaction (consistency)
         - Outbox insert
         ↓
 Business DB
@@ -60,79 +71,107 @@ Kafka business events
 Downstream services
 ```
 
+**Technology Stack:**
+- Node.js + TypeScript (type safety)
+- JSONata (powerful transformations)
+- Kafka (reliable streaming)
+- Ajv (JSON Schema validation)
+- Worker pool (CPU-bound work)
+- Prometheus + Grafana (observability)
+
 ## Problem Statement
 
-### Without This Architecture
+### The Old Way (Without Integration Magic)
 
-Partner-specific complexity spreads throughout the codebase:
+Every partner needs custom code:
 
 ```text
-CompanyAClient
-CompanyARequestMapper
-CompanyAResponseMapper
-CompanyAValidator
-CompanyAErrorMapper
+CompanyAClient.java (500 lines)
+CompanyARequestMapper.java (300 lines)
+CompanyAResponseMapper.java (400 lines)
+CompanyAValidator.java (200 lines)
+CompanyAErrorMapper.java (150 lines)
 
-CompanyBClient
-CompanyBRequestMapper
-CompanyBResponseMapper
-CompanyBValidator
-CompanyBErrorMapper
+CompanyBClient.java (500 lines)
+CompanyBRequestMapper.java (300 lines)
+CompanyBResponseMapper.java (400 lines)
+CompanyBValidator.java (200 lines)
+CompanyBErrorMapper.java (150 lines)
 
-...
+... repeat for 50 partners = 125,000 lines of code!
 ```
 
-This leads to:
-- Code duplication
-- Maintenance burden
-- Slow partner onboarding
-- Difficult to change mappings
-- Tight coupling to partner formats
+**Problems:**
+- ❌ 2-4 weeks per partner integration
+- ❌ Developers write repetitive adapter code
+- ❌ Code changes for every mapping update
+- ❌ Difficult to maintain and test
+- ❌ Business blocked by engineering capacity
+- ❌ Tight coupling to partner formats
 
-### With This Architecture
+### The New Way (With Integration Magic)
 
-Partner complexity is isolated in configuration:
+**Zero custom code per partner:**
 
 ```text
-Generic transformation engine
+Generic transformation engine (one time)
 +
-partner-specific JSONata mappings
+Visual mapping tool (no code)
 +
-partner-specific config
+Partner-specific JSONata mappings (generated automatically)
 +
-canonical schema validation
+Canonical schema validation (automatic)
 ```
 
-Benefits:
-- New partners onboarded in days, not weeks
-- Mapping changes without code deployment
-- Centralized business logic
-- Scalable and maintainable
+**Benefits:**
+- ✅ 10 minutes per partner integration
+- ✅ Business users create integrations
+- ✅ Mapping changes without deployment
+- ✅ Centralized, testable business logic
+- ✅ Scalable and maintainable
+- ✅ Engineering focuses on core product
 
-## When to Use This Architecture
+**ROI Example:**
+- **Old way:** 50 partners × 2 weeks × $10k/week = **$1,000,000**
+- **New way:** Platform build once × 8 weeks × $10k/week = **$80,000**
+- **Savings:** **$920,000 + ongoing velocity gains**
 
-This architecture is useful when:
+## When to Use Integration Magic
+
+**Perfect fit when:**
 
 ```text
-business process is mostly the same
-partner payload formats are different
-new partners may be added frequently
-field mapping changes happen often
-we want to reduce partner-specific adapter classes
-we want mappings to be configurable and versioned
+✅ You have 3+ partners/systems to integrate
+✅ Partner formats are different but business logic is similar
+✅ New partners are added frequently
+✅ Field mappings change often
+✅ You want business users to own integrations
+✅ You need enterprise reliability (10k+ msg/sec)
+✅ You want to reduce engineering bottleneck
+✅ Mappings should be versioned and testable
 ```
 
-## When NOT to Use This Architecture
+**Real-world scenarios:**
+- E-commerce: Integrate 20+ marketplaces (Amazon, eBay, Shopify...)
+- Fintech: Connect 15+ payment providers (Stripe, PayPal, Square...)
+- Healthcare: Standardize 50+ hospital systems
+- Logistics: Consolidate 30+ shipping carriers
+- SaaS: Integrate customer data from various sources
 
-This architecture may be overkill if:
+## When NOT to Use Integration Magic
+
+**May be overkill if:**
 
 ```text
-only 1-2 partners
-partner formats are very similar
-mappings rarely change
-business logic is highly partner-specific
-low message volume
+❌ Only 1-2 stable partners
+❌ Partner formats are identical
+❌ Mappings never change
+❌ Business logic is highly partner-specific
+❌ Very low message volume (<100/day)
+❌ You prefer writing custom code for everything
 ```
+
+**In these cases:** Traditional custom adapters might be simpler.
 
 ## Key Components
 

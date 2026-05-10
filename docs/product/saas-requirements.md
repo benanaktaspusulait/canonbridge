@@ -1,10 +1,10 @@
-# SaaS Requirements for ETL Solutions
+# SaaS Requirements for CanonBridge
 
 ## 🏢 Multi-Tenancy Architecture
 
 ### Tenancy Model
 
-ETL Solutions must support **strict multi-tenancy** with complete data isolation.
+CanonBridge must support **strict multi-tenancy** with complete data isolation.
 
 #### Tenant Isolation Levels
 

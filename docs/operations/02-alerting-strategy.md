@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document defines the alerting strategy for ETL Solutions platform, including alert rules, severity levels, notification channels, and escalation procedures.
+This document defines the alerting strategy for CanonBridge platform, including alert rules, severity levels, notification channels, and escalation procedures.
 
 ## Alert Philosophy
 
@@ -40,7 +40,7 @@ This document defines the alerting strategy for ETL Solutions platform, includin
   annotations:
     summary: "Service {{ $labels.job }} is down"
     description: "{{ $labels.job }} has been down for more than 1 minute"
-    runbook: "https://docs.etlsolutions.com/runbook#service-down"
+    runbook: "https://docs.etl-solutions.example.com/runbook#service-down"
     action: "Check pod status, logs, and restart if necessary"
 ```
 
@@ -56,7 +56,7 @@ This document defines the alerting strategy for ETL Solutions platform, includin
   annotations:
     summary: "High pod restart rate for {{ $labels.pod }}"
     description: "Pod {{ $labels.pod }} is restarting frequently"
-    runbook: "https://docs.etlsolutions.com/runbook#pod-restarts"
+    runbook: "https://docs.etl-solutions.example.com/runbook#pod-restarts"
 ```
 
 ### 2. Performance Alerts
@@ -73,7 +73,7 @@ This document defines the alerting strategy for ETL Solutions platform, includin
   annotations:
     summary: "High response time on {{ $labels.job }}"
     description: "P99 response time is {{ $value }}ms (threshold: 1000ms)"
-    runbook: "https://docs.etlsolutions.com/runbook#high-latency"
+    runbook: "https://docs.etl-solutions.example.com/runbook#high-latency"
 ```
 
 #### High CPU Usage (P3)
@@ -88,7 +88,7 @@ This document defines the alerting strategy for ETL Solutions platform, includin
   annotations:
     summary: "High CPU usage on {{ $labels.pod }}"
     description: "CPU usage is {{ $value }}% (threshold: 80%)"
-    runbook: "https://docs.etlsolutions.com/runbook#high-cpu"
+    runbook: "https://docs.etl-solutions.example.com/runbook#high-cpu"
 ```
 
 #### High Memory Usage (P3)
@@ -103,7 +103,7 @@ This document defines the alerting strategy for ETL Solutions platform, includin
   annotations:
     summary: "High memory usage on {{ $labels.pod }}"
     description: "Memory usage is {{ $value }}% (threshold: 85%)"
-    runbook: "https://docs.etlsolutions.com/runbook#high-memory"
+    runbook: "https://docs.etl-solutions.example.com/runbook#high-memory"
 ```
 
 ### 3. Application Alerts
@@ -121,7 +121,7 @@ This document defines the alerting strategy for ETL Solutions platform, includin
     summary: "High transformation error rate"
     description: "Error rate is {{ $value }}% (threshold: 1%)"
     partner: "{{ $labels.partner_id }}"
-    runbook: "https://docs.etlsolutions.com/runbook#high-error-rate"
+    runbook: "https://docs.etl-solutions.example.com/runbook#high-error-rate"
 ```
 
 #### DLQ Messages Accumulating (P2)
@@ -137,7 +137,7 @@ This document defines the alerting strategy for ETL Solutions platform, includin
     summary: "DLQ messages accumulating"
     description: "{{ $value }} messages added to DLQ in last 15 minutes"
     partner: "{{ $labels.partner_id }}"
-    runbook: "https://docs.etlsolutions.com/runbook#dlq-accumulation"
+    runbook: "https://docs.etl-solutions.example.com/runbook#dlq-accumulation"
 ```
 
 #### Transformation Latency High (P3)
@@ -153,7 +153,7 @@ This document defines the alerting strategy for ETL Solutions platform, includin
     summary: "High transformation latency"
     description: "P99 transformation time is {{ $value }}ms (threshold: 500ms)"
     partner: "{{ $labels.partner_id }}"
-    runbook: "https://docs.etlsolutions.com/runbook#slow-transformation"
+    runbook: "https://docs.etl-solutions.example.com/runbook#slow-transformation"
 ```
 
 ### 4. Kafka Alerts
@@ -172,7 +172,7 @@ This document defines the alerting strategy for ETL Solutions platform, includin
     description: "Consumer lag is {{ $value }} messages (threshold: 10000)"
     topic: "{{ $labels.topic }}"
     consumer_group: "{{ $labels.consumer_group }}"
-    runbook: "https://docs.etlsolutions.com/runbook#consumer-lag"
+    runbook: "https://docs.etl-solutions.example.com/runbook#consumer-lag"
 ```
 
 #### Kafka Broker Down (P1)
@@ -187,7 +187,7 @@ This document defines the alerting strategy for ETL Solutions platform, includin
   annotations:
     summary: "Kafka broker {{ $labels.broker }} is down"
     description: "Kafka broker has been down for more than 1 minute"
-    runbook: "https://docs.etlsolutions.com/runbook#kafka-broker-down"
+    runbook: "https://docs.etl-solutions.example.com/runbook#kafka-broker-down"
 ```
 
 #### Under-Replicated Partitions (P2)
@@ -202,7 +202,7 @@ This document defines the alerting strategy for ETL Solutions platform, includin
   annotations:
     summary: "Kafka has under-replicated partitions"
     description: "{{ $value }} partitions are under-replicated"
-    runbook: "https://docs.etlsolutions.com/runbook#under-replicated"
+    runbook: "https://docs.etl-solutions.example.com/runbook#under-replicated"
 ```
 
 ### 5. Database Alerts
@@ -219,7 +219,7 @@ This document defines the alerting strategy for ETL Solutions platform, includin
   annotations:
     summary: "Database connection pool exhausted"
     description: "Connection pool usage is {{ $value }}% (threshold: 95%)"
-    runbook: "https://docs.etlsolutions.com/runbook#connection-pool"
+    runbook: "https://docs.etl-solutions.example.com/runbook#connection-pool"
 ```
 
 #### High Database Query Time (P3)
@@ -234,7 +234,7 @@ This document defines the alerting strategy for ETL Solutions platform, includin
   annotations:
     summary: "High database query time"
     description: "P99 query time is {{ $value }}ms (threshold: 1000ms)"
-    runbook: "https://docs.etlsolutions.com/runbook#slow-queries"
+    runbook: "https://docs.etl-solutions.example.com/runbook#slow-queries"
 ```
 
 #### Database Replication Lag (P2)
@@ -249,7 +249,7 @@ This document defines the alerting strategy for ETL Solutions platform, includin
   annotations:
     summary: "High database replication lag"
     description: "Replication lag is {{ $value }} seconds (threshold: 60s)"
-    runbook: "https://docs.etlsolutions.com/runbook#replication-lag"
+    runbook: "https://docs.etl-solutions.example.com/runbook#replication-lag"
 ```
 
 ### 6. Business Alerts
@@ -267,7 +267,7 @@ This document defines the alerting strategy for ETL Solutions platform, includin
     summary: "Partner {{ $labels.partner_id }} integration failing"
     description: "Error rate is {{ $value }}% for partner {{ $labels.partner_id }}"
     partner: "{{ $labels.partner_id }}"
-    runbook: "https://docs.etlsolutions.com/runbook#partner-failure"
+    runbook: "https://docs.etl-solutions.example.com/runbook#partner-failure"
 ```
 
 #### SLA Breach Warning (P3)
@@ -282,7 +282,7 @@ This document defines the alerting strategy for ETL Solutions platform, includin
   annotations:
     summary: "SLA breach warning"
     description: "Success rate is {{ $value }}% (SLA: 99.9%)"
-    runbook: "https://docs.etlsolutions.com/runbook#sla-breach"
+    runbook: "https://docs.etl-solutions.example.com/runbook#sla-breach"
 ```
 
 ## Notification Channels
@@ -302,25 +302,25 @@ route:
   group_interval: 10s
   repeat_interval: 12h
   receiver: 'default'
-  
+
   routes:
     # Critical alerts go to PagerDuty
     - match:
         severity: critical
       receiver: 'pagerduty-critical'
       continue: true
-    
+
     # High severity to PagerDuty and Slack
     - match:
         severity: high
       receiver: 'pagerduty-high'
       continue: true
-    
+
     # Medium severity to Slack
     - match:
         severity: medium
       receiver: 'slack-medium'
-    
+
     # Low severity to email
     - match:
         severity: low
@@ -332,31 +332,31 @@ receivers:
       - channel: '#alerts'
         title: 'Alert: {{ .GroupLabels.alertname }}'
         text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
-  
+
   - name: 'pagerduty-critical'
     pagerduty_configs:
       - service_key: 'YOUR_PAGERDUTY_SERVICE_KEY'
         severity: 'critical'
         description: '{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}'
-  
+
   - name: 'pagerduty-high'
     pagerduty_configs:
       - service_key: 'YOUR_PAGERDUTY_SERVICE_KEY'
         severity: 'error'
         description: '{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}'
-  
+
   - name: 'slack-medium'
     slack_configs:
       - channel: '#alerts-medium'
         title: 'Warning: {{ .GroupLabels.alertname }}'
         text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
-  
+
   - name: 'email-low'
     email_configs:
-      - to: 'team@etlsolutions.com'
-        from: 'alerts@etlsolutions.com'
+      - to: 'team@etl-solutions.example.com'
+        from: 'alerts@etl-solutions.example.com'
         smarthost: 'smtp.gmail.com:587'
-        auth_username: 'alerts@etlsolutions.com'
+        auth_username: 'alerts@etl-solutions.example.com'
         auth_password: 'YOUR_PASSWORD'
 ```
 
@@ -423,10 +423,10 @@ schedules:
         rotation_virtual_start: "2026-05-10T00:00:00Z"
         rotation_turn_length_seconds: 604800  # 1 week
         users:
-          - user1@etlsolutions.com
-          - user2@etlsolutions.com
-          - user3@etlsolutions.com
-  
+          - user1@etl-solutions.example.com
+          - user2@etl-solutions.example.com
+          - user3@etl-solutions.example.com
+
   - name: "Secondary On-Call"
     time_zone: "UTC"
     layers:
@@ -435,8 +435,8 @@ schedules:
         rotation_virtual_start: "2026-05-10T00:00:00Z"
         rotation_turn_length_seconds: 604800
         users:
-          - lead1@etlsolutions.com
-          - lead2@etlsolutions.com
+          - lead1@etl-solutions.example.com
+          - lead2@etl-solutions.example.com
 ```
 
 ## Alert Suppression
@@ -464,7 +464,7 @@ inhibit_rules:
     target_match_re:
       alertname: 'HighResponseTime|HighErrorRate|HighCPUUsage'
     equal: ['job']
-  
+
   # If Kafka broker is down, suppress consumer lag alerts
   - source_match:
       alertname: 'KafkaBrokerDown'
@@ -579,5 +579,5 @@ kubectl exec -n monitoring alertmanager-0 -- \
 
 ---
 
-**Last Updated**: May 10, 2026  
+**Last Updated**: May 10, 2026
 **Version**: 1.0

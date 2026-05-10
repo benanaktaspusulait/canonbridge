@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Schema validation protects the transformer and business services from malformed partner payloads and invalid canonical events. ETL Solutions uses Ajv-compatible JSON Schema for input and canonical validation.
+Schema validation protects the transformer and business services from malformed partner payloads and invalid canonical events. CanonBridge uses Ajv-compatible JSON Schema for input and canonical validation.
 
 ## Validation Stages
 

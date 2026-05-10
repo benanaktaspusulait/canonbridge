@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-## 🚀 Getting Started with ETL Solutions Documentation
+## 🚀 Getting Started with CanonBridge Documentation
 
 This guide helps you quickly find what you need.
 
@@ -53,23 +53,23 @@ This guide helps you quickly find what you need.
 → `docs/product/04-mapping-studio-validation-testing.md`
 
 ### "How do I deploy to production?"
-→ `docs/deployment/01-deployment-checklist.md`  
-→ `docs/deployment/02-canary-deployment.md`  
+→ `docs/deployment/01-deployment-checklist.md`
+→ `docs/deployment/02-canary-deployment.md`
 → `docs/operations/01-monitoring-dashboards.md`
 
 ### "Something is broken, how do I fix it?"
-→ `docs/operations/03-troubleshooting.md`  
-→ `docs/operations/08-runbook.md`  
+→ `docs/operations/03-troubleshooting.md`
+→ `docs/operations/08-runbook.md`
 → `docs/operations/01-monitoring-dashboards.md`
 
 ### "How do I scale the system?"
-→ `docs/operations/04-scaling.md`  
-→ `docs/operations/07-performance-tuning.md`  
+→ `docs/operations/04-scaling.md`
+→ `docs/operations/07-performance-tuning.md`
 → `docs/architecture/10-risk-mitigation.md` (Capacity Planning)
 
 ### "How do I test my changes?"
-→ `docs/testing/01-unit-tests.md`  
-→ `docs/testing/02-integration-tests.md`  
+→ `docs/testing/01-unit-tests.md`
+→ `docs/testing/02-integration-tests.md`
 → `docs/testing/03-e2e-tests.md`
 
 ## 📚 Documentation Structure
@@ -194,19 +194,19 @@ Code → CI/CD → Canary (5%) → 25% → 50% → 100%
 
 ## ❓ FAQ
 
-**Q: Where do I find information about X?**  
+**Q: Where do I find information about X?**
 A: Check `docs/README.md` for the navigation guide.
 
-**Q: Is there a quick reference?**  
+**Q: Is there a quick reference?**
 A: Yes! See `docs/operations/08-runbook.md`
 
-**Q: What if I need the full details?**  
+**Q: What if I need the full details?**
 A: See `_archive/nodejs-jsonata-kafka-integration-architecture-v6.md`
 
-**Q: How do I contribute to the docs?**  
+**Q: How do I contribute to the docs?**
 A: Follow the structure in `DOCUMENTATION_INDEX.md`
 
-**Q: What's the status of each section?**  
+**Q: What's the status of each section?**
 A: Check `DOCUMENTATION_INDEX.md` for completion status
 
 ## 🚦 Status

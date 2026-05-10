@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Logs must help debug partner integration failures without leaking sensitive payload data. ETL Solutions uses structured logs with correlation IDs, partner metadata, mapping versions, and masked error context.
+Logs must help debug partner integration failures without leaking sensitive payload data. CanonBridge uses structured logs with correlation IDs, partner metadata, mapping versions, and masked error context.
 
 ## Required Log Fields
 

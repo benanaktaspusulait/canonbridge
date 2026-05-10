@@ -1,6 +1,6 @@
 # Product Documentation
 
-This section contains active product documentation for ETL Solutions.
+This section contains active product documentation for CanonBridge.
 
 ## Product Documents
 

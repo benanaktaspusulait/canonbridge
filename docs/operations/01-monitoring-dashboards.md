@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the monitoring dashboards for ETL Solutions platform, including metrics collection, visualization, and alerting setup.
+This document describes the monitoring dashboards for CanonBridge platform, including metrics collection, visualization, and alerting setup.
 
 ## Dashboard Architecture
 
@@ -303,14 +303,14 @@ const metrics = {
     help: 'Total HTTP requests',
     labelNames: ['method', 'path', 'status']
   }),
-  
+
   http_request_duration_ms: new Histogram({
     name: 'http_request_duration_ms',
     help: 'HTTP request duration in milliseconds',
     labelNames: ['method', 'path', 'status'],
     buckets: [10, 50, 100, 200, 500, 1000, 2000, 5000]
   }),
-  
+
   // Transformation metrics
   transformation_duration_ms: new Histogram({
     name: 'transformation_duration_ms',
@@ -318,51 +318,51 @@ const metrics = {
     labelNames: ['partner_id', 'event_type'],
     buckets: [10, 25, 50, 100, 200, 500, 1000]
   }),
-  
+
   transformation_success_total: new Counter({
     name: 'transformation_success_total',
     help: 'Total successful transformations',
     labelNames: ['partner_id', 'event_type']
   }),
-  
+
   transformation_error_total: new Counter({
     name: 'transformation_error_total',
     help: 'Total transformation errors',
     labelNames: ['partner_id', 'event_type', 'error_type']
   }),
-  
+
   // Kafka metrics
   kafka_consumer_lag: new Gauge({
     name: 'kafka_consumer_lag',
     help: 'Kafka consumer lag',
     labelNames: ['topic', 'partition', 'consumer_group']
   }),
-  
+
   kafka_messages_consumed_total: new Counter({
     name: 'kafka_messages_consumed_total',
     help: 'Total Kafka messages consumed',
     labelNames: ['topic', 'partition']
   }),
-  
+
   kafka_messages_produced_total: new Counter({
     name: 'kafka_messages_produced_total',
     help: 'Total Kafka messages produced',
     labelNames: ['topic']
   }),
-  
+
   // DLQ metrics
   dlq_messages_total: new Counter({
     name: 'dlq_messages_total',
     help: 'Total messages sent to DLQ',
     labelNames: ['partner_id', 'event_type', 'error_type']
   }),
-  
+
   // Worker pool metrics
   worker_pool_size: new Gauge({
     name: 'worker_pool_size',
     help: 'Current worker pool size'
   }),
-  
+
   worker_pool_queue_depth: new Gauge({
     name: 'worker_pool_queue_depth',
     help: 'Current worker pool queue depth'
@@ -411,7 +411,7 @@ helm install grafana grafana/grafana \
 ```json
 {
   "dashboard": {
-    "title": "ETL Solutions - System Overview",
+    "title": "CanonBridge - System Overview",
     "panels": [
       {
         "title": "CPU Usage",
@@ -450,7 +450,7 @@ alerts:
     annotations:
       summary: "High transformation error rate"
       description: "Error rate is {{ $value }}%"
-    
+
   - name: High Consumer Lag
     condition: avg() OF query(A, 5m, now) IS ABOVE 1000
     query: kafka_consumer_lag
@@ -540,5 +540,5 @@ helm upgrade prometheus prometheus-community/prometheus \
 
 ---
 
-**Last Updated**: May 10, 2026  
+**Last Updated**: May 10, 2026
 **Version**: 1.0

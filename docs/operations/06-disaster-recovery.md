@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines disaster recovery (DR) procedures for the ETL Solutions platform, including backup strategies, recovery procedures, and business continuity planning.
+This document outlines disaster recovery (DR) procedures for the CanonBridge platform, including backup strategies, recovery procedures, and business continuity planning.
 
 ## DR Objectives
 
@@ -47,7 +47,7 @@ data:
     archive_mode = on
     archive_command = 'aws s3 cp %p s3://etl-solutions-backups/wal/%f'
     archive_timeout = 300  # 5 minutes
-    
+
     # Replication settings
     max_wal_senders = 10
     wal_keep_size = 1GB
@@ -213,7 +213,7 @@ kubectl get pods -n etl-solutions -w
 kubectl logs -n etl-solutions <pod-name> --previous
 ```
 
-**RTO**: < 1 minute  
+**RTO**: < 1 minute
 **RPO**: 0 (no data loss)
 
 ### Scenario 2: Node Failure
@@ -238,7 +238,7 @@ kubectl get pods -n etl-solutions -o wide
 kubectl delete node <node-name>
 ```
 
-**RTO**: 5-10 minutes  
+**RTO**: 5-10 minutes
 **RPO**: 0 (no data loss)
 
 ### Scenario 3: Availability Zone Failure
@@ -265,7 +265,7 @@ kubectl exec -n etl-solutions kafka-0 -- \
 watch kubectl get pods -n etl-solutions
 ```
 
-**RTO**: 10-15 minutes  
+**RTO**: 10-15 minutes
 **RPO**: 0 (no data loss with proper replication)
 
 ### Scenario 4: Complete Region Failure
@@ -314,12 +314,12 @@ aws route53 change-resource-record-sets \
 
 # 7. Verify services
 echo "6. Verifying services..."
-curl https://etl-solutions.com/health/ready
+curl https://etl-solutions.example.com/health/ready
 
 echo "=== Region Failover Complete ==="
 ```
 
-**RTO**: 15-30 minutes  
+**RTO**: 15-30 minutes
 **RPO**: 5 minutes (last WAL archive)
 
 ### Scenario 5: Data Corruption
@@ -377,7 +377,7 @@ kubectl scale deployment business-service -n etl-solutions --replicas=3
 echo "=== Data Corruption Recovery Complete ==="
 ```
 
-**RTO**: 30-60 minutes  
+**RTO**: 30-60 minutes
 **RPO**: 5 minutes (last WAL archive)
 
 ## Recovery Procedures
@@ -498,7 +498,7 @@ echo "3. Executing recovery procedure..."
 
 # 5. Verify recovery
 echo "4. Verifying recovery..."
-curl https://etl-solutions.com/health/ready
+curl https://etl-solutions.example.com/health/ready
 
 # 6. Calculate RTO
 END_TIME=$(date +%s)
@@ -539,25 +539,25 @@ echo "=== DR Drill Complete ==="
 # Incident communication plan
 stakeholders:
   - name: Engineering Team
-    contact: eng-team@etlsolutions.com
+    contact: eng-team@etl-solutions.example.com
     notification: Immediate (PagerDuty)
-  
+
   - name: Management
-    contact: management@etlsolutions.com
+    contact: management@etl-solutions.example.com
     notification: Within 15 minutes
-  
+
   - name: Customers
-    contact: status.etlsolutions.com
+    contact: status.etl-solutions.example.com
     notification: Within 30 minutes
-  
+
   - name: Partners
-    contact: partners@etlsolutions.com
+    contact: partners@etl-solutions.example.com
     notification: Within 1 hour
 
 communication_channels:
   - Slack: #incidents
-  - Email: incidents@etlsolutions.com
-  - Status Page: status.etlsolutions.com
+  - Email: incidents@etl-solutions.example.com
+  - Status Page: status.etl-solutions.example.com
   - Phone: On-call rotation
 ```
 
@@ -655,5 +655,5 @@ echo "=== Incident Response Complete ==="
 
 ---
 
-**Last Updated**: May 10, 2026  
+**Last Updated**: May 10, 2026
 **Version**: 1.0

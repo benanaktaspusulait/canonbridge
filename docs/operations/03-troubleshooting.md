@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides step-by-step troubleshooting procedures for common issues in the ETL Solutions platform.
+This guide provides step-by-step troubleshooting procedures for common issues in the CanonBridge platform.
 
 ## Quick Diagnostic Commands
 
@@ -624,5 +624,5 @@ kubectl exec -n etl-solutions kafka-0 -- \
 
 ---
 
-**Last Updated**: May 10, 2026  
+**Last Updated**: May 10, 2026
 **Version**: 1.0
