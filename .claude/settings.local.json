@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp /Users/benanaktas/project/community/docs/architecture/java25-microservices-design.md /Users/benanaktas/project/community/docs/technology/phase-1-design.md)",
+      "Bash(cp /Users/benanaktas/project/community/docs/architecture/java25-microservices-requirements.md /Users/benanaktas/project/community/docs/technology/phase-1-requirements.md)"
+    ]
+  }
+}
