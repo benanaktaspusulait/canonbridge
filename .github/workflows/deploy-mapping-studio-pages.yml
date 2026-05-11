@@ -42,6 +42,9 @@ jobs:
       - name: Add SPA fallback
         run: cp dist/mapping-studio-ui/browser/index.html dist/mapping-studio-ui/browser/404.html
 
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
