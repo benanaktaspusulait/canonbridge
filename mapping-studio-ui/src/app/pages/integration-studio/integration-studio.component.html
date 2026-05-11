@@ -96,26 +96,65 @@
           </div>
         </div>
       </ng-template>
-      <div class="toolbar-row">
-        <input #fileIn type="file" accept="application/json,.json" class="sr-only" (change)="onFileSelected($event)" />
-        <input
-          #inputSchemaIn
-          type="file"
-          accept=".json,application/json"
-          class="sr-only"
-          (change)="onLoadInputSchema($event)" />
-        <p-button
-          [label]="'studio.loadFile' | i18n"
-          icon="pi pi-upload"
-          variant="outlined"
-          severity="secondary"
-          (onClick)="fileIn.click()" />
-        <p-button
-          [label]="'studio.schema.loadInput' | i18n"
-          icon="pi pi-file-import"
-          variant="outlined"
-          severity="secondary"
-          (onClick)="inputSchemaIn.click()" />
+      <input
+        #fileIn
+        type="file"
+        accept="application/json,.json,.txt,text/plain"
+        class="sr-only"
+        (change)="onFileSelected($event)" />
+      <input
+        #inputSchemaIn
+        type="file"
+        accept=".json,application/json"
+        class="sr-only"
+        (change)="onLoadInputSchema($event)" />
+      <div class="studio-upload-grid">
+        <button
+          type="button"
+          class="studio-upload-card"
+          [class.studio-upload-card--active]="uploadDropTarget() === 'source'"
+          (click)="fileIn.click()"
+          (dragover)="onUploadDragOver($event, 'source')"
+          (dragleave)="onUploadDragLeave($event)"
+          (drop)="onSourceFileDrop($event)">
+          <span class="studio-upload-card__icon" aria-hidden="true"><i class="pi pi-upload"></i></span>
+          <span class="studio-upload-card__content">
+            <strong>{{ 'studio.loadFile' | i18n }}</strong>
+            <small>{{ 'studio.upload.sourceHint' | i18n }}</small>
+            @if (sourceFileMeta(); as fm) {
+              <span class="studio-upload-card__meta">
+                <i class="pi pi-check" aria-hidden="true"></i>
+                {{ 'studio.upload.loaded' | i18n }} · {{ fm.name }} · {{ fm.size }}
+              </span>
+            }
+          </span>
+          <span class="studio-upload-card__action">{{ 'studio.upload.browse' | i18n }}</span>
+          <span class="studio-upload-card__accept">{{ 'studio.upload.acceptSource' | i18n }}</span>
+        </button>
+        <button
+          type="button"
+          class="studio-upload-card"
+          [class.studio-upload-card--active]="uploadDropTarget() === 'inputSchema'"
+          (click)="inputSchemaIn.click()"
+          (dragover)="onUploadDragOver($event, 'inputSchema')"
+          (dragleave)="onUploadDragLeave($event)"
+          (drop)="onInputSchemaDrop($event)">
+          <span class="studio-upload-card__icon" aria-hidden="true"><i class="pi pi-file-import"></i></span>
+          <span class="studio-upload-card__content">
+            <strong>{{ 'studio.schema.loadInput' | i18n }}</strong>
+            <small>{{ 'studio.upload.inputSchemaHint' | i18n }}</small>
+            @if (inputSchemaMeta(); as sm) {
+              <span class="studio-upload-card__meta">
+                <i class="pi pi-check" aria-hidden="true"></i>
+                {{ 'studio.upload.loaded' | i18n }} · {{ sm.title || sm.$id || ('studio.upload.schemaReady' | i18n) }}
+              </span>
+            }
+          </span>
+          <span class="studio-upload-card__action">{{ 'studio.upload.browse' | i18n }}</span>
+          <span class="studio-upload-card__accept">{{ 'studio.upload.acceptSchema' | i18n }}</span>
+        </button>
+      </div>
+      <div class="toolbar-row studio-action-row">
         <p-button [label]="'studio.analyze' | i18n" icon="pi pi-sync" (onClick)="analyzePayload()" />
         <p-button
           [label]="'studio.next' | i18n"
@@ -150,14 +189,9 @@
       @if (parseError()) {
         <p-message severity="error" [text]="parseError()!" styleClass="w-full mt-3" />
       }
-      @if (sourceFileMeta(); as fm) {
-        <p class="text-sm text-color-secondary mt-2 mb-0">
-          {{ 'studio.json.fileMeta' | i18n: { name: fm.name, size: fm.size } }}
-        </p>
-      }
       <div
         class="studio-json-drop mt-3"
-        [class.studio-json-drop--active]="sourceDropHighlight()"
+        [class.studio-json-drop--active]="sourceDropHighlight() || uploadDropTarget() === 'source'"
         (dragover)="onJsonDragOver($event)"
         (dragleave)="onJsonDragLeave($event)"
         (drop)="onJsonDrop($event)">
@@ -320,12 +354,6 @@
         severity="secondary"
         (onClick)="addTargetField()" />
       <p-button
-        [label]="'studio.schema.loadCanonical' | i18n"
-        icon="pi pi-file-import"
-        variant="outlined"
-        severity="secondary"
-        (onClick)="canonicalSchemaIn.click()" />
-      <p-button
         [label]="'studio.back' | i18n"
         icon="pi pi-arrow-left"
         variant="outlined"
@@ -337,6 +365,30 @@
         iconPos="right"
         (onClick)="nextStep()"
         [disabled]="canonicalNextDisabled()" />
+    </div>
+    <div class="studio-upload-grid studio-upload-grid--single">
+      <button
+        type="button"
+        class="studio-upload-card studio-upload-card--compact"
+        [class.studio-upload-card--active]="uploadDropTarget() === 'canonicalSchema'"
+        (click)="canonicalSchemaIn.click()"
+        (dragover)="onUploadDragOver($event, 'canonicalSchema')"
+        (dragleave)="onUploadDragLeave($event)"
+        (drop)="onCanonicalSchemaDrop($event)">
+        <span class="studio-upload-card__icon" aria-hidden="true"><i class="pi pi-file-import"></i></span>
+        <span class="studio-upload-card__content">
+          <strong>{{ 'studio.schema.loadCanonical' | i18n }}</strong>
+          <small>{{ 'studio.upload.canonicalSchemaHint' | i18n }}</small>
+          @if (canonicalSchemaMeta(); as cm) {
+            <span class="studio-upload-card__meta">
+              <i class="pi pi-check" aria-hidden="true"></i>
+              {{ 'studio.upload.loaded' | i18n }} · {{ cm.title || cm.$id || ('studio.upload.schemaReady' | i18n) }}
+            </span>
+          }
+        </span>
+        <span class="studio-upload-card__action">{{ 'studio.upload.browse' | i18n }}</span>
+        <span class="studio-upload-card__accept">{{ 'studio.upload.acceptSchema' | i18n }}</span>
+      </button>
     </div>
     @if (!targetFields().length) {
       <p-message severity="warn" [text]="'studio.canonical.needField' | i18n" styleClass="w-full mb-3" />
@@ -474,7 +526,7 @@
               <th>{{ 'studio.colSourcePath' | i18n }}</th>
               <th>{{ 'studio.colTargetKeyRule' | i18n }}</th>
               <th>{{ 'studio.colTransform' | i18n }}</th>
-              <th>{{ 'studio.colMode' | i18n }}</th>
+              <th class="studio-col-status">{{ 'studio.colStatus' | i18n }}</th>
               <th style="width: 3rem"></th>
             </tr>
           </thead>
@@ -520,11 +572,7 @@
                     [disabled]="ruleUsesAdvancedLogic(rule)" />
                 </td>
                 <td>
-                  @if (ruleUsesAdvancedLogic(rule)) {
-                    <p-tag severity="info" [value]="'studio.mode.advanced' | i18n" />
-                  } @else {
-                    <p-tag severity="secondary" [value]="'studio.mode.visual' | i18n" />
-                  }
+                  <p-tag [severity]="ruleStatus(rule).severity" [value]="ruleStatus(rule).label" />
                 </td>
                 <td (click)="$event.stopPropagation()">
                   <p-button
@@ -541,8 +589,37 @@
       </div>
 
       <div class="studio-mapping-inspector studio-inspector-surface">
-        <h3 class="inspector-title">{{ 'studio.ruleInspectorTitle' | i18n }}</h3>
         @if (selectedRule(); as rule) {
+          <div class="studio-inspector-heading">
+            <div>
+              <span class="studio-inspector-eyebrow">{{ 'studio.ruleContext.selected' | i18n }}</span>
+              <h3 class="inspector-title">{{ rule.targetKey || ('studio.ruleContext.missingTarget' | i18n) }}</h3>
+            </div>
+            <p-tag
+              [severity]="ruleStatus(rule).severity"
+              [value]="ruleStatus(rule).label" />
+          </div>
+
+          <div class="studio-rule-context" aria-live="polite">
+            <div class="studio-rule-flow">
+              <div class="studio-rule-node">
+                <span>{{ 'studio.ruleContext.source' | i18n }}</span>
+                <strong>{{ rule.sourcePath || ('studio.ruleContext.missingSource' | i18n) }}</strong>
+                <code>{{ ruleSourceValuePreview(rule) }}</code>
+              </div>
+              <div class="studio-rule-op">
+                <i [class]="transformIcon(rule.transform)" aria-hidden="true"></i>
+                <span>{{ ('studio.transform.' + rule.transform) | i18n }}</span>
+              </div>
+              <div class="studio-rule-node studio-rule-node--target">
+                <span>{{ 'studio.ruleContext.target' | i18n }}</span>
+                <strong>{{ rule.targetKey || ('studio.ruleContext.missingTarget' | i18n) }}</strong>
+                <code>{{ ruleResultValuePreview(rule) }}</code>
+              </div>
+            </div>
+            <p>{{ ruleSummaryText(rule) }}</p>
+          </div>
+
           <div class="studio-inspector-tabs-wrap">
             <p-tabs [value]="ruleInspectorTab()" (valueChange)="onInspectorTabChange($event)">
               <p-tablist>
@@ -563,6 +640,35 @@
                         (onClick)="clearTechnicalRule(rule)" />
                     </div>
                   }
+                  <div class="studio-rule-pickers">
+                    <label class="studio-field-shell">
+                      <span>{{ 'studio.ruleContext.fieldToTransform' | i18n }}</span>
+                      <p-select
+                        [options]="sourcePathOptions()"
+                        [ngModel]="rule.sourcePath"
+                        (ngModelChange)="patchRule(rule.id, { sourcePath: $event })"
+                        optionLabel="label"
+                        optionValue="value"
+                        [filter]="true"
+                        [filterPlaceholder]="'studio.filterPath' | i18n"
+                        [placeholder]="'studio.selectPath' | i18n"
+                        styleClass="w-full"
+                        [disabled]="ruleUsesAdvancedLogic(rule)" />
+                      <small>{{ 'studio.ruleContext.sourceHelp' | i18n }}</small>
+                    </label>
+                    <label class="studio-field-shell">
+                      <span>{{ 'studio.ruleContext.outputTarget' | i18n }}</span>
+                      <p-select
+                        [options]="targetKeyOptions()"
+                        [ngModel]="rule.targetKey"
+                        (ngModelChange)="patchRule(rule.id, { targetKey: $event })"
+                        optionLabel="label"
+                        optionValue="value"
+                        styleClass="w-full"
+                        [disabled]="ruleUsesAdvancedLogic(rule)" />
+                      <small>{{ ruleTargetMeta(rule) }}</small>
+                    </label>
+                  </div>
                   <div class="param-block">
                     <label class="param-label">{{ 'studio.colTransform' | i18n }}</label>
                     <div class="transform-catalog" role="list">
@@ -590,6 +696,18 @@
                       </div>
                     </div>
                     <div class="studio-transform-config__body">
+                      <div class="studio-effect-card">
+                        <i [class]="transformIcon(rule.transform)" aria-hidden="true"></i>
+                        <div>
+                          <span>{{ 'studio.ruleContext.effectTitle' | i18n }}</span>
+                          <strong>
+                            {{ rule.sourcePath || ('studio.ruleContext.missingSource' | i18n) }}
+                            <b aria-hidden="true">→</b>
+                            {{ rule.targetKey || ('studio.ruleContext.missingTarget' | i18n) }}
+                          </strong>
+                          <p>{{ ruleSummaryText(rule) }}</p>
+                        </div>
+                      </div>
                   @switch (rule.transform) {
                     @case ('direct') {
                       <div class="studio-no-param-card">
@@ -1244,26 +1362,35 @@
               <div class="inspector-panel">
                 <h3 class="card-title">{{ 'studio.fixture.title' | i18n }}</h3>
                 <p class="card-subtitle">{{ 'studio.fixture.subtitle' | i18n }}</p>
-                <div class="toolbar-row mb-3">
+                <div class="toolbar-row mb-3 studio-fixture-toolbar">
                   <input
                     #cfgIn
                     type="file"
                     accept=".json,application/json"
                     class="sr-only"
                     (change)="onLoadPartnerConfig($event)" />
-                  <p-button
-                    [label]="'studio.fixture.add' | i18n"
-                    icon="pi pi-plus"
-                    variant="outlined"
-                    (onClick)="addFixtureRow()" />
-                  <p-button [label]="'studio.fixture.runAll' | i18n" icon="pi pi-play" (onClick)="runAllFixtures()" />
-                  <p-button
-                    [label]="'studio.fixture.loadConfig' | i18n"
-                    icon="pi pi-file-import"
-                    variant="outlined"
-                    severity="secondary"
-                    (onClick)="cfgIn.click()" />
-                </div>
+	                  <p-button
+	                    [label]="'studio.fixture.add' | i18n"
+	                    icon="pi pi-plus"
+	                    variant="outlined"
+	                    (onClick)="addFixtureRow()" />
+	                  <p-button [label]="'studio.fixture.runAll' | i18n" icon="pi pi-play" (onClick)="runAllFixtures()" />
+                    <button
+                      type="button"
+                      class="studio-upload-card studio-upload-card--inline"
+                      [class.studio-upload-card--active]="uploadDropTarget() === 'fixtureConfig'"
+                      (click)="cfgIn.click()"
+                      (dragover)="onUploadDragOver($event, 'fixtureConfig')"
+                      (dragleave)="onUploadDragLeave($event)"
+                      (drop)="onPartnerConfigDrop($event)">
+                      <span class="studio-upload-card__icon" aria-hidden="true"><i class="pi pi-file-import"></i></span>
+                      <span class="studio-upload-card__content">
+                        <strong>{{ 'studio.fixture.loadConfig' | i18n }}</strong>
+                        <small>{{ 'studio.fixture.configDropHint' | i18n }}</small>
+                      </span>
+                      <span class="studio-upload-card__action">{{ 'studio.upload.browse' | i18n }}</span>
+                    </button>
+	                </div>
                 @if (fixtureConfigMessage(); as cfm) {
                   <p-message
                     [severity]="cfm.severity"
@@ -1278,7 +1405,7 @@
                     <tr>
                       <th>{{ 'studio.fixture.name' | i18n }}</th>
                       <th>{{ 'studio.fixture.status' | i18n }}</th>
-                      <th style="width: 12rem">{{ 'studio.colParameters' | i18n }}</th>
+	                      <th style="width: 15rem">{{ 'studio.colParameters' | i18n }}</th>
                       <th style="width: 3rem"></th>
                     </tr>
                   </ng-template>
@@ -1344,18 +1471,39 @@
                           class="sr-only"
                           [id]="'studio-fx-expectedJson-' + fx.id"
                           (change)="onFixtureLoadFile(fx.id, 'expectedJson', $event)" />
-                        <p-button
-                          [label]="'studio.fixture.loadInputFile' | i18n"
-                          size="small"
-                          variant="outlined"
-                          (onClick)="pickFixtureFile(fx.id, 'inputJson')" />
-                        <p-button
-                          [label]="'studio.fixture.loadExpectedFile' | i18n"
-                          size="small"
-                          variant="outlined"
-                          styleClass="mt-1"
-                          (onClick)="pickFixtureFile(fx.id, 'expectedJson')" />
-                      </td>
+                        <div class="studio-file-chip-stack">
+                          <button
+                            type="button"
+                            class="studio-file-chip"
+                            [class.studio-file-chip--active]="uploadDropTarget() === fixtureUploadTarget(fx.id, 'inputJson')"
+                            [class.studio-file-chip--loaded]="!!fx.inputJson"
+                            (click)="pickFixtureFile(fx.id, 'inputJson')"
+                            (dragover)="onUploadDragOver($event, fixtureUploadTarget(fx.id, 'inputJson'))"
+                            (dragleave)="onUploadDragLeave($event)"
+                            (drop)="onFixtureFileDrop(fx.id, 'inputJson', $event)">
+                            <i class="pi" [class.pi-check]="!!fx.inputJson" [class.pi-upload]="!fx.inputJson" aria-hidden="true"></i>
+                            <span>
+                              <strong>{{ 'studio.fixture.loadInputFile' | i18n }}</strong>
+                              <small>{{ 'studio.fixture.inputDropHint' | i18n }}</small>
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            class="studio-file-chip"
+                            [class.studio-file-chip--active]="uploadDropTarget() === fixtureUploadTarget(fx.id, 'expectedJson')"
+                            [class.studio-file-chip--loaded]="!!fx.expectedJson"
+                            (click)="pickFixtureFile(fx.id, 'expectedJson')"
+                            (dragover)="onUploadDragOver($event, fixtureUploadTarget(fx.id, 'expectedJson'))"
+                            (dragleave)="onUploadDragLeave($event)"
+                            (drop)="onFixtureFileDrop(fx.id, 'expectedJson', $event)">
+                            <i class="pi" [class.pi-check]="!!fx.expectedJson" [class.pi-upload]="!fx.expectedJson" aria-hidden="true"></i>
+                            <span>
+                              <strong>{{ 'studio.fixture.loadExpectedFile' | i18n }}</strong>
+                              <small>{{ 'studio.fixture.expectedDropHint' | i18n }}</small>
+                            </span>
+                          </button>
+                        </div>
+	                      </td>
                       <td>
                         <p-button
                           icon="pi pi-trash"

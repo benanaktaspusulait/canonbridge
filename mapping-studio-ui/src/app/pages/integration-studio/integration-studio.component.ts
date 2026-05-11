@@ -60,6 +60,7 @@ import {
 import { highlightJsonToHtml, highlightJsonValueToHtml } from './json-highlight';
 
 const TARGET_KEY_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+type UploadDropTarget = string;
 
 const DEMO_JSON = `{
   "customer": {
@@ -178,6 +179,7 @@ const DEFAULT_SOURCE_VALIDATION_RULES: SourceValidationRule[] = [
 ];
 
 type EnumMapPair = { source: string; target: string };
+type RuleStatusSeverity = 'success' | 'warn' | 'danger' | 'info' | 'secondary';
 
 function formatPrimitive(v: unknown): string {
   if (v === null) return 'null';
@@ -385,6 +387,21 @@ function stableStringify(value: unknown): string {
   }
 }
 
+function previewString(value: unknown): string {
+  if (value === undefined) return '—';
+  let raw: string;
+  if (typeof value === 'string') {
+    raw = `"${value}"`;
+  } else {
+    try {
+      raw = JSON.stringify(value);
+    } catch {
+      raw = String(value);
+    }
+  }
+  return raw.length > 96 ? `${raw.slice(0, 93)}...` : raw;
+}
+
 function effectiveJsonataExpression(rule: MappingRule): string | undefined {
   const j = rule.jsonataExpression?.trim();
   if (j) return j;
@@ -537,6 +554,7 @@ export class IntegrationStudioComponent implements OnInit {
   maxUnlockedStep = signal(0);
   testRunPending = signal(false);
   sourceDropHighlight = signal(false);
+  uploadDropTarget = signal<UploadDropTarget | null>(null);
   sourceFileMeta = signal<{ name: string; size: string } | null>(null);
 
   activeStep = signal(0);
@@ -873,36 +891,90 @@ export class IntegrationStudioComponent implements OnInit {
   onFileSelected(ev: Event): void {
     const input = ev.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (!file) return;
-    this.sourceFileMeta.set({
-      name: file.name,
-      size: `${(file.size / 1024).toFixed(1)} KB`
-    });
-    const reader = new FileReader();
-    reader.onload = () => {
-      this.sourceJson.set(String(reader.result ?? ''));
-      this.analyzePayload();
-    };
-    reader.readAsText(file);
     input.value = '';
+    if (!file) return;
+    this.loadSourceFile(file);
+  }
+
+  onUploadDragOver(ev: DragEvent, target: UploadDropTarget): void {
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.uploadDropTarget.set(target);
+    if (target === 'source') {
+      this.sourceDropHighlight.set(true);
+    }
+  }
+
+  onUploadDragLeave(ev: DragEvent): void {
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.uploadDropTarget.set(null);
+    this.sourceDropHighlight.set(false);
+  }
+
+  onSourceFileDrop(ev: DragEvent): void {
+    const file = this.takeDroppedFile(ev);
+    this.sourceDropHighlight.set(false);
+    if (!file) return;
+    this.loadSourceFile(file);
+  }
+
+  onInputSchemaDrop(ev: DragEvent): void {
+    const file = this.takeDroppedFile(ev);
+    if (!file) return;
+    this.loadInputSchemaFile(file);
+  }
+
+  onCanonicalSchemaDrop(ev: DragEvent): void {
+    const file = this.takeDroppedFile(ev);
+    if (!file) return;
+    this.loadCanonicalSchemaFile(file);
+  }
+
+  onPartnerConfigDrop(ev: DragEvent): void {
+    const file = this.takeDroppedFile(ev);
+    if (!file) return;
+    this.loadPartnerConfigFile(file);
+  }
+
+  onFixtureFileDrop(rowId: string, field: 'inputJson' | 'expectedJson', ev: DragEvent): void {
+    const file = this.takeDroppedFile(ev);
+    if (!file) return;
+    this.loadFixtureFile(rowId, field, file);
+  }
+
+  fixtureUploadTarget(rowId: string, field: 'inputJson' | 'expectedJson'): string {
+    return `fixture:${rowId}:${field}`;
   }
 
   onJsonDragOver(ev: DragEvent): void {
     ev.preventDefault();
     ev.stopPropagation();
     this.sourceDropHighlight.set(true);
+    this.uploadDropTarget.set('source');
   }
 
   onJsonDragLeave(ev: DragEvent): void {
     ev.preventDefault();
     this.sourceDropHighlight.set(false);
+    this.uploadDropTarget.set(null);
   }
 
   onJsonDrop(ev: DragEvent): void {
-    ev.preventDefault();
+    const file = this.takeDroppedFile(ev);
     this.sourceDropHighlight.set(false);
-    const file = ev.dataTransfer?.files?.[0];
-    if (!file || !file.name.toLowerCase().endsWith('.json')) return;
+    if (!file) return;
+    this.loadSourceFile(file);
+  }
+
+  private takeDroppedFile(ev: DragEvent): File | null {
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.uploadDropTarget.set(null);
+    return ev.dataTransfer?.files?.[0] ?? null;
+  }
+
+  private loadSourceFile(file: File): void {
     this.sourceFileMeta.set({
       name: file.name,
       size: `${(file.size / 1024).toFixed(1)} KB`
@@ -1286,6 +1358,84 @@ export class IntegrationStudioComponent implements OnInit {
     return uniqueSelectOptions(values);
   }
 
+  ruleSourceValuePreview(rule: MappingRule): string {
+    try {
+      const payload = JSON.parse(this.sourceJson()) as unknown;
+      return previewString(getByPath(payload, rule.sourcePath));
+    } catch {
+      return '—';
+    }
+  }
+
+  ruleResultValuePreview(rule: MappingRule): string {
+    const tested = this.testOutput();
+    if (tested && Object.prototype.hasOwnProperty.call(tested, rule.targetKey)) {
+      return previewString(tested[rule.targetKey]);
+    }
+    if (effectiveJsonataExpression(rule)) {
+      return this.i18n.translate('studio.ruleContext.runTestForPreview');
+    }
+    try {
+      const payload = JSON.parse(this.sourceJson()) as unknown;
+      return previewString(applyVisualTransform(rule, payload));
+    } catch {
+      return '—';
+    }
+  }
+
+  ruleTargetMeta(rule: MappingRule): string {
+    const target = this.targetFields().find(field => field.key === rule.targetKey);
+    if (!target) return this.i18n.translate('studio.ruleContext.missingTarget');
+    const required = target.required
+      ? this.i18n.translate('studio.ruleContext.required')
+      : this.i18n.translate('studio.ruleContext.optional');
+    const description = target.description?.trim();
+    return description ? `${target.type} · ${required} · ${description}` : `${target.type} · ${required}`;
+  }
+
+  ruleStatus(rule: MappingRule): { severity: RuleStatusSeverity; label: string } {
+    this.i18n.translations();
+    if (!rule.sourcePath) {
+      return { severity: 'warn', label: this.i18n.translate('studio.ruleStatus.missingSource') };
+    }
+    if (!rule.targetKey) {
+      return { severity: 'warn', label: this.i18n.translate('studio.ruleStatus.missingTarget') };
+    }
+    if (this.ruleEvalErrors()[rule.id] || this.ruleRowAjvError(rule.id)) {
+      return { severity: 'danger', label: this.i18n.translate('studio.ruleStatus.needsFix') };
+    }
+    if (this.ruleMissingSettings(rule)) {
+      return { severity: 'warn', label: this.i18n.translate('studio.ruleStatus.needsSettings') };
+    }
+    if (this.ruleUsesAdvancedLogic(rule)) {
+      return { severity: 'info', label: this.i18n.translate('studio.ruleStatus.imported') };
+    }
+    return { severity: 'success', label: this.i18n.translate('studio.ruleStatus.ready') };
+  }
+
+  private ruleMissingSettings(rule: MappingRule): boolean {
+    const hasA = Boolean(rule.paramA?.trim());
+    const hasB = Boolean(rule.paramB?.trim());
+    const hasC = Boolean(rule.paramC?.trim());
+    switch (rule.transform) {
+      case 'date_format':
+        return !hasA || !hasB;
+      case 'enum_map':
+        return this.enumMapRows(rule).some(row => !row.source.trim() || !row.target.trim());
+      case 'default_value':
+      case 'combine':
+      case 'string_replace':
+      case 'template_string':
+        return !hasA;
+      case 'array_filter_equals':
+        return !hasA || !hasB;
+      case 'conditional_value':
+        return !hasA || !hasB || !hasC;
+      default:
+        return false;
+    }
+  }
+
   updateEnumMapCell(rule: MappingRule, index: number, key: keyof EnumMapPair, value: string): void {
     const rows = this.enumMapRows(rule);
     rows[index] = { ...(rows[index] ?? { source: '', target: '' }), [key]: value ?? '' };
@@ -1657,7 +1807,15 @@ export class IntegrationStudioComponent implements OnInit {
     const input = ev.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = '';
-    if (!file || !file.name.toLowerCase().endsWith('.json')) return;
+    if (!file) return;
+    this.loadInputSchemaFile(file);
+  }
+
+  private loadInputSchemaFile(file: File): void {
+    if (!this.isJsonSchemaFile(file)) {
+      this.inputSchemaLoadError.set(this.i18n.translate('studio.schema.invalidFileType'));
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       const text = String(reader.result ?? '');
@@ -1695,7 +1853,15 @@ export class IntegrationStudioComponent implements OnInit {
     const input = ev.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = '';
-    if (!file || !file.name.toLowerCase().endsWith('.json')) return;
+    if (!file) return;
+    this.loadCanonicalSchemaFile(file);
+  }
+
+  private loadCanonicalSchemaFile(file: File): void {
+    if (!this.isJsonSchemaFile(file)) {
+      this.canonicalSchemaLoadError.set(this.i18n.translate('studio.schema.invalidFileType'));
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       const text = String(reader.result ?? '');
@@ -1726,6 +1892,10 @@ export class IntegrationStudioComponent implements OnInit {
       });
     };
     reader.readAsText(file);
+  }
+
+  private isJsonSchemaFile(file: File): boolean {
+    return file.name.toLowerCase().endsWith('.json') || file.type === 'application/json';
   }
 
   onValidateTabChange(value: string | number | undefined): void {
@@ -1781,6 +1951,10 @@ export class IntegrationStudioComponent implements OnInit {
     const file = input.files?.[0];
     input.value = '';
     if (!file) return;
+    this.loadFixtureFile(rowId, field, file);
+  }
+
+  private loadFixtureFile(rowId: string, field: 'inputJson' | 'expectedJson', file: File): void {
     const reader = new FileReader();
     reader.onload = () => {
       const text = String(reader.result ?? '');
@@ -1793,7 +1967,18 @@ export class IntegrationStudioComponent implements OnInit {
     const input = ev.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = '';
-    if (!file || !file.name.toLowerCase().endsWith('.json')) return;
+    if (!file) return;
+    this.loadPartnerConfigFile(file);
+  }
+
+  private loadPartnerConfigFile(file: File): void {
+    if (!this.isJsonSchemaFile(file)) {
+      this.fixtureConfigMessage.set({
+        severity: 'error',
+        text: this.i18n.translate('studio.fixture.invalidConfigFileType')
+      });
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       try {

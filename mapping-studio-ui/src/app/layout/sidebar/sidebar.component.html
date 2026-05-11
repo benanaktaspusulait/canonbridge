@@ -1,40 +1,73 @@
 <aside class="layout-sidebar" [class.layout-sidebar-collapsed]="collapsed">
-  <div class="layout-sidebar-header">
-    <div class="layout-sidebar-brand">
-      <div class="layout-sidebar-logo">
-        <i class="pi pi-sitemap"></i>
+  <div class="layout-sidebar-frame">
+    <div class="layout-sidebar-header">
+      <a class="layout-sidebar-brand" routerLink="/studio" aria-label="CanonBridge Mapping Studio">
+        <span class="layout-sidebar-logo">
+          <i class="pi pi-sitemap" aria-hidden="true"></i>
+        </span>
+        @if (!collapsed) {
+          <span class="layout-sidebar-titles">
+            <span class="layout-sidebar-title">CanonBridge</span>
+            <span class="layout-sidebar-sub">{{ 'sidebar.logoSub' | i18n }}</span>
+          </span>
+        }
+      </a>
+    </div>
+
+    @if (!collapsed) {
+      <nav class="layout-sidebar-nav" aria-label="Primary navigation">
+        @for (group of navGroups; track group.labelKey) {
+          <section class="layout-nav-section">
+            <div class="layout-nav-section-title">
+              <i class="pi pi-chevron-down" aria-hidden="true"></i>
+              <span>{{ group.labelKey | i18n }}</span>
+            </div>
+
+            <div class="layout-nav-list">
+              @for (item of group.items; track item.route) {
+                <a
+                  class="layout-nav-item"
+                  [routerLink]="item.route"
+                  routerLinkActive="layout-nav-item--active"
+                  [routerLinkActiveOptions]="{ exact: true }">
+                  <span class="layout-nav-item__icon">
+                    <i [class]="item.icon" aria-hidden="true"></i>
+                  </span>
+                  <span class="layout-nav-item__label">{{ item.labelKey | i18n }}</span>
+                  @if (item.badge) {
+                    <span class="layout-nav-item__badge">{{ item.badge }}</span>
+                  }
+                </a>
+              }
+            </div>
+          </section>
+        }
+      </nav>
+
+      <div class="layout-sidebar-footer">
+        <span class="layout-sidebar-status-dot" aria-hidden="true"></span>
+        <span class="layout-sidebar-footer-copy">
+          <strong>{{ 'topbar.demo' | i18n }}</strong>
+          <span>{{ 'sidebar.logoSub' | i18n }}</span>
+        </span>
       </div>
-      @if (!collapsed) {
-        <div class="layout-sidebar-titles">
-          <span class="layout-sidebar-title">CanonBridge</span>
-          <span class="layout-sidebar-sub">{{ 'sidebar.logoSub' | i18n }}</span>
-        </div>
-      }
-    </div>
+    } @else {
+      <nav class="layout-sidebar-rail" aria-label="Primary navigation">
+        @for (item of iconNavItems; track item.route) {
+          <a
+            class="layout-rail-item"
+            [routerLink]="item.route"
+            routerLinkActive="layout-rail-item--active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            [pTooltip]="item.labelKey | i18n"
+            tooltipPosition="right">
+            <i [class]="item.icon" aria-hidden="true"></i>
+            @if (item.badge) {
+              <span class="layout-rail-item__badge">{{ item.badge }}</span>
+            }
+          </a>
+        }
+      </nav>
+    }
   </div>
-
-  <p-divider styleClass="m-0" />
-
-  @if (!collapsed) {
-    <div class="layout-sidebar-menu">
-      <p-scrollPanel [style]="{ width: '100%', height: '100%' }" styleClass="layout-sidebar-scroll">
-        <p-panelmenu [model]="panelModel()" styleClass="layout-panelmenu w-full border-none" />
-      </p-scrollPanel>
-    </div>
-  } @else {
-    <div class="layout-sidebar-icons">
-      @for (item of iconNavItems; track item.route) {
-        <p-button
-          [routerLink]="item.route"
-          [icon]="item.icon"
-          [rounded]="true"
-          [text]="true"
-          severity="secondary"
-          [pTooltip]="item.labelKey | i18n"
-          tooltipPosition="right"
-          styleClass="layout-sidebar-icon-btn w-full"
-          routerLinkActive="layout-sidebar-icon-active" />
-      }
-    </div>
-  }
 </aside>
