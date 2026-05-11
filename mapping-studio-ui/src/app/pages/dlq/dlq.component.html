@@ -1,7 +1,10 @@
+<p-toast />
+<p-confirmDialog />
+
 <div class="page-header">
   <div>
     <h1 class="page-title">{{ 'dlq.title' | i18n }}</h1>
-    <p class="page-subtitle">{{ 'dlq.subtitle' | i18n: { count: messages.length } }}</p>
+    <p class="page-subtitle">{{ 'dlq.subtitle' | i18n: { count: messages().length } }}</p>
   </div>
   <div class="page-actions">
     <p-button
@@ -9,18 +12,24 @@
       icon="pi pi-refresh"
       severity="secondary"
       variant="outlined"
-      [disabled]="selected.length === 0" />
-    <p-button [label]="'dlq.redriveAll' | i18n" icon="pi pi-refresh" severity="danger" variant="outlined" />
+      [disabled]="selected.length === 0"
+      (onClick)="redriveSelected()" />
+    <p-button
+      [label]="'dlq.redriveAll' | i18n"
+      icon="pi pi-refresh"
+      severity="danger"
+      variant="outlined"
+      [disabled]="messages().length === 0"
+      (onClick)="redriveAll()" />
   </div>
 </div>
 
 <p-card>
   <p-table
-    [value]="messages"
+    [value]="messages()"
     [(selection)]="selected"
     dataKey="id"
     styleClass="p-datatable-sm"
-    [expandedRowKeys]="{}"
     #dt>
     <ng-template pTemplate="header">
       <tr>
@@ -53,18 +62,21 @@
               variant="text"
               severity="secondary"
               size="small"
+              (onClick)="redriveMessage(msg)"
               [pTooltip]="'dlq.tooltipRedrive' | i18n" />
             <p-button
               icon="pi pi-eye"
               variant="text"
               severity="secondary"
               size="small"
+              (onClick)="inspect(msg)"
               [pTooltip]="'dlq.tooltipInspect' | i18n" />
             <p-button
               icon="pi pi-trash"
               variant="text"
               severity="danger"
               size="small"
+              (onClick)="confirmDiscard(msg, $event)"
               [pTooltip]="'dlq.tooltipDiscard' | i18n" />
           </div>
         </td>
@@ -74,10 +86,54 @@
     <ng-template pTemplate="emptymessage">
       <tr>
         <td colspan="8" class="empty-cell">
-          <i class="pi pi-check-circle" style="font-size:2rem;color:#16a34a;display:block;margin-bottom:.5rem"></i>
+          <i class="pi pi-check-circle"></i>
           {{ 'dlq.empty' | i18n }}
         </td>
       </tr>
     </ng-template>
   </p-table>
 </p-card>
+
+<p-drawer [(visible)]="inspectorVisible" position="right" styleClass="payload-inspector-drawer">
+  @if (inspected(); as msg) {
+    <div class="drawer-header">
+      <span class="drawer-eyebrow">{{ 'dlq.inspectorTitle' | i18n }}</span>
+      <h2>{{ msg.id }}</h2>
+      <p-tag [severity]="getErrorSeverity(msg.errorType)" [value]="msg.errorType" />
+    </div>
+
+    <div class="payload-meta">
+      <article>
+        <span>{{ 'table.partner' | i18n }}</span>
+        <strong>{{ msg.partner }}</strong>
+      </article>
+      <article>
+        <span>{{ 'table.eventType' | i18n }}</span>
+        <strong>{{ msg.eventType }}</strong>
+      </article>
+      <article>
+        <span>{{ 'dlq.colAttempts' | i18n }}</span>
+        <strong>{{ msg.attempts }}/3</strong>
+      </article>
+      <article>
+        <span>{{ 'dlq.colLastFailed' | i18n }}</span>
+        <strong>{{ msg.lastFailed }}</strong>
+      </article>
+    </div>
+
+    <section class="inspector-section">
+      <h3>{{ 'dlq.colErrorMessage' | i18n }}</h3>
+      <p>{{ msg.errorMessage }}</p>
+    </section>
+
+    <section class="inspector-section">
+      <h3>{{ 'dlq.payload' | i18n }}</h3>
+      <pre>{{ prettyPayload(msg.payload) }}</pre>
+    </section>
+
+    <div class="drawer-actions">
+      <p-button [label]="'dlq.tooltipRedrive' | i18n" icon="pi pi-refresh" (onClick)="redriveMessage(msg)" />
+      <p-button [label]="'dlq.discard' | i18n" icon="pi pi-trash" severity="danger" variant="outlined" (onClick)="confirmDiscard(msg, $event)" />
+    </div>
+  }
+</p-drawer>

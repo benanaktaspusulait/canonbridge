@@ -1,15 +1,33 @@
+<p-toast />
+<p-confirmDialog />
+
 <div class="page-header">
   <div>
     <h1 class="page-title">{{ 'partners.title' | i18n }}</h1>
     <p class="page-subtitle">{{ 'partners.subtitle' | i18n }}</p>
   </div>
   <div class="page-actions">
-    <p-button [label]="'partners.onboard' | i18n" icon="pi pi-plus" />
+    <p-button [label]="'partners.onboard' | i18n" icon="pi pi-plus" (onClick)="openAdd()" />
   </div>
 </div>
 
+<div class="partner-summary">
+  <article>
+    <span>{{ 'partners.summary.total' | i18n }}</span>
+    <strong>{{ partners().length }}</strong>
+  </article>
+  <article>
+    <span>{{ 'partners.summary.active' | i18n }}</span>
+    <strong>{{ activeCount() }}</strong>
+  </article>
+  <article>
+    <span>{{ 'partners.summary.mappings' | i18n }}</span>
+    <strong>{{ totalMappings() }}</strong>
+  </article>
+</div>
+
 <p-card>
-  <p-table [value]="partners" styleClass="p-datatable-sm">
+  <p-table [value]="partners()" styleClass="p-datatable-sm">
     <ng-template pTemplate="header">
       <tr>
         <th>{{ 'partners.colPartner' | i18n }}</th>
@@ -19,7 +37,7 @@
         <th style="text-align:center">{{ 'partners.colDlq' | i18n }}</th>
         <th>{{ 'partners.colThroughput' | i18n }}</th>
         <th>{{ 'partners.colLastSeen' | i18n }}</th>
-        <th style="width:100px"></th>
+        <th style="width:120px"></th>
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-p>
@@ -30,6 +48,9 @@
             <div>
               <div class="partner-name">{{ p.name }}</div>
               <code class="partner-slug">{{ p.slug }}</code>
+              @if (p.contactEmail) {
+                <small>{{ p.contactEmail }}</small>
+              }
             </div>
           </div>
         </td>
@@ -50,20 +71,65 @@
         <td>
           <div class="row-actions">
             <p-button
-              icon="pi pi-cog"
+              icon="pi pi-pencil"
               variant="text"
               severity="secondary"
               size="small"
-              [pTooltip]="'partners.configure' | i18n" />
+              (onClick)="openEdit(p)"
+              [pTooltip]="'partners.edit' | i18n" />
             <p-button
-              icon="pi pi-chart-line"
+              icon="pi pi-trash"
               variant="text"
-              severity="secondary"
+              severity="danger"
               size="small"
-              [pTooltip]="'partners.metrics' | i18n" />
+              (onClick)="confirmDelete(p, $event)"
+              [pTooltip]="'partners.delete' | i18n" />
           </div>
         </td>
       </tr>
     </ng-template>
   </p-table>
 </p-card>
+
+<p-dialog
+  [(visible)]="dialogVisible"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: 'min(42rem, calc(100vw - 2rem))' }"
+  [header]="isEdit ? ('partners.dialog.editTitle' | i18n) : ('partners.dialog.addTitle' | i18n)">
+  <div class="partner-form-grid">
+    <label class="field">
+      <span>{{ 'partners.form.name' | i18n }}</span>
+      <input pInputText [(ngModel)]="form.name" (ngModelChange)="onNameInput()" autocomplete="off" />
+    </label>
+    <label class="field">
+      <span>{{ 'partners.form.slug' | i18n }}</span>
+      <input pInputText [(ngModel)]="form.slug" autocomplete="off" />
+    </label>
+    <label class="field">
+      <span>{{ 'partners.form.status' | i18n }}</span>
+      <p-select [options]="statusOptions" optionLabel="label" optionValue="value" [(ngModel)]="form.status" appendTo="body" />
+    </label>
+    <label class="field">
+      <span>{{ 'partners.form.contactEmail' | i18n }}</span>
+      <input pInputText [(ngModel)]="form.contactEmail" autocomplete="off" />
+    </label>
+    <label class="field">
+      <span>{{ 'partners.form.eventTypes' | i18n }}</span>
+      <p-inputNumber [(ngModel)]="form.eventTypes" [min]="0" [showButtons]="true" inputStyleClass="w-full" />
+    </label>
+    <label class="field">
+      <span>{{ 'partners.form.activeMappings' | i18n }}</span>
+      <p-inputNumber [(ngModel)]="form.activeMappings" [min]="0" [showButtons]="true" inputStyleClass="w-full" />
+    </label>
+    <label class="field field-wide">
+      <span>{{ 'partners.form.description' | i18n }}</span>
+      <textarea pTextarea [(ngModel)]="form.description" rows="4"></textarea>
+    </label>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button [label]="'partners.cancel' | i18n" severity="secondary" variant="outlined" (onClick)="dialogVisible = false" />
+    <p-button [label]="isEdit ? ('partners.save' | i18n) : ('partners.onboard' | i18n)" icon="pi pi-check" [disabled]="!formValid" (onClick)="save()" />
+  </ng-template>
+</p-dialog>

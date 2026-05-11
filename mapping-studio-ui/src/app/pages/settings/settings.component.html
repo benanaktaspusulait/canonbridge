@@ -1,3 +1,6 @@
+<p-toast />
+<p-confirmDialog />
+
 <div class="page-header">
   <div>
     <h1 class="page-title">{{ 'settings.title' | i18n }}</h1>
@@ -34,7 +37,7 @@
 
     <p-divider />
     <div class="card-footer">
-      <p-button [label]="'settings.saveChanges' | i18n" icon="pi pi-check" size="small" />
+      <p-button [label]="'settings.saveChanges' | i18n" icon="pi pi-check" size="small" (onClick)="saveSettings()" />
     </div>
   </p-card>
 
@@ -82,11 +85,11 @@
         <h2 class="card-title">{{ 'settings.apiKeysTitle' | i18n }}</h2>
         <p class="card-subtitle">{{ 'settings.apiKeysSub' | i18n }}</p>
       </div>
-      <p-button [label]="'settings.generateKey' | i18n" icon="pi pi-plus" size="small" />
+      <p-button [label]="'settings.generateKey' | i18n" icon="pi pi-plus" size="small" (onClick)="openGenerateKey()" />
     </div>
   </ng-template>
 
-  <p-table [value]="apiKeys" styleClass="p-datatable-sm">
+  <p-table [value]="apiKeys()" styleClass="p-datatable-sm">
     <ng-template pTemplate="header">
       <tr>
         <th>{{ 'settings.colName' | i18n }}</th>
@@ -114,6 +117,7 @@
             variant="text"
             severity="danger"
             size="small"
+            (onClick)="revokeKey(k, $event)"
             [pTooltip]="'settings.revoke' | i18n"
             [disabled]="k.status === 'revoked'" />
         </td>
@@ -121,3 +125,32 @@
     </ng-template>
   </p-table>
 </p-card>
+
+<p-dialog
+  [(visible)]="keyDialogVisible"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: 'min(36rem, calc(100vw - 2rem))' }"
+  [header]="'settings.generateKey' | i18n">
+  <div class="field">
+    <label class="field-label">{{ 'settings.keyName' | i18n }}</label>
+    <input pInputText [(ngModel)]="newKeyName" class="w-full" autocomplete="off" />
+  </div>
+
+  @if (generatedKey) {
+    <div class="generated-key">
+      <span>{{ 'settings.generatedKey' | i18n }}</span>
+      <code>{{ generatedKey }}</code>
+      <small>{{ 'settings.generatedKeyHint' | i18n }}</small>
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    <p-button [label]="'settings.cancel' | i18n" severity="secondary" variant="outlined" (onClick)="keyDialogVisible = false" />
+    @if (!generatedKey) {
+      <p-button [label]="'settings.generateKey' | i18n" icon="pi pi-key" [disabled]="!newKeyName.trim()" (onClick)="generateKey()" />
+    } @else {
+      <p-button [label]="'settings.copyKey' | i18n" icon="pi pi-copy" (onClick)="copyGeneratedKey()" />
+    }
+  </ng-template>
+</p-dialog>

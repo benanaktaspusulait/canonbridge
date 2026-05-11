@@ -1,41 +1,43 @@
+<p-toast />
+
 <div class="page-header">
   <div>
     <h1 class="page-title">{{ 'externalSystems.title' | i18n }}</h1>
     <p class="page-subtitle">{{ 'externalSystems.subtitle' | i18n }}</p>
   </div>
   <div class="page-actions">
-    <p-button [label]="'externalSystems.newConnection' | i18n" icon="pi pi-plus" />
+    <p-button [label]="'externalSystems.newConnection' | i18n" icon="pi pi-plus" (onClick)="openAdd()" />
   </div>
 </div>
 
 <section class="external-health-strip" aria-label="External system health summary">
   <article>
     <span>{{ 'externalSystems.kpi.healthy' | i18n }}</span>
-    <strong>{{ totals.healthy }}</strong>
+    <strong>{{ totals().healthy }}</strong>
   </article>
   <article>
     <span>{{ 'externalSystems.kpi.degraded' | i18n }}</span>
-    <strong>{{ totals.degraded }}</strong>
+    <strong>{{ totals().degraded }}</strong>
   </article>
   <article>
     <span>{{ 'externalSystems.kpi.down' | i18n }}</span>
-    <strong>{{ totals.down }}</strong>
+    <strong>{{ totals().down }}</strong>
   </article>
   <article>
     <span>{{ 'externalSystems.kpi.calls' | i18n }}</span>
-    <strong>{{ totals.calls }}</strong>
+    <strong>{{ totals().calls }}</strong>
   </article>
 </section>
 
 <p-card styleClass="external-card">
   <div class="external-filter-bar">
-    <button type="button">{{ 'externalSystems.filter.partner' | i18n }} <i class="pi pi-chevron-down"></i></button>
-    <button type="button">{{ 'externalSystems.filter.type' | i18n }} <i class="pi pi-chevron-down"></i></button>
-    <button type="button">{{ 'externalSystems.filter.environment' | i18n }} <i class="pi pi-chevron-down"></i></button>
-    <button type="button">{{ 'externalSystems.filter.window' | i18n }} <i class="pi pi-chevron-down"></i></button>
+    <p-select [(ngModel)]="partnerFilter" [options]="partnerOptions()" appendTo="body" />
+    <p-select [(ngModel)]="typeFilter" [options]="typeOptions" appendTo="body" />
+    <p-select [(ngModel)]="environmentFilter" [options]="environmentOptions" appendTo="body" />
+    <p-select [(ngModel)]="timeWindow" [options]="timeWindowOptions" appendTo="body" />
   </div>
 
-  <p-table [value]="connections" styleClass="p-datatable-sm external-table">
+  <p-table [value]="filteredConnections()" styleClass="p-datatable-sm external-table">
     <ng-template pTemplate="header">
       <tr>
         <th>{{ 'externalSystems.col.connection' | i18n }}</th>
@@ -54,6 +56,7 @@
           <div class="external-name-cell">
             <strong>{{ row.name }}</strong>
             <span>{{ row.partner }} · {{ row.eventType }}</span>
+            <small>{{ row.method }} {{ row.url }}</small>
           </div>
         </td>
         <td>
@@ -79,12 +82,75 @@
         <td class="text-color-secondary">{{ row.lastSuccess }}</td>
         <td>
           <div class="external-actions">
-            <p-button icon="pi pi-play" variant="text" severity="secondary" size="small" [pTooltip]="'externalSystems.action.test' | i18n" />
-            <p-button icon="pi pi-eye" variant="text" severity="secondary" size="small" [pTooltip]="'externalSystems.action.view' | i18n" />
-            <p-button icon="pi pi-cog" variant="text" severity="secondary" size="small" [pTooltip]="'externalSystems.action.edit' | i18n" />
+            <p-button
+              icon="pi pi-play"
+              variant="text"
+              severity="secondary"
+              size="small"
+              [loading]="testingId() === row.id"
+              (onClick)="test(row)"
+              [pTooltip]="'externalSystems.action.test' | i18n" />
+            <p-button
+              icon="pi pi-pencil"
+              variant="text"
+              severity="secondary"
+              size="small"
+              (onClick)="openEdit(row)"
+              [pTooltip]="'externalSystems.action.edit' | i18n" />
           </div>
         </td>
       </tr>
     </ng-template>
   </p-table>
 </p-card>
+
+<p-dialog
+  [(visible)]="dialogVisible"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: 'min(46rem, calc(100vw - 2rem))' }"
+  [header]="isEdit ? ('externalSystems.dialog.editTitle' | i18n) : ('externalSystems.dialog.addTitle' | i18n)">
+  <div class="external-form-grid">
+    <label class="field">
+      <span>{{ 'externalSystems.form.name' | i18n }}</span>
+      <input pInputText [(ngModel)]="form.name" autocomplete="off" />
+    </label>
+    <label class="field">
+      <span>{{ 'externalSystems.form.partner' | i18n }}</span>
+      <input pInputText [(ngModel)]="form.partner" autocomplete="off" />
+    </label>
+    <label class="field">
+      <span>{{ 'externalSystems.form.eventType' | i18n }}</span>
+      <input pInputText [(ngModel)]="form.eventType" autocomplete="off" />
+    </label>
+    <label class="field">
+      <span>{{ 'externalSystems.form.type' | i18n }}</span>
+      <p-select [options]="formTypeOptions" [(ngModel)]="form.type" appendTo="body" />
+    </label>
+    <label class="field">
+      <span>{{ 'externalSystems.form.environment' | i18n }}</span>
+      <p-select [options]="environmentOptions.slice(1)" [(ngModel)]="form.environment" appendTo="body" />
+    </label>
+    <label class="field">
+      <span>{{ 'externalSystems.form.method' | i18n }}</span>
+      <p-select [options]="methodOptions" [(ngModel)]="form.method" appendTo="body" />
+    </label>
+    <label class="field field-wide">
+      <span>{{ 'externalSystems.form.url' | i18n }}</span>
+      <input pInputText [(ngModel)]="form.url" autocomplete="off" />
+    </label>
+    <label class="field">
+      <span>{{ 'externalSystems.form.authType' | i18n }}</span>
+      <p-select [options]="authOptions" [(ngModel)]="form.authType" appendTo="body" />
+    </label>
+    <label class="field">
+      <span>{{ 'externalSystems.form.timeoutMs' | i18n }}</span>
+      <p-inputNumber [(ngModel)]="form.timeoutMs" [min]="500" [step]="500" [showButtons]="true" inputStyleClass="w-full" />
+    </label>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button [label]="'externalSystems.cancel' | i18n" severity="secondary" variant="outlined" (onClick)="dialogVisible = false" />
+    <p-button [label]="'externalSystems.save' | i18n" icon="pi pi-check" [disabled]="!formValid" (onClick)="save()" />
+  </ng-template>
+</p-dialog>

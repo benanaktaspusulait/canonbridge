@@ -105,12 +105,32 @@
     "export": "Export",
     "preview": "Preview",
     "rollback": "Rollback",
+    "deprecate": "Deprecate",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "detailTitle": "Version detail",
+    "checksum": "Checksum",
+    "notes": "Release notes",
+    "rules": "Transformation rules",
+    "openStudio": "Open in Studio",
+    "deprecateTitle": "Deprecate mapping",
+    "deprecateMessage": "Deprecate {{version}}? New events will no longer use this version.",
+    "deleteTitle": "Delete mapping",
+    "deleteMessage": "Delete {{version}} from the catalog?",
+    "toast": {
+      "deprecated": "Mapping deprecated",
+      "deleted": "Mapping deleted"
+    },
     "empty": "No mappings found."
   },
   "partners": {
     "title": "Partners",
     "subtitle": "Manage partner integrations, health status, and event configurations",
     "onboard": "Onboard Partner",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
     "colPartner": "Partner",
     "colStatus": "Status",
     "colEvents": "Event Types",
@@ -120,6 +140,34 @@
     "colLastSeen": "Last Seen",
     "configure": "Configure",
     "metrics": "Metrics",
+    "summary": {
+      "total": "Total partners",
+      "active": "Active",
+      "mappings": "Mappings"
+    },
+    "dialog": {
+      "addTitle": "Onboard partner",
+      "editTitle": "Edit partner"
+    },
+    "form": {
+      "name": "Partner name",
+      "slug": "Partner slug",
+      "status": "Status",
+      "contactEmail": "Technical contact",
+      "eventTypes": "Event types",
+      "activeMappings": "Active mappings",
+      "description": "Description"
+    },
+    "deleteTitle": "Delete partner",
+    "deleteMessage": "Delete {{name}} and its local demo configuration?",
+    "toast": {
+      "invalidTitle": "Missing information",
+      "invalidDetail": "Partner name and slug are required.",
+      "duplicateTitle": "Slug already exists",
+      "updated": "Partner updated",
+      "onboarded": "Partner onboarded",
+      "deleted": "Partner deleted"
+    },
     "status": {
       "active": "active",
       "inactive": "inactive",
@@ -161,6 +209,33 @@
       "test": "Test connection",
       "view": "View history",
       "edit": "Edit"
+    },
+    "dialog": {
+      "addTitle": "Add external connection",
+      "editTitle": "Edit external connection"
+    },
+    "form": {
+      "name": "Connection name",
+      "partner": "Partner",
+      "eventType": "Event type",
+      "type": "Type",
+      "environment": "Environment",
+      "method": "HTTP method",
+      "url": "Endpoint URL",
+      "authType": "Authentication",
+      "timeoutMs": "Timeout"
+    },
+    "save": "Save connection",
+    "cancel": "Cancel",
+    "justNow": "just now",
+    "toast": {
+      "invalidTitle": "Missing connection details",
+      "invalidDetail": "Name, partner, event type, and URL are required.",
+      "created": "Connection created",
+      "updated": "Connection updated",
+      "testPassed": "Connection test passed",
+      "testFailed": "Connection test failed",
+      "invalidUrl": "URL must start with http:// or https://"
     }
   },
   "dlq": {
@@ -175,12 +250,32 @@
     "tooltipRedrive": "Redrive",
     "tooltipInspect": "Inspect payload",
     "tooltipDiscard": "Discard",
+    "inspectorTitle": "Payload inspector",
+    "payload": "Payload",
+    "discard": "Discard",
+    "cancel": "Cancel",
+    "discardTitle": "Discard DLQ message",
+    "discardMessage": "Discard {{id}} permanently from the queue?",
+    "toast": {
+      "redriven": "Message redriven",
+      "redrivenAll": "DLQ redriven",
+      "redriveFailed": "Redrive failed",
+      "discarded": "Message discarded",
+      "count": "{{count}} message(s)"
+    },
     "empty": "No messages in DLQ"
   },
   "monitoring": {
     "title": "Monitoring",
     "subtitle": "Real-time platform metrics and partner health",
     "refresh": "Refresh",
+    "autoRefresh": "Auto-refresh",
+    "export": "Export",
+    "lastUpdated": "Last updated",
+    "windowTooltip": "Select time window for metrics",
+    "exportCsv": "Export CSV",
+    "exportCsvTooltip": "Download partner health as CSV",
+    "exportJsonTooltip": "Download full metrics snapshot as JSON",
     "partnerHealth": "Partner Health",
     "partnerHealthSub": "Per-partner throughput, latency, and DLQ metrics",
     "colStatus": "Status",
@@ -202,6 +297,12 @@
       "healthy": "healthy",
       "degraded": "degraded",
       "down": "down"
+    },
+    "toast": {
+      "refreshed": "Metrics refreshed",
+      "autoOn": "Auto-refresh enabled",
+      "autoOff": "Auto-refresh disabled",
+      "exported": "Export ready"
     }
   },
   "settings": {
@@ -231,6 +332,22 @@
     "colCreated": "Created",
     "colLastUsed": "Last Used",
     "revoke": "Revoke",
+    "cancel": "Cancel",
+    "keyName": "Key name",
+    "generatedKey": "Generated key",
+    "generatedKeyHint": "Copy it now. Full keys are shown only once.",
+    "copyKey": "Copy key",
+    "revokeTitle": "Revoke API key",
+    "revokeMessage": "Revoke {{name}}? Existing clients using this key will stop authenticating.",
+    "toast": {
+      "invalidTitle": "Missing tenant information",
+      "invalidDetail": "Tenant name and slug are required.",
+      "saved": "Settings saved",
+      "keyNameRequired": "Key name is required",
+      "keyGenerated": "API key generated",
+      "keyCopied": "API key copied",
+      "revoked": "API key revoked"
+    },
     "keyStatus": {
       "active": "active",
       "revoked": "revoked"

@@ -26,3 +26,103 @@
 }
 
 .text-sm { font-size: 0.875rem; }
+
+:host ::ng-deep .mapping-detail-drawer {
+  width: min(34rem, 100vw);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.drawer-eyebrow {
+  display: block;
+  color: var(--text-color-secondary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.drawer-header h2 {
+  margin: 0.25rem 0 0;
+  color: var(--text-color);
+  font-size: 1.35rem;
+}
+
+.drawer-header h2 span {
+  color: var(--text-color-secondary);
+  font-size: 1rem;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.detail-grid article {
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 0.8rem;
+  background: var(--surface-ground);
+}
+
+.detail-grid span,
+.detail-section h3 {
+  display: block;
+  margin: 0 0 0.35rem;
+  color: var(--text-color-secondary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.detail-grid strong,
+.detail-section p,
+.detail-section code {
+  color: var(--text-color);
+}
+
+.detail-section {
+  margin-top: 1rem;
+}
+
+.detail-section ul {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detail-section li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-color);
+}
+
+.detail-section li i {
+  color: #16a34a;
+}
+
+.drawer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 560px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,3 +1,34 @@
+.partner-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.partner-summary article {
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  background: var(--surface-card);
+  padding: 1rem;
+}
+
+.partner-summary span {
+  display: block;
+  color: var(--text-color-secondary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.partner-summary strong {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--text-color);
+  font-size: 1.65rem;
+  line-height: 1;
+}
+
 .partner-cell {
   display: flex;
   align-items: center;
@@ -18,6 +49,13 @@
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-color);
+}
+
+.partner-cell small {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--text-color-secondary);
+  font-size: 0.75rem;
 }
 
 .partner-slug {
@@ -43,4 +81,37 @@
   justify-content: flex-end;
 }
 
+.partner-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.field span {
+  color: var(--text-color);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.field-wide {
+  grid-column: 1 / -1;
+}
+
+.field textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
 .text-sm { font-size: 0.875rem; }
+
+@media (max-width: 720px) {
+  .partner-summary,
+  .partner-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

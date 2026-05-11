@@ -82,5 +82,34 @@
   margin-top: 2px;
 }
 
+.generated-key {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 32%, var(--surface-border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--primary-color) 6%, var(--surface-card));
+  padding: 1rem;
+}
+
+.generated-key span {
+  color: var(--text-color);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.generated-key code {
+  display: block;
+  overflow-x: auto;
+  border-radius: 6px;
+  background: var(--surface-ground);
+  color: var(--text-color);
+  padding: 0.75rem;
+}
+
+.generated-key small {
+  color: var(--text-color-secondary);
+}
+
 .text-sm { font-size: 0.875rem; }
 .font-medium { font-weight: 500; }

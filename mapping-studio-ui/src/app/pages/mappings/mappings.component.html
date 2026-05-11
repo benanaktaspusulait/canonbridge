@@ -1,3 +1,6 @@
+<p-toast />
+<p-confirmDialog />
+
 <div class="page-header">
   <div>
     <h1 class="page-title">{{ 'mappings.title' | i18n }}</h1>
@@ -21,15 +24,10 @@
         variant="outlined"
         severity="secondary"
         [pTooltip]="'mappings.filter' | i18n" />
-      <p-button
-        icon="pi pi-download"
-        variant="outlined"
-        severity="secondary"
-        [pTooltip]="'mappings.export' | i18n" />
     </div>
   </div>
 
-  <p-table [value]="filtered" styleClass="p-datatable-sm p-datatable-striped" [paginator]="true" [rows]="10">
+  <p-table [value]="filtered()" styleClass="p-datatable-sm p-datatable-striped" [paginator]="true" [rows]="10">
     <ng-template pTemplate="header">
       <tr>
         <th pSortableColumn="partner">{{ 'table.partner' | i18n }} <p-sortIcon field="partner" /></th>
@@ -41,7 +39,7 @@
         </th>
         <th pSortableColumn="createdAt">{{ 'table.published' | i18n }} <p-sortIcon field="createdAt" /></th>
         <th pSortableColumn="publishedBy">{{ 'table.by' | i18n }} <p-sortIcon field="publishedBy" /></th>
-        <th style="width:120px"></th>
+        <th style="width:150px"></th>
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-m>
@@ -60,16 +58,23 @@
               variant="text"
               severity="secondary"
               size="small"
-              routerLink="/studio"
+              (onClick)="openDetails(m)"
               [pTooltip]="'mappings.preview' | i18n" />
             <p-button
-              icon="pi pi-history"
+              icon="pi pi-ban"
               variant="text"
-              severity="secondary"
+              severity="warn"
               size="small"
-              [pTooltip]="'mappings.rollback' | i18n"
-              [disabled]="m.status !== 'active'" />
-            <p-button icon="pi pi-ellipsis-v" variant="text" severity="secondary" size="small" />
+              [disabled]="m.status === 'deprecated'"
+              (onClick)="deprecate(m, $event)"
+              [pTooltip]="'mappings.deprecate' | i18n" />
+            <p-button
+              icon="pi pi-trash"
+              variant="text"
+              severity="danger"
+              size="small"
+              (onClick)="delete(m, $event)"
+              [pTooltip]="'mappings.delete' | i18n" />
           </div>
         </td>
       </tr>
@@ -81,3 +86,73 @@
     </ng-template>
   </p-table>
 </p-card>
+
+<p-drawer [(visible)]="detailVisible" position="right" styleClass="mapping-detail-drawer">
+  @if (selectedMapping(); as m) {
+    <div class="drawer-header">
+      <div>
+        <span class="drawer-eyebrow">{{ 'mappings.detailTitle' | i18n }}</span>
+        <h2>{{ m.eventType }} <span>{{ m.version }}</span></h2>
+      </div>
+      <p-tag [severity]="getSeverity(m.status)" [value]="('status.' + m.status) | i18n" />
+    </div>
+
+    <div class="detail-grid">
+      <article>
+        <span>{{ 'table.partner' | i18n }}</span>
+        <strong>{{ m.partner }}</strong>
+      </article>
+      <article>
+        <span>{{ 'table.by' | i18n }}</span>
+        <strong>{{ m.publishedBy }}</strong>
+      </article>
+      <article>
+        <span>{{ 'table.published' | i18n }}</span>
+        <strong>{{ m.createdAt }}</strong>
+      </article>
+      <article>
+        <span>{{ 'table.transformations' | i18n }}</span>
+        <strong>{{ m.transformations | number }}</strong>
+      </article>
+    </div>
+
+    <section class="detail-section">
+      <h3>{{ 'mappings.checksum' | i18n }}</h3>
+      <code>{{ m.checksum }}</code>
+    </section>
+
+    <section class="detail-section">
+      <h3>{{ 'mappings.notes' | i18n }}</h3>
+      <p>{{ m.notes }}</p>
+    </section>
+
+    <section class="detail-section">
+      <h3>{{ 'mappings.rules' | i18n }}</h3>
+      <ul>
+        @for (rule of m.rules; track rule) {
+          <li><i class="pi pi-check-circle"></i>{{ rule }}</li>
+        }
+      </ul>
+    </section>
+
+    <div class="drawer-actions">
+      <p-button
+        [label]="'mappings.openStudio' | i18n"
+        icon="pi pi-objects-column"
+        routerLink="/studio" />
+      <p-button
+        [label]="'mappings.deprecate' | i18n"
+        icon="pi pi-ban"
+        severity="warn"
+        variant="outlined"
+        [disabled]="m.status === 'deprecated'"
+        (onClick)="deprecate(m, $event)" />
+      <p-button
+        [label]="'mappings.delete' | i18n"
+        icon="pi pi-trash"
+        severity="danger"
+        variant="outlined"
+        (onClick)="delete(m, $event)" />
+    </div>
+  }
+</p-drawer>

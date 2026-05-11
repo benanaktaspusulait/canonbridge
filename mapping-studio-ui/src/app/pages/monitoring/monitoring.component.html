@@ -1,19 +1,35 @@
+<p-toast />
+
 <div class="page-header">
   <div>
     <h1 class="page-title">{{ 'monitoring.title' | i18n }}</h1>
     <p class="page-subtitle">{{ 'monitoring.subtitle' | i18n }}</p>
   </div>
-  <div class="page-actions">
+  <div class="page-actions monitoring-actions">
+    <p-select [(ngModel)]="timeWindow" [options]="windowOptions" optionLabel="label" optionValue="value" appendTo="body" />
+    <label class="auto-refresh">
+      <span>{{ 'monitoring.autoRefresh' | i18n }}</span>
+      <p-toggleswitch [(ngModel)]="autoRefresh" (ngModelChange)="onAutoRefreshChange()" />
+    </label>
+    <p-button
+      icon="pi pi-download"
+      variant="outlined"
+      severity="secondary"
+      [label]="'monitoring.export' | i18n"
+      (onClick)="exportCsv()" />
     <p-button
       icon="pi pi-refresh"
       variant="outlined"
       severity="secondary"
-      [label]="'monitoring.refresh' | i18n" />
+      [label]="'monitoring.refresh' | i18n"
+      (onClick)="refresh()" />
   </div>
 </div>
 
+<div class="last-updated">{{ 'monitoring.lastUpdated' | i18n }}: {{ lastUpdatedLabel }}</div>
+
 <div class="metrics-grid">
-  @for (m of metrics; track m.labelKey) {
+  @for (m of metrics(); track m.labelKey) {
     <div class="metric-card" [class.ok]="m.ok" [class.breach]="!m.ok">
       <div class="metric-icon" [style.background]="m.color">
         <i class="pi {{ m.icon }}"></i>
@@ -40,7 +56,7 @@
     </div>
   </ng-template>
 
-  <p-table [value]="partnerHealth" styleClass="p-datatable-sm">
+  <p-table [value]="partnerHealth()" styleClass="p-datatable-sm">
     <ng-template pTemplate="header">
       <tr>
         <th>{{ 'table.partner' | i18n }}</th>
@@ -59,8 +75,8 @@
           <p-tag [severity]="getSeverity(p.status)" [value]="('monitoring.healthStatus.' + p.status) | i18n" />
         </td>
         <td class="text-sm">{{ p.throughput }}</td>
-        <td class="text-sm" [class.latency-warn]="p.p99 !== '—' && +p.p99 > 200">{{ p.p99 }}</td>
-        <td class="text-sm" [class.dlq-warn]="p.dlqRate !== '—' && +p.dlqRate > 0.1">{{ p.dlqRate }}</td>
+        <td class="text-sm" [class.latency-warn]="p.p99 !== '—' && +p.p99.replace('ms', '') > 200">{{ p.p99 }}</td>
+        <td class="text-sm" [class.dlq-warn]="p.dlqRate !== '—' && +p.dlqRate.replace('%', '') > 0.1">{{ p.dlqRate }}</td>
         <td class="text-sm" style="text-align:right">{{ p.lag }}</td>
         <td class="text-sm">{{ p.uptime }}</td>
       </tr>

@@ -105,12 +105,32 @@
     "export": "Dışa aktar",
     "preview": "Önizleme",
     "rollback": "Geri al",
+    "deprecate": "Kullanım dışı bırak",
+    "delete": "Sil",
+    "cancel": "İptal",
+    "detailTitle": "Sürüm detayı",
+    "checksum": "İmza",
+    "notes": "Sürüm notları",
+    "rules": "Dönüşüm kuralları",
+    "openStudio": "Studio’da aç",
+    "deprecateTitle": "Eşlemeyi kullanım dışı bırak",
+    "deprecateMessage": "{{version}} kullanım dışı bırakılsın mı? Yeni eventler artık bu sürümü kullanmayacak.",
+    "deleteTitle": "Eşlemeyi sil",
+    "deleteMessage": "{{version}} katalogdan silinsin mi?",
+    "toast": {
+      "deprecated": "Eşleme kullanım dışı",
+      "deleted": "Eşleme silindi"
+    },
     "empty": "Eşleme bulunamadı."
   },
   "partners": {
     "title": "Ortaklar",
     "subtitle": "Ortak entegrasyonları, sağlık durumu ve olay yapılandırmaları",
     "onboard": "Ortak ekle",
+    "edit": "Düzenle",
+    "delete": "Sil",
+    "cancel": "İptal",
+    "save": "Kaydet",
     "colPartner": "Ortak",
     "colStatus": "Durum",
     "colEvents": "Olay tipleri",
@@ -120,6 +140,34 @@
     "colLastSeen": "Son görülme",
     "configure": "Yapılandır",
     "metrics": "Metrikler",
+    "summary": {
+      "total": "Toplam ortak",
+      "active": "Aktif",
+      "mappings": "Eşlemeler"
+    },
+    "dialog": {
+      "addTitle": "Ortak ekle",
+      "editTitle": "Ortak düzenle"
+    },
+    "form": {
+      "name": "Ortak adı",
+      "slug": "Ortak kısa adı",
+      "status": "Durum",
+      "contactEmail": "Teknik iletişim",
+      "eventTypes": "Olay tipleri",
+      "activeMappings": "Aktif eşlemeler",
+      "description": "Açıklama"
+    },
+    "deleteTitle": "Ortağı sil",
+    "deleteMessage": "{{name}} ve yerel demo yapılandırması silinsin mi?",
+    "toast": {
+      "invalidTitle": "Eksik bilgi",
+      "invalidDetail": "Ortak adı ve kısa adı zorunlu.",
+      "duplicateTitle": "Bu kısa ad zaten var",
+      "updated": "Ortak güncellendi",
+      "onboarded": "Ortak eklendi",
+      "deleted": "Ortak silindi"
+    },
     "status": {
       "active": "aktif",
       "inactive": "pasif",
@@ -161,6 +209,33 @@
       "test": "Bağlantıyı test et",
       "view": "Geçmişi gör",
       "edit": "Düzenle"
+    },
+    "dialog": {
+      "addTitle": "Dış bağlantı ekle",
+      "editTitle": "Dış bağlantı düzenle"
+    },
+    "form": {
+      "name": "Bağlantı adı",
+      "partner": "Ortak",
+      "eventType": "Olay tipi",
+      "type": "Tip",
+      "environment": "Ortam",
+      "method": "HTTP metodu",
+      "url": "Endpoint URL",
+      "authType": "Kimlik doğrulama",
+      "timeoutMs": "Timeout"
+    },
+    "save": "Bağlantıyı kaydet",
+    "cancel": "İptal",
+    "justNow": "şimdi",
+    "toast": {
+      "invalidTitle": "Bağlantı bilgisi eksik",
+      "invalidDetail": "Ad, ortak, olay tipi ve URL zorunlu.",
+      "created": "Bağlantı oluşturuldu",
+      "updated": "Bağlantı güncellendi",
+      "testPassed": "Bağlantı testi başarılı",
+      "testFailed": "Bağlantı testi başarısız",
+      "invalidUrl": "URL http:// veya https:// ile başlamalı"
     }
   },
   "dlq": {
@@ -175,12 +250,28 @@
     "tooltipRedrive": "Yeniden gönder",
     "tooltipInspect": "Yükü incele",
     "tooltipDiscard": "Sil",
+    "inspectorTitle": "Payload inceleyici",
+    "payload": "Payload",
+    "discard": "Sil",
+    "cancel": "İptal",
+    "discardTitle": "DLQ mesajını sil",
+    "discardMessage": "{{id}} kuyruktan kalıcı olarak silinsin mi?",
+    "toast": {
+      "redriven": "Mesaj yeniden gönderildi",
+      "redrivenAll": "DLQ yeniden gönderildi",
+      "redriveFailed": "Yeniden gönderim başarısız",
+      "discarded": "Mesaj silindi",
+      "count": "{{count}} mesaj"
+    },
     "empty": "DLQ’da mesaj yok"
   },
   "monitoring": {
     "title": "İzleme",
     "subtitle": "Gerçek zamanlı platform metrikleri ve ortak sağlığı",
     "refresh": "Yenile",
+    "autoRefresh": "Otomatik yenile",
+    "export": "Dışa aktar",
+    "lastUpdated": "Son güncelleme",
     "partnerHealth": "Ortak sağlığı",
     "partnerHealthSub": "Ortak başına verim, gecikme ve DLQ metrikleri",
     "colStatus": "Durum",
@@ -202,6 +293,12 @@
       "healthy": "sağlıklı",
       "degraded": "bozulmuş",
       "down": "kapalı"
+    },
+    "toast": {
+      "refreshed": "Metrikler yenilendi",
+      "autoOn": "Otomatik yenileme açık",
+      "autoOff": "Otomatik yenileme kapalı",
+      "exported": "Dışa aktarım hazır"
     }
   },
   "settings": {
@@ -231,6 +328,22 @@
     "colCreated": "Oluşturulma",
     "colLastUsed": "Son kullanım",
     "revoke": "İptal et",
+    "cancel": "İptal",
+    "keyName": "Anahtar adı",
+    "generatedKey": "Üretilen anahtar",
+    "generatedKeyHint": "Şimdi kopyalayın. Tam anahtar sadece bir kez gösterilir.",
+    "copyKey": "Anahtarı kopyala",
+    "revokeTitle": "API anahtarını iptal et",
+    "revokeMessage": "{{name}} iptal edilsin mi? Bu anahtarı kullanan istemciler artık doğrulanamayacak.",
+    "toast": {
+      "invalidTitle": "Kiracı bilgisi eksik",
+      "invalidDetail": "Kiracı adı ve kısa adı zorunlu.",
+      "saved": "Ayarlar kaydedildi",
+      "keyNameRequired": "Anahtar adı zorunlu",
+      "keyGenerated": "API anahtarı üretildi",
+      "keyCopied": "API anahtarı kopyalandı",
+      "revoked": "API anahtarı iptal edildi"
+    },
     "keyStatus": {
       "active": "aktif",
       "revoked": "iptal"

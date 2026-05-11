@@ -38,19 +38,8 @@
   margin-bottom: 1rem;
 }
 
-.external-filter-bar button {
-  min-height: 2.45rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  border-radius: 8px;
-  border: 1px solid var(--surface-border);
-  background: var(--surface-card);
-  color: var(--text-color);
-  padding: 0 0.78rem;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
+:host ::ng-deep .external-filter-bar .p-select {
+  min-width: 11rem;
 }
 
 .external-name-cell,
@@ -69,6 +58,13 @@
 td small {
   color: var(--text-color-secondary);
   font-size: 0.78rem;
+}
+
+.external-name-cell small {
+  max-width: 24rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .external-type-pill {
@@ -113,6 +109,27 @@ td small {
   gap: 0.15rem;
 }
 
+.external-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.field span {
+  color: var(--text-color);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.field-wide {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 900px) {
   .external-health-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -121,6 +138,10 @@ td small {
 
 @media (max-width: 560px) {
   .external-health-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .external-form-grid {
     grid-template-columns: 1fr;
   }
 }

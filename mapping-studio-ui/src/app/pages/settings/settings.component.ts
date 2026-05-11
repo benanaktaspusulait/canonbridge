@@ -1,14 +1,19 @@
-import { Component } from '@angular/core';
-import { CardModule } from 'primeng/card';
+import { Component, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { CardModule } from 'primeng/card';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
+import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
-import { FormsModule } from '@angular/forms';
+import { ToastModule } from 'primeng/toast';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
+import { I18nService } from '../../core/i18n/i18n.service';
 
 interface ApiKey {
   id: string;
@@ -22,23 +27,113 @@ interface ApiKey {
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CardModule, ButtonModule, InputTextModule, ToggleSwitchModule,
-            DividerModule, TableModule, TagModule, FormsModule, TooltipModule, I18nPipe],
+  imports: [
+    FormsModule,
+    ButtonModule,
+    CardModule,
+    ConfirmDialogModule,
+    DialogModule,
+    DividerModule,
+    InputTextModule,
+    TableModule,
+    TagModule,
+    ToastModule,
+    ToggleSwitchModule,
+    TooltipModule,
+    I18nPipe
+  ],
+  providers: [ConfirmationService, MessageService],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss'
 })
 export class SettingsComponent {
+  private readonly confirmation = inject(ConfirmationService);
+  private readonly toast = inject(MessageService);
+  private readonly i18n = inject(I18nService);
+
   tenantName = 'Acme Corp';
   tenantSlug = 'acme-corp';
-  webhookUrl  = 'https://hooks.acme.com/canonbridge';
+  webhookUrl = 'https://hooks.acme.com/canonbridge';
 
-  dlqAlerts   = true;
-  lagAlerts   = true;
+  dlqAlerts = true;
+  lagAlerts = true;
   emailDigest = false;
 
-  readonly apiKeys: ApiKey[] = [
-    { id: 'k1', name: 'Production Transformer', prefix: 'cb_live_xK9m…', createdAt: '2026-03-01', lastUsed: '2 min ago',  status: 'active'  },
-    { id: 'k2', name: 'CI/CD Pipeline',         prefix: 'cb_live_pQ3r…', createdAt: '2026-04-15', lastUsed: '1 day ago',  status: 'active'  },
-    { id: 'k3', name: 'Old Dev Key',             prefix: 'cb_live_aB7z…', createdAt: '2026-01-10', lastUsed: '45 days ago', status: 'revoked' },
-  ];
+  keyDialogVisible = false;
+  newKeyName = '';
+  generatedKey = '';
+
+  readonly apiKeys = signal<ApiKey[]>([
+    { id: 'k1', name: 'Production Transformer', prefix: 'cb_live_xK9m…', createdAt: '2026-03-01', lastUsed: '2 min ago', status: 'active' },
+    { id: 'k2', name: 'CI/CD Pipeline', prefix: 'cb_live_pQ3r…', createdAt: '2026-04-15', lastUsed: '1 day ago', status: 'active' },
+    { id: 'k3', name: 'Old Dev Key', prefix: 'cb_live_aB7z…', createdAt: '2026-01-10', lastUsed: '45 days ago', status: 'revoked' }
+  ]);
+
+  saveSettings(): void {
+    if (!this.tenantName.trim() || !this.tenantSlug.trim()) {
+      this.toast.add({ severity: 'warn', summary: this.t('settings.toast.invalidTitle'), detail: this.t('settings.toast.invalidDetail') });
+      return;
+    }
+
+    localStorage.setItem('canonbridge.settings', JSON.stringify({
+      tenantName: this.tenantName,
+      tenantSlug: this.tenantSlug,
+      webhookUrl: this.webhookUrl,
+      dlqAlerts: this.dlqAlerts,
+      lagAlerts: this.lagAlerts,
+      emailDigest: this.emailDigest
+    }));
+    this.toast.add({ severity: 'success', summary: this.t('settings.toast.saved'), detail: this.tenantSlug });
+  }
+
+  openGenerateKey(): void {
+    this.newKeyName = '';
+    this.generatedKey = '';
+    this.keyDialogVisible = true;
+  }
+
+  generateKey(): void {
+    if (!this.newKeyName.trim()) {
+      this.toast.add({ severity: 'warn', summary: this.t('settings.toast.keyNameRequired') });
+      return;
+    }
+
+    const raw = `cb_live_${crypto.randomUUID().replace(/-/g, '')}${Math.random().toString(36).slice(2, 12)}`;
+    const key: ApiKey = {
+      id: `k${Date.now()}`,
+      name: this.newKeyName.trim(),
+      prefix: `${raw.slice(0, 14)}…`,
+      createdAt: new Date().toISOString().slice(0, 10),
+      lastUsed: 'never',
+      status: 'active'
+    };
+    this.apiKeys.update(list => [key, ...list]);
+    this.generatedKey = raw;
+    this.toast.add({ severity: 'success', summary: this.t('settings.toast.keyGenerated'), detail: key.name });
+  }
+
+  async copyGeneratedKey(): Promise<void> {
+    if (!this.generatedKey) return;
+    await navigator.clipboard?.writeText(this.generatedKey);
+    this.toast.add({ severity: 'success', summary: this.t('settings.toast.keyCopied') });
+  }
+
+  revokeKey(key: ApiKey, event: Event): void {
+    this.confirmation.confirm({
+      target: event.target as EventTarget,
+      header: this.t('settings.revokeTitle'),
+      message: this.t('settings.revokeMessage', { name: key.name }),
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: this.t('settings.revoke'),
+      rejectLabel: this.t('settings.cancel'),
+      accept: () => {
+        this.apiKeys.update(list => list.map(k => k.id === key.id ? { ...k, status: 'revoked', lastUsed: 'revoked now' } : k));
+        this.toast.add({ severity: 'warn', summary: this.t('settings.toast.revoked'), detail: key.name });
+      }
+    });
+  }
+
+  private t(key: string, params?: Record<string, unknown>): string {
+    return this.i18n.translate(key, params);
+  }
 }
