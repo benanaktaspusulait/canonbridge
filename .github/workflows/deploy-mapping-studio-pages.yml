@@ -1,0 +1,62 @@
+name: Deploy Mapping Studio to GitHub Pages
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - "mapping-studio-ui/**"
+      - ".github/workflows/deploy-mapping-studio-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Mapping Studio
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mapping-studio-ui
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mapping-studio-ui/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static app
+        run: npm run build:dev -- --base-href /canonbridge/
+
+      - name: Add SPA fallback
+        run: cp dist/mapping-studio-ui/browser/index.html dist/mapping-studio-ui/browser/404.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: mapping-studio-ui/dist/mapping-studio-ui/browser
+
+  deploy:
+    name: Publish to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v4
