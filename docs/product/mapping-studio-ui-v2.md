@@ -1200,6 +1200,26 @@ Backend connection tasks:
 
 ---
 
+## 21. Prompt Coverage Matrix
+
+| Requested UI capability | Covered section(s) | Runtime/UI expectation |
+|---|---|---|
+| Step 1 source type cards: Kafka, Webhook, External API, Manual Upload | Sections 3 and 4 | The first wizard step must ask how the flow starts before showing source-specific fields. |
+| Kafka Topic source panel | Section 4.4 | Topic, consumer group, sample source, schema version, latest sample fetch, and upload fallback. |
+| Webhook source panel with generated URL and API key | Section 4.5 | Show URL and inbound key with copy/rotate actions; capture or upload sample payload. |
+| External API polling panel | Section 4.6 and Section 6 | URL, method, query params, headers, body, schedule, checkpoint, timeout, retry, and credential selector. |
+| Manual data upload | Section 4.7 | Keep JSON paste/upload as the fastest setup/test path. |
+| Authentication drawer | Section 5 | Dynamic forms for API Key, Basic Auth, Bearer Token, and OAuth2; save credentials by reusable display name. |
+| Credential reuse across wizards | Section 5.6 | Credentials appear by metadata only. Secret values remain write-only. |
+| External API response as Step 3 source tree | Section 7 | Once tested, the response sample becomes selectable source data for no-code mapping. |
+| Step 5 real API test before mapping | Section 8 | Production UI calls backend `outbound-call-manager`, shows HTTP status/body errors, then runs mapping validation. |
+| External Systems page | Section 9 | Show success rate, latency, last error, credential status, recent calls, and connection health. |
+| Published config structure | Sections 10 and 11 | Persist source/outbound config and credential references without storing secrets. |
+| Validation and publish gates | Section 12 | Block publish until source, credential, outbound test, mapping, and canonical schema gates pass. |
+| Demo/local implementation boundary | Section 20 | Make clear that current browser demo simulates external network calls until backend APIs are connected. |
+
+---
+
 **See Also**:
 
 - [Mapping Studio UX Flow](./02-mapping-studio-ux-flow.md)

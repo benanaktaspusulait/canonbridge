@@ -1204,6 +1204,23 @@ This boundary must remain visible in demos: the browser can simulate or preview,
 
 ---
 
+## 53. Prompt Coverage Matrix
+
+| Requested capability | Covered section(s) | Implementation expectation |
+|---|---|---|
+| `outbound-call-manager` as the outbound API call manager | Sections 2, 3, 4, 40, 42, 43 | Implement as an internal Java/Quarkus service. It sends requests outward only and is not an ingress API gateway. |
+| Partner config `outbound` block with URL, method, headers, timeout, retry | Section 40 | Store only published connection metadata and credential references. Validate URL allowlists and retry policy before publish. |
+| Credential Store with API key, Basic, Bearer, OAuth2 client credentials | Sections 5, 40, 49 | Use encrypted PostgreSQL or Vault. Never place secret values in mapping artifacts or browser-exported config. |
+| OAuth2 token acquisition and refresh | Section 5.4 | Resolve token at runtime through Authentication Manager, cache access tokens, and avoid database persistence for short-lived tokens. |
+| SOAP/XML outbound support | Section 6 and Section 40 SOAP validation rules | Convert JSON to XML, wrap SOAP envelope, execute request, convert response XML back to JSON context. |
+| Kafka alternatives: webhook, scheduled poller, manual trigger | Section 7 | Use Webhook Receiver for inbound HTTP, Scheduled Poller for periodic fetch, and Admin/Studio trigger for manual tests. |
+| High-level architecture boxes for Outbound API Manager and Credential Store | Section 2 | Keep service boundaries explicit: Transformer evaluates mappings; outbound manager owns network I/O; credential store owns secrets. |
+| Core flow step for credential resolution and outbound call | Section 3 | Execute outbound calls before JSONata evaluation and pass normalized responses into the transformation context. |
+| JSONata note for outbound response transformation | Section 8 | JSONata consumes outbound response data but cannot initiate network calls or access credentials. |
+| Security architecture with Credential Store, PII masking, audit logging | Section 49 | Enforce tenant-scoped access, masking policies, audit events, and publish gates. |
+
+---
+
 **See Also**:
 
 - [Architecture Overview](./01-overview.md)
