@@ -401,6 +401,16 @@
     "ingestSubtitle": "Paste JSON from a partner system or load a file. The structure is parsed into a field tree for mapping.",
     "loadFile": "Load JSON file",
     "cancel": "Cancel",
+    "config": {
+      "import": "Import config",
+      "export": "Export config",
+      "invalidFileType": "Please use a .json Studio config file.",
+      "invalidShape": "This file is not a CanonBridge Studio config.",
+      "imported": "Studio config imported",
+      "importedDetail": "Fields, rules, validation, fixtures, and source setup were restored.",
+      "importFailed": "Studio config could not be imported",
+      "exported": "Studio config exported"
+    },
     "sourceType": {
       "title": "Source type",
       "kafka": "Kafka Topic",
@@ -434,7 +444,13 @@
       "url": "Webhook URL",
       "apiKey": "Inbound API key",
       "rotate": "Rotate",
-      "captureSample": "Capture sample"
+      "captureSample": "Capture sample",
+      "copyUrl": "Copy webhook URL",
+      "copyKey": "Copy inbound API key",
+      "copiedUrl": "Webhook URL copied",
+      "copiedKey": "Inbound API key copied",
+      "rotated": "Webhook key rotated",
+      "rotatedDetail": "A new masked demo key is ready for this draft."
     },
     "sourceApi": {
       "title": "External API source",
@@ -445,7 +461,10 @@
       "url": "URL",
       "schedule": "Schedule",
       "auth": "Authentication",
-      "test": "Test API call"
+      "test": "Test API call",
+      "invalidUrl": "Enter a valid HTTP or HTTPS URL before testing.",
+      "testPassed": "External API test passed",
+      "demoTestDetail": "Demo response captured in {{duration}}ms and loaded into the source tree."
     },
     "sourceAuth": {
       "add": "Add authentication",
@@ -498,6 +517,7 @@
       "title": "Incoming JSON rules",
       "subtitle": "Define what the partner payload must satisfy before transformation, without writing code.",
       "add": "Add rule",
+      "reorder": "Reorder validation rule",
       "remove": "Remove rule",
       "count": "{{count}} rule(s) in the active list",
       "passing": "Passing",
@@ -760,7 +780,8 @@
     "testMapping": "Test mapping",
     "test": {
       "successToast": "Test passed — output matches required fields.",
-      "failedToast": "Test failed — review validation messages and rules."
+      "failedToast": "Test failed — review validation messages and rules.",
+      "running": "Running mapping rules and schema checks..."
     },
     "publishDemo": "Publish (demo)",
     "schemaOk": "Schema check passed",
@@ -773,7 +794,9 @@
     "outputSubtitle": "Preview of the canonical payload after applying your rules.",
     "outputEmpty": "Run “Test mapping” to see output.",
     "output": {
-      "copied": "Output copied to clipboard"
+      "copied": "Output copied to clipboard",
+      "copy": "Copy output",
+      "download": "Download output"
     },
     "jsonPlaceholder": "{ \"your\": \"partner-json\" }",
     "json": {
@@ -909,6 +932,8 @@
       "error": "Error ⚠",
       "summary": "{{passed}} / {{total}} passed",
       "configNoFixtures": "No fixtures array found in this config file.",
+      "configImported": "{{count}} fixture row(s) imported with inline payloads.",
+      "configPathsImported": "{{count}} fixture row(s) imported from config paths. Browser security cannot read local files by path; drop each input/expected JSON onto the row.",
       "invalidConfig": "Invalid config file: {{msg}}",
       "invalidConfigFileType": "Please use a .json config file.",
       "expectedJson": "expected JSON",
@@ -921,7 +946,8 @@
       "title": "Generated transformation rule",
       "subtitle": "Executable rule preview automatically prepared from the visual wizard choices.",
       "copy": "Copy rule",
-      "download": "Download mapping-preview.rule"
+      "download": "Download mapping-preview.rule",
+      "copied": "Generated rule copied"
     }
   }
 }

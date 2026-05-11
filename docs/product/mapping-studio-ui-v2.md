@@ -1162,6 +1162,44 @@ Runtime:
 
 ---
 
+## 20. Current UI Implementation Status
+
+The Angular Mapping Studio now contains the first integrated V2 pass inside `IntegrationStudioComponent`. The implementation is still demo/local for external network activity, but the no-code user flow is wired end to end.
+
+Completed in UI:
+
+- Step 1 source selector for Kafka, Webhook, External API, and Manual Upload.
+- Strong upload cards with click and drag/drop for source JSON, input schema, canonical schema, fixture config, and fixture payload files.
+- Inline Credential drawer with dynamic fields for API key, Basic Auth, Bearer token, and OAuth2 client credentials.
+- Webhook copy and rotate actions with toast feedback.
+- External API test action that validates URL format, captures a demo response, and loads the response tree.
+- Incoming JSON validation rule editor with enable/disable, field selector, rule type selector, parameters, delete, and drag/drop reorder.
+- Canonical schema table with drag/drop row ordering and dot-path target key support.
+- Field mapping inspector with visual transform catalog, transform-specific controls, live source/result previews, summary, and guarded technical imported-rule view.
+- Generated engine rule tab in Validate & Publish with copy/download.
+- Full Studio config import/export so a draft can be moved as data, not just as a generated rule.
+- Fixture runner with config path visibility, inline payload support, drag/drop payload loading, batch execution, and diff display.
+- Step 5 loading state while tests and fixture batches run.
+- Syntax-highlighted transformed output with copy/download actions.
+
+Explicitly demo-only until backend integration:
+
+- Kafka latest-sample fetch uses a bundled sample.
+- Webhook capture uses a bundled sample.
+- External API test uses a bundled sample response after URL validation.
+- Credential save stores only local demo metadata in the browser session.
+- Publish records a local demo state and does not create an immutable backend mapping version.
+
+Backend connection tasks:
+
+- Replace demo source capture actions with real Admin/API calls.
+- Wire External API test to `outbound-call-manager`.
+- Persist credentials through Credential Store metadata APIs.
+- Persist Studio drafts and published versions through Mapping Studio APIs.
+- Enforce publish gates from Architecture V7 Section 49.5.
+
+---
+
 **See Also**:
 
 - [Mapping Studio UX Flow](./02-mapping-studio-ux-flow.md)

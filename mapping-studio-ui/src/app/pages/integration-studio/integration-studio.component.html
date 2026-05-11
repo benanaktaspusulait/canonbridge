@@ -108,6 +108,12 @@
         accept=".json,application/json"
         class="sr-only"
         (change)="onLoadInputSchema($event)" />
+      <input
+        #studioConfigIn
+        type="file"
+        accept=".json,application/json"
+        class="sr-only"
+        (change)="onLoadStudioConfig($event)" />
       <section class="studio-source-picker" [attr.aria-label]="'studio.sourceType.title' | i18n">
         @for (card of sourceTypeCards; track card.id) {
           <button
@@ -166,14 +172,30 @@
                 <span>{{ 'studio.sourceWebhook.url' | i18n }}</span>
                 <input pInputText [value]="webhookUrl()" readonly />
               </label>
-              <p-button icon="pi pi-copy" variant="outlined" severity="secondary" />
+              <p-button
+                icon="pi pi-copy"
+                variant="outlined"
+                severity="secondary"
+                [ariaLabel]="'studio.sourceWebhook.copyUrl' | i18n"
+                (onClick)="copyWebhookUrl()" />
             </div>
             <div class="studio-copy-row">
               <label>
                 <span>{{ 'studio.sourceWebhook.apiKey' | i18n }}</span>
                 <input pInputText [value]="webhookKeyMasked()" readonly />
               </label>
-              <p-button [label]="'studio.sourceWebhook.rotate' | i18n" icon="pi pi-refresh" variant="outlined" severity="secondary" />
+              <p-button
+                icon="pi pi-copy"
+                variant="outlined"
+                severity="secondary"
+                [ariaLabel]="'studio.sourceWebhook.copyKey' | i18n"
+                (onClick)="copyWebhookKey()" />
+              <p-button
+                [label]="'studio.sourceWebhook.rotate' | i18n"
+                icon="pi pi-refresh"
+                variant="outlined"
+                severity="secondary"
+                (onClick)="rotateWebhookKey()" />
             </div>
             <div class="toolbar-row">
               <p-button [label]="'studio.sourceWebhook.captureSample' | i18n" icon="pi pi-bolt" (onClick)="captureWebhookSample()" />
@@ -403,6 +425,18 @@
       <div class="toolbar-row studio-action-row">
         <p-button [label]="'studio.analyze' | i18n" icon="pi pi-sync" (onClick)="analyzePayload()" />
         <p-button
+          [label]="'studio.config.import' | i18n"
+          icon="pi pi-folder-open"
+          variant="outlined"
+          severity="secondary"
+          (onClick)="studioConfigIn.click()" />
+        <p-button
+          [label]="'studio.config.export' | i18n"
+          icon="pi pi-download"
+          variant="outlined"
+          severity="secondary"
+          (onClick)="exportStudioConfig()" />
+        <p-button
           [label]="'studio.next' | i18n"
           icon="pi pi-arrow-right"
           iconPos="right"
@@ -508,9 +542,16 @@
         <span>{{ 'studio.sourceValidation.count' | i18n: { count: sourceValidationRules().length } }}</span>
       </div>
 
-      <div class="studio-source-rule-list">
+      <div class="studio-source-rule-list" cdkDropList (cdkDropListDropped)="onSourceValidationDrop($event)">
         @for (rule of sourceValidationRules(); track rule.id) {
-          <div class="studio-source-rule-row" [class.studio-source-rule-row--off]="!rule.enabled">
+          <div cdkDrag class="studio-source-rule-row" [class.studio-source-rule-row--off]="!rule.enabled">
+            <button
+              type="button"
+              cdkDragHandle
+              class="studio-drag-handle studio-drag-handle--button"
+              [attr.aria-label]="'studio.sourceValidation.reorder' | i18n">
+              <i class="pi pi-bars text-color-secondary" aria-hidden="true"></i>
+            </button>
             <p-toggleSwitch
               [ngModel]="rule.enabled"
               (ngModelChange)="patchSourceValidationRule(rule.id, { enabled: $event })" />
@@ -870,6 +911,9 @@
             <p-tabs [value]="ruleInspectorTab()" (valueChange)="onInspectorTabChange($event)">
               <p-tablist>
                 <p-tab value="visual">{{ 'studio.tab.visual' | i18n }}</p-tab>
+                @if (ruleUsesAdvancedLogic(rule)) {
+                  <p-tab value="advanced">{{ 'studio.tab.advanced' | i18n }}</p-tab>
+                }
                 <p-tab value="summary">{{ 'studio.tab.summary' | i18n }}</p-tab>
               </p-tablist>
               <p-tabpanels>
@@ -1324,6 +1368,42 @@
                   </div>
                 </div>
               </p-tabpanel>
+              @if (ruleUsesAdvancedLogic(rule)) {
+                <p-tabpanel value="advanced">
+                  <div class="inspector-panel">
+                    <p-message severity="info" [text]="'studio.advancedHint' | i18n" styleClass="w-full" />
+                    @if (pathChips().length) {
+                      <div class="studio-path-chip-panel">
+                        <span>{{ 'studio.insertPathTitle' | i18n }}</span>
+                        <div class="studio-path-chip-list">
+                          @for (path of pathChips(); track path) {
+                            <button type="button" class="studio-path-chip" (click)="appendPathToAdvancedEditor(path)">
+                              {{ path }}
+                            </button>
+                          }
+                        </div>
+                      </div>
+                    }
+                    <label class="studio-field-shell">
+                      <span>{{ 'studio.mode.advanced' | i18n }}</span>
+                      <textarea
+                        #advancedExpr
+                        pTextarea
+                        class="w-full mono-textarea"
+                        rows="7"
+                        [placeholder]="'studio.advancedPlaceholder' | i18n"
+                        [ngModel]="rule.advancedExpression || rule.jsonataExpression || ''"
+                        (ngModelChange)="patchRule(rule.id, { advancedExpression: $event, jsonataExpression: undefined })"></textarea>
+                    </label>
+                    <p-button
+                      [label]="'studio.clearTechnicalRule' | i18n"
+                      icon="pi pi-undo"
+                      size="small"
+                      variant="outlined"
+                      (onClick)="clearTechnicalRule(rule)" />
+                  </div>
+                </p-tabpanel>
+              }
               <p-tabpanel value="summary">
                 <div class="inspector-panel">
                   <p class="hint-text">{{ 'studio.summaryHint' | i18n }}</p>
@@ -1514,6 +1594,7 @@
           <p-tablist>
             <p-tab value="test">{{ 'studio.validateTab.test' | i18n }}</p-tab>
             <p-tab value="fixtures">{{ 'studio.validateTab.fixtures' | i18n }}</p-tab>
+            <p-tab value="expression">{{ 'studio.validateTab.expression' | i18n }}</p-tab>
           </p-tablist>
           <p-tabpanels>
             <p-tabpanel value="test">
@@ -1525,14 +1606,23 @@
                     variant="outlined"
                     severity="secondary"
                     (onClick)="prevStep()" />
-                  <p-button [label]="'studio.testMapping' | i18n" icon="pi pi-play" (onClick)="runTest()" />
+                  <p-button
+                    [label]="'studio.testMapping' | i18n"
+                    icon="pi pi-play"
+                    (onClick)="runTest()"
+                    [disabled]="testRunPending()"
+                    [loading]="testRunPending()" />
                   <p-button
                     [label]="'studio.publishDemo' | i18n"
                     icon="pi pi-cloud-upload"
                     severity="success"
                     (onClick)="publishDemo()"
-                    [disabled]="validationOk() !== true" />
+                    [disabled]="validationOk() !== true || testRunPending()"
+                    [loading]="testRunPending()" />
                 </div>
+                @if (testRunPending()) {
+                  <p-message severity="info" [text]="'studio.test.running' | i18n" styleClass="w-full mt-3" />
+                }
                 @if (canonicalSchemaIssuesDetail().length) {
                   <ul class="validation-list mt-3">
                     @for (row of canonicalSchemaIssuesDetail(); track row.text) {
@@ -1583,7 +1673,8 @@
                     [label]="'studio.testAltFixture' | i18n"
                     icon="pi pi-bolt"
                     variant="outlined"
-                    (onClick)="runAltFixture()" />
+                    (onClick)="runAltFixture()"
+                    [disabled]="testRunPending()" />
                 </div>
                 @if (altParseError()) {
                   <p-message severity="error" [text]="altParseError()!" styleClass="w-full mt-2" />
@@ -1620,7 +1711,12 @@
 	                    icon="pi pi-plus"
 	                    variant="outlined"
 	                    (onClick)="addFixtureRow()" />
-	                  <p-button [label]="'studio.fixture.runAll' | i18n" icon="pi pi-play" (onClick)="runAllFixtures()" />
+	                  <p-button
+                      [label]="'studio.fixture.runAll' | i18n"
+                      icon="pi pi-play"
+                      (onClick)="runAllFixtures()"
+                      [disabled]="testRunPending()"
+                      [loading]="testRunPending()" />
                     <button
                       type="button"
                       class="studio-upload-card studio-upload-card--inline"
@@ -1663,6 +1759,9 @@
                           class="w-full"
                           [ngModel]="fx.name"
                           (ngModelChange)="patchFixtureRow(fx.id, { name: $event })" />
+                        @if (fx.configPath) {
+                          <small class="studio-fixture-config-path">{{ fx.configPath }}</small>
+                        }
                         <textarea
                           pTextarea
                           class="w-full mono-textarea mt-2"
@@ -1781,6 +1880,32 @@
                 }
               </div>
             </p-tabpanel>
+            <p-tabpanel value="expression">
+              <div class="inspector-panel">
+                <h3 class="card-title">{{ 'studio.expression.title' | i18n }}</h3>
+                <p class="card-subtitle">{{ 'studio.expression.subtitle' | i18n }}</p>
+                <div class="toolbar-row mb-3">
+                  <p-button
+                    [label]="'studio.expression.copy' | i18n"
+                    icon="pi pi-copy"
+                    variant="outlined"
+                    (onClick)="copyCombinedExpression()" />
+                  <p-button
+                    [label]="'studio.expression.download' | i18n"
+                    icon="pi pi-download"
+                    variant="outlined"
+                    severity="secondary"
+                    (onClick)="downloadCombinedExpression()" />
+                  <p-button
+                    [label]="'studio.config.export' | i18n"
+                    icon="pi pi-box"
+                    variant="outlined"
+                    severity="secondary"
+                    (onClick)="exportStudioConfig()" />
+                </div>
+                <pre class="studio-expression-preview">{{ combinedExpressionPreview() }}</pre>
+              </div>
+            </p-tabpanel>
           </p-tabpanels>
         </p-tabs>
       </div>
@@ -1796,7 +1921,26 @@
         </div>
       </ng-template>
       @if (testOutput()) {
-        <pre class="mono-pre">{{ testOutput() | json }}</pre>
+        <div class="toolbar-row mb-3">
+          <p-button
+            [label]="'studio.output.copy' | i18n"
+            icon="pi pi-copy"
+            variant="outlined"
+            size="small"
+            (onClick)="copyOutputJson()" />
+          <p-button
+            [label]="'studio.output.download' | i18n"
+            icon="pi pi-download"
+            variant="outlined"
+            severity="secondary"
+            size="small"
+            (onClick)="downloadOutputJson()" />
+        </div>
+        @if (highlightedOutputHtml(); as outHtml) {
+          <pre class="studio-json-hl hljs" [innerHTML]="outHtml"></pre>
+        } @else {
+          <pre class="mono-pre">{{ testOutput() | json }}</pre>
+        }
       } @else {
         <p class="empty-hint">{{ 'studio.outputEmpty' | i18n }}</p>
       }

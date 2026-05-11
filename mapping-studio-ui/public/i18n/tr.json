@@ -432,6 +432,16 @@
     "ingestSubtitle": "Partner sisteminden JSON yapıştırın veya dosya yükleyin. Yapı, eşleme için alan ağacına dönüştürülür.",
     "loadFile": "JSON dosyası yükle",
     "cancel": "İptal",
+    "config": {
+      "import": "Config içe al",
+      "export": "Config dışa aktar",
+      "invalidFileType": "Lütfen .json Studio config dosyası kullanın.",
+      "invalidShape": "Bu dosya CanonBridge Studio config dosyası değil.",
+      "imported": "Studio config içe alındı",
+      "importedDetail": "Alanlar, kurallar, doğrulama, fixture ve kaynak ayarları geri yüklendi.",
+      "importFailed": "Studio config içe alınamadı",
+      "exported": "Studio config dışa aktarıldı"
+    },
     "sourceType": {
       "title": "Kaynak tipi",
       "kafka": "Kafka Topic",
@@ -465,7 +475,13 @@
       "url": "Webhook URL",
       "apiKey": "Giriş API key",
       "rotate": "Döndür",
-      "captureSample": "Örnek yakala"
+      "captureSample": "Örnek yakala",
+      "copyUrl": "Webhook URL kopyala",
+      "copyKey": "Giriş API key kopyala",
+      "copiedUrl": "Webhook URL kopyalandı",
+      "copiedKey": "Giriş API key kopyalandı",
+      "rotated": "Webhook anahtarı döndürüldü",
+      "rotatedDetail": "Bu taslak için yeni maskeli demo anahtarı hazır."
     },
     "sourceApi": {
       "title": "Dış API kaynağı",
@@ -476,7 +492,10 @@
       "url": "URL",
       "schedule": "Zamanlama",
       "auth": "Kimlik doğrulama",
-      "test": "API çağrısını test et"
+      "test": "API çağrısını test et",
+      "invalidUrl": "Testten önce geçerli bir HTTP veya HTTPS URL girin.",
+      "testPassed": "Dış API testi başarılı",
+      "demoTestDetail": "Demo yanıt {{duration}}ms içinde yakalandı ve kaynak ağacına yüklendi."
     },
     "sourceAuth": {
       "add": "Kimlik doğrulama ekle",
@@ -529,6 +548,7 @@
       "title": "Gelen JSON kuralları",
       "subtitle": "Partner payload’u dönüşüme girmeden önce hangi alanların kabul edileceğini kod yazmadan tanımlayın.",
       "add": "Kural ekle",
+      "reorder": "Doğrulama kuralını sırala",
       "remove": "Kuralı sil",
       "count": "{{count}} kural aktif listede",
       "passing": "Geçerli",
@@ -815,7 +835,8 @@
     "testMapping": "Eşlemeyi test et",
     "test": {
       "successToast": "Test geçti — çıktı zorunlu alanlarla uyumlu.",
-      "failedToast": "Test başarısız — doğrulama mesajlarını ve kuralları gözden geçirin."
+      "failedToast": "Test başarısız — doğrulama mesajlarını ve kuralları gözden geçirin.",
+      "running": "Mapping kuralları ve şema kontrolleri çalıştırılıyor..."
     },
     "publishDemo": "Yayınla (demo)",
     "schemaOk": "Şema kontrolü başarılı",
@@ -828,7 +849,9 @@
     "outputSubtitle": "Kurallarınız uygulandıktan sonra kanonik yükün önizlemesi.",
     "outputEmpty": "Çıktıyı görmek için “Eşlemeyi test et” çalıştırın.",
     "output": {
-      "copied": "Çıktı panoya kopyalandı"
+      "copied": "Çıktı panoya kopyalandı",
+      "copy": "Çıktıyı kopyala",
+      "download": "Çıktıyı indir"
     },
     "jsonPlaceholder": "{ \"ornek\": \"partner-json\" }",
     "json": {
@@ -964,6 +987,8 @@
       "error": "Hata ⚠",
       "summary": "{{passed}} / {{total}} geçti",
       "configNoFixtures": "Bu config dosyasında fixtures dizisi yok.",
+      "configImported": "{{count}} fixture satırı gömülü payload ile içe alındı.",
+      "configPathsImported": "{{count}} fixture satırı config path bilgisiyle içe alındı. Tarayıcı güvenliği yerel dosyaları path ile okuyamaz; her giriş/beklenen JSON’u satıra bırakın.",
       "invalidConfig": "Geçersiz config dosyası: {{msg}}",
       "invalidConfigFileType": "Lütfen .json uzantılı bir config dosyası kullanın.",
       "expectedJson": "beklenen JSON",
@@ -976,7 +1001,8 @@
       "title": "Üretilen dönüşüm kuralı",
       "subtitle": "Görsel wizard seçimlerinden otomatik hazırlanan çalıştırılabilir kural önizlemesi.",
       "copy": "Kuralı kopyala",
-      "download": "mapping-preview.rule indir"
+      "download": "mapping-preview.rule indir",
+      "copied": "Üretilen kural kopyalandı"
     }
   }
 }

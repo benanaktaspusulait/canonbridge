@@ -1462,13 +1462,7 @@ export class IntegrationStudioComponent implements OnInit {
   downloadOutputJson(): void {
     const o = this.testOutput();
     if (!o) return;
-    const blob = new Blob([JSON.stringify(o, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'transform-output.json';
-    a.click();
-    URL.revokeObjectURL(url);
+    this.downloadText('transform-output.json', JSON.stringify(o, null, 2), 'application/json');
   }
 
   addTargetField(): void {
@@ -1626,6 +1620,7 @@ export class IntegrationStudioComponent implements OnInit {
 
   clearTechnicalRule(rule: MappingRule): void {
     this.patchRule(rule.id, { advancedExpression: '', jsonataExpression: undefined });
+    this.ruleInspectorTab.set('visual');
   }
 
   arrayItemFieldOptions(rule: MappingRule): { label: string; value: string }[] {
@@ -2608,15 +2603,14 @@ export class IntegrationStudioComponent implements OnInit {
     } catch {
       /* ignore */
     }
+    this.toast.add({
+      severity: 'success',
+      summary: this.i18n.translate('studio.expression.copied'),
+      life: 2500
+    });
   }
 
   downloadCombinedExpression(): void {
-    const blob = new Blob([this.combinedExpressionPreview()], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'mapping-preview.rule';
-    a.click();
-    URL.revokeObjectURL(url);
+    this.downloadText('mapping-preview.rule', this.combinedExpressionPreview(), 'text/plain;charset=utf-8');
   }
 }

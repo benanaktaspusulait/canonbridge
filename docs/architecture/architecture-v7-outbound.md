@@ -1177,6 +1177,33 @@ The V7 architecture is complete when:
 
 ---
 
+## 52. Current Implementation Boundary
+
+As of the Mapping Studio cleanup on May 11, 2026, the UI demonstrates the complete outbound-oriented workflow, but production runtime calls still require the V7 backend milestones above.
+
+Implemented in the local UI:
+
+- Source type cards for Kafka, webhook, external API, and manual upload.
+- No-code source validation rules before transformation.
+- Credential drawer UX for API key, Basic Auth, Bearer token, and OAuth2 client credentials.
+- External API sample capture as a demo response, with explicit demo status messaging.
+- Full Studio configuration import/export for source setup, source validation, canonical fields, rules, fixtures, credentials metadata, and webhook metadata.
+- Generated transformation rule preview, copy, and download.
+- External Systems operational screen for connection health in the demo app.
+
+Still backend-bound:
+
+- `outbound-call-manager` execute/test APIs.
+- Encrypted Credential Store or Vault integration.
+- Real webhook URL/key provisioning and rotation.
+- Scheduled Poller execution and checkpoint persistence.
+- SOAP/WSDL runtime execution.
+- Server-side publish gates that verify credentials, URL allowlists, outbound samples, and audit records.
+
+This boundary must remain visible in demos: the browser can simulate or preview, but any production publish must call the backend services specified in Sections 4, 5, 7, 40, and 49.
+
+---
+
 **See Also**:
 
 - [Architecture Overview](./01-overview.md)
