@@ -9,17 +9,15 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: github-pages
+  group: mapping-studio-pages
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build Mapping Studio
+  deploy:
+    name: Build and Publish Mapping Studio
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -40,26 +38,14 @@ jobs:
         run: npm run build:dev -- --base-href /canonbridge/
 
       - name: Add SPA fallback
-        run: cp dist/mapping-studio-ui/browser/index.html dist/mapping-studio-ui/browser/404.html
+        run: |
+          cp dist/mapping-studio-ui/browser/index.html dist/mapping-studio-ui/browser/404.html
+          touch dist/mapping-studio-ui/browser/.nojekyll
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
+      - name: Publish to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          enablement: true
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: mapping-studio-ui/dist/mapping-studio-ui/browser
-
-  deploy:
-    name: Publish to GitHub Pages
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy Pages artifact
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: mapping-studio-ui/dist/mapping-studio-ui/browser
+          force_orphan: true
