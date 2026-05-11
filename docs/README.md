@@ -88,6 +88,7 @@ This is the central hub for all CanonBridge documentation. Whether you're a busi
 - [SaaS Requirements](./product/saas-requirements.md)
 - [Mapping Studio Docs](./product/README.md)
 - [Visual JSONata Design](./product/06-mapping-studio-visual-jsonata-design.md)
+- [Mapping Studio UI V2](./product/mapping-studio-ui-v2.md)
 - [Mapping Studio Design System](./product/mapping-studio-design-system.md)
 
 Mapping Studio is the core management workflow: upload or paste sample JSON, inspect the inferred JSON tree, generate an input schema, map source fields to canonical fields, preview transformations, create fixtures, review, and publish immutable mapping versions.
@@ -95,6 +96,7 @@ Mapping Studio is the core management workflow: upload or paste sample JSON, ins
 ### Architecture
 
 - [Architecture Overview](./architecture/01-overview.md)
+- [Architecture V7 - Outbound API Calling and Credential Store](./architecture/architecture-v7-outbound.md)
 - [Core Principles](./architecture/02-core-principles.md)
 - [Technology Decisions](./architecture/03-technology-decisions.md)
 - [Tech Stack](./architecture/tech-stack.md)
