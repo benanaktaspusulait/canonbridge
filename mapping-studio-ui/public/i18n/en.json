@@ -102,7 +102,8 @@
     "newDemo": "New mapping (demo)",
     "searchPlaceholder": "Search partner, event type…",
     "filter": "Filter",
-    "export": "Export",
+    "export": "Export CSV",
+    "results": "results",
     "preview": "Preview",
     "rollback": "Rollback",
     "deprecate": "Deprecate",
@@ -119,7 +120,8 @@
     "deleteMessage": "Delete {{version}} from the catalog?",
     "toast": {
       "deprecated": "Mapping deprecated",
-      "deleted": "Mapping deleted"
+      "deleted": "Mapping deleted",
+      "exported": "Export ready"
     },
     "empty": "No mappings found."
   },
@@ -178,6 +180,12 @@
     "title": "External Systems",
     "subtitle": "Outbound APIs, webhooks, and scheduled polling health across the last 24 hours.",
     "newConnection": "New connection",
+    "results": "results",
+    "empty": "No connections match the current filters.",
+    "delete": "Delete",
+    "deleteTitle": "Delete connection",
+    "deleteMessage": "Delete \"{{name}}\" and its configuration?",
+    "cancel": "Cancel",
     "kpi": {
       "healthy": "Healthy",
       "degraded": "Degraded",
@@ -233,6 +241,7 @@
       "invalidDetail": "Name, partner, event type, and URL are required.",
       "created": "Connection created",
       "updated": "Connection updated",
+      "deleted": "Connection deleted",
       "testPassed": "Connection test passed",
       "testFailed": "Connection test failed",
       "invalidUrl": "URL must start with http:// or https://"
@@ -242,10 +251,12 @@
     "title": "Dead Letter Queue",
     "subtitle": "{{count}} failed messages — investigate and replay",
     "redriveSelected": "Redrive Selected",
+    "discardSelected": "Discard Selected",
     "redriveAll": "Redrive All",
     "colErrorType": "Error Type",
     "colErrorMessage": "Error Message",
     "colAttempts": "Attempts",
+    "colFirstFailed": "First Failed",
     "colLastFailed": "Last Failed",
     "tooltipRedrive": "Redrive",
     "tooltipInspect": "Inspect payload",
@@ -256,11 +267,13 @@
     "cancel": "Cancel",
     "discardTitle": "Discard DLQ message",
     "discardMessage": "Discard {{id}} permanently from the queue?",
+    "discardSelectedTitle": "Discard selected messages",
+    "discardSelectedMessage": "Permanently discard {{count}} selected message(s)?",
     "toast": {
       "redriven": "Message redriven",
       "redrivenAll": "DLQ redriven",
       "redriveFailed": "Redrive failed",
-      "discarded": "Message discarded",
+      "discarded": "Message(s) discarded",
       "count": "{{count}} message(s)"
     },
     "empty": "No messages in DLQ"
@@ -339,6 +352,7 @@
     "copyKey": "Copy key",
     "revokeTitle": "Revoke API key",
     "revokeMessage": "Revoke {{name}}? Existing clients using this key will stop authenticating.",
+    "revokedNow": "revoked",
     "toast": {
       "invalidTitle": "Missing tenant information",
       "invalidDetail": "Tenant name and slug are required.",

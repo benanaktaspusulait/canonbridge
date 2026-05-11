@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -24,6 +24,8 @@ interface ApiKey {
   status: 'active' | 'revoked';
 }
 
+const STORAGE_KEY = 'canonbridge.settings';
+
 @Component({
   selector: 'app-settings',
   standalone: true,
@@ -46,28 +48,55 @@ interface ApiKey {
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss'
 })
-export class SettingsComponent {
+export class SettingsComponent implements OnInit {
   private readonly confirmation = inject(ConfirmationService);
   private readonly toast = inject(MessageService);
   private readonly i18n = inject(I18nService);
 
+  // ── Tenant form ───────────────────────────────────────────────────────────
   tenantName = 'Acme Corp';
   tenantSlug = 'acme-corp';
   webhookUrl = 'https://hooks.acme.com/canonbridge';
 
-  dlqAlerts = true;
-  lagAlerts = true;
+  // ── Notification toggles ──────────────────────────────────────────────────
+  dlqAlerts   = true;
+  lagAlerts   = true;
   emailDigest = false;
 
+  // ── API key dialog ────────────────────────────────────────────────────────
   keyDialogVisible = false;
   newKeyName = '';
   generatedKey = '';
 
   readonly apiKeys = signal<ApiKey[]>([
-    { id: 'k1', name: 'Production Transformer', prefix: 'cb_live_xK9m…', createdAt: '2026-03-01', lastUsed: '2 min ago', status: 'active' },
-    { id: 'k2', name: 'CI/CD Pipeline', prefix: 'cb_live_pQ3r…', createdAt: '2026-04-15', lastUsed: '1 day ago', status: 'active' },
-    { id: 'k3', name: 'Old Dev Key', prefix: 'cb_live_aB7z…', createdAt: '2026-01-10', lastUsed: '45 days ago', status: 'revoked' }
+    { id: 'k1', name: 'Production Transformer', prefix: 'cb_live_xK9m…', createdAt: '2026-03-01', lastUsed: '2 min ago',   status: 'active'  },
+    { id: 'k2', name: 'CI/CD Pipeline',         prefix: 'cb_live_pQ3r…', createdAt: '2026-04-15', lastUsed: '1 day ago',   status: 'active'  },
+    { id: 'k3', name: 'Old Dev Key',             prefix: 'cb_live_aB7z…', createdAt: '2026-01-10', lastUsed: '45 days ago', status: 'revoked' }
   ]);
+
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+  ngOnInit(): void {
+    this.loadSettings();
+  }
+
+  private loadSettings(): void {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (saved.tenantName  !== undefined) this.tenantName  = saved.tenantName;
+      if (saved.tenantSlug  !== undefined) this.tenantSlug  = saved.tenantSlug;
+      if (saved.webhookUrl  !== undefined) this.webhookUrl  = saved.webhookUrl;
+      if (saved.dlqAlerts   !== undefined) this.dlqAlerts   = saved.dlqAlerts;
+      if (saved.lagAlerts   !== undefined) this.lagAlerts   = saved.lagAlerts;
+      if (saved.emailDigest !== undefined) this.emailDigest = saved.emailDigest;
+    } catch {
+      // ignore corrupt storage
+    }
+  }
+
+  // ── Tenant save ───────────────────────────────────────────────────────────
 
   saveSettings(): void {
     if (!this.tenantName.trim() || !this.tenantSlug.trim()) {
@@ -75,16 +104,18 @@ export class SettingsComponent {
       return;
     }
 
-    localStorage.setItem('canonbridge.settings', JSON.stringify({
-      tenantName: this.tenantName,
-      tenantSlug: this.tenantSlug,
-      webhookUrl: this.webhookUrl,
-      dlqAlerts: this.dlqAlerts,
-      lagAlerts: this.lagAlerts,
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      tenantName:  this.tenantName,
+      tenantSlug:  this.tenantSlug,
+      webhookUrl:  this.webhookUrl,
+      dlqAlerts:   this.dlqAlerts,
+      lagAlerts:   this.lagAlerts,
       emailDigest: this.emailDigest
     }));
     this.toast.add({ severity: 'success', summary: this.t('settings.toast.saved'), detail: this.tenantSlug });
   }
+
+  // ── API key management ────────────────────────────────────────────────────
 
   openGenerateKey(): void {
     this.newKeyName = '';
@@ -114,8 +145,12 @@ export class SettingsComponent {
 
   async copyGeneratedKey(): Promise<void> {
     if (!this.generatedKey) return;
-    await navigator.clipboard?.writeText(this.generatedKey);
-    this.toast.add({ severity: 'success', summary: this.t('settings.toast.keyCopied') });
+    try {
+      await navigator.clipboard.writeText(this.generatedKey);
+      this.toast.add({ severity: 'success', summary: this.t('settings.toast.keyCopied') });
+    } catch {
+      this.toast.add({ severity: 'error', summary: 'Copy failed', detail: 'Use Ctrl+C to copy manually.' });
+    }
   }
 
   revokeKey(key: ApiKey, event: Event): void {
@@ -127,7 +162,9 @@ export class SettingsComponent {
       acceptLabel: this.t('settings.revoke'),
       rejectLabel: this.t('settings.cancel'),
       accept: () => {
-        this.apiKeys.update(list => list.map(k => k.id === key.id ? { ...k, status: 'revoked', lastUsed: 'revoked now' } : k));
+        this.apiKeys.update(list =>
+          list.map(k => k.id === key.id ? { ...k, status: 'revoked' as const, lastUsed: this.t('settings.revokedNow') } : k)
+        );
         this.toast.add({ severity: 'warn', summary: this.t('settings.toast.revoked'), detail: key.name });
       }
     });

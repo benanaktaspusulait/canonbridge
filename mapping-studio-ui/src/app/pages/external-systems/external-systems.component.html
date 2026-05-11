@@ -1,4 +1,5 @@
 <p-toast />
+<p-confirmDialog />
 
 <div class="page-header">
   <div>
@@ -10,33 +11,51 @@
   </div>
 </div>
 
+<!-- ── KPI strip ─────────────────────────────────────────────────────────── -->
 <section class="external-health-strip" aria-label="External system health summary">
   <article>
     <span>{{ 'externalSystems.kpi.healthy' | i18n }}</span>
-    <strong>{{ totals().healthy }}</strong>
+    <strong class="kpi-healthy">{{ totals().healthy }}</strong>
   </article>
   <article>
     <span>{{ 'externalSystems.kpi.degraded' | i18n }}</span>
-    <strong>{{ totals().degraded }}</strong>
+    <strong class="kpi-degraded">{{ totals().degraded }}</strong>
   </article>
   <article>
     <span>{{ 'externalSystems.kpi.down' | i18n }}</span>
-    <strong>{{ totals().down }}</strong>
+    <strong class="kpi-down">{{ totals().down }}</strong>
   </article>
   <article>
     <span>{{ 'externalSystems.kpi.calls' | i18n }}</span>
-    <strong>{{ totals().calls }}</strong>
+    <strong>{{ totals().calls | number }}</strong>
   </article>
 </section>
 
 <p-card styleClass="external-card">
+  <!-- ── Filter bar ──────────────────────────────────────────────────────── -->
   <div class="external-filter-bar">
-    <p-select [(ngModel)]="partnerFilter" [options]="partnerOptions()" appendTo="body" />
-    <p-select [(ngModel)]="typeFilter" [options]="typeOptions" appendTo="body" />
-    <p-select [(ngModel)]="environmentFilter" [options]="environmentOptions" appendTo="body" />
-    <p-select [(ngModel)]="timeWindow" [options]="timeWindowOptions" appendTo="body" />
+    <p-select
+      [options]="partnerOptions()"
+      [ngModel]="partnerFilter()"
+      (ngModelChange)="partnerFilter.set($event)"
+      appendTo="body"
+      [placeholder]="'externalSystems.filter.partner' | i18n" />
+    <p-select
+      [options]="typeOptions"
+      [ngModel]="typeFilter()"
+      (ngModelChange)="typeFilter.set($event)"
+      appendTo="body"
+      [placeholder]="'externalSystems.filter.type' | i18n" />
+    <p-select
+      [options]="environmentOptions"
+      [ngModel]="environmentFilter()"
+      (ngModelChange)="environmentFilter.set($event)"
+      appendTo="body"
+      [placeholder]="'externalSystems.filter.environment' | i18n" />
+    <span class="filter-count">{{ filteredConnections().length }} {{ 'externalSystems.results' | i18n }}</span>
   </div>
 
+  <!-- ── Table ──────────────────────────────────────────────────────────── -->
   <p-table [value]="filteredConnections()" styleClass="p-datatable-sm external-table">
     <ng-template pTemplate="header">
       <tr>
@@ -47,7 +66,7 @@
         <th>{{ 'externalSystems.col.latency' | i18n }}</th>
         <th>{{ 'externalSystems.col.lastError' | i18n }}</th>
         <th>{{ 'externalSystems.col.lastSuccess' | i18n }}</th>
-        <th style="width: 8rem"></th>
+        <th style="width: 9rem"></th>
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-row>
@@ -79,7 +98,7 @@
           </div>
         </td>
         <td class="external-error">{{ row.lastError }}</td>
-        <td class="text-color-secondary">{{ row.lastSuccess }}</td>
+        <td class="text-color-secondary text-sm">{{ row.lastSuccess }}</td>
         <td>
           <div class="external-actions">
             <p-button
@@ -97,13 +116,26 @@
               size="small"
               (onClick)="openEdit(row)"
               [pTooltip]="'externalSystems.action.edit' | i18n" />
+            <p-button
+              icon="pi pi-trash"
+              variant="text"
+              severity="danger"
+              size="small"
+              (onClick)="confirmDelete(row, $event)"
+              [pTooltip]="'externalSystems.delete' | i18n" />
           </div>
         </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="8" class="empty-cell">{{ 'externalSystems.empty' | i18n }}</td>
       </tr>
     </ng-template>
   </p-table>
 </p-card>
 
+<!-- ── Add / Edit dialog ─────────────────────────────────────────────────── -->
 <p-dialog
   [(visible)]="dialogVisible"
   [modal]="true"

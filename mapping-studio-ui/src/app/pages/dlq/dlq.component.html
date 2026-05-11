@@ -15,6 +15,13 @@
       [disabled]="selected.length === 0"
       (onClick)="redriveSelected()" />
     <p-button
+      [label]="'dlq.discardSelected' | i18n"
+      icon="pi pi-trash"
+      severity="danger"
+      variant="outlined"
+      [disabled]="selected.length === 0"
+      (onClick)="confirmDiscardSelected($event)" />
+    <p-button
       [label]="'dlq.redriveAll' | i18n"
       icon="pi pi-refresh"
       severity="danger"
@@ -39,6 +46,7 @@
         <th>{{ 'dlq.colErrorType' | i18n }}</th>
         <th>{{ 'dlq.colErrorMessage' | i18n }}</th>
         <th style="text-align:center">{{ 'dlq.colAttempts' | i18n }}</th>
+        <th>{{ 'dlq.colFirstFailed' | i18n }}</th>
         <th>{{ 'dlq.colLastFailed' | i18n }}</th>
         <th style="width:120px"></th>
       </tr>
@@ -54,6 +62,7 @@
         <td style="text-align:center">
           <span class="attempt-badge">{{ msg.attempts }}/3</span>
         </td>
+        <td class="text-sm text-color-secondary">{{ msg.firstFailed }}</td>
         <td class="text-sm text-color-secondary">{{ msg.lastFailed }}</td>
         <td>
           <div class="row-actions">
@@ -85,7 +94,7 @@
 
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td colspan="8" class="empty-cell">
+        <td colspan="9" class="empty-cell">
           <i class="pi pi-check-circle"></i>
           {{ 'dlq.empty' | i18n }}
         </td>
@@ -94,6 +103,7 @@
   </p-table>
 </p-card>
 
+<!-- ── Payload inspector drawer ──────────────────────────────────────────── -->
 <p-drawer [(visible)]="inspectorVisible" position="right" styleClass="payload-inspector-drawer">
   @if (inspected(); as msg) {
     <div class="drawer-header">
@@ -116,6 +126,10 @@
         <strong>{{ msg.attempts }}/3</strong>
       </article>
       <article>
+        <span>{{ 'dlq.colFirstFailed' | i18n }}</span>
+        <strong>{{ msg.firstFailed }}</strong>
+      </article>
+      <article>
         <span>{{ 'dlq.colLastFailed' | i18n }}</span>
         <strong>{{ msg.lastFailed }}</strong>
       </article>
@@ -132,8 +146,18 @@
     </section>
 
     <div class="drawer-actions">
-      <p-button [label]="'dlq.tooltipRedrive' | i18n" icon="pi pi-refresh" (onClick)="redriveMessage(msg)" />
-      <p-button [label]="'dlq.discard' | i18n" icon="pi pi-trash" severity="danger" variant="outlined" (onClick)="confirmDiscard(msg, $event)" />
+      <p-button
+        [label]="'dlq.tooltipRedrive' | i18n"
+        icon="pi pi-refresh"
+        styleClass="w-full"
+        (onClick)="redriveMessage(msg)" />
+      <p-button
+        [label]="'dlq.discard' | i18n"
+        icon="pi pi-trash"
+        severity="danger"
+        variant="outlined"
+        styleClass="w-full"
+        (onClick)="confirmDiscard(msg, $event)" />
     </div>
   }
 </p-drawer>

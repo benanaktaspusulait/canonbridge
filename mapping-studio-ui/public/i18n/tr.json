@@ -72,12 +72,30 @@
     "recentSubtitle": "Tüm ortaklardaki son eşleme aktivitesi",
     "viewAll": "Tümünü gör",
     "stat": {
-      "msgProcessed": { "label": "İşlenen mesajlar", "change": "düne göre +%12,3" },
-      "activeMappings": { "label": "Aktif eşlemeler", "change": "bu hafta +2" },
-      "dlq": { "label": "DLQ mesajları", "change": "son saatte +5" },
-      "lag": { "label": "Tüketici gecikmesi", "change": "SLO hedefi içinde" },
-      "p99": { "label": "Dönüşüm p99", "change": "SLO: < 200 ms" },
-      "partners": { "label": "Aktif ortaklar", "change": "3 kiracı" }
+      "msgProcessed": {
+        "label": "İşlenen mesajlar",
+        "change": "düne göre +%12,3"
+      },
+      "activeMappings": {
+        "label": "Aktif eşlemeler",
+        "change": "bu hafta +2"
+      },
+      "dlq": {
+        "label": "DLQ mesajları",
+        "change": "son saatte +5"
+      },
+      "lag": {
+        "label": "Tüketici gecikmesi",
+        "change": "SLO hedefi içinde"
+      },
+      "p99": {
+        "label": "Dönüşüm p99",
+        "change": "SLO: < 200 ms"
+      },
+      "partners": {
+        "label": "Aktif ortaklar",
+        "change": "3 kiracı"
+      }
     }
   },
   "table": {
@@ -102,7 +120,7 @@
     "newDemo": "Yeni eşleme (demo)",
     "searchPlaceholder": "Ortak veya olay tipi ara…",
     "filter": "Filtrele",
-    "export": "Dışa aktar",
+    "export": "CSV dışa aktar",
     "preview": "Önizleme",
     "rollback": "Geri al",
     "deprecate": "Kullanım dışı bırak",
@@ -119,9 +137,11 @@
     "deleteMessage": "{{version}} katalogdan silinsin mi?",
     "toast": {
       "deprecated": "Eşleme kullanım dışı",
-      "deleted": "Eşleme silindi"
+      "deleted": "Eşleme silindi",
+      "exported": "Dışa aktarım hazır"
     },
-    "empty": "Eşleme bulunamadı."
+    "empty": "Eşleme bulunamadı.",
+    "results": "sonuç"
   },
   "partners": {
     "title": "Ortaklar",
@@ -235,8 +255,14 @@
       "updated": "Bağlantı güncellendi",
       "testPassed": "Bağlantı testi başarılı",
       "testFailed": "Bağlantı testi başarısız",
-      "invalidUrl": "URL http:// veya https:// ile başlamalı"
-    }
+      "invalidUrl": "URL http:// veya https:// ile başlamalı",
+      "deleted": "Bağlantı silindi"
+    },
+    "results": "sonuç",
+    "empty": "Mevcut filtrelere uyan bağlantı yok.",
+    "delete": "Sil",
+    "deleteTitle": "Bağlantıyı sil",
+    "deleteMessage": "\"{{name}}\" ve yapılandırması silinsin mi?"
   },
   "dlq": {
     "title": "Ölü harf kuyruğu",
@@ -260,10 +286,14 @@
       "redriven": "Mesaj yeniden gönderildi",
       "redrivenAll": "DLQ yeniden gönderildi",
       "redriveFailed": "Yeniden gönderim başarısız",
-      "discarded": "Mesaj silindi",
+      "discarded": "Mesaj(lar) silindi",
       "count": "{{count}} mesaj"
     },
-    "empty": "DLQ’da mesaj yok"
+    "empty": "DLQ’da mesaj yok",
+    "discardSelected": "Seçilenleri sil",
+    "colFirstFailed": "İlk hata",
+    "discardSelectedTitle": "Seçili mesajları sil",
+    "discardSelectedMessage": "{{count}} seçili mesaj kalıcı olarak silinsin mi?"
   },
   "monitoring": {
     "title": "İzleme",
@@ -282,12 +312,30 @@
     "colLag": "Gecikme",
     "colUptime": "Çalışma süresi",
     "metric": {
-      "throughput": { "label": "Verim", "slo": "SLO: > 100/sn" },
-      "p99": { "label": "p99 gecikme", "slo": "SLO: < 200 ms" },
-      "dlq": { "label": "DLQ oranı", "slo": "SLO: <%0,1" },
-      "lag": { "label": "Tüketici gecikmesi", "slo": "SLO: < 1.000" },
-      "error": { "label": "Hata oranı", "slo": "SLO: <%1" },
-      "uptime": { "label": "Çalışma süresi", "slo": "SLO: > %99,9" }
+      "throughput": {
+        "label": "Verim",
+        "slo": "SLO: > 100/sn"
+      },
+      "p99": {
+        "label": "p99 gecikme",
+        "slo": "SLO: < 200 ms"
+      },
+      "dlq": {
+        "label": "DLQ oranı",
+        "slo": "SLO: <%0,1"
+      },
+      "lag": {
+        "label": "Tüketici gecikmesi",
+        "slo": "SLO: < 1.000"
+      },
+      "error": {
+        "label": "Hata oranı",
+        "slo": "SLO: <%1"
+      },
+      "uptime": {
+        "label": "Çalışma süresi",
+        "slo": "SLO: > %99,9"
+      }
     },
     "healthStatus": {
       "healthy": "sağlıklı",
@@ -347,7 +395,8 @@
     "keyStatus": {
       "active": "aktif",
       "revoked": "iptal"
-    }
+    },
+    "revokedNow": "iptal edildi"
   },
   "studio": {
     "title": "Integration Studio",
@@ -673,14 +722,38 @@
     },
     "noCode": {
       "title": "Kod yazmadan kapsanan dönüşümler",
-      "paths": { "title": "Alan seçimi", "text": "Kaynak ağaçtan değer seçme, iç içe alanlar ve tekil hedefler." },
-      "arrays": { "title": "Diziler", "text": "İlk/son/sıradaki eleman, filtreleme, sayma ve birleştirme." },
-      "strings": { "title": "Metin", "text": "Büyük/küçük harf, kırpma, değiştirme, parça alma ve şablon." },
-      "numbers": { "title": "Sayı", "text": "Sayıya çevirme, toplam, ortalama, minimum ve maksimum." },
-      "dates": { "title": "Tarih", "text": "Giriş ve çıkış formatını seçerek tarih dönüştürme." },
-      "logic": { "title": "Koşul", "text": "Eşitse/değilse bloklarıyla iş kuralı kurma." },
-      "defaults": { "title": "Varsayılan", "text": "Kaynak boşsa güvenli değer atama." },
-      "validation": { "title": "Doğrulama", "text": "Her seçimden sonra önizleme ve son adımda şema kontrolü." }
+      "paths": {
+        "title": "Alan seçimi",
+        "text": "Kaynak ağaçtan değer seçme, iç içe alanlar ve tekil hedefler."
+      },
+      "arrays": {
+        "title": "Diziler",
+        "text": "İlk/son/sıradaki eleman, filtreleme, sayma ve birleştirme."
+      },
+      "strings": {
+        "title": "Metin",
+        "text": "Büyük/küçük harf, kırpma, değiştirme, parça alma ve şablon."
+      },
+      "numbers": {
+        "title": "Sayı",
+        "text": "Sayıya çevirme, toplam, ortalama, minimum ve maksimum."
+      },
+      "dates": {
+        "title": "Tarih",
+        "text": "Giriş ve çıkış formatını seçerek tarih dönüştürme."
+      },
+      "logic": {
+        "title": "Koşul",
+        "text": "Eşitse/değilse bloklarıyla iş kuralı kurma."
+      },
+      "defaults": {
+        "title": "Varsayılan",
+        "text": "Kaynak boşsa güvenli değer atama."
+      },
+      "validation": {
+        "title": "Doğrulama",
+        "text": "Her seçimden sonra önizleme ve son adımda şema kontrolü."
+      }
     },
     "cheat": {
       "title": "Eşleme ipuçları",

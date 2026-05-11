@@ -26,7 +26,11 @@ interface DlqMessage {
 @Component({
   selector: 'app-dlq',
   standalone: true,
-  imports: [ButtonModule, CardModule, ConfirmDialogModule, DrawerModule, TableModule, TagModule, ToastModule, TooltipModule, I18nPipe],
+  imports: [
+    ButtonModule, CardModule, ConfirmDialogModule, DrawerModule,
+    TableModule, TagModule, ToastModule, TooltipModule,
+    I18nPipe
+  ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './dlq.component.html',
   styleUrl: './dlq.component.scss'
@@ -42,14 +46,14 @@ export class DlqComponent {
 
   private readonly _messages = signal<DlqMessage[]>([
     {
-      id: 'dlq-001', partner: 'payment-gateway', eventType: 'payment.captured',
+      id: 'dlq-001', partner: 'payment-gateway',  eventType: 'payment.captured',
       errorType: 'SCHEMA_VALIDATION',
       errorMessage: 'Required field "amount" is missing from payload',
       attempts: 3, firstFailed: '2026-05-10 13:45', lastFailed: '2026-05-10 14:15',
       payload: '{"transactionId":"txn-999","currency":"USD"}'
     },
     {
-      id: 'dlq-002', partner: 'payment-gateway', eventType: 'payment.captured',
+      id: 'dlq-002', partner: 'payment-gateway',  eventType: 'payment.captured',
       errorType: 'TRANSFORMATION_ERROR',
       errorMessage: 'Mapping rule evaluation failed — missing field reference',
       attempts: 3, firstFailed: '2026-05-10 12:30', lastFailed: '2026-05-10 13:00',
@@ -73,18 +77,20 @@ export class DlqComponent {
 
   readonly messages = this._messages.asReadonly();
 
+  // ── Inspect ───────────────────────────────────────────────────────────────
+
   inspect(msg: DlqMessage): void {
     this.inspected.set(msg);
     this.inspectorVisible = true;
   }
 
+  // ── Redrive ───────────────────────────────────────────────────────────────
+
   redriveMessage(msg: DlqMessage): void {
-    const validPayload = this.parsePayload(msg.payload) !== null;
-    if (!validPayload) {
+    if (this.parsePayload(msg.payload) === null) {
       this.toast.add({ severity: 'error', summary: this.t('dlq.toast.redriveFailed'), detail: msg.id });
       return;
     }
-
     this.removeMessages([msg.id]);
     this.toast.add({ severity: 'success', summary: this.t('dlq.toast.redriven'), detail: msg.id });
   }
@@ -102,6 +108,8 @@ export class DlqComponent {
     this.toast.add({ severity: 'success', summary: this.t('dlq.toast.redrivenAll'), detail: this.t('dlq.toast.count', { count: ids.length }) });
   }
 
+  // ── Discard ───────────────────────────────────────────────────────────────
+
   confirmDiscard(msg: DlqMessage, event: Event): void {
     this.confirmation.confirm({
       target: event.target as EventTarget,
@@ -117,8 +125,28 @@ export class DlqComponent {
     });
   }
 
+  confirmDiscardSelected(event: Event): void {
+    if (!this.selected.length) return;
+    const count = this.selected.length;
+    this.confirmation.confirm({
+      target: event.target as EventTarget,
+      header: this.t('dlq.discardSelectedTitle'),
+      message: this.t('dlq.discardSelectedMessage', { count }),
+      icon: 'pi pi-trash',
+      acceptLabel: this.t('dlq.discard'),
+      rejectLabel: this.t('dlq.cancel'),
+      accept: () => {
+        const ids = this.selected.map(m => m.id);
+        this.removeMessages(ids);
+        this.toast.add({ severity: 'warn', summary: this.t('dlq.toast.discarded'), detail: this.t('dlq.toast.count', { count }) });
+      }
+    });
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
   getErrorSeverity(type: string): 'danger' | 'warn' | 'info' {
-    if (type === 'SCHEMA_VALIDATION') return 'danger';
+    if (type === 'SCHEMA_VALIDATION')  return 'danger';
     if (type === 'TRANSFORMATION_ERROR') return 'warn';
     return 'info';
   }
@@ -139,11 +167,7 @@ export class DlqComponent {
   }
 
   private parsePayload(payload: string): unknown | null {
-    try {
-      return JSON.parse(payload);
-    } catch {
-      return null;
-    }
+    try { return JSON.parse(payload); } catch { return null; }
   }
 
   private t(key: string, params?: Record<string, unknown>): string {

@@ -6,8 +6,14 @@
     <p class="page-subtitle">{{ 'monitoring.subtitle' | i18n }}</p>
   </div>
   <div class="page-actions monitoring-actions">
-    <p-select [(ngModel)]="timeWindow" [options]="windowOptions" optionLabel="label" optionValue="value" appendTo="body" />
-    <label class="auto-refresh">
+    <p-select
+      [options]="windowOptions"
+      [(ngModel)]="timeWindow"
+      optionLabel="label"
+      optionValue="value"
+      appendTo="body"
+      (onChange)="onWindowChange()" />
+    <label class="auto-refresh-label">
       <span>{{ 'monitoring.autoRefresh' | i18n }}</span>
       <p-toggleswitch [(ngModel)]="autoRefresh" (ngModelChange)="onAutoRefreshChange()" />
     </label>
@@ -26,8 +32,12 @@
   </div>
 </div>
 
-<div class="last-updated">{{ 'monitoring.lastUpdated' | i18n }}: {{ lastUpdatedLabel }}</div>
+<div class="last-updated-bar">
+  <i class="pi pi-clock"></i>
+  {{ 'monitoring.lastUpdated' | i18n }}: <strong>{{ lastUpdatedLabel }}</strong>
+</div>
 
+<!-- ── Metric cards ──────────────────────────────────────────────────────── -->
 <div class="metrics-grid">
   @for (m of metrics(); track m.labelKey) {
     <div class="metric-card" [class.ok]="m.ok" [class.breach]="!m.ok">
@@ -46,6 +56,7 @@
   }
 </div>
 
+<!-- ── Partner health table ──────────────────────────────────────────────── -->
 <p-card styleClass="mt-4">
   <ng-template pTemplate="header">
     <div class="card-header-row">
@@ -53,6 +64,13 @@
         <h2 class="card-title">{{ 'monitoring.partnerHealth' | i18n }}</h2>
         <p class="card-subtitle">{{ 'monitoring.partnerHealthSub' | i18n }}</p>
       </div>
+      <p-button
+        icon="pi pi-download"
+        variant="text"
+        severity="secondary"
+        size="small"
+        [label]="'monitoring.export' | i18n"
+        (onClick)="exportCsv()" />
     </div>
   </ng-template>
 
@@ -75,9 +93,9 @@
           <p-tag [severity]="getSeverity(p.status)" [value]="('monitoring.healthStatus.' + p.status) | i18n" />
         </td>
         <td class="text-sm">{{ p.throughput }}</td>
-        <td class="text-sm" [class.latency-warn]="p.p99 !== '—' && +p.p99.replace('ms', '') > 200">{{ p.p99 }}</td>
-        <td class="text-sm" [class.dlq-warn]="p.dlqRate !== '—' && +p.dlqRate.replace('%', '') > 0.1">{{ p.dlqRate }}</td>
-        <td class="text-sm" style="text-align:right">{{ p.lag }}</td>
+        <td class="text-sm" [class.latency-warn]="p.p99 !== '—' && +p.p99.replace('ms','') > 200">{{ p.p99 }}</td>
+        <td class="text-sm" [class.dlq-warn]="p.dlqRate !== '—' && +p.dlqRate.replace('%','') > 0.1">{{ p.dlqRate }}</td>
+        <td class="text-sm" style="text-align:right" [class.lag-warn]="p.lag > 500">{{ p.lag }}</td>
         <td class="text-sm">{{ p.uptime }}</td>
       </tr>
     </ng-template>
