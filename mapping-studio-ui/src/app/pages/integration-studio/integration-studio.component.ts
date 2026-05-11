@@ -407,13 +407,16 @@ function parseEnumPairs(s: string): EnumMapPair[] {
 }
 
 function serializeEnumPairs(rows: EnumMapPair[]): string {
-  return JSON.stringify(rows.filter(row => row.source.trim() || row.target.trim()));
+  return JSON.stringify(rows.map(row => ({
+    source: row.source,
+    target: row.target
+  })));
 }
 
 function parseEnumMap(s: string): Record<string, string> {
   const m: Record<string, string> = {};
   for (const row of parseEnumPairs(s)) {
-    if (row.source.trim()) m[row.source.trim()] = row.target.trim();
+    if (row.source.trim() && row.target.trim()) m[row.source.trim()] = row.target.trim();
   }
   return m;
 }

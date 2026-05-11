@@ -48,7 +48,7 @@ function parseEnumPairs(s: string): EnumMapPair[] {
 function parseEnumMap(s: string): Record<string, string> {
   const m: Record<string, string> = {};
   for (const row of parseEnumPairs(s)) {
-    if (row.source.trim()) m[row.source.trim()] = row.target.trim();
+    if (row.source.trim() && row.target.trim()) m[row.source.trim()] = row.target.trim();
   }
   return m;
 }
