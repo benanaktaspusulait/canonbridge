@@ -72,6 +72,7 @@ export type FixtureRunStatus = 'idle' | 'passed' | 'failed' | 'error';
 export interface FixtureRow {
   id: string;
   name: string;
+  configPath?: string;
   inputJson: string;
   expectedJson: string;
   status: FixtureRunStatus;

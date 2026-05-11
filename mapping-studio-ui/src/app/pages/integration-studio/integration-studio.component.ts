@@ -59,7 +59,7 @@ import {
 } from './studio-ajv';
 import { highlightJsonToHtml, highlightJsonValueToHtml } from './json-highlight';
 
-const TARGET_KEY_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+const TARGET_KEY_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*$/;
 type UploadDropTarget = string;
 type StudioSourceType = 'kafka' | 'webhook' | 'externalApi' | 'manual';
 type SourceAuthType = 'API_KEY' | 'BASIC_AUTH' | 'BEARER_TOKEN' | 'OAUTH2_CLIENT_CREDENTIALS';
@@ -70,6 +70,34 @@ type CredentialOption = {
   type: SourceAuthType;
   environment: 'Sandbox' | 'Production';
   lastUsed: string;
+};
+
+type StudioConfigExport = {
+  version: 1;
+  exportedAt: string;
+  sourceType: StudioSourceType;
+  sourceJson: string;
+  sourceFileMeta: { name: string; size: string } | null;
+  inputSchemaDoc: Record<string, unknown> | null;
+  inputSchemaMeta: { title?: string; $id?: string } | null;
+  canonicalSchemaDoc: Record<string, unknown> | null;
+  canonicalSchemaMeta: { title?: string; $id?: string } | null;
+  targetFields: TargetField[];
+  rules: MappingRule[];
+  sourceValidationRules: SourceValidationRule[];
+  externalApi: {
+    name: string;
+    method: ExternalApiMethod;
+    url: string;
+    schedule: string;
+    selectedCredentialId: string;
+  };
+  credentials: CredentialOption[];
+  webhook: {
+    url: string;
+    keyMasked: string;
+  };
+  fixtures: FixtureRow[];
 };
 
 const DEMO_JSON = `{
@@ -315,6 +343,20 @@ function getByPath(root: unknown, path: string): unknown {
     cur = (cur as Record<string, unknown>)[p];
   }
   return cur;
+}
+
+function setByPath(root: Record<string, unknown>, path: string, value: unknown): void {
+  const parts = path.split('.').map(part => part.trim()).filter(Boolean);
+  if (!parts.length) return;
+  let cur: Record<string, unknown> = root;
+  for (const part of parts.slice(0, -1)) {
+    const next = cur[part];
+    if (next === null || typeof next !== 'object' || Array.isArray(next)) {
+      cur[part] = {};
+    }
+    cur = cur[part] as Record<string, unknown>;
+  }
+  cur[parts[parts.length - 1]] = value;
 }
 
 function asNumberArray(value: unknown): number[] {
@@ -1011,16 +1053,68 @@ export class IntegrationStudioComponent implements OnInit {
     this.analyzePayload();
   }
 
+  async copyWebhookUrl(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.webhookUrl());
+    } catch {
+      /* clipboard may be unavailable in some browser contexts */
+    }
+    this.toast.add({
+      severity: 'success',
+      summary: this.i18n.translate('studio.sourceWebhook.copiedUrl'),
+      life: 2500
+    });
+  }
+
+  async copyWebhookKey(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.webhookKeyMasked());
+    } catch {
+      /* clipboard may be unavailable in some browser contexts */
+    }
+    this.toast.add({
+      severity: 'success',
+      summary: this.i18n.translate('studio.sourceWebhook.copiedKey'),
+      life: 2500
+    });
+  }
+
+  rotateWebhookKey(): void {
+    const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+    this.webhookKeyMasked.set(`cb_wh_************${suffix}`);
+    this.toast.add({
+      severity: 'success',
+      summary: this.i18n.translate('studio.sourceWebhook.rotated'),
+      detail: this.i18n.translate('studio.sourceWebhook.rotatedDetail'),
+      life: 3500
+    });
+  }
+
   testExternalApi(): void {
     this.sourceType.set('externalApi');
+    if (!/^https?:\/\//i.test(this.externalApiUrl().trim())) {
+      this.toast.add({
+        severity: 'error',
+        summary: this.i18n.translate('studio.sourceApi.invalidUrl'),
+        life: 4000
+      });
+      return;
+    }
+    const durationMs = 150 + Math.floor(Math.random() * 160);
     this.externalApiLastTest.set({
       status: 200,
-      durationMs: 183,
+      durationMs,
       capturedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     });
     this.sourceFileMeta.set({ name: `${this.externalApiName() || 'external-api'}-response.json`, size: '0.5 KB' });
     this.sourceJson.set(EXTERNAL_API_SAMPLE_JSON);
     this.analyzePayload();
+    this.toast.add({
+      severity: 'success',
+      summary: this.i18n.translate('studio.sourceApi.testPassed'),
+      detail: this.i18n.translate('studio.sourceApi.demoTestDetail', { duration: durationMs }),
+      life: 4000
+    });
   }
 
   saveCredential(): void {
@@ -1180,10 +1274,25 @@ export class IntegrationStudioComponent implements OnInit {
     return ev.dataTransfer?.files?.[0] ?? null;
   }
 
+  private formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+
+  private downloadText(filename: string, content: string, type: string): void {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   private loadSourceFile(file: File): void {
     this.sourceFileMeta.set({
       name: file.name,
-      size: `${(file.size / 1024).toFixed(1)} KB`
+      size: this.formatFileSize(file.size)
     });
     const reader = new FileReader();
     reader.onload = () => {
@@ -1322,6 +1431,13 @@ export class IntegrationStudioComponent implements OnInit {
     const copy = [...this.rules()];
     moveItemInArray(copy, event.previousIndex, event.currentIndex);
     this.rules.set(copy);
+  }
+
+  onSourceValidationDrop(event: CdkDragDrop<SourceValidationRule[]>): void {
+    const copy = [...this.sourceValidationRules()];
+    moveItemInArray(copy, event.previousIndex, event.currentIndex);
+    this.sourceValidationRules.set(copy);
+    this.analyzePayloadSoft();
   }
 
   selectRuleRow(rule: MappingRule): void {
@@ -1575,8 +1691,11 @@ export class IntegrationStudioComponent implements OnInit {
 
   ruleResultValuePreview(rule: MappingRule): string {
     const tested = this.testOutput();
-    if (tested && Object.prototype.hasOwnProperty.call(tested, rule.targetKey)) {
-      return previewString(tested[rule.targetKey]);
+    if (tested) {
+      const testedValue = getByPath(tested, rule.targetKey);
+      if (testedValue !== undefined) {
+        return previewString(testedValue);
+      }
     }
     if (effectiveJsonataExpression(rule)) {
       return this.i18n.translate('studio.ruleContext.runTestForPreview');
@@ -1816,7 +1935,7 @@ export class IntegrationStudioComponent implements OnInit {
           const stage = res.stage ?? 'evaluate';
           const msg = res.message ?? 'Unknown error';
           merged[r.id] = merged[r.id] ? `${merged[r.id]} | Transformer (${stage}): ${msg}` : `Transformer (${stage}): ${msg}`;
-        } else if (!merged[r.id] && stableStringify(out[r.targetKey]) !== stableStringify(res.result)) {
+        } else if (!merged[r.id] && stableStringify(getByPath(out, r.targetKey)) !== stableStringify(res.result)) {
           extraNotes.push(
             this.i18n.translate('studio.validation.serverBrowserMismatch', { field: r.targetKey })
           );
@@ -1838,14 +1957,14 @@ export class IntegrationStudioComponent implements OnInit {
         const ex = effectiveJsonataExpression(rule);
         if (ex) {
           const r = await evaluateMappingExpression(ex, payload);
-          out[rule.targetKey] = r as unknown;
+          setByPath(out, rule.targetKey, r as unknown);
         } else {
-          out[rule.targetKey] = applyVisualTransform(rule, payload) as unknown;
+          setByPath(out, rule.targetKey, applyVisualTransform(rule, payload) as unknown);
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         errors[rule.id] = msg;
-        out[rule.targetKey] = null;
+        setByPath(out, rule.targetKey, null);
       }
     }
     return { out, errors };
@@ -1879,7 +1998,7 @@ export class IntegrationStudioComponent implements OnInit {
       let ok = true;
       for (const f of this.targetFields()) {
         if (!f.required) continue;
-        const v = out[f.key];
+        const v = getByPath(out, f.key);
         if (v === null || v === undefined || v === '') {
           ok = false;
           messages.push(this.i18n.translate('studio.validation.missing', { field: f.key }));
@@ -2007,6 +2126,109 @@ export class IntegrationStudioComponent implements OnInit {
         life: 5000
       });
     }
+  }
+
+  onLoadStudioConfig(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    this.loadStudioConfigFile(file);
+  }
+
+  private loadStudioConfigFile(file: File): void {
+    if (!this.isJsonSchemaFile(file)) {
+      this.toast.add({
+        severity: 'error',
+        summary: this.i18n.translate('studio.config.invalidFileType'),
+        life: 4000
+      });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const cfg = JSON.parse(String(reader.result ?? '')) as Partial<StudioConfigExport>;
+        if (cfg.version !== 1 || !Array.isArray(cfg.targetFields) || !Array.isArray(cfg.rules)) {
+          throw new Error(this.i18n.translate('studio.config.invalidShape'));
+        }
+        this.sourceType.set(cfg.sourceType ?? 'manual');
+        this.sourceJson.set(typeof cfg.sourceJson === 'string' ? cfg.sourceJson : DEMO_JSON);
+        this.sourceFileMeta.set(cfg.sourceFileMeta ?? { name: file.name, size: this.formatFileSize(file.size) });
+        this.inputSchemaDoc.set(cfg.inputSchemaDoc ?? null);
+        this.inputSchemaMeta.set(cfg.inputSchemaMeta ?? null);
+        this.canonicalSchemaDoc.set(cfg.canonicalSchemaDoc ?? null);
+        this.canonicalSchemaMeta.set(cfg.canonicalSchemaMeta ?? null);
+        this.targetFields.set(cfg.targetFields);
+        this.rules.set(cfg.rules);
+        this.sourceValidationRules.set(cfg.sourceValidationRules ?? []);
+        this.externalApiName.set(cfg.externalApi?.name ?? this.externalApiName());
+        this.externalApiMethod.set(cfg.externalApi?.method ?? this.externalApiMethod());
+        this.externalApiUrl.set(cfg.externalApi?.url ?? this.externalApiUrl());
+        this.externalApiSchedule.set(cfg.externalApi?.schedule ?? this.externalApiSchedule());
+        this.selectedCredentialId.set(cfg.externalApi?.selectedCredentialId ?? this.selectedCredentialId());
+        this.credentials.set(cfg.credentials ?? this.credentials());
+        this.webhookUrl.set(cfg.webhook?.url ?? this.webhookUrl());
+        this.webhookKeyMasked.set(cfg.webhook?.keyMasked ?? this.webhookKeyMasked());
+        this.fixtures.set(cfg.fixtures ?? this.fixtures());
+        this.selectedRule.set(cfg.rules[0] ?? null);
+        this.ruleInspectorTab.set('visual');
+        this.validationOk.set(null);
+        this.validationMessages.set([]);
+        this.published.set(false);
+        this.analyzePayloadSoft();
+        this.toast.add({
+          severity: 'success',
+          summary: this.i18n.translate('studio.config.imported'),
+          detail: this.i18n.translate('studio.config.importedDetail'),
+          life: 3500
+        });
+      } catch (e) {
+        this.toast.add({
+          severity: 'error',
+          summary: this.i18n.translate('studio.config.importFailed'),
+          detail: e instanceof Error ? e.message : String(e),
+          life: 5000
+        });
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  exportStudioConfig(): void {
+    const cfg: StudioConfigExport = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      sourceType: this.sourceType(),
+      sourceJson: this.sourceJson(),
+      sourceFileMeta: this.sourceFileMeta(),
+      inputSchemaDoc: this.inputSchemaDoc(),
+      inputSchemaMeta: this.inputSchemaMeta(),
+      canonicalSchemaDoc: this.canonicalSchemaDoc(),
+      canonicalSchemaMeta: this.canonicalSchemaMeta(),
+      targetFields: this.targetFields(),
+      rules: this.rules(),
+      sourceValidationRules: this.sourceValidationRules(),
+      externalApi: {
+        name: this.externalApiName(),
+        method: this.externalApiMethod(),
+        url: this.externalApiUrl(),
+        schedule: this.externalApiSchedule(),
+        selectedCredentialId: this.selectedCredentialId()
+      },
+      credentials: this.credentials(),
+      webhook: {
+        url: this.webhookUrl(),
+        keyMasked: this.webhookKeyMasked()
+      },
+      fixtures: this.fixtures()
+    };
+    this.downloadText('canonbridge-studio-config.json', JSON.stringify(cfg, null, 2), 'application/json');
+    this.toast.add({
+      severity: 'success',
+      summary: this.i18n.translate('studio.config.exported'),
+      life: 3000
+    });
   }
 
   onLoadInputSchema(ev: Event): void {
@@ -2199,16 +2421,47 @@ export class IntegrationStudioComponent implements OnInit {
         }
         this.fixtureConfigMessage.set(null);
         this.fixtures.update(rs => {
+          let pathOnlyCount = 0;
           const extra: FixtureRow[] = fx.map((p: unknown, idx: number) => {
-            const path = String(p);
-            const base = path.split('/').pop() ?? path;
+            const row = p && typeof p === 'object' ? (p as Record<string, unknown>) : null;
+            const path = row
+              ? String(row['path'] ?? row['inputPath'] ?? row['input'] ?? `fixture-${idx + 1}.json`)
+              : String(p);
+            const base = String(row?.['name'] ?? path.split('/').pop() ?? path);
+            const inputRaw = row?.['inputJson'] ?? row?.['inputPayload'];
+            const expectedRaw = row?.['expectedJson'] ?? row?.['expectedPayload'];
+            const inputJson =
+              typeof inputRaw === 'string'
+                ? inputRaw
+                : inputRaw === undefined
+                  ? ''
+                  : JSON.stringify(inputRaw, null, 2);
+            const expectedJson =
+              typeof expectedRaw === 'string'
+                ? expectedRaw
+                : expectedRaw === undefined
+                  ? ''
+                  : JSON.stringify(expectedRaw, null, 2);
+            if (!inputJson && !expectedJson) {
+              pathOnlyCount += 1;
+            }
             return {
               id: `fx_cfg_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 7)}`,
               name: base,
-              inputJson: '',
-              expectedJson: '',
+              configPath: path,
+              inputJson,
+              expectedJson,
               status: 'idle' as const
             };
+          });
+          this.fixtureConfigMessage.set({
+            severity: 'info',
+            text: this.i18n.translate(
+              pathOnlyCount
+                ? 'studio.fixture.configPathsImported'
+                : 'studio.fixture.configImported',
+              { count: extra.length }
+            )
           });
           return [...rs, ...extra];
         });
@@ -2240,104 +2493,109 @@ export class IntegrationStudioComponent implements OnInit {
 
   async runAllFixtures(): Promise<void> {
     this.fixtureRunSummary.set(null);
-    const next = [...this.fixtures()];
-    let passed = 0;
-    for (let i = 0; i < next.length; i++) {
-      const row = next[i];
-      if (!row.inputJson.trim()) {
-        next[i] = { ...row, status: 'idle', errorMessage: undefined, actualJson: undefined, diffs: undefined };
-        continue;
+    this.testRunPending.set(true);
+    try {
+      const next = [...this.fixtures()];
+      let passed = 0;
+      for (let i = 0; i < next.length; i++) {
+        const row = next[i];
+        if (!row.inputJson.trim()) {
+          next[i] = { ...row, status: 'idle', errorMessage: undefined, actualJson: undefined, diffs: undefined };
+          continue;
+        }
+        let payload: unknown;
+        try {
+          payload = JSON.parse(row.inputJson);
+        } catch (e) {
+          next[i] = {
+            ...row,
+            status: 'error',
+            errorMessage: e instanceof Error ? e.message : String(e),
+            diffs: undefined
+          };
+          continue;
+        }
+        const { out, errors } = await this.executeRulesOnPayload(payload);
+        if (Object.keys(errors).length) {
+          next[i] = {
+            ...row,
+            status: 'error',
+            errorMessage: Object.values(errors).join('; '),
+            actualJson: JSON.stringify(out, null, 2),
+            diffs: undefined
+          };
+          continue;
+        }
+        const expRaw = row.expectedJson.trim();
+        if (!expRaw) {
+          next[i] = {
+            ...row,
+            status: 'passed',
+            errorMessage: undefined,
+            actualJson: JSON.stringify(out, null, 2),
+            diffs: undefined
+          };
+          passed += 1;
+          continue;
+        }
+        let expectedParsed: unknown;
+        try {
+          expectedParsed = JSON.parse(expRaw);
+        } catch (e) {
+          next[i] = {
+            ...row,
+            status: 'error',
+            errorMessage:
+              (e instanceof Error ? e.message : String(e)) +
+              ' (' +
+              this.i18n.translate('studio.fixture.expectedJson') +
+              ')',
+            diffs: undefined
+          };
+          continue;
+        }
+        if (stableStringify(expectedParsed) === stableStringify(out)) {
+          next[i] = {
+            ...row,
+            status: 'passed',
+            errorMessage: undefined,
+            actualJson: JSON.stringify(out, null, 2),
+            diffs: undefined
+          };
+          passed += 1;
+        } else if (
+          expectedParsed !== null &&
+          typeof expectedParsed === 'object' &&
+          out !== null &&
+          typeof out === 'object'
+        ) {
+          next[i] = {
+            ...row,
+            status: 'failed',
+            errorMessage: undefined,
+            actualJson: JSON.stringify(out, null, 2),
+            diffs: this.computeShallowDiff(
+              expectedParsed as Record<string, unknown>,
+              out as Record<string, unknown>
+            )
+          };
+        } else {
+          next[i] = {
+            ...row,
+            status: 'failed',
+            errorMessage: undefined,
+            actualJson: JSON.stringify(out, null, 2),
+            diffs: [{ path: '.', expected: expectedParsed, actual: out }]
+          };
+        }
       }
-      let payload: unknown;
-      try {
-        payload = JSON.parse(row.inputJson);
-      } catch (e) {
-        next[i] = {
-          ...row,
-          status: 'error',
-          errorMessage: e instanceof Error ? e.message : String(e),
-          diffs: undefined
-        };
-        continue;
-      }
-      const { out, errors } = await this.executeRulesOnPayload(payload);
-      if (Object.keys(errors).length) {
-        next[i] = {
-          ...row,
-          status: 'error',
-          errorMessage: Object.values(errors).join('; '),
-          actualJson: JSON.stringify(out, null, 2),
-          diffs: undefined
-        };
-        continue;
-      }
-      const expRaw = row.expectedJson.trim();
-      if (!expRaw) {
-        next[i] = {
-          ...row,
-          status: 'passed',
-          errorMessage: undefined,
-          actualJson: JSON.stringify(out, null, 2),
-          diffs: undefined
-        };
-        passed += 1;
-        continue;
-      }
-      let expectedParsed: unknown;
-      try {
-        expectedParsed = JSON.parse(expRaw);
-      } catch (e) {
-        next[i] = {
-          ...row,
-          status: 'error',
-          errorMessage:
-            (e instanceof Error ? e.message : String(e)) +
-            ' (' +
-            this.i18n.translate('studio.fixture.expectedJson') +
-            ')',
-          diffs: undefined
-        };
-        continue;
-      }
-      if (stableStringify(expectedParsed) === stableStringify(out)) {
-        next[i] = {
-          ...row,
-          status: 'passed',
-          errorMessage: undefined,
-          actualJson: JSON.stringify(out, null, 2),
-          diffs: undefined
-        };
-        passed += 1;
-      } else if (
-        expectedParsed !== null &&
-        typeof expectedParsed === 'object' &&
-        out !== null &&
-        typeof out === 'object'
-      ) {
-        next[i] = {
-          ...row,
-          status: 'failed',
-          errorMessage: undefined,
-          actualJson: JSON.stringify(out, null, 2),
-          diffs: this.computeShallowDiff(
-            expectedParsed as Record<string, unknown>,
-            out as Record<string, unknown>
-          )
-        };
-      } else {
-        next[i] = {
-          ...row,
-          status: 'failed',
-          errorMessage: undefined,
-          actualJson: JSON.stringify(out, null, 2),
-          diffs: [{ path: '.', expected: expectedParsed, actual: out }]
-        };
-      }
+      this.fixtures.set(next);
+      this.fixtureRunSummary.set(
+        this.i18n.translate('studio.fixture.summary', { passed, total: next.length })
+      );
+    } finally {
+      this.testRunPending.set(false);
     }
-    this.fixtures.set(next);
-    this.fixtureRunSummary.set(
-      this.i18n.translate('studio.fixture.summary', { passed, total: next.length })
-    );
   }
 
   toggleFixtureDetail(id: string): void {
