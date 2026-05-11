@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Title } from '@angular/platform-browser';
@@ -25,6 +26,7 @@ export class I18nService {
   private readonly http = inject(HttpClient);
   private readonly title = inject(Title);
   private readonly appRef = inject(ApplicationRef);
+  private readonly document = inject(DOCUMENT);
 
   readonly lang = signal<LangId>('en');
   readonly translations = signal<Record<string, string>>({});
@@ -59,11 +61,17 @@ export class I18nService {
   private async loadLang(id: LangId): Promise<void> {
     this.lang.set(id);
     localStorage.setItem('canonbridge.lang', id);
-    document.documentElement.lang = id;
-    const data = await firstValueFrom(this.http.get<Record<string, unknown>>(`/i18n/${id}.json`));
+    this.document.documentElement.lang = id;
+    const data = await firstValueFrom(this.http.get<Record<string, unknown>>(this.translationUrl(id)));
     this.translations.set(flattenTranslations(data));
     this.title.setTitle(this.translate('app.title'));
     this.loaded.set(true);
     this.appRef.tick();
+  }
+
+  private translationUrl(id: LangId): string {
+    const baseHref = this.document.querySelector('base')?.getAttribute('href') || '/';
+    const baseUrl = new URL(baseHref, this.document.location.origin);
+    return new URL(`i18n/${id}.json`, baseUrl).pathname;
   }
 }
