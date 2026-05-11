@@ -41,7 +41,14 @@ import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { targetFieldsFromCanonicalPayloadProperties } from './canonical-fields-from-schema';
 import { collectSchemaValuePaths, isRootObjectSchema } from './json-schema-walk';
-import type { FixtureRow, MappingRule, TargetField, TransformKind } from './integration-studio.models';
+import type {
+  FixtureRow,
+  MappingRule,
+  SourceValidationKind,
+  SourceValidationRule,
+  TargetField,
+  TransformKind
+} from './integration-studio.models';
 import { buildCombinedMappingExpression } from './rule-to-jsonata';
 import {
   createStudioAjv,
@@ -112,7 +119,11 @@ const DEFAULT_RULES: MappingRule[] = [
     sourcePath: 'customer.status',
     targetKey: 'durum',
     transform: 'enum_map',
-    paramA: 'A=AKTIF,B=PASIF,C=ASKIDA',
+    paramA: JSON.stringify([
+      { source: 'A', target: 'AKTIF' },
+      { source: 'B', target: 'PASIF' },
+      { source: 'C', target: 'ASKIDA' }
+    ]),
     paramB: '',
     paramC: '',
     advancedExpression: ''
@@ -138,6 +149,35 @@ const DEFAULT_RULES: MappingRule[] = [
     advancedExpression: ''
   }
 ];
+
+const DEFAULT_SOURCE_VALIDATION_RULES: SourceValidationRule[] = [
+  {
+    id: 'sv1',
+    path: 'customer.full_name',
+    kind: 'required',
+    paramA: '',
+    paramB: '',
+    enabled: true
+  },
+  {
+    id: 'sv2',
+    path: 'customer.status',
+    kind: 'enum',
+    paramA: 'A,B,C',
+    paramB: '',
+    enabled: true
+  },
+  {
+    id: 'sv3',
+    path: 'order.qty',
+    kind: 'required',
+    paramA: '',
+    paramB: '',
+    enabled: true
+  }
+];
+
+type EnumMapPair = { source: string; target: string };
 
 function formatPrimitive(v: unknown): string {
   if (v === null) return 'null';
@@ -216,13 +256,84 @@ function getByPath(root: unknown, path: string): unknown {
   return cur;
 }
 
+function asNumberArray(value: unknown): number[] {
+  if (!Array.isArray(value)) {
+    const n = Number(value);
+    return Number.isFinite(n) ? [n] : [];
+  }
+  return value
+    .map(item => Number(item))
+    .filter(n => Number.isFinite(n));
+}
+
+function firstRecordInArray(value: unknown): Record<string, unknown> | null {
+  if (!Array.isArray(value)) return null;
+  const found = value.find(item => item !== null && typeof item === 'object' && !Array.isArray(item));
+  return (found as Record<string, unknown> | undefined) ?? null;
+}
+
+function parseEnumPairs(s: string): EnumMapPair[] {
+  const trimmed = s.trim();
+  if (!trimmed) return [];
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (Array.isArray(parsed)) {
+      return parsed
+        .map(item => {
+          if (!item || typeof item !== 'object') return null;
+          const row = item as Record<string, unknown>;
+          return {
+            source: String(row['source'] ?? ''),
+            target: String(row['target'] ?? '')
+          };
+        })
+        .filter((row): row is EnumMapPair => Boolean(row));
+    }
+  } catch {
+    /* legacy comma syntax */
+  }
+  return s
+    .split(/[,;]/)
+    .map(x => x.trim())
+    .filter(Boolean)
+    .map(part => {
+      const eq = part.indexOf('=');
+      return eq > 0 ? { source: part.slice(0, eq).trim(), target: part.slice(eq + 1).trim() } : null;
+    })
+    .filter((row): row is EnumMapPair => Boolean(row));
+}
+
+function serializeEnumPairs(rows: EnumMapPair[]): string {
+  return JSON.stringify(rows.filter(row => row.source.trim() || row.target.trim()));
+}
+
 function parseEnumMap(s: string): Record<string, string> {
   const m: Record<string, string> = {};
-  for (const part of s.split(/[,;]/).map(x => x.trim()).filter(Boolean)) {
-    const eq = part.indexOf('=');
-    if (eq > 0) m[part.slice(0, eq).trim()] = part.slice(eq + 1).trim();
+  for (const row of parseEnumPairs(s)) {
+    if (row.source.trim()) m[row.source.trim()] = row.target.trim();
   }
   return m;
+}
+
+function uniqueSelectOptions(values: string[]): { label: string; value: string }[] {
+  return [...new Set(values.map(value => value.trim()).filter(Boolean))].map(value => ({ label: value, value }));
+}
+
+function pathToInstancePath(path: string): string {
+  return `/${path.replace(/\[(\d+)\]/g, '/$1').replace(/\./g, '/')}`;
+}
+
+function sourceValueType(value: unknown): 'array' | 'object' | 'null' | 'string' | 'number' | 'boolean' {
+  if (Array.isArray(value)) return 'array';
+  if (value === null) return 'null';
+  return typeof value as 'object' | 'string' | 'number' | 'boolean';
+}
+
+function parseCsvValues(value: string): string[] {
+  return value
+    .split(/[,;]/)
+    .map(item => item.trim())
+    .filter(Boolean);
 }
 
 function applyDateFormat(value: unknown, inFmt: string, outFmt: string): string {
@@ -327,10 +438,36 @@ function applyVisualTransform(rule: MappingRule, payload: unknown): unknown {
     case 'array_join':
       if (!Array.isArray(raw)) return raw;
       return raw.map(String).join(rule.paramA || ',');
+    case 'array_first':
+      return Array.isArray(raw) ? raw[0] : undefined;
+    case 'array_last':
+      return Array.isArray(raw) ? raw[raw.length - 1] : undefined;
     case 'array_element': {
-      const i = parseInt(rule.paramA, 10) || 0;
+      const i = Math.max(1, parseInt(rule.paramA, 10) || 1) - 1;
       if (!Array.isArray(raw)) return undefined;
       return raw[i];
+    }
+    case 'array_count':
+      return Array.isArray(raw) ? raw.length : 0;
+    case 'array_filter_equals':
+      if (!Array.isArray(raw)) return [];
+      return raw.filter(item => String(getByPath(item, rule.paramA) ?? '') === rule.paramB);
+    case 'math_sum': {
+      const numbers = asNumberArray(raw);
+      return numbers.reduce((sum, n) => sum + n, 0);
+    }
+    case 'math_average': {
+      const numbers = asNumberArray(raw);
+      if (!numbers.length) return null;
+      return numbers.reduce((sum, n) => sum + n, 0) / numbers.length;
+    }
+    case 'math_min': {
+      const numbers = asNumberArray(raw);
+      return numbers.length ? Math.min(...numbers) : null;
+    }
+    case 'math_max': {
+      const numbers = asNumberArray(raw);
+      return numbers.length ? Math.max(...numbers) : null;
     }
     case 'conditional_value':
       return String(raw ?? '') === rule.paramA ? rule.paramB : rule.paramC;
@@ -407,6 +544,7 @@ export class IntegrationStudioComponent implements OnInit {
   parseError = signal<string | null>(null);
   treeNodes = signal<TreeNode[]>([]);
   sourcePaths = signal<string[]>([]);
+  sourceValidationRules = signal<SourceValidationRule[]>(DEFAULT_SOURCE_VALIDATION_RULES.map(rule => ({ ...rule })));
 
   targetFields = signal<TargetField[]>([...DEFAULT_TARGETS]);
   rules = signal<MappingRule[]>(DEFAULT_RULES.map(r => ({ ...r })));
@@ -483,13 +621,31 @@ export class IntegrationStudioComponent implements OnInit {
       'string_substring',
       'string_replace',
       'array_join',
+      'array_first',
+      'array_last',
       'array_element',
+      'array_count',
+      'array_filter_equals',
+      'math_sum',
+      'math_average',
+      'math_min',
+      'math_max',
       'conditional_value',
       'template_string'
     ];
     return kinds.map(value => ({
       value,
       label: this.i18n.translate(`studio.transform.${value}`)
+    }));
+  });
+
+  readonly noCodeCapabilities = computed(() => {
+    this.i18n.translations();
+    return ['paths', 'arrays', 'strings', 'numbers', 'dates', 'logic', 'defaults', 'validation'].map(key => ({
+      key,
+      icon: this.capabilityIcon(key),
+      title: this.i18n.translate(`studio.noCode.${key}.title`),
+      text: this.i18n.translate(`studio.noCode.${key}.text`)
     }));
   });
 
@@ -500,6 +656,38 @@ export class IntegrationStudioComponent implements OnInit {
       label: this.i18n.translate(`studio.fieldType.${value}`)
     }));
   });
+
+  readonly sourceValidationKindOptions = computed(() => {
+    this.i18n.translations();
+    return ([
+      'required',
+      'type',
+      'enum',
+      'min',
+      'max',
+      'min_length',
+      'max_length',
+      'regex'
+    ] as SourceValidationKind[]).map(value => ({
+      value,
+      label: this.i18n.translate(`studio.sourceValidation.kind.${value}`)
+    }));
+  });
+
+  readonly sourceValidationTypeOptions = computed(() => {
+    this.i18n.translations();
+    return (['string', 'number', 'boolean', 'object', 'array'] as const).map(value => ({
+      value,
+      label: this.i18n.translate(`studio.sourceValidation.type.${value}`)
+    }));
+  });
+
+  readonly dateFormatOptions = computed(() => [
+    { value: 'yyyy-MM-dd', label: 'YYYY-MM-DD' },
+    { value: 'dd/MM/yyyy', label: 'DD/MM/YYYY' },
+    { value: 'ISO 8601', label: 'ISO 8601' },
+    { value: 'Unix ms', label: 'Unix timestamp (ms)' }
+  ]);
 
   readonly sourcePathOptions = computed(() => {
     const fromJson = this.sourcePaths();
@@ -647,16 +835,19 @@ export class IntegrationStudioComponent implements OnInit {
     this.inputSchemaValidationIssues.set([]);
     try {
       const parsed = JSON.parse(this.sourceJson()) as unknown;
+      const issues: AjvIssue[] = [];
       const sch = this.inputSchemaDoc();
       if (sch) {
         const v = validateWithAjv(this.ajv, sch, parsed);
-        this.inputSchemaValidationIssues.set(v.ok ? [] : v.issues);
+        if (!v.ok) issues.push(...v.issues);
       }
+      issues.push(...this.validateSourceRules(parsed));
       const nodes = buildTreeNodes(parsed, '');
       const paths: string[] = [];
       collectLeafPaths(nodes, paths);
       this.treeNodes.set(nodes);
       this.sourcePaths.set(paths);
+      this.inputSchemaValidationIssues.set(issues);
       this.parseError.set(null);
     } catch (e) {
       this.treeNodes.set([]);
@@ -736,6 +927,96 @@ export class IntegrationStudioComponent implements OnInit {
         });
       });
     }
+  }
+
+  private validateSourceRules(payload: unknown): AjvIssue[] {
+    const issues: AjvIssue[] = [];
+    for (const rule of this.sourceValidationRules().filter(r => r.enabled && r.path)) {
+      const value = getByPath(payload, rule.path);
+      const instancePath = pathToInstancePath(rule.path);
+      const label = rule.path;
+      const addIssue = (key: string, params: Record<string, unknown> = {}) => {
+        issues.push({
+          instancePath,
+          message: this.i18n.translate(`studio.sourceValidation.error.${key}`, { path: label, ...params })
+        });
+      };
+
+      if (rule.kind === 'required') {
+        if (value === undefined || value === null || value === '') addIssue('required');
+        continue;
+      }
+
+      if (value === undefined || value === null || value === '') continue;
+
+      if (rule.kind === 'type') {
+        const expected = rule.paramA || 'string';
+        const actual = sourceValueType(value);
+        if (actual !== expected) addIssue('type', { expected, actual });
+      } else if (rule.kind === 'enum') {
+        const allowed = parseCsvValues(rule.paramA);
+        if (allowed.length && !allowed.includes(String(value))) {
+          addIssue('enum', { values: allowed.join(', ') });
+        }
+      } else if (rule.kind === 'min') {
+        const min = Number(rule.paramA);
+        const actual = Number(value);
+        if (Number.isFinite(min) && Number.isFinite(actual) && actual < min) addIssue('min', { min });
+      } else if (rule.kind === 'max') {
+        const max = Number(rule.paramA);
+        const actual = Number(value);
+        if (Number.isFinite(max) && Number.isFinite(actual) && actual > max) addIssue('max', { max });
+      } else if (rule.kind === 'min_length') {
+        const min = Number(rule.paramA);
+        if (Number.isFinite(min) && String(value).length < min) addIssue('minLength', { min });
+      } else if (rule.kind === 'max_length') {
+        const max = Number(rule.paramA);
+        if (Number.isFinite(max) && String(value).length > max) addIssue('maxLength', { max });
+      } else if (rule.kind === 'regex') {
+        try {
+          const re = new RegExp(rule.paramA);
+          if (rule.paramA && !re.test(String(value))) addIssue('regex');
+        } catch {
+          addIssue('regexInvalid');
+        }
+      }
+    }
+    return issues;
+  }
+
+  addSourceValidationRule(path = this.sourcePaths()[0] ?? ''): void {
+    this.sourceValidationRules.update(rules => [
+      ...rules,
+      {
+        id: `sv_${Date.now()}`,
+        path,
+        kind: 'required',
+        paramA: '',
+        paramB: '',
+        enabled: true
+      }
+    ]);
+    this.analyzePayloadSoft();
+  }
+
+  patchSourceValidationRule(id: string, patch: Partial<SourceValidationRule>): void {
+    this.sourceValidationRules.update(rules =>
+      rules.map(rule => {
+        if (rule.id !== id) return rule;
+        const next = { ...rule, ...patch };
+        if (patch.kind && patch.kind !== rule.kind) {
+          next.paramA = patch.kind === 'type' ? 'string' : '';
+          next.paramB = '';
+        }
+        return next;
+      })
+    );
+    this.analyzePayloadSoft();
+  }
+
+  removeSourceValidationRule(id: string): void {
+    this.sourceValidationRules.update(rules => rules.filter(rule => rule.id !== id));
+    this.analyzePayloadSoft();
   }
 
   fieldTypeTagSeverity(t: TargetField['type']): 'info' | 'secondary' | 'warn' {
@@ -882,6 +1163,144 @@ export class IntegrationStudioComponent implements OnInit {
     this.ruleInspectorTab.set(value === undefined || value === null ? 'visual' : `${value}`);
   }
 
+  selectTransform(rule: MappingRule, transform: TransformKind): void {
+    if (rule.transform === transform) return;
+    const defaults: Partial<Record<TransformKind, Partial<MappingRule>>> = {
+      date_format: { paramA: 'yyyy-MM-dd', paramB: 'dd/MM/yyyy', paramC: '' },
+      enum_map: { paramA: serializeEnumPairs([{ source: '', target: '' }]), paramB: '', paramC: '' },
+      default_value: { paramA: '', paramB: '', paramC: '' },
+      combine: { paramA: this.sourcePathOptions()[0]?.value ?? '', paramB: ' ', paramC: '' },
+      string_substring: { paramA: '0', paramB: '', paramC: '' },
+      string_replace: { paramA: '', paramB: '', paramC: '' },
+      array_join: { paramA: ',', paramB: '', paramC: '' },
+      array_element: { paramA: '1', paramB: '', paramC: '' },
+      array_filter_equals: { paramA: '', paramB: '', paramC: '' },
+      conditional_value: { paramA: '', paramB: '', paramC: '' },
+      template_string: { paramA: '', paramB: '', paramC: '' }
+    };
+    this.patchRule(rule.id, {
+      transform,
+      paramA: '',
+      paramB: '',
+      paramC: '',
+      ...(defaults[transform] ?? {})
+    });
+  }
+
+  transformIcon(value: TransformKind): string {
+    const map: Record<TransformKind, string> = {
+      direct: 'pi pi-arrow-right-arrow-left',
+      date_format: 'pi pi-calendar',
+      enum_map: 'pi pi-sitemap',
+      number_coerce: 'pi pi-hashtag',
+      default_value: 'pi pi-shield',
+      combine: 'pi pi-link',
+      string_uppercase: 'pi pi-sort-alpha-up',
+      string_lowercase: 'pi pi-sort-alpha-down',
+      string_trim: 'pi pi-align-left',
+      string_substring: 'pi pi-sliders-h',
+      string_replace: 'pi pi-sync',
+      array_join: 'pi pi-list',
+      array_first: 'pi pi-step-backward',
+      array_last: 'pi pi-step-forward',
+      array_element: 'pi pi-sort-numeric-down',
+      array_count: 'pi pi-calculator',
+      array_filter_equals: 'pi pi-filter',
+      math_sum: 'pi pi-plus',
+      math_average: 'pi pi-percentage',
+      math_min: 'pi pi-sort-amount-down',
+      math_max: 'pi pi-sort-amount-up',
+      conditional_value: 'pi pi-code',
+      template_string: 'pi pi-pencil'
+    };
+    return map[value] ?? 'pi pi-sliders-h';
+  }
+
+  capabilityIcon(key: string): string {
+    const map: Record<string, string> = {
+      paths: 'pi pi-directions',
+      arrays: 'pi pi-list-check',
+      strings: 'pi pi-language',
+      numbers: 'pi pi-calculator',
+      dates: 'pi pi-calendar-clock',
+      logic: 'pi pi-code',
+      defaults: 'pi pi-shield',
+      validation: 'pi pi-verified'
+    };
+    return map[key] ?? 'pi pi-sparkles';
+  }
+
+  clearTechnicalRule(rule: MappingRule): void {
+    this.patchRule(rule.id, { advancedExpression: '', jsonataExpression: undefined });
+  }
+
+  arrayItemFieldOptions(rule: MappingRule): { label: string; value: string }[] {
+    let payload: unknown;
+    try {
+      payload = JSON.parse(this.sourceJson());
+    } catch {
+      return [];
+    }
+    const sample = firstRecordInArray(getByPath(payload, rule.sourcePath));
+    if (!sample) return [];
+    return Object.keys(sample).map(key => ({ label: key, value: key }));
+  }
+
+  enumMapRows(rule: MappingRule): EnumMapPair[] {
+    const rows = parseEnumPairs(rule.paramA);
+    if (rows.length) return rows;
+    let payload: unknown;
+    try {
+      payload = JSON.parse(this.sourceJson());
+    } catch {
+      return [{ source: '', target: '' }];
+    }
+    const raw = getByPath(payload, rule.sourcePath);
+    if (raw === null || raw === undefined || typeof raw === 'object') {
+      return [{ source: '', target: '' }];
+    }
+    return [{ source: String(raw), target: '' }];
+  }
+
+  enumSourceValueOptions(rule: MappingRule): { label: string; value: string }[] {
+    const values = this.enumMapRows(rule).map(row => row.source);
+    try {
+      const payload = JSON.parse(this.sourceJson()) as unknown;
+      const raw = getByPath(payload, rule.sourcePath);
+      if (Array.isArray(raw)) {
+        values.push(...raw.filter(item => item === null || typeof item !== 'object').map(item => String(item ?? '')));
+      } else if (raw !== null && raw !== undefined && typeof raw !== 'object') {
+        values.push(String(raw));
+      }
+    } catch {
+      /* sample payload is optional here */
+    }
+    return uniqueSelectOptions(values);
+  }
+
+  enumTargetValueOptions(rule: MappingRule): { label: string; value: string }[] {
+    const values = this.enumMapRows(rule).map(row => row.target);
+    const target = this.targetFields().find(field => field.key === rule.targetKey);
+    const descriptionValues = target?.description.match(/[A-ZÇĞİÖŞÜ0-9_]{2,}/g) ?? [];
+    values.push(...descriptionValues);
+    return uniqueSelectOptions(values);
+  }
+
+  updateEnumMapCell(rule: MappingRule, index: number, key: keyof EnumMapPair, value: string): void {
+    const rows = this.enumMapRows(rule);
+    rows[index] = { ...(rows[index] ?? { source: '', target: '' }), [key]: value ?? '' };
+    this.patchRule(rule.id, { paramA: serializeEnumPairs(rows) });
+  }
+
+  addEnumMapRow(rule: MappingRule): void {
+    this.patchRule(rule.id, { paramA: serializeEnumPairs([...this.enumMapRows(rule), { source: '', target: '' }]) });
+  }
+
+  removeEnumMapRow(rule: MappingRule, index: number): void {
+    const rows = this.enumMapRows(rule).filter((_, i) => i !== index);
+    this.patchRule(rule.id, { paramA: serializeEnumPairs(rows.length ? rows : [{ source: '', target: '' }]) });
+  }
+
   ruleUsesAdvancedLogic(rule: MappingRule): boolean {
     return Boolean(effectiveJsonataExpression(rule));
   }
@@ -939,8 +1358,29 @@ export class IntegrationStudioComponent implements OnInit {
         });
       case 'array_join':
         return t('studio.summary.arrayJoin', { path, target, delim: rule.paramA || ',' });
+      case 'array_first':
+        return t('studio.summary.arrayFirst', { path, target });
+      case 'array_last':
+        return t('studio.summary.arrayLast', { path, target });
       case 'array_element':
-        return t('studio.summary.arrayElement', { path, target, index: rule.paramA || '0' });
+        return t('studio.summary.arrayElement', { path, target, index: rule.paramA || '1' });
+      case 'array_count':
+        return t('studio.summary.arrayCount', { path, target });
+      case 'array_filter_equals':
+        return t('studio.summary.arrayFilterEquals', {
+          path,
+          target,
+          itemPath: rule.paramA || '—',
+          value: rule.paramB || '—'
+        });
+      case 'math_sum':
+        return t('studio.summary.mathSum', { path, target });
+      case 'math_average':
+        return t('studio.summary.mathAverage', { path, target });
+      case 'math_min':
+        return t('studio.summary.mathMin', { path, target });
+      case 'math_max':
+        return t('studio.summary.mathMax', { path, target });
       case 'conditional_value':
         return t('studio.summary.conditional', {
           path,
@@ -1526,7 +1966,7 @@ export class IntegrationStudioComponent implements OnInit {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'mapping-preview.jsonata';
+    a.download = 'mapping-preview.rule';
     a.click();
     URL.revokeObjectURL(url);
   }

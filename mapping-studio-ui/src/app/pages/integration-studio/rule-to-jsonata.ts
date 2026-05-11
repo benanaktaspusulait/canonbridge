@@ -1,5 +1,7 @@
 import type { MappingRule } from './integration-studio.models';
 
+type EnumMapPair = { source: string; target: string };
+
 function jqPath(path: string): string {
   return path.replace(/\[(\d+)\]/g, '.$1').trim();
 }
@@ -8,11 +10,45 @@ function escapeSingleQuoted(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
+function jsonataStringLiteral(s: string): string {
+  return `'${escapeSingleQuoted(s)}'`;
+}
+
+function parseEnumPairs(s: string): EnumMapPair[] {
+  const trimmed = s.trim();
+  if (!trimmed) return [];
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (Array.isArray(parsed)) {
+      return parsed
+        .map(item => {
+          if (!item || typeof item !== 'object') return null;
+          const row = item as Record<string, unknown>;
+          return {
+            source: String(row['source'] ?? ''),
+            target: String(row['target'] ?? '')
+          };
+        })
+        .filter((row): row is EnumMapPair => Boolean(row));
+    }
+  } catch {
+    /* legacy comma syntax */
+  }
+  return s
+    .split(/[,;]/)
+    .map(x => x.trim())
+    .filter(Boolean)
+    .map(part => {
+      const eq = part.indexOf('=');
+      return eq > 0 ? { source: part.slice(0, eq).trim(), target: part.slice(eq + 1).trim() } : null;
+    })
+    .filter((row): row is EnumMapPair => Boolean(row));
+}
+
 function parseEnumMap(s: string): Record<string, string> {
   const m: Record<string, string> = {};
-  for (const part of s.split(/[,;]/).map(x => x.trim()).filter(Boolean)) {
-    const eq = part.indexOf('=');
-    if (eq > 0) m[part.slice(0, eq).trim()] = part.slice(eq + 1).trim();
+  for (const row of parseEnumPairs(s)) {
+    if (row.source.trim()) m[row.source.trim()] = row.target.trim();
   }
   return m;
 }
@@ -55,14 +91,36 @@ export function ruleToJsonataFragment(rule: MappingRule): string {
       const d = escapeSingleQuoted(rule.paramA || ',');
       return `$join(${base}, '${d}')`;
     }
+    case 'array_first':
+      return `${base}[0]`;
+    case 'array_last':
+      return `${base}[$count(${base}) - 1]`;
     case 'array_element': {
-      const i = parseInt(rule.paramA, 10) || 0;
-      return `${base}[${i}]`;
+      const uiIndex = Math.max(1, parseInt(rule.paramA, 10) || 1);
+      return `${base}[${uiIndex - 1}]`;
+    }
+    case 'array_count':
+      return `$count(${base})`;
+    case 'array_filter_equals': {
+      const field = jqPath(rule.paramA || '').replace(/^\$?\./, '');
+      const value = jsonataStringLiteral(rule.paramB);
+      if (!field) {
+        return `${base}[$string($) = ${value}]`;
+      }
+      return `${base}[${field} = ${value}]`;
     }
     case 'default_value': {
       const fb = escapeSingleQuoted(rule.paramA);
       return `$exists(${base}) and ${base} != null and $string(${base}) != '' ? ${base} : '${fb}'`;
     }
+    case 'math_sum':
+      return `$sum(${base})`;
+    case 'math_average':
+      return `$average(${base})`;
+    case 'math_min':
+      return `$min(${base})`;
+    case 'math_max':
+      return `$max(${base})`;
     case 'combine': {
       const p2 = jqPath(rule.paramA);
       const sep = escapeSingleQuoted(rule.paramB || ' ');

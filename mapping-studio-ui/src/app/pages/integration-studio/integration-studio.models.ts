@@ -11,7 +11,15 @@ export type TransformKind =
   | 'string_substring'
   | 'string_replace'
   | 'array_join'
+  | 'array_first'
+  | 'array_last'
   | 'array_element'
+  | 'array_count'
+  | 'array_filter_equals'
+  | 'math_sum'
+  | 'math_average'
+  | 'math_min'
+  | 'math_max'
   | 'conditional_value'
   | 'template_string';
 
@@ -38,6 +46,25 @@ export interface MappingRule {
    * Optional alias per requirements doc; when set, takes precedence over `advancedExpression` and visual.
    */
   jsonataExpression?: string;
+}
+
+export type SourceValidationKind =
+  | 'required'
+  | 'type'
+  | 'enum'
+  | 'min'
+  | 'max'
+  | 'min_length'
+  | 'max_length'
+  | 'regex';
+
+export interface SourceValidationRule {
+  id: string;
+  path: string;
+  kind: SourceValidationKind;
+  paramA: string;
+  paramB: string;
+  enabled: boolean;
 }
 
 export type FixtureRunStatus = 'idle' | 'passed' | 'failed' | 'error';

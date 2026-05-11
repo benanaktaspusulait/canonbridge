@@ -201,6 +201,98 @@
         <p class="empty-hint">{{ 'studio.treeEmpty' | i18n }}</p>
       }
     </p-card>
+
+    <p-card styleClass="studio-card studio-source-guard-card">
+      <ng-template pTemplate="header">
+        <div class="card-header-row">
+          <div>
+            <h2 class="card-title">{{ 'studio.sourceValidation.title' | i18n }}</h2>
+            <p class="card-subtitle">{{ 'studio.sourceValidation.subtitle' | i18n }}</p>
+          </div>
+          <p-tag
+            [severity]="inputSchemaValidationIssues().length ? 'danger' : 'success'"
+            [value]="
+              inputSchemaValidationIssues().length
+                ? ('studio.sourceValidation.failing' | i18n)
+                : ('studio.sourceValidation.passing' | i18n)
+            " />
+        </div>
+      </ng-template>
+
+      <div class="studio-source-guard-toolbar">
+        <p-button
+          [label]="'studio.sourceValidation.add' | i18n"
+          icon="pi pi-plus"
+          variant="outlined"
+          (onClick)="addSourceValidationRule()" />
+        <span>{{ 'studio.sourceValidation.count' | i18n: { count: sourceValidationRules().length } }}</span>
+      </div>
+
+      <div class="studio-source-rule-list">
+        @for (rule of sourceValidationRules(); track rule.id) {
+          <div class="studio-source-rule-row" [class.studio-source-rule-row--off]="!rule.enabled">
+            <p-toggleSwitch
+              [ngModel]="rule.enabled"
+              (ngModelChange)="patchSourceValidationRule(rule.id, { enabled: $event })" />
+            <label class="studio-field-shell">
+              <span>{{ 'studio.sourceValidation.field' | i18n }}</span>
+              <p-select
+                [options]="sourcePathOptions()"
+                [ngModel]="rule.path"
+                (ngModelChange)="patchSourceValidationRule(rule.id, { path: $event })"
+                optionLabel="label"
+                optionValue="value"
+                [filter]="true"
+                [editable]="true"
+                [placeholder]="'studio.selectPath' | i18n"
+                styleClass="w-full" />
+            </label>
+            <label class="studio-field-shell">
+              <span>{{ 'studio.sourceValidation.rule' | i18n }}</span>
+              <p-select
+                [options]="sourceValidationKindOptions()"
+                [ngModel]="rule.kind"
+                (ngModelChange)="patchSourceValidationRule(rule.id, { kind: $event })"
+                optionLabel="label"
+                optionValue="value"
+                styleClass="w-full" />
+            </label>
+            @if (rule.kind === 'type') {
+              <label class="studio-field-shell">
+                <span>{{ 'studio.sourceValidation.expectedType' | i18n }}</span>
+                <p-select
+                  [options]="sourceValidationTypeOptions()"
+                  [ngModel]="rule.paramA"
+                  (ngModelChange)="patchSourceValidationRule(rule.id, { paramA: $event })"
+                  optionLabel="label"
+                  optionValue="value"
+                  styleClass="w-full" />
+              </label>
+            } @else if (rule.kind === 'required') {
+              <div class="studio-no-param-card studio-source-rule-note">
+                <i class="pi pi-shield" aria-hidden="true"></i>
+                <span>{{ 'studio.sourceValidation.requiredHint' | i18n }}</span>
+              </div>
+            } @else {
+              <label class="studio-field-shell">
+                <span>{{ ('studio.sourceValidation.paramLabel.' + rule.kind) | i18n }}</span>
+                <input
+                  pInputText
+                  [ngModel]="rule.paramA"
+                  (ngModelChange)="patchSourceValidationRule(rule.id, { paramA: $event })"
+                  [placeholder]="('studio.sourceValidation.paramPlaceholder.' + rule.kind) | i18n" />
+              </label>
+            }
+            <p-button
+              icon="pi pi-trash"
+              variant="text"
+              severity="danger"
+              [ariaLabel]="'studio.sourceValidation.remove' | i18n"
+              (onClick)="removeSourceValidationRule(rule.id)" />
+          </div>
+        }
+      </div>
+    </p-card>
   </div>
 }
 
@@ -455,190 +547,417 @@
             <p-tabs [value]="ruleInspectorTab()" (valueChange)="onInspectorTabChange($event)">
               <p-tablist>
                 <p-tab value="visual">{{ 'studio.tab.visual' | i18n }}</p-tab>
-                <p-tab value="advanced">{{ 'studio.tab.advanced' | i18n }}</p-tab>
                 <p-tab value="summary">{{ 'studio.tab.summary' | i18n }}</p-tab>
               </p-tablist>
               <p-tabpanels>
               <p-tabpanel value="visual">
                 <div class="inspector-panel">
                   @if (ruleUsesAdvancedLogic(rule)) {
-                    <p-message severity="info" [text]="'studio.visualDisabledHint' | i18n" styleClass="w-full mb-3" />
+                    <div class="studio-engine-lock">
+                      <p-message severity="info" [text]="'studio.visualDisabledHint' | i18n" styleClass="w-full" />
+                      <p-button
+                        [label]="'studio.clearTechnicalRule' | i18n"
+                        icon="pi pi-undo"
+                        size="small"
+                        variant="outlined"
+                        (onClick)="clearTechnicalRule(rule)" />
+                    </div>
                   }
                   <div class="param-block">
                     <label class="param-label">{{ 'studio.colTransform' | i18n }}</label>
-                    <p-select
-                      [options]="transformOptions()"
-                      [ngModel]="rule.transform"
-                      (ngModelChange)="patchRule(rule.id, { transform: $event })"
-                      optionLabel="label"
-                      optionValue="value"
-                      styleClass="w-full"
-                      [disabled]="ruleUsesAdvancedLogic(rule)" />
+                    <div class="transform-catalog" role="list">
+                      @for (option of transformOptions(); track option.value) {
+                        <button
+                          type="button"
+                          role="listitem"
+                          class="transform-card"
+                          [class.transform-card--active]="rule.transform === option.value"
+                          [disabled]="ruleUsesAdvancedLogic(rule)"
+                          (click)="selectTransform(rule, option.value)">
+                          <i [class]="transformIcon(option.value)" aria-hidden="true"></i>
+                          <span>{{ option.label }}</span>
+                          <small>{{ ('studio.transformHelp.' + option.value) | i18n }}</small>
+                        </button>
+                      }
+                    </div>
                   </div>
+                  <div class="studio-transform-config mt-3">
+                    <div class="studio-transform-config__header">
+                      <i [class]="transformIcon(rule.transform)" aria-hidden="true"></i>
+                      <div>
+                        <strong>{{ ('studio.transform.' + rule.transform) | i18n }}</strong>
+                        <span>{{ ('studio.transformHelp.' + rule.transform) | i18n }}</span>
+                      </div>
+                    </div>
+                    <div class="studio-transform-config__body">
                   @switch (rule.transform) {
-                    @case ('date_format') {
-                      <div class="param-grid mt-2">
-                        <input
-                          pInputText
-                          [placeholder]="'studio.phDateIn' | i18n"
-                          [ngModel]="rule.paramA"
-                          (ngModelChange)="patchRule(rule.id, { paramA: $event })"
-                          [disabled]="ruleUsesAdvancedLogic(rule)" />
-                        <input
-                          pInputText
-                          [placeholder]="'studio.phDateOut' | i18n"
-                          [ngModel]="rule.paramB"
-                          (ngModelChange)="patchRule(rule.id, { paramB: $event })"
-                          [disabled]="ruleUsesAdvancedLogic(rule)" />
+                    @case ('direct') {
+                      <div class="studio-no-param-card">
+                        <i class="pi pi-arrow-right-arrow-left" aria-hidden="true"></i>
+                        <span>{{ 'studio.transformSetup.direct' | i18n }}</span>
                       </div>
                     }
-                    @case ('enum_map') {
-                      <input
-                        pInputText
-                        class="w-full mt-2"
-                        [placeholder]="'studio.phEnum' | i18n"
-                        [ngModel]="rule.paramA"
-                        (ngModelChange)="patchRule(rule.id, { paramA: $event })"
-                        [disabled]="ruleUsesAdvancedLogic(rule)" />
-                    }
-                    @case ('default_value') {
-                      <input
-                        pInputText
-                        class="w-full mt-2"
-                        [placeholder]="'studio.phDefault' | i18n"
-                        [ngModel]="rule.paramA"
-                        (ngModelChange)="patchRule(rule.id, { paramA: $event })"
-                        [disabled]="ruleUsesAdvancedLogic(rule)" />
-                    }
-                    @case ('combine') {
+                    @case ('date_format') {
                       <div class="param-grid mt-2">
-                        <p-select
-                          [options]="sourcePathOptions()"
+                        <label class="studio-field-shell">
+                          <span>{{ 'studio.date.inputFormat' | i18n }}</span>
+                          <p-select
+                          [options]="dateFormatOptions()"
                           [ngModel]="rule.paramA"
                           (ngModelChange)="patchRule(rule.id, { paramA: $event })"
                           optionLabel="label"
                           optionValue="value"
-                          [placeholder]="'studio.phSecondPath' | i18n"
+                          [editable]="true"
+                          [placeholder]="'studio.phDateIn' | i18n"
                           styleClass="w-full"
                           [disabled]="ruleUsesAdvancedLogic(rule)" />
-                        <input
-                          pInputText
-                          [placeholder]="'studio.phSeparator' | i18n"
+                        </label>
+                        <label class="studio-field-shell">
+                          <span>{{ 'studio.date.outputFormat' | i18n }}</span>
+                          <p-select
+                          [options]="dateFormatOptions()"
                           [ngModel]="rule.paramB"
                           (ngModelChange)="patchRule(rule.id, { paramB: $event })"
+                          optionLabel="label"
+                          optionValue="value"
+                          [editable]="true"
+                          [placeholder]="'studio.phDateOut' | i18n"
+                          styleClass="w-full"
                           [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        </label>
+                      </div>
+                    }
+                    @case ('enum_map') {
+                      <div class="studio-enum-builder mt-2">
+                        <div class="studio-enum-builder__toolbar">
+                          <div>
+                            <strong>{{ 'studio.enum.title' | i18n }}</strong>
+                            <span>{{ 'studio.enum.subtitle' | i18n }}</span>
+                          </div>
+                          <p-button
+                            [label]="'studio.enum.add' | i18n"
+                            icon="pi pi-plus"
+                            size="small"
+                            variant="outlined"
+                            (onClick)="addEnumMapRow(rule)"
+                            [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        </div>
+                        <div class="studio-enum-list">
+                          @for (row of enumMapRows(rule); track $index) {
+                            <div class="studio-enum-row">
+                              <label class="studio-field-shell">
+                                <span>{{ 'studio.enum.sourceValue' | i18n }}</span>
+                                <p-select
+                                  [options]="enumSourceValueOptions(rule)"
+                                  [ngModel]="row.source"
+                                  (ngModelChange)="updateEnumMapCell(rule, $index, 'source', $event)"
+                                  optionLabel="label"
+                                  optionValue="value"
+                                  [editable]="true"
+                                  [placeholder]="'studio.enum.sourcePlaceholder' | i18n"
+                                  styleClass="w-full"
+                                  [disabled]="ruleUsesAdvancedLogic(rule)" />
+                              </label>
+                              <i class="pi pi-arrow-right studio-enum-row__arrow" aria-hidden="true"></i>
+                              <label class="studio-field-shell">
+                                <span>{{ 'studio.enum.targetValue' | i18n }}</span>
+                                <p-select
+                                  [options]="enumTargetValueOptions(rule)"
+                                  [ngModel]="row.target"
+                                  (ngModelChange)="updateEnumMapCell(rule, $index, 'target', $event)"
+                                  optionLabel="label"
+                                  optionValue="value"
+                                  [editable]="true"
+                                  [placeholder]="'studio.enum.targetPlaceholder' | i18n"
+                                  styleClass="w-full"
+                                  [disabled]="ruleUsesAdvancedLogic(rule)" />
+                              </label>
+                              <p-button
+                                icon="pi pi-trash"
+                                variant="text"
+                                severity="danger"
+                                [ariaLabel]="'studio.enum.remove' | i18n"
+                                (onClick)="removeEnumMapRow(rule, $index)"
+                                [disabled]="ruleUsesAdvancedLogic(rule) || enumMapRows(rule).length <= 1" />
+                            </div>
+                          }
+                        </div>
+                        <div class="studio-no-param-card">
+                          <i class="pi pi-info-circle" aria-hidden="true"></i>
+                          <span>{{ 'studio.enum.unmatchedHint' | i18n }}</span>
+                        </div>
+                      </div>
+                    }
+                    @case ('number_coerce') {
+                      <div class="studio-no-param-card">
+                        <i class="pi pi-hashtag" aria-hidden="true"></i>
+                        <span>{{ 'studio.transformSetup.number_coerce' | i18n }}</span>
+                      </div>
+                    }
+                    @case ('default_value') {
+                      <label class="studio-field-shell">
+                        <span>{{ 'studio.defaultValue.valueLabel' | i18n }}</span>
+                        <input
+                          pInputText
+                          [placeholder]="'studio.phDefault' | i18n"
+                          [ngModel]="rule.paramA"
+                          (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                          [disabled]="ruleUsesAdvancedLogic(rule)" />
+                      </label>
+                    }
+                    @case ('combine') {
+                      <div class="param-grid mt-2">
+                        <label class="studio-field-shell">
+                          <span>{{ 'studio.combine.secondField' | i18n }}</span>
+                          <p-select
+                            [options]="sourcePathOptions()"
+                            [ngModel]="rule.paramA"
+                            (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                            optionLabel="label"
+                            optionValue="value"
+                            [filter]="true"
+                            [placeholder]="'studio.phSecondPath' | i18n"
+                            styleClass="w-full"
+                            [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        </label>
+                        <label class="studio-field-shell">
+                          <span>{{ 'studio.combine.separator' | i18n }}</span>
+                          <input
+                            pInputText
+                            [placeholder]="'studio.phSeparator' | i18n"
+                            [ngModel]="rule.paramB"
+                            (ngModelChange)="patchRule(rule.id, { paramB: $event })"
+                            [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        </label>
+                      </div>
+                    }
+                    @case ('string_uppercase') {
+                      <div class="studio-no-param-card">
+                        <i class="pi pi-sort-alpha-up" aria-hidden="true"></i>
+                        <span>{{ 'studio.transformSetup.string_uppercase' | i18n }}</span>
+                      </div>
+                    }
+                    @case ('string_lowercase') {
+                      <div class="studio-no-param-card">
+                        <i class="pi pi-sort-alpha-down" aria-hidden="true"></i>
+                        <span>{{ 'studio.transformSetup.string_lowercase' | i18n }}</span>
+                      </div>
+                    }
+                    @case ('string_trim') {
+                      <div class="studio-no-param-card">
+                        <i class="pi pi-align-left" aria-hidden="true"></i>
+                        <span>{{ 'studio.transformSetup.string_trim' | i18n }}</span>
                       </div>
                     }
                     @case ('string_substring') {
                       <div class="param-grid mt-2">
-                        <input
-                          pInputText
-                          [placeholder]="'studio.phSubstringStart' | i18n"
-                          [ngModel]="rule.paramA"
-                          (ngModelChange)="patchRule(rule.id, { paramA: $event })"
-                          [disabled]="ruleUsesAdvancedLogic(rule)" />
-                        <input
-                          pInputText
-                          [placeholder]="'studio.phSubstringLen' | i18n"
-                          [ngModel]="rule.paramB"
-                          (ngModelChange)="patchRule(rule.id, { paramB: $event })"
-                          [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        <label class="studio-field-shell">
+                          <span>{{ 'studio.substring.start' | i18n }}</span>
+                          <input
+                            pInputText
+                            type="number"
+                            min="0"
+                            step="1"
+                            [placeholder]="'studio.phSubstringStart' | i18n"
+                            [ngModel]="rule.paramA"
+                            (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                            [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        </label>
+                        <label class="studio-field-shell">
+                          <span>{{ 'studio.substring.length' | i18n }}</span>
+                          <input
+                            pInputText
+                            type="number"
+                            min="1"
+                            step="1"
+                            [placeholder]="'studio.phSubstringLen' | i18n"
+                            [ngModel]="rule.paramB"
+                            (ngModelChange)="patchRule(rule.id, { paramB: $event })"
+                            [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        </label>
                       </div>
                     }
                     @case ('string_replace') {
                       <div class="param-grid mt-2">
-                        <input
-                          pInputText
-                          [placeholder]="'studio.phReplaceFrom' | i18n"
-                          [ngModel]="rule.paramA"
-                          (ngModelChange)="patchRule(rule.id, { paramA: $event })"
-                          [disabled]="ruleUsesAdvancedLogic(rule)" />
-                        <input
-                          pInputText
-                          [placeholder]="'studio.phReplaceTo' | i18n"
-                          [ngModel]="rule.paramB"
-                          (ngModelChange)="patchRule(rule.id, { paramB: $event })"
-                          [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        <label class="studio-field-shell">
+                          <span>{{ 'studio.replace.find' | i18n }}</span>
+                          <input
+                            pInputText
+                            [placeholder]="'studio.phReplaceFrom' | i18n"
+                            [ngModel]="rule.paramA"
+                            (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                            [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        </label>
+                        <label class="studio-field-shell">
+                          <span>{{ 'studio.replace.with' | i18n }}</span>
+                          <input
+                            pInputText
+                            [placeholder]="'studio.phReplaceTo' | i18n"
+                            [ngModel]="rule.paramB"
+                            (ngModelChange)="patchRule(rule.id, { paramB: $event })"
+                            [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        </label>
                       </div>
                     }
                     @case ('array_join') {
-                      <input
-                        pInputText
-                        class="w-full mt-2"
-                        [placeholder]="'studio.phArrayDelim' | i18n"
-                        [ngModel]="rule.paramA"
-                        (ngModelChange)="patchRule(rule.id, { paramA: $event })"
-                        [disabled]="ruleUsesAdvancedLogic(rule)" />
-                    }
-                    @case ('array_element') {
-                      <input
-                        pInputText
-                        class="w-full mt-2"
-                        [placeholder]="'studio.phArrayIndex' | i18n"
-                        [ngModel]="rule.paramA"
-                        (ngModelChange)="patchRule(rule.id, { paramA: $event })"
-                        [disabled]="ruleUsesAdvancedLogic(rule)" />
-                    }
-                    @case ('conditional_value') {
-                      <div class="param-grid mt-2">
+                      <label class="studio-field-shell">
+                        <span>{{ 'studio.array.delimiterLabel' | i18n }}</span>
                         <input
                           pInputText
-                          [placeholder]="'studio.phWhenEquals' | i18n"
+                          [placeholder]="'studio.phArrayDelim' | i18n"
                           [ngModel]="rule.paramA"
                           (ngModelChange)="patchRule(rule.id, { paramA: $event })"
                           [disabled]="ruleUsesAdvancedLogic(rule)" />
-                        <input
-                          pInputText
-                          [placeholder]="'studio.phThenValue' | i18n"
-                          [ngModel]="rule.paramB"
-                          (ngModelChange)="patchRule(rule.id, { paramB: $event })"
-                          [disabled]="ruleUsesAdvancedLogic(rule)" />
-                        <input
-                          pInputText
-                          [placeholder]="'studio.phElseValue' | i18n"
-                          [ngModel]="rule.paramC"
-                          (ngModelChange)="patchRule(rule.id, { paramC: $event })"
-                          [disabled]="ruleUsesAdvancedLogic(rule)" />
+                      </label>
+                    }
+                    @case ('array_first') {
+                      <div class="studio-no-param-card mt-2">
+                        <i class="pi pi-step-backward" aria-hidden="true"></i>
+                        <span>{{ 'studio.array.firstHint' | i18n }}</span>
+                      </div>
+                    }
+                    @case ('array_last') {
+                      <div class="studio-no-param-card mt-2">
+                        <i class="pi pi-step-forward" aria-hidden="true"></i>
+                        <span>{{ 'studio.array.lastHint' | i18n }}</span>
+                      </div>
+                    }
+                    @case ('array_element') {
+                      <div class="param-grid mt-2">
+                        <label class="studio-field-shell">
+                          <span>{{ 'studio.array.positionLabel' | i18n }}</span>
+                          <input
+                            pInputText
+                            type="number"
+                            min="1"
+                            step="1"
+                            [placeholder]="'studio.phArrayIndex' | i18n"
+                            [ngModel]="rule.paramA"
+                            (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                            [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        </label>
+                        <div class="studio-no-param-card">
+                          <i class="pi pi-info-circle" aria-hidden="true"></i>
+                          <span>{{ 'studio.array.positionHint' | i18n }}</span>
+                        </div>
+                      </div>
+                    }
+                    @case ('array_count') {
+                      <div class="studio-no-param-card mt-2">
+                        <i class="pi pi-calculator" aria-hidden="true"></i>
+                        <span>{{ 'studio.array.countHint' | i18n }}</span>
+                      </div>
+                    }
+                    @case ('array_filter_equals') {
+                      <div class="param-grid mt-2">
+                        <label class="studio-field-shell">
+                          <span>{{ 'studio.array.itemFieldLabel' | i18n }}</span>
+                          <p-select
+                            [options]="arrayItemFieldOptions(rule)"
+                            [ngModel]="rule.paramA"
+                            (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                            optionLabel="label"
+                            optionValue="value"
+                            [editable]="true"
+                            [placeholder]="'studio.phArrayItemField' | i18n"
+                            styleClass="w-full"
+                            [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        </label>
+                        <label class="studio-field-shell">
+                          <span>{{ 'studio.array.itemValueLabel' | i18n }}</span>
+                          <input
+                            pInputText
+                            [placeholder]="'studio.phArrayItemValue' | i18n"
+                            [ngModel]="rule.paramB"
+                            (ngModelChange)="patchRule(rule.id, { paramB: $event })"
+                            [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        </label>
+                      </div>
+                    }
+                    @case ('math_sum') {
+                      <div class="studio-no-param-card mt-2">
+                        <i class="pi pi-plus" aria-hidden="true"></i>
+                        <span>{{ 'studio.math.sumHint' | i18n }}</span>
+                      </div>
+                    }
+                    @case ('math_average') {
+                      <div class="studio-no-param-card mt-2">
+                        <i class="pi pi-percentage" aria-hidden="true"></i>
+                        <span>{{ 'studio.math.averageHint' | i18n }}</span>
+                      </div>
+                    }
+                    @case ('math_min') {
+                      <div class="studio-no-param-card mt-2">
+                        <i class="pi pi-sort-amount-down" aria-hidden="true"></i>
+                        <span>{{ 'studio.math.minHint' | i18n }}</span>
+                      </div>
+                    }
+                    @case ('math_max') {
+                      <div class="studio-no-param-card mt-2">
+                        <i class="pi pi-sort-amount-up" aria-hidden="true"></i>
+                        <span>{{ 'studio.math.maxHint' | i18n }}</span>
+                      </div>
+                    }
+                    @case ('conditional_value') {
+                      <div class="param-grid mt-2">
+                        <label class="studio-field-shell">
+                          <span>{{ 'studio.condition.when' | i18n }}</span>
+                          <input
+                            pInputText
+                            [placeholder]="'studio.phWhenEquals' | i18n"
+                            [ngModel]="rule.paramA"
+                            (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                            [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        </label>
+                        <label class="studio-field-shell">
+                          <span>{{ 'studio.condition.then' | i18n }}</span>
+                          <input
+                            pInputText
+                            [placeholder]="'studio.phThenValue' | i18n"
+                            [ngModel]="rule.paramB"
+                            (ngModelChange)="patchRule(rule.id, { paramB: $event })"
+                            [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        </label>
+                        <label class="studio-field-shell">
+                          <span>{{ 'studio.condition.else' | i18n }}</span>
+                          <input
+                            pInputText
+                            [placeholder]="'studio.phElseValue' | i18n"
+                            [ngModel]="rule.paramC"
+                            (ngModelChange)="patchRule(rule.id, { paramC: $event })"
+                            [disabled]="ruleUsesAdvancedLogic(rule)" />
+                        </label>
                       </div>
                     }
                     @case ('template_string') {
-                      <textarea
-                        pTextarea
-                        class="w-full mt-2 mono-textarea"
-                        rows="4"
-                        [placeholder]="'studio.phTemplate' | i18n"
-                        [ngModel]="rule.paramA"
-                        (ngModelChange)="patchRule(rule.id, { paramA: $event })"
-                        [disabled]="ruleUsesAdvancedLogic(rule)"></textarea>
+                      <label class="studio-field-shell">
+                        <span>{{ 'studio.template.body' | i18n }}</span>
+                        <textarea
+                          pTextarea
+                          class="w-full mono-textarea"
+                          rows="4"
+                          [placeholder]="'studio.phTemplate' | i18n"
+                          [ngModel]="rule.paramA"
+                          (ngModelChange)="patchRule(rule.id, { paramA: $event })"
+                          [disabled]="ruleUsesAdvancedLogic(rule)"></textarea>
+                      </label>
                     }
                     @default {
-                      <p class="text-color-secondary text-sm mt-2 mb-0">{{ 'studio.noExtraParams' | i18n }}</p>
+                      <div class="studio-no-param-card">
+                        <i [class]="transformIcon(rule.transform)" aria-hidden="true"></i>
+                        <span>{{ 'studio.transformSetup.noParams' | i18n }}</span>
+                      </div>
                     }
                   }
-                </div>
-              </p-tabpanel>
-              <p-tabpanel value="advanced">
-                <div class="inspector-panel">
-                  <p class="hint-text">{{ 'studio.advancedHint' | i18n }}</p>
-                  <textarea
-                    #advancedExpr
-                    pTextarea
-                    class="w-full mono-textarea"
-                    rows="8"
-                    [placeholder]="'studio.advancedPlaceholder' | i18n"
-                    [ngModel]="rule.advancedExpression"
-                    (ngModelChange)="patchRule(rule.id, { advancedExpression: $event })"></textarea>
-                  <p-fieldset [legend]="'studio.insertPathTitle' | i18n" styleClass="mt-3 path-fieldset">
-                    <div class="path-chips">
-                      @for (p of pathChips(); track p) {
-                        <p-button
-                          [label]="p"
-                          size="small"
-                          variant="outlined"
-                          (onClick)="appendPathToAdvancedEditor(p)" />
-                      }
                     </div>
-                  </p-fieldset>
+                  </div>
+                  <div class="studio-engine-proof mt-3">
+                    <i class="pi pi-verified" aria-hidden="true"></i>
+                    <div>
+                      <strong>{{ 'studio.engineProof.title' | i18n }}</strong>
+                      <span>{{ 'studio.engineProof.text' | i18n }}</span>
+                    </div>
+                  </div>
                 </div>
               </p-tabpanel>
               <p-tabpanel value="summary">
@@ -665,27 +984,18 @@
       </div>
     </div>
 
-    <p-fieldset [legend]="'studio.cheat.title' | i18n" styleClass="mt-4 cheat-fieldset">
-      <p-scrollpanel styleClass="cheat-scrollpanel w-full">
-        <div class="cheat-columns">
-          <div>
-            <h4 class="cheat-heading">{{ 'studio.cheat.paths' | i18n }}</h4>
-            <pre class="cheat-pre">{{ 'studio.cheat.pathsText' | i18n }}</pre>
+    <p-fieldset [legend]="'studio.noCode.title' | i18n" styleClass="mt-4 studio-capability-fieldset">
+      <div class="studio-capability-grid">
+        @for (capability of noCodeCapabilities(); track capability.key) {
+          <div class="studio-capability-card">
+            <i [class]="capability.icon" aria-hidden="true"></i>
+            <div>
+              <strong>{{ capability.title }}</strong>
+              <span>{{ capability.text }}</span>
+            </div>
           </div>
-          <div>
-            <h4 class="cheat-heading">{{ 'studio.cheat.strings' | i18n }}</h4>
-            <pre class="cheat-pre">{{ 'studio.cheat.stringsText' | i18n }}</pre>
-          </div>
-          <div>
-            <h4 class="cheat-heading">{{ 'studio.cheat.arrays' | i18n }}</h4>
-            <pre class="cheat-pre">{{ 'studio.cheat.arraysText' | i18n }}</pre>
-          </div>
-          <div>
-            <h4 class="cheat-heading">{{ 'studio.cheat.logic' | i18n }}</h4>
-            <pre class="cheat-pre">{{ 'studio.cheat.logicText' | i18n }}</pre>
-          </div>
-        </div>
-      </p-scrollpanel>
+        }
+      </div>
     </p-fieldset>
   </p-card>
 }
@@ -840,7 +1150,6 @@
           <p-tablist>
             <p-tab value="test">{{ 'studio.validateTab.test' | i18n }}</p-tab>
             <p-tab value="fixtures">{{ 'studio.validateTab.fixtures' | i18n }}</p-tab>
-            <p-tab value="expression">{{ 'studio.validateTab.expression' | i18n }}</p-tab>
           </p-tablist>
           <p-tabpanels>
             <p-tabpanel value="test">
@@ -1076,29 +1385,6 @@
                     </div>
                   }
                 }
-              </div>
-            </p-tabpanel>
-            <p-tabpanel value="expression">
-              <div class="inspector-panel">
-                <h3 class="card-title">{{ 'studio.expression.title' | i18n }}</h3>
-                <p class="card-subtitle">{{ 'studio.expression.subtitle' | i18n }}</p>
-                <div class="toolbar-row mb-2">
-                  <p-button
-                    [label]="'studio.expression.copy' | i18n"
-                    icon="pi pi-copy"
-                    variant="outlined"
-                    (onClick)="copyCombinedExpression()" />
-                  <p-button
-                    [label]="'studio.expression.download' | i18n"
-                    icon="pi pi-download"
-                    (onClick)="downloadCombinedExpression()" />
-                </div>
-                <textarea
-                  pTextarea
-                  class="w-full mono-textarea studio-expression-preview"
-                  readonly
-                  rows="16"
-                  [value]="combinedExpressionPreview()"></textarea>
               </div>
             </p-tabpanel>
           </p-tabpanels>

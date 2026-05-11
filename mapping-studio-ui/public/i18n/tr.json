@@ -200,10 +200,10 @@
   },
   "studio": {
     "title": "Integration Studio",
-    "subtitle": "Partner yükünden kurumsal şemanıza tasarım: görsel dönüşümler, gerektiğinde gelişmiş formüller ve yerel test — demo tamamen tarayıcıda.",
+    "subtitle": "Partner yükünden kurumsal şemanıza tasarım: kod yazmadan görsel dönüşümler, canlı önizleme ve yerel test — demo tamamen tarayıcıda.",
     "heroKicker": "CanonBridge",
     "heroBadge": "Yerel önizleme · API yok",
-    "heroBadgeHybrid": "Yerel önizleme · JSONata doğrulaması transformer ile",
+    "heroBadgeHybrid": "Yerel önizleme · dönüşüm motoru doğruluyor",
     "stepProgress": "{{current}} / {{total}} adım",
     "wizardAria": "Çalışma akışı adımları",
     "wizard": {
@@ -225,8 +225,8 @@
       "missing": "eksik",
       "mappingCoverage": "Eşleme kapsamı",
       "mapped": "eşlendi",
-      "advancedRules": "Gelişmiş kural",
-      "advancedHint": "manuel formül"
+      "advancedRules": "Motor kuralı",
+      "advancedHint": "istisnai"
     },
     "ingestTitle": "Örnek yükü al",
     "ingestSubtitle": "Partner sisteminden JSON yapıştırın veya dosya yükleyin. Yapı, eşleme için alan ağacına dönüştürülür.",
@@ -240,6 +240,63 @@
     "tree": {
       "pathCopied": "Yol panoya kopyalandı"
     },
+    "sourceValidation": {
+      "title": "Gelen JSON kuralları",
+      "subtitle": "Partner payload’u dönüşüme girmeden önce hangi alanların kabul edileceğini kod yazmadan tanımlayın.",
+      "add": "Kural ekle",
+      "remove": "Kuralı sil",
+      "count": "{{count}} kural aktif listede",
+      "passing": "Geçerli",
+      "failing": "Kontrol gerekiyor",
+      "field": "Kaynak alan",
+      "rule": "Kural",
+      "expectedType": "Beklenen tip",
+      "requiredHint": "Alan yoksa, null ise veya boş metinse payload reddedilir.",
+      "kind": {
+        "required": "Zorunlu alan",
+        "type": "Tip kontrolü",
+        "enum": "İzinli değerler",
+        "min": "Minimum sayı",
+        "max": "Maksimum sayı",
+        "min_length": "Minimum uzunluk",
+        "max_length": "Maksimum uzunluk",
+        "regex": "Metin deseni"
+      },
+      "type": {
+        "string": "Metin",
+        "number": "Sayı",
+        "boolean": "Doğru/Yanlış",
+        "object": "Nesne",
+        "array": "Dizi"
+      },
+      "paramLabel": {
+        "enum": "İzinli değerler",
+        "min": "En az",
+        "max": "En çok",
+        "min_length": "En az karakter",
+        "max_length": "En çok karakter",
+        "regex": "Desen"
+      },
+      "paramPlaceholder": {
+        "enum": "A, B, C",
+        "min": "0",
+        "max": "999",
+        "min_length": "2",
+        "max_length": "64",
+        "regex": "^[A-Z0-9-]+$"
+      },
+      "error": {
+        "required": "{{path}} zorunlu ama kaynakta boş veya yok.",
+        "type": "{{path}} tipi {{expected}} olmalı; gelen tip {{actual}}.",
+        "enum": "{{path}} izinli değerlerden biri olmalı: {{values}}.",
+        "min": "{{path}} minimum {{min}} olmalı.",
+        "max": "{{path}} maksimum {{max}} olmalı.",
+        "minLength": "{{path}} en az {{min}} karakter olmalı.",
+        "maxLength": "{{path}} en çok {{max}} karakter olmalı.",
+        "regex": "{{path}} beklenen metin desenine uymuyor.",
+        "regexInvalid": "{{path}} için girilen desen geçerli değil."
+      }
+    },
     "canonicalTitle": "Kanonik şema",
     "canonicalSubtitle": "Verinin platformunuzda nasıl görünmesi gerektiğini tanımlayın: alan anahtarları, tipler ve zorunluluk.",
     "canonical": {
@@ -252,7 +309,7 @@
     "colRequired": "Zorunlu",
     "colDescription": "Açıklama",
     "rulesTitle": "Dönüşüm kuralları",
-    "rulesSubtitle": "Kaynak yollarını kanonik hedeflerle bağlayın; görsel yardımcılar veya tek hedef için çok alanlı mantıkta Gelişmiş sekmesini kullanın. Her kuralın düz-dil özeti son adımın yanı sıra ikinci örnek yük testine yardım eder.",
+    "rulesSubtitle": "Kaynak yollarını kanonik hedeflerle bağlayın; metin, sayı, tarih, koşul ve dizi işlemlerini kartlardan seçin. Kullanıcı kod görmez; sistem seçimleri çalıştırılabilir kurala çevirip test eder.",
     "addRule": "Kural ekle",
     "colSourcePath": "Kaynak yol",
     "colTargetKeyRule": "Hedef anahtar",
@@ -261,32 +318,112 @@
     "colMode": "Mod",
     "mode": {
       "visual": "Görsel",
-      "advanced": "Gelişmiş formül"
+      "advanced": "Motor kuralı"
     },
     "ruleInspectorTitle": "Kural inceleyici",
-    "ruleInspectorEmpty": "Görsel seçenekler, gelişmiş formül veya özeti için tablodan bir satır seçin.",
+    "ruleInspectorEmpty": "Görsel dönüşüm seçenekleri ve kural özeti için tablodan bir satır seçin.",
     "tab": {
-      "visual": "Görsel",
-      "advanced": "Gelişmiş",
+      "visual": "Wizard",
+      "advanced": "Teknik",
       "summary": "Özet"
     },
-    "visualDisabledHint": "Bu kuralda gelişmiş formül kullanılıyor. Görsel düzenlemeye dönmek için Gelişmiş sekmesindeki içeriği temizleyin.",
-    "advancedHint": "Tam örnek yük üzerinde hesaplanır; tek hedef için birden çok kaynaktan veri gerektiğinde uygundur. Mümkünse önce görsel dönüşümleri kullanın — ekip için okunması daha kolaydır.",
-    "advancedPlaceholder": "ör. ortak.order.id benzeri yollar, sabit metinler, tarih/sayı/dizi mantığı…",
+    "visualDisabledHint": "Bu kural eski teknik moddan gelmiş. Görsel wizard’a dönmek için teknik kuralı temizleyebilirsiniz.",
+    "clearTechnicalRule": "Görsel wizard’a dön",
+    "advancedHint": "Teknik kurallar yalnızca içe aktarılan eski mappinglerde görünür; normal akış görsel wizard’dır.",
+    "advancedPlaceholder": "Teknik kural alanı normal kullanıcı akışında gösterilmez.",
     "summaryHint": "Onay süreçleri için kısa, teknik jargonsuz anlatım — aşağıda satır düzünde özeti görürsünüz.",
-    "insertPathTitle": "Alan yolunu formüle ekle",
+    "insertPathTitle": "Alan yolunu ekle",
     "copySummary": "Özeti kopyala",
-    "ruleInspectError": "Bu kural son test çalıştırında başarısız oldu. Görsel ayarları, formülü veya örnek yükleri gözden geçirip Eşlemeyi test et’i tekrar çalıştırın.",
+    "ruleInspectError": "Bu kural son test çalıştırında başarısız oldu. Görsel ayarları veya örnek yükleri gözden geçirip Eşlemeyi test et’i tekrar çalıştırın.",
     "phSubstringStart": "Başlangıç indeksi (0 tabanlı)",
     "phSubstringLen": "Uzunluk (isteğe bağlı)",
     "phReplaceFrom": "Bul",
     "phReplaceTo": "Değiştir",
     "phArrayDelim": "Ayraç (ör. , veya | )",
-    "phArrayIndex": "İndeks (0 tabanlı)",
+    "phArrayIndex": "Sıra numarası (1 = ilk eleman)",
+    "phArrayItemField": "Örn. status",
+    "phArrayItemValue": "Örn. ACTIVE",
     "phWhenEquals": "Kaynak şuna eşitse (metin)",
     "phThenValue": "O zaman değer",
     "phElseValue": "Değilse değer",
     "phTemplate": "Merhaba {{customer.full_name}} — adet {{order.qty}}",
+    "enum": {
+      "title": "Değer sözlüğü",
+      "subtitle": "Partnerden gelen değeri sizin sözlüğünüzdeki değere bağlayın.",
+      "add": "Eşleme ekle",
+      "remove": "Eşlemeyi sil",
+      "sourceValue": "Partner değeri",
+      "targetValue": "Kanonik değer",
+      "sourcePlaceholder": "Seç veya yaz",
+      "targetPlaceholder": "Seç veya yaz",
+      "unmatchedHint": "Eşleşmeyen değerler şimdilik kaynak değeriyle bırakılır; gerekirse yeni satır ekleyin."
+    },
+    "date": {
+      "inputFormat": "Gelen tarih formatı",
+      "outputFormat": "Çıkış tarih formatı"
+    },
+    "defaultValue": {
+      "valueLabel": "Kaynak boşsa yazılacak değer"
+    },
+    "combine": {
+      "secondField": "Birleştirilecek ikinci alan",
+      "separator": "Araya konacak ayraç"
+    },
+    "substring": {
+      "start": "Başlangıç karakteri",
+      "length": "Alınacak karakter sayısı"
+    },
+    "replace": {
+      "find": "Bulunacak metin",
+      "with": "Yeni metin"
+    },
+    "condition": {
+      "when": "Kaynak bu değere eşitse",
+      "then": "O zaman yaz",
+      "else": "Değilse yaz"
+    },
+    "template": {
+      "body": "Şablon metni"
+    },
+    "array": {
+      "firstHint": "Seçilen kaynaktaki listenin ilk satırı alınır.",
+      "lastHint": "Seçilen kaynaktaki listenin son satırı alınır.",
+      "positionLabel": "Hangi sıradaki eleman?",
+      "positionHint": "Kullanıcı 1 yazar; sistem arka planda doğru dizi konumuna çevirir.",
+      "countHint": "Seçilen listedeki eleman sayısı hedef alana yazılır.",
+      "itemFieldLabel": "Dizi satırındaki alan",
+      "itemValueLabel": "Eşit olması gereken değer",
+      "delimiterLabel": "Elemanların arasına konacak ayraç"
+    },
+    "math": {
+      "sumHint": "Seçilen sayı listesindeki değerler toplanır.",
+      "averageHint": "Seçilen sayı listesinin ortalaması alınır.",
+      "minHint": "Seçilen sayı listesindeki en küçük değer seçilir.",
+      "maxHint": "Seçilen sayı listesindeki en büyük değer seçilir."
+    },
+    "engineProof": {
+      "title": "Motor kuralı otomatik hazırlanır",
+      "text": "Bu seçimler arka planda çalıştırılabilir dönüşüm kuralına çevrilir ve test adımında doğrulanır."
+    },
+    "transformSetup": {
+      "direct": "Seçilen kaynak alan olduğu gibi hedef alana aktarılır. Ek ayar gerekmez.",
+      "number_coerce": "Kaynak değer metin olsa bile sayıya çevrilir; boş değer gelirse null üretilir.",
+      "string_uppercase": "Seçilen metnin tamamı büyük harfe çevrilir.",
+      "string_lowercase": "Seçilen metnin tamamı küçük harfe çevrilir.",
+      "string_trim": "Metnin başındaki ve sonundaki gereksiz boşluklar temizlenir.",
+      "noParams": "Bu işlem için ek alan gerekmez; seçim test adımında doğrulanır."
+    },
+    "noCode": {
+      "title": "Kod yazmadan kapsanan dönüşümler",
+      "paths": { "title": "Alan seçimi", "text": "Kaynak ağaçtan değer seçme, iç içe alanlar ve tekil hedefler." },
+      "arrays": { "title": "Diziler", "text": "İlk/son/sıradaki eleman, filtreleme, sayma ve birleştirme." },
+      "strings": { "title": "Metin", "text": "Büyük/küçük harf, kırpma, değiştirme, parça alma ve şablon." },
+      "numbers": { "title": "Sayı", "text": "Sayıya çevirme, toplam, ortalama, minimum ve maksimum." },
+      "dates": { "title": "Tarih", "text": "Giriş ve çıkış formatını seçerek tarih dönüştürme." },
+      "logic": { "title": "Koşul", "text": "Eşitse/değilse bloklarıyla iş kuralı kurma." },
+      "defaults": { "title": "Varsayılan", "text": "Kaynak boşsa güvenli değer atama." },
+      "validation": { "title": "Doğrulama", "text": "Her seçimden sonra önizleme ve son adımda şema kontrolü." }
+    },
     "cheat": {
       "title": "Eşleme ipuçları",
       "paths": "Veriye işaret etmek",
@@ -296,10 +433,10 @@
       "arrays": "Liste ve koleksiyonlar",
       "arraysText": "“Diziyi birleştir”, ayırıcı karakter seçerek çıktıyı tek satıra yayar.\n“Dizi elemanı”, yalnızca belirli bir indeksi hedefliyorsanız idealdir.",
       "logic": "Kalite güvencesi",
-      "logicText": "Koşullu ve varsayılan dönüşümler iş kurallarını çoğu senaryoda kapsar.\nGelişmiş forma geçtiğinizde formülü küçük tutun; her yük örneği değiştiğinde Eşlemeyi test etmeyi unutmayın."
+      "logicText": "Koşullu ve varsayılan dönüşümler iş kurallarını çoğu senaryoda kapsar.\nHer yük örneği değiştiğinde Eşlemeyi test etmeyi unutmayın."
     },
     "summary": {
-      "advanced": "Tam yük üzerinde özel formül çalıştırılır ve sonuç “{{target}}” alanında tutulur.",
+      "advanced": "Tam yük üzerinde içe aktarılmış teknik kural çalıştırılır ve sonuç “{{target}}” alanında tutulur.",
       "direct": "“{{path}}” adresindeki değer doğrudan “{{target}}” kanonik alanına kopyalanır.",
       "dateFormat": "“{{path}}” tarih değeri {{inFmt}} biçimiyle okunur, {{outFmt}} olarak yazılır ve “{{target}}”e aktarılır.",
       "enumMap": "“{{path}}” üzerinden gelen partner kodları sözlük eşlemesiyle “{{target}}” çıktınıza çevrilir.",
@@ -314,28 +451,36 @@
       "substrToEndPhrase": ", alanın geri kalanına kadar",
       "stringReplace": "“{{path}}” içindeki tüm “{{from}}” değeri “{{to}}” ile değiştirilir ve “{{target}}” elde edilir.",
       "arrayJoin": "“{{path}}” dizisi “{{delim}}” ile birleştirilerek “{{target}}” çıktılanır.",
-      "arrayElement": "“{{path}}” içinde indeks {{index}} seçilir ve doğrudan “{{target}}”e aktarılır.",
+      "arrayFirst": "“{{path}}” listesinin ilk elemanı “{{target}}”e aktarılır.",
+      "arrayLast": "“{{path}}” listesinin son elemanı “{{target}}”e aktarılır.",
+      "arrayElement": "“{{path}}” listesindeki {{index}}. eleman seçilir ve “{{target}}”e aktarılır.",
+      "arrayCount": "“{{path}}” listesindeki eleman sayısı “{{target}}”e yazılır.",
+      "arrayFilterEquals": "“{{path}}” listesindeki satırlarda “{{itemPath}}” değeri “{{value}}” ise satır korunur ve “{{target}}”e aktarılır.",
+      "mathSum": "“{{path}}” sayı listesi toplanır ve “{{target}}”e yazılır.",
+      "mathAverage": "“{{path}}” sayı listesinin ortalaması alınır ve “{{target}}”e yazılır.",
+      "mathMin": "“{{path}}” sayı listesindeki en küçük değer “{{target}}”e yazılır.",
+      "mathMax": "“{{path}}” sayı listesindeki en büyük değer “{{target}}”e yazılır.",
       "conditional": "“{{path}}”, “{{when}}” değeriyle örtüşürse “{{thenVal}}”, aksi durumda “{{elseVal}}” “{{target}}” olarak yazılır.",
       "template": "Şablon, Görsel sekmedeki yer tutucularla oluşturulur ve çıktı “{{target}}”dir."
     },
     "altFixtureTitle": "Alternatif test yükü",
     "altFixtureSubtitle": "Aynı kurallarla isteğe bağlı ikinci JSON — sihirbazdan çıkmadan hızlı regresyon kontrolü.",
     "altFixturePlaceholder": "{ \"baska\": \"ornek\" }",
-    "altTransformerTag": "Transformer JSONata notları",
+    "altTransformerTag": "Dönüşüm motoru notları",
     "altOutputTitle": "Alternatif yük çıktısı",
     "testAltFixture": "Alternatif JSON’da çalıştır",
     "filterPath": "Yol ara",
     "selectPath": "Yol seç",
     "phDateIn": "Giriş deseni (ör. yyyy-MM-dd)",
     "phDateOut": "Çıkış deseni (ör. dd/MM/yyyy)",
-    "phEnum": "A=AKTIF,B=PASIF,C=ASKIDA",
+    "phEnum": "Değer seç veya yaz",
     "phDefault": "Kaynak boşsa değer",
     "phSecondPath": "İkinci yol",
     "phSeparator": "Ayraç (boşluk)",
     "noExtraParams": "Ek parametre yok",
     "validateTitle": "Doğrulamayı çalıştır",
     "validateSubtitle": "Dönüşümleri örnek JSON üzerinde yerel çalıştırır ve zorunlu kanonik alanları kontrol eder (yalnızca demo, API yok).",
-    "validateSubtitleHybrid": "Eşlemeyi tarayıcıda çalıştırır, zorunlu alanları kontrol eder ve gelişmiş JSONata kurallarını ingestion ile aynı motor üzerinde derleme/değerlendirme için transformer’a gönderir.",
+    "validateSubtitleHybrid": "Eşlemeyi tarayıcıda çalıştırır, zorunlu alanları kontrol eder ve aynı üretim motorunda derleme/değerlendirme eşliğini doğrular.",
     "testMapping": "Eşlemeyi test et",
     "test": {
       "successToast": "Test geçti — çıktı zorunlu alanlarla uyumlu.",
@@ -364,8 +509,8 @@
       "missing": "Zorunlu hedef alan eksik: “{{field}}”.",
       "allPresent": "Tüm zorunlu kanonik alanlar mevcut.",
       "ruleEvalFailed": "“{{field}}” alanını üreten kural tamamlanamadı. İlgili kolon için inceleyiciyi kullanıp “Eşlemeyi test et”i yeniden çalıştırın.",
-      "transformerUnreachable": "Transformer ile JSONata kontrolü yapılamadı. Transformer’ın ayakta olduğundan ve CORS’un bu çıkış noktasını kabul ettiğinden emin olun.",
-      "serverBrowserMismatch": "Canonical “{{field}}” için transformer JSONata sonucu tarayıcı çıktısından farklı. Kütüphane sürümlerini eşleyin—üretim hattında otoriter sonuç sunucudaki motor olur.",
+      "transformerUnreachable": "Dönüşüm motoru kontrolüne ulaşılamadı. Servisin ayakta olduğundan ve CORS’un bu çıkış noktasını kabul ettiğinden emin olun.",
+      "serverBrowserMismatch": "Canonical “{{field}}” için üretim motoru sonucu tarayıcı çıktısından farklı. Kütüphane sürümlerini eşleyin—üretim hattında otoriter sonuç sunucudaki motor olur.",
       "altTransformerNote": "{{field}} · {{detail}}"
     },
     "transform": {
@@ -381,9 +526,42 @@
       "string_substring": "Alt dizge",
       "string_replace": "Metin değiştir",
       "array_join": "Diziyi birleştir",
-      "array_element": "Dizi elemanı (indeks)",
+      "array_first": "İlk elemanı al",
+      "array_last": "Son elemanı al",
+      "array_element": "Sıradaki elemanı al",
+      "array_count": "Diziyi say",
+      "array_filter_equals": "Diziyi filtrele",
+      "math_sum": "Toplam al",
+      "math_average": "Ortalama al",
+      "math_min": "En küçüğü al",
+      "math_max": "En büyüğü al",
       "conditional_value": "Eşitse / değilse",
       "template_string": "Şablon ({{path}})"
+    },
+    "transformHelp": {
+      "direct": "Değeri değiştirmeden taşı",
+      "date_format": "Tarih biçimini dönüştür",
+      "enum_map": "Partner kodlarını sizin değerlere çevir",
+      "number_coerce": "Metni sayıya çevir",
+      "default_value": "Boş gelen kaynağı tamamla",
+      "combine": "İki alanı tek çıktıda birleştir",
+      "string_uppercase": "Metni büyük harfe çevir",
+      "string_lowercase": "Metni küçük harfe çevir",
+      "string_trim": "Baş/son boşlukları temizle",
+      "string_substring": "Metnin belirli parçasını al",
+      "string_replace": "Metin içinde bul ve değiştir",
+      "array_join": "Listeyi ayraçla tek değere indir",
+      "array_first": "Listenin ilk elemanını seç",
+      "array_last": "Listenin son elemanını seç",
+      "array_element": "1’den başlayan sıra numarasıyla seç",
+      "array_count": "Listedeki eleman sayısını yaz",
+      "array_filter_equals": "Satır alanı belirli değere eşitse tut",
+      "math_sum": "Sayı listesini topla",
+      "math_average": "Sayı listesinin ortalamasını al",
+      "math_min": "En küçük sayıyı seç",
+      "math_max": "En büyük sayıyı seç",
+      "conditional_value": "Eşitse başka, değilse başka yaz",
+      "template_string": "Sabit metin ve alanları birleştir"
     },
     "fieldType": {
       "string": "Metin",
@@ -422,7 +600,7 @@
       "coverageSubtitle": "Mapping'in satış demosunda güven veren kısa sağlık özeti.",
       "requiredCoverage": "Zorunlu kapsam",
       "visualRules": "Görsel kural",
-      "advancedRules": "Gelişmiş kural",
+      "advancedRules": "Motor kuralı",
       "lastValidation": "Son doğrulama",
       "notRun": "Çalışmadı",
       "passed": "Geçti",
@@ -433,7 +611,7 @@
     "validateTab": {
       "test": "Test ve yayın",
       "fixtures": "Toplu fixture",
-      "expression": "JSONata dışa aktarım"
+      "expression": "Motor kuralı"
     },
     "fixture": {
       "title": "Toplu fixture çalıştırıcı",
@@ -459,10 +637,10 @@
       "expandRow": "Farkı göster"
     },
     "expression": {
-      "title": "Birleşik JSONata",
-      "subtitle": "Hedef anahtarları ifadelere bağlayan nesne sabiti (görsel kurallar çevrilir; gelişmiş/jsonataExpression baskın gelir).",
-      "copy": "İfadeyi kopyala",
-      "download": "mapping-preview.jsonata indir"
+      "title": "Üretilen dönüşüm kuralı",
+      "subtitle": "Görsel wizard seçimlerinden otomatik hazırlanan çalıştırılabilir kural önizlemesi.",
+      "copy": "Kuralı kopyala",
+      "download": "mapping-preview.rule indir"
     }
   }
 }
