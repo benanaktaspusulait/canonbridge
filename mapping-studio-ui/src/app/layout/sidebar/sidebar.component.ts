@@ -21,6 +21,7 @@ const PRIMARY_NAV: NavEntry[] = [
   { route: '/studio', icon: 'pi pi-objects-column', labelKey: 'nav.studio' },
   { route: '/mappings', icon: 'pi pi-directions', labelKey: 'nav.mappings' },
   { route: '/partners', icon: 'pi pi-building', labelKey: 'nav.partners' },
+  { route: '/external-systems', icon: 'pi pi-cloud', labelKey: 'nav.externalSystems' },
   {
     route: '/dlq',
     icon: 'pi pi-exclamation-triangle',

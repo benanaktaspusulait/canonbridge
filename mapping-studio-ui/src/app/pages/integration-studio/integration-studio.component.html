@@ -108,52 +108,298 @@
         accept=".json,application/json"
         class="sr-only"
         (change)="onLoadInputSchema($event)" />
-      <div class="studio-upload-grid">
-        <button
-          type="button"
-          class="studio-upload-card"
-          [class.studio-upload-card--active]="uploadDropTarget() === 'source'"
-          (click)="fileIn.click()"
-          (dragover)="onUploadDragOver($event, 'source')"
-          (dragleave)="onUploadDragLeave($event)"
-          (drop)="onSourceFileDrop($event)">
-          <span class="studio-upload-card__icon" aria-hidden="true"><i class="pi pi-upload"></i></span>
-          <span class="studio-upload-card__content">
-            <strong>{{ 'studio.loadFile' | i18n }}</strong>
-            <small>{{ 'studio.upload.sourceHint' | i18n }}</small>
-            @if (sourceFileMeta(); as fm) {
-              <span class="studio-upload-card__meta">
-                <i class="pi pi-check" aria-hidden="true"></i>
-                {{ 'studio.upload.loaded' | i18n }} · {{ fm.name }} · {{ fm.size }}
-              </span>
+      <section class="studio-source-picker" [attr.aria-label]="'studio.sourceType.title' | i18n">
+        @for (card of sourceTypeCards; track card.id) {
+          <button
+            type="button"
+            class="studio-source-card"
+            [class.studio-source-card--active]="sourceType() === card.id"
+            [attr.aria-pressed]="sourceType() === card.id"
+            (click)="selectSourceType(card.id)">
+            <span class="studio-source-card__icon" aria-hidden="true"><i [class]="card.icon"></i></span>
+            <span class="studio-source-card__copy">
+              <strong>{{ card.titleKey | i18n }}</strong>
+              <small>{{ card.descKey | i18n }}</small>
+              <em>{{ card.hintKey | i18n }}</em>
+            </span>
+          </button>
+        }
+      </section>
+
+      @switch (sourceType()) {
+        @case ('kafka') {
+          <section class="studio-source-config">
+            <div class="studio-source-config__head">
+              <div>
+                <h3>{{ 'studio.sourceKafka.title' | i18n }}</h3>
+                <p>{{ 'studio.sourceKafka.subtitle' | i18n }}</p>
+              </div>
+              <p-tag severity="info" [value]="'studio.sourceKafka.badge' | i18n" />
+            </div>
+            <div class="studio-form-grid">
+              <label>
+                <span>{{ 'studio.sourceKafka.topic' | i18n }}</span>
+                <input pInputText value="tenant-001.raw.acme-marketplace.order-created" />
+              </label>
+              <label>
+                <span>{{ 'studio.sourceKafka.consumerGroup' | i18n }}</span>
+                <input pInputText value="canonbridge-transformer-acme-order-created" />
+              </label>
+            </div>
+            <div class="toolbar-row">
+              <p-button [label]="'studio.sourceKafka.fetchSample' | i18n" icon="pi pi-download" (onClick)="loadKafkaSample()" />
+              <p-button [label]="'studio.sourceCommon.uploadInstead' | i18n" icon="pi pi-upload" variant="outlined" severity="secondary" (onClick)="fileIn.click()" />
+            </div>
+          </section>
+        }
+        @case ('webhook') {
+          <section class="studio-source-config">
+            <div class="studio-source-config__head">
+              <div>
+                <h3>{{ 'studio.sourceWebhook.title' | i18n }}</h3>
+                <p>{{ 'studio.sourceWebhook.subtitle' | i18n }}</p>
+              </div>
+              <p-tag severity="success" [value]="'studio.sourceWebhook.ready' | i18n" />
+            </div>
+            <div class="studio-copy-row">
+              <label>
+                <span>{{ 'studio.sourceWebhook.url' | i18n }}</span>
+                <input pInputText [value]="webhookUrl()" readonly />
+              </label>
+              <p-button icon="pi pi-copy" variant="outlined" severity="secondary" />
+            </div>
+            <div class="studio-copy-row">
+              <label>
+                <span>{{ 'studio.sourceWebhook.apiKey' | i18n }}</span>
+                <input pInputText [value]="webhookKeyMasked()" readonly />
+              </label>
+              <p-button [label]="'studio.sourceWebhook.rotate' | i18n" icon="pi pi-refresh" variant="outlined" severity="secondary" />
+            </div>
+            <div class="toolbar-row">
+              <p-button [label]="'studio.sourceWebhook.captureSample' | i18n" icon="pi pi-bolt" (onClick)="captureWebhookSample()" />
+              <p-button [label]="'studio.sourceCommon.uploadInstead' | i18n" icon="pi pi-upload" variant="outlined" severity="secondary" (onClick)="fileIn.click()" />
+            </div>
+          </section>
+        }
+        @case ('externalApi') {
+          <section class="studio-source-config studio-source-config--api">
+            <div class="studio-source-config__head">
+              <div>
+                <h3>{{ 'studio.sourceApi.title' | i18n }}</h3>
+                <p>{{ 'studio.sourceApi.subtitle' | i18n }}</p>
+              </div>
+              @if (externalApiLastTest(); as test) {
+                <p-tag severity="success" [value]="'HTTP ' + test.status + ' · ' + test.durationMs + 'ms'" />
+              } @else {
+                <p-tag severity="warn" [value]="'studio.sourceApi.notTested' | i18n" />
+              }
+            </div>
+            <div class="studio-form-grid studio-form-grid--api">
+              <label>
+                <span>{{ 'studio.sourceApi.name' | i18n }}</span>
+                <input pInputText [ngModel]="externalApiName()" (ngModelChange)="externalApiName.set($event)" />
+              </label>
+              <label>
+                <span>{{ 'studio.sourceApi.method' | i18n }}</span>
+                <select class="studio-native-select" [ngModel]="externalApiMethod()" (ngModelChange)="setExternalApiMethod($event)">
+                  @for (method of externalApiMethods; track method) {
+                    <option [value]="method">{{ method }}</option>
+                  }
+                </select>
+              </label>
+              <label class="studio-form-grid__wide">
+                <span>{{ 'studio.sourceApi.url' | i18n }}</span>
+                <input pInputText [ngModel]="externalApiUrl()" (ngModelChange)="externalApiUrl.set($event)" />
+              </label>
+              <label>
+                <span>{{ 'studio.sourceApi.schedule' | i18n }}</span>
+                <input pInputText [ngModel]="externalApiSchedule()" (ngModelChange)="externalApiSchedule.set($event)" />
+              </label>
+              <label>
+                <span>{{ 'studio.sourceApi.auth' | i18n }}</span>
+                <select class="studio-native-select" [ngModel]="selectedCredentialId()" (ngModelChange)="selectedCredentialId.set($event)">
+                  @for (credential of credentials(); track credential.id) {
+                    <option [value]="credential.id">{{ credential.name }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+            @if (selectedCredential(); as credential) {
+              <div class="studio-credential-summary">
+                <i class="pi pi-shield" aria-hidden="true"></i>
+                <span>
+                  <strong>{{ credential.name }}</strong>
+                  <small>{{ credential.type }} · {{ credential.environment }} · {{ 'studio.sourceAuth.lastUsed' | i18n }} {{ credential.lastUsed }}</small>
+                </span>
+              </div>
             }
-          </span>
-          <span class="studio-upload-card__action">{{ 'studio.upload.browse' | i18n }}</span>
-          <span class="studio-upload-card__accept">{{ 'studio.upload.acceptSource' | i18n }}</span>
-        </button>
-        <button
-          type="button"
-          class="studio-upload-card"
-          [class.studio-upload-card--active]="uploadDropTarget() === 'inputSchema'"
-          (click)="inputSchemaIn.click()"
-          (dragover)="onUploadDragOver($event, 'inputSchema')"
-          (dragleave)="onUploadDragLeave($event)"
-          (drop)="onInputSchemaDrop($event)">
-          <span class="studio-upload-card__icon" aria-hidden="true"><i class="pi pi-file-import"></i></span>
-          <span class="studio-upload-card__content">
-            <strong>{{ 'studio.schema.loadInput' | i18n }}</strong>
-            <small>{{ 'studio.upload.inputSchemaHint' | i18n }}</small>
-            @if (inputSchemaMeta(); as sm) {
-              <span class="studio-upload-card__meta">
-                <i class="pi pi-check" aria-hidden="true"></i>
-                {{ 'studio.upload.loaded' | i18n }} · {{ sm.title || sm.$id || ('studio.upload.schemaReady' | i18n) }}
-              </span>
+            <div class="toolbar-row">
+              <p-button [label]="'studio.sourceAuth.add' | i18n" icon="pi pi-key" variant="outlined" severity="secondary" (onClick)="authDrawerOpen.set(true)" />
+              <p-button [label]="'studio.sourceApi.test' | i18n" icon="pi pi-play" (onClick)="testExternalApi()" />
+              <p-button [label]="'studio.sourceCommon.uploadInstead' | i18n" icon="pi pi-upload" variant="outlined" severity="secondary" (onClick)="fileIn.click()" />
+            </div>
+            @if (authDrawerOpen()) {
+              <aside class="studio-auth-drawer">
+                <div class="studio-auth-drawer__head">
+                  <div>
+                    <h3>{{ 'studio.sourceAuth.drawerTitle' | i18n }}</h3>
+                    <p>{{ 'studio.sourceAuth.drawerSubtitle' | i18n }}</p>
+                  </div>
+                  <button type="button" class="studio-icon-button" (click)="authDrawerOpen.set(false)">
+                    <i class="pi pi-times" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <div class="studio-form-grid">
+                  <label class="studio-form-grid__wide">
+                    <span>{{ 'studio.sourceAuth.name' | i18n }}</span>
+                    <input pInputText [ngModel]="credentialName()" (ngModelChange)="credentialName.set($event)" />
+                  </label>
+                  <label>
+                    <span>{{ 'studio.sourceAuth.type' | i18n }}</span>
+                    <select class="studio-native-select" [ngModel]="authType()" (ngModelChange)="setAuthType($event)">
+                      @for (type of authTypes; track type) {
+                        <option [value]="type">{{ ('studio.sourceAuth.typeLabel.' + type) | i18n }}</option>
+                      }
+                    </select>
+                  </label>
+                </div>
+                @switch (authType()) {
+                  @case ('API_KEY') {
+                    <div class="studio-form-grid">
+                      <label>
+                        <span>{{ 'studio.sourceAuth.headerName' | i18n }}</span>
+                        <input pInputText [ngModel]="credentialHeaderName()" (ngModelChange)="credentialHeaderName.set($event)" />
+                      </label>
+                      <label>
+                        <span>{{ 'studio.sourceAuth.secretValue' | i18n }}</span>
+                        <input pInputText type="password" [ngModel]="credentialValue()" (ngModelChange)="credentialValue.set($event)" />
+                      </label>
+                    </div>
+                  }
+                  @case ('BASIC_AUTH') {
+                    <div class="studio-form-grid">
+                      <label>
+                        <span>{{ 'studio.sourceAuth.username' | i18n }}</span>
+                        <input pInputText [ngModel]="credentialUsername()" (ngModelChange)="credentialUsername.set($event)" />
+                      </label>
+                      <label>
+                        <span>{{ 'studio.sourceAuth.password' | i18n }}</span>
+                        <input pInputText type="password" [ngModel]="credentialPassword()" (ngModelChange)="credentialPassword.set($event)" />
+                      </label>
+                    </div>
+                  }
+                  @case ('BEARER_TOKEN') {
+                    <label class="studio-stacked-field">
+                      <span>{{ 'studio.sourceAuth.token' | i18n }}</span>
+                      <input pInputText type="password" [ngModel]="credentialValue()" (ngModelChange)="credentialValue.set($event)" />
+                    </label>
+                  }
+                  @case ('OAUTH2_CLIENT_CREDENTIALS') {
+                    <div class="studio-form-grid">
+                      <label class="studio-form-grid__wide">
+                        <span>{{ 'studio.sourceAuth.tokenUrl' | i18n }}</span>
+                        <input pInputText [ngModel]="credentialTokenUrl()" (ngModelChange)="credentialTokenUrl.set($event)" />
+                      </label>
+                      <label>
+                        <span>{{ 'studio.sourceAuth.clientId' | i18n }}</span>
+                        <input pInputText [ngModel]="credentialClientId()" (ngModelChange)="credentialClientId.set($event)" />
+                      </label>
+                      <label>
+                        <span>{{ 'studio.sourceAuth.clientSecret' | i18n }}</span>
+                        <input pInputText type="password" [ngModel]="credentialClientSecret()" (ngModelChange)="credentialClientSecret.set($event)" />
+                      </label>
+                      <label class="studio-form-grid__wide">
+                        <span>{{ 'studio.sourceAuth.scope' | i18n }}</span>
+                        <input pInputText [ngModel]="credentialScope()" (ngModelChange)="credentialScope.set($event)" />
+                      </label>
+                    </div>
+                  }
+                }
+                <p class="studio-secret-note"><i class="pi pi-lock" aria-hidden="true"></i>{{ 'studio.sourceAuth.writeOnly' | i18n }}</p>
+                <div class="toolbar-row studio-auth-actions">
+                  <p-button [label]="'studio.sourceAuth.save' | i18n" icon="pi pi-check" (onClick)="saveCredential()" />
+                  <p-button [label]="'studio.cancel' | i18n" variant="outlined" severity="secondary" (onClick)="authDrawerOpen.set(false)" />
+                </div>
+              </aside>
             }
-          </span>
-          <span class="studio-upload-card__action">{{ 'studio.upload.browse' | i18n }}</span>
-          <span class="studio-upload-card__accept">{{ 'studio.upload.acceptSchema' | i18n }}</span>
-        </button>
-      </div>
+          </section>
+        }
+        @default {
+          <div class="studio-upload-grid">
+            <button
+              type="button"
+              class="studio-upload-card"
+              [class.studio-upload-card--active]="uploadDropTarget() === 'source'"
+              (click)="fileIn.click()"
+              (dragover)="onUploadDragOver($event, 'source')"
+              (dragleave)="onUploadDragLeave($event)"
+              (drop)="onSourceFileDrop($event)">
+              <span class="studio-upload-card__icon" aria-hidden="true"><i class="pi pi-upload"></i></span>
+              <span class="studio-upload-card__content">
+                <strong>{{ 'studio.loadFile' | i18n }}</strong>
+                <small>{{ 'studio.upload.sourceHint' | i18n }}</small>
+                @if (sourceFileMeta(); as fm) {
+                  <span class="studio-upload-card__meta">
+                    <i class="pi pi-check" aria-hidden="true"></i>
+                    {{ 'studio.upload.loaded' | i18n }} · {{ fm.name }} · {{ fm.size }}
+                  </span>
+                }
+              </span>
+              <span class="studio-upload-card__action">{{ 'studio.upload.browse' | i18n }}</span>
+              <span class="studio-upload-card__accept">{{ 'studio.upload.acceptSource' | i18n }}</span>
+            </button>
+            <button
+              type="button"
+              class="studio-upload-card"
+              [class.studio-upload-card--active]="uploadDropTarget() === 'inputSchema'"
+              (click)="inputSchemaIn.click()"
+              (dragover)="onUploadDragOver($event, 'inputSchema')"
+              (dragleave)="onUploadDragLeave($event)"
+              (drop)="onInputSchemaDrop($event)">
+              <span class="studio-upload-card__icon" aria-hidden="true"><i class="pi pi-file-import"></i></span>
+              <span class="studio-upload-card__content">
+                <strong>{{ 'studio.schema.loadInput' | i18n }}</strong>
+                <small>{{ 'studio.upload.inputSchemaHint' | i18n }}</small>
+                @if (inputSchemaMeta(); as sm) {
+                  <span class="studio-upload-card__meta">
+                    <i class="pi pi-check" aria-hidden="true"></i>
+                    {{ 'studio.upload.loaded' | i18n }} · {{ sm.title || sm.$id || ('studio.upload.schemaReady' | i18n) }}
+                  </span>
+                }
+              </span>
+              <span class="studio-upload-card__action">{{ 'studio.upload.browse' | i18n }}</span>
+              <span class="studio-upload-card__accept">{{ 'studio.upload.acceptSchema' | i18n }}</span>
+            </button>
+          </div>
+        }
+      }
+
+      @if (sourceType() !== 'manual') {
+        <div class="studio-upload-grid studio-upload-grid--single">
+          <button
+            type="button"
+            class="studio-upload-card studio-upload-card--compact"
+            [class.studio-upload-card--active]="uploadDropTarget() === 'inputSchema'"
+            (click)="inputSchemaIn.click()"
+            (dragover)="onUploadDragOver($event, 'inputSchema')"
+            (dragleave)="onUploadDragLeave($event)"
+            (drop)="onInputSchemaDrop($event)">
+            <span class="studio-upload-card__icon" aria-hidden="true"><i class="pi pi-file-import"></i></span>
+            <span class="studio-upload-card__content">
+              <strong>{{ 'studio.schema.loadInput' | i18n }}</strong>
+              <small>{{ 'studio.upload.inputSchemaHint' | i18n }}</small>
+              @if (inputSchemaMeta(); as sm) {
+                <span class="studio-upload-card__meta">
+                  <i class="pi pi-check" aria-hidden="true"></i>
+                  {{ 'studio.upload.loaded' | i18n }} · {{ sm.title || sm.$id || ('studio.upload.schemaReady' | i18n) }}
+                </span>
+              }
+            </span>
+            <span class="studio-upload-card__action">{{ 'studio.upload.browse' | i18n }}</span>
+            <span class="studio-upload-card__accept">{{ 'studio.upload.acceptSchema' | i18n }}</span>
+          </button>
+        </div>
+      }
       <div class="toolbar-row studio-action-row">
         <p-button [label]="'studio.analyze' | i18n" icon="pi pi-sync" (onClick)="analyzePayload()" />
         <p-button

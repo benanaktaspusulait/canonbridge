@@ -16,6 +16,7 @@
     "studio": "Studio",
     "mappings": "Eşlemeler",
     "partners": "Ortaklar",
+    "externalSystems": "Dış Sistemler",
     "dlq": "DLQ",
     "monitoring": "İzleme",
     "settings": "Ayarlar"
@@ -125,6 +126,43 @@
       "degraded": "bozulmuş"
     }
   },
+  "externalSystems": {
+    "title": "Dış Sistemler",
+    "subtitle": "Son 24 saatte outbound API, webhook ve zamanlı sorgu sağlığı.",
+    "newConnection": "Yeni bağlantı",
+    "kpi": {
+      "healthy": "Sağlıklı",
+      "degraded": "Sorunlu",
+      "down": "Kapalı",
+      "calls": "Çağrı / 24s"
+    },
+    "filter": {
+      "partner": "Ortak",
+      "type": "Tip",
+      "environment": "Ortam",
+      "window": "Son 24s"
+    },
+    "col": {
+      "connection": "Bağlantı",
+      "type": "Tip",
+      "status": "Durum",
+      "success": "Başarı",
+      "latency": "Gecikme",
+      "lastError": "Son hata",
+      "lastSuccess": "Son başarı"
+    },
+    "status": {
+      "healthy": "Sağlıklı",
+      "degraded": "Sorunlu",
+      "down": "Kapalı",
+      "notTested": "Test edilmedi"
+    },
+    "action": {
+      "test": "Bağlantıyı test et",
+      "view": "Geçmişi gör",
+      "edit": "Düzenle"
+    }
+  },
   "dlq": {
     "title": "Ölü harf kuyruğu",
     "subtitle": "{{count}} başarısız mesaj — inceleyin ve yeniden gönderin",
@@ -231,6 +269,81 @@
     "ingestTitle": "Örnek yükü al",
     "ingestSubtitle": "Partner sisteminden JSON yapıştırın veya dosya yükleyin. Yapı, eşleme için alan ağacına dönüştürülür.",
     "loadFile": "JSON dosyası yükle",
+    "cancel": "İptal",
+    "sourceType": {
+      "title": "Kaynak tipi",
+      "kafka": "Kafka Topic",
+      "kafkaDesc": "Mevcut raw topic üzerinden akış.",
+      "kafkaHint": "Event pipeline için",
+      "webhook": "Webhook",
+      "webhookDesc": "Dış sistem CanonBridge'e veri göndersin.",
+      "webhookHint": "URL + giriş API key",
+      "externalApi": "Dış API",
+      "externalApiDesc": "CanonBridge dışarı gidip veriyi alsın.",
+      "externalApiHint": "URL, metod, auth, zamanlama",
+      "manual": "Manuel Yükleme",
+      "manualDesc": "Kurulum ve test için JSON bırakın.",
+      "manualHint": "En hızlı demo yolu"
+    },
+    "sourceCommon": {
+      "uploadInstead": "Örnek dosya yükle"
+    },
+    "sourceKafka": {
+      "title": "Kafka kaynağı",
+      "subtitle": "Runtime tetikleyici olarak mevcut raw topic'i kullanın ve mapping için örnek veri çekin.",
+      "badge": "Mevcut pipeline",
+      "topic": "Topic",
+      "consumerGroup": "Consumer group",
+      "fetchSample": "Son örneği çek"
+    },
+    "sourceWebhook": {
+      "title": "Webhook kaynağı",
+      "subtitle": "CanonBridge dış sistemin kullanacağı inbound URL ve anahtarı üretir.",
+      "ready": "Endpoint hazır",
+      "url": "Webhook URL",
+      "apiKey": "Giriş API key",
+      "rotate": "Döndür",
+      "captureSample": "Örnek yakala"
+    },
+    "sourceApi": {
+      "title": "Dış API kaynağı",
+      "subtitle": "CanonBridge'in zamanlı veya test sırasında çalıştıracağı isteği yapılandırın.",
+      "notTested": "Test edilmedi",
+      "name": "Bağlantı adı",
+      "method": "Metod",
+      "url": "URL",
+      "schedule": "Zamanlama",
+      "auth": "Kimlik doğrulama",
+      "test": "API çağrısını test et"
+    },
+    "sourceAuth": {
+      "add": "Kimlik doğrulama ekle",
+      "drawerTitle": "Kimlik doğrulama ekle",
+      "drawerSubtitle": "Secret alanlar tek yönlü kaydedilir ve isimle tekrar kullanılır.",
+      "name": "Credential adı",
+      "type": "Credential tipi",
+      "headerName": "Header adı",
+      "secretValue": "Değer",
+      "username": "Kullanıcı adı",
+      "password": "Şifre",
+      "token": "Token",
+      "tokenUrl": "Token URL",
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "scope": "Scope",
+      "writeOnly": "Secret değerleri kaydettikten sonra tekrar gösterilmez.",
+      "save": "Credential kaydet",
+      "saved": "Credential kaydedildi",
+      "savedDetail": "Artık kimlik doğrulama seçiminde kullanılabilir.",
+      "unnamedCredential": "Adsız credential",
+      "lastUsed": "Son kullanım",
+      "typeLabel": {
+        "API_KEY": "API Key",
+        "BASIC_AUTH": "Basic Auth",
+        "BEARER_TOKEN": "Bearer Token",
+        "OAUTH2_CLIENT_CREDENTIALS": "OAuth2 Client Credentials"
+      }
+    },
     "upload": {
       "browse": "Dosya seç",
       "loaded": "Yüklendi",

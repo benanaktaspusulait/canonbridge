@@ -1,0 +1,90 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ 'externalSystems.title' | i18n }}</h1>
+    <p class="page-subtitle">{{ 'externalSystems.subtitle' | i18n }}</p>
+  </div>
+  <div class="page-actions">
+    <p-button [label]="'externalSystems.newConnection' | i18n" icon="pi pi-plus" />
+  </div>
+</div>
+
+<section class="external-health-strip" aria-label="External system health summary">
+  <article>
+    <span>{{ 'externalSystems.kpi.healthy' | i18n }}</span>
+    <strong>{{ totals.healthy }}</strong>
+  </article>
+  <article>
+    <span>{{ 'externalSystems.kpi.degraded' | i18n }}</span>
+    <strong>{{ totals.degraded }}</strong>
+  </article>
+  <article>
+    <span>{{ 'externalSystems.kpi.down' | i18n }}</span>
+    <strong>{{ totals.down }}</strong>
+  </article>
+  <article>
+    <span>{{ 'externalSystems.kpi.calls' | i18n }}</span>
+    <strong>{{ totals.calls }}</strong>
+  </article>
+</section>
+
+<p-card styleClass="external-card">
+  <div class="external-filter-bar">
+    <button type="button">{{ 'externalSystems.filter.partner' | i18n }} <i class="pi pi-chevron-down"></i></button>
+    <button type="button">{{ 'externalSystems.filter.type' | i18n }} <i class="pi pi-chevron-down"></i></button>
+    <button type="button">{{ 'externalSystems.filter.environment' | i18n }} <i class="pi pi-chevron-down"></i></button>
+    <button type="button">{{ 'externalSystems.filter.window' | i18n }} <i class="pi pi-chevron-down"></i></button>
+  </div>
+
+  <p-table [value]="connections" styleClass="p-datatable-sm external-table">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>{{ 'externalSystems.col.connection' | i18n }}</th>
+        <th>{{ 'externalSystems.col.type' | i18n }}</th>
+        <th>{{ 'externalSystems.col.status' | i18n }}</th>
+        <th>{{ 'externalSystems.col.success' | i18n }}</th>
+        <th>{{ 'externalSystems.col.latency' | i18n }}</th>
+        <th>{{ 'externalSystems.col.lastError' | i18n }}</th>
+        <th>{{ 'externalSystems.col.lastSuccess' | i18n }}</th>
+        <th style="width: 8rem"></th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-row>
+      <tr>
+        <td>
+          <div class="external-name-cell">
+            <strong>{{ row.name }}</strong>
+            <span>{{ row.partner }} · {{ row.eventType }}</span>
+          </div>
+        </td>
+        <td>
+          <span class="external-type-pill">{{ row.type }}</span>
+          <small>{{ row.environment }}</small>
+        </td>
+        <td>
+          <p-tag [severity]="statusSeverity(row.status)" [value]="('externalSystems.status.' + row.status) | i18n" />
+        </td>
+        <td>
+          <div class="external-success-cell">
+            <strong>{{ row.successRate ?? 0 }}%</strong>
+            <span class="external-meter"><span [style.width.%]="successWidth(row)"></span></span>
+          </div>
+        </td>
+        <td>
+          <div class="external-latency">
+            <strong>{{ row.avgMs ?? 0 }}ms</strong>
+            <small>p95 {{ row.p95Ms ?? 0 }}ms</small>
+          </div>
+        </td>
+        <td class="external-error">{{ row.lastError }}</td>
+        <td class="text-color-secondary">{{ row.lastSuccess }}</td>
+        <td>
+          <div class="external-actions">
+            <p-button icon="pi pi-play" variant="text" severity="secondary" size="small" [pTooltip]="'externalSystems.action.test' | i18n" />
+            <p-button icon="pi pi-eye" variant="text" severity="secondary" size="small" [pTooltip]="'externalSystems.action.view' | i18n" />
+            <p-button icon="pi pi-cog" variant="text" severity="secondary" size="small" [pTooltip]="'externalSystems.action.edit' | i18n" />
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-card>

@@ -61,6 +61,16 @@ import { highlightJsonToHtml, highlightJsonValueToHtml } from './json-highlight'
 
 const TARGET_KEY_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 type UploadDropTarget = string;
+type StudioSourceType = 'kafka' | 'webhook' | 'externalApi' | 'manual';
+type SourceAuthType = 'API_KEY' | 'BASIC_AUTH' | 'BEARER_TOKEN' | 'OAUTH2_CLIENT_CREDENTIALS';
+type ExternalApiMethod = 'GET' | 'POST' | 'PUT';
+type CredentialOption = {
+  id: string;
+  name: string;
+  type: SourceAuthType;
+  environment: 'Sandbox' | 'Production';
+  lastUsed: string;
+};
 
 const DEMO_JSON = `{
   "customer": {
@@ -71,6 +81,55 @@ const DEMO_JSON = `{
     "placed_at": "2026-05-10",
     "qty": "4"
   }
+}`;
+
+const KAFKA_SAMPLE_JSON = `{
+  "topic": "tenant-001.raw.acme-marketplace.order-created",
+  "partition": 3,
+  "offset": 98221,
+  "payload": {
+    "order_id": "ORD-9841",
+    "customer_name": "Ayşe Yılmaz",
+    "status": "A",
+    "placed_at": "2026-05-10",
+    "qty": "4"
+  }
+}`;
+
+const WEBHOOK_SAMPLE_JSON = `{
+  "delivery_id": "whd_48921",
+  "event": "order.created",
+  "data": {
+    "customer": {
+      "name": "Ayşe Yılmaz",
+      "state": "ACTIVE"
+    },
+    "order": {
+      "id": "ORD-7781",
+      "created_at": "2026-05-10T09:15:00Z",
+      "quantity": 4
+    }
+  }
+}`;
+
+const EXTERNAL_API_SAMPLE_JSON = `{
+  "orders": [
+    {
+      "id": "ORD-5521",
+      "customer": {
+        "name": "Ayşe Yılmaz",
+        "status": "ACTIVE"
+      },
+      "placedAt": "2026-05-10T09:15:00Z",
+      "quantity": 4,
+      "shippingQuote": {
+        "serviceLevel": "EXPRESS",
+        "etaDays": 2,
+        "price": 12.5
+      }
+    }
+  ],
+  "nextUpdatedSince": "2026-05-10T09:16:00Z"
 }`;
 
 const DEFAULT_TARGETS: TargetField[] = [
@@ -556,6 +615,42 @@ export class IntegrationStudioComponent implements OnInit {
   sourceDropHighlight = signal(false);
   uploadDropTarget = signal<UploadDropTarget | null>(null);
   sourceFileMeta = signal<{ name: string; size: string } | null>(null);
+  sourceType = signal<StudioSourceType>('manual');
+  externalApiMethod = signal<ExternalApiMethod>('GET');
+  externalApiUrl = signal('https://api.carrier-a.example/v1/orders');
+  externalApiName = signal('Carrier A orders');
+  externalApiSchedule = signal('*/5 * * * *');
+  externalApiLastTest = signal<{ status: number; durationMs: number; capturedAt: string } | null>(null);
+  authDrawerOpen = signal(false);
+  authType = signal<SourceAuthType>('API_KEY');
+  credentialName = signal('Carrier A Production API Key');
+  credentialHeaderName = signal('X-API-Key');
+  credentialValue = signal('');
+  credentialUsername = signal('');
+  credentialPassword = signal('');
+  credentialTokenUrl = signal('https://auth.carrier-a.example/oauth/token');
+  credentialClientId = signal('');
+  credentialClientSecret = signal('');
+  credentialScope = signal('orders.read');
+  credentials = signal<CredentialOption[]>([
+    {
+      id: 'cred_carrier_a_oauth_prod',
+      name: 'Carrier A Production OAuth2',
+      type: 'OAUTH2_CLIENT_CREDENTIALS',
+      environment: 'Production',
+      lastUsed: '2h'
+    },
+    {
+      id: 'cred_webhook_ingress_demo',
+      name: 'Webhook inbound API key',
+      type: 'API_KEY',
+      environment: 'Sandbox',
+      lastUsed: 'Never'
+    }
+  ]);
+  selectedCredentialId = signal('cred_carrier_a_oauth_prod');
+  webhookUrl = signal('https://api.canonbridge.example/webhooks/acme/order-created/wh_7R9k2');
+  webhookKeyMasked = signal('cb_wh_************8f2a');
 
   activeStep = signal(0);
   sourceJson = signal(DEMO_JSON);
@@ -601,6 +696,48 @@ export class IntegrationStudioComponent implements OnInit {
   fixtureRunSummary = signal<string | null>(null);
   fixtureConfigMessage = signal<{ severity: 'info' | 'error'; text: string } | null>(null);
   selectedFixtureDetailId = signal<string | null>(null);
+
+  readonly sourceTypeCards: {
+    id: StudioSourceType;
+    icon: string;
+    titleKey: string;
+    descKey: string;
+    hintKey: string;
+  }[] = [
+    {
+      id: 'kafka',
+      icon: 'pi pi-send',
+      titleKey: 'studio.sourceType.kafka',
+      descKey: 'studio.sourceType.kafkaDesc',
+      hintKey: 'studio.sourceType.kafkaHint'
+    },
+    {
+      id: 'webhook',
+      icon: 'pi pi-link',
+      titleKey: 'studio.sourceType.webhook',
+      descKey: 'studio.sourceType.webhookDesc',
+      hintKey: 'studio.sourceType.webhookHint'
+    },
+    {
+      id: 'externalApi',
+      icon: 'pi pi-cloud-download',
+      titleKey: 'studio.sourceType.externalApi',
+      descKey: 'studio.sourceType.externalApiDesc',
+      hintKey: 'studio.sourceType.externalApiHint'
+    },
+    {
+      id: 'manual',
+      icon: 'pi pi-upload',
+      titleKey: 'studio.sourceType.manual',
+      descKey: 'studio.sourceType.manualDesc',
+      hintKey: 'studio.sourceType.manualHint'
+    }
+  ];
+  readonly externalApiMethods: ExternalApiMethod[] = ['GET', 'POST', 'PUT'];
+  readonly authTypes: SourceAuthType[] = ['API_KEY', 'BASIC_AUTH', 'BEARER_TOKEN', 'OAUTH2_CLIENT_CREDENTIALS'];
+  readonly selectedCredential = computed(() =>
+    this.credentials().find(credential => credential.id === this.selectedCredentialId()) ?? null
+  );
 
   readonly combinedExpressionPreview = computed(() => buildCombinedMappingExpression(this.rules()));
 
@@ -836,6 +973,75 @@ export class IntegrationStudioComponent implements OnInit {
   prevStep(): void {
     this.activeStep.update(s => Math.max(0, s - 1));
     this.scrollStudioIntoView();
+  }
+
+  selectSourceType(type: StudioSourceType): void {
+    this.sourceType.set(type);
+    this.externalApiLastTest.set(null);
+  }
+
+  setExternalApiMethod(value: string): void {
+    if (value === 'GET' || value === 'POST' || value === 'PUT') {
+      this.externalApiMethod.set(value);
+    }
+  }
+
+  setAuthType(value: string): void {
+    if (
+      value === 'API_KEY' ||
+      value === 'BASIC_AUTH' ||
+      value === 'BEARER_TOKEN' ||
+      value === 'OAUTH2_CLIENT_CREDENTIALS'
+    ) {
+      this.authType.set(value);
+    }
+  }
+
+  loadKafkaSample(): void {
+    this.sourceType.set('kafka');
+    this.sourceFileMeta.set({ name: 'kafka-latest-message.json', size: '0.3 KB' });
+    this.sourceJson.set(KAFKA_SAMPLE_JSON);
+    this.analyzePayload();
+  }
+
+  captureWebhookSample(): void {
+    this.sourceType.set('webhook');
+    this.sourceFileMeta.set({ name: 'webhook-captured-payload.json', size: '0.3 KB' });
+    this.sourceJson.set(WEBHOOK_SAMPLE_JSON);
+    this.analyzePayload();
+  }
+
+  testExternalApi(): void {
+    this.sourceType.set('externalApi');
+    this.externalApiLastTest.set({
+      status: 200,
+      durationMs: 183,
+      capturedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+    this.sourceFileMeta.set({ name: `${this.externalApiName() || 'external-api'}-response.json`, size: '0.5 KB' });
+    this.sourceJson.set(EXTERNAL_API_SAMPLE_JSON);
+    this.analyzePayload();
+  }
+
+  saveCredential(): void {
+    const name = this.credentialName().trim() || this.i18n.translate('studio.sourceAuth.unnamedCredential');
+    const id = `cred_${Date.now()}`;
+    const credential: CredentialOption = {
+      id,
+      name,
+      type: this.authType(),
+      environment: 'Sandbox',
+      lastUsed: 'Never'
+    };
+    this.credentials.update(rows => [credential, ...rows]);
+    this.selectedCredentialId.set(id);
+    this.authDrawerOpen.set(false);
+    this.toast.add({
+      severity: 'success',
+      summary: this.i18n.translate('studio.sourceAuth.saved'),
+      detail: this.i18n.translate('studio.sourceAuth.savedDetail'),
+      life: 3000
+    });
   }
 
   onSourceJsonChange(value: string): void {

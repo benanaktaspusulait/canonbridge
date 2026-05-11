@@ -16,6 +16,7 @@
     "studio": "Studio",
     "mappings": "Mappings",
     "partners": "Partners",
+    "externalSystems": "External Systems",
     "dlq": "DLQ",
     "monitoring": "Monitoring",
     "settings": "Settings"
@@ -125,6 +126,43 @@
       "degraded": "degraded"
     }
   },
+  "externalSystems": {
+    "title": "External Systems",
+    "subtitle": "Outbound APIs, webhooks, and scheduled polling health across the last 24 hours.",
+    "newConnection": "New connection",
+    "kpi": {
+      "healthy": "Healthy",
+      "degraded": "Degraded",
+      "down": "Down",
+      "calls": "Calls / 24h"
+    },
+    "filter": {
+      "partner": "Partner",
+      "type": "Type",
+      "environment": "Environment",
+      "window": "Last 24h"
+    },
+    "col": {
+      "connection": "Connection",
+      "type": "Type",
+      "status": "Status",
+      "success": "Success",
+      "latency": "Latency",
+      "lastError": "Last error",
+      "lastSuccess": "Last success"
+    },
+    "status": {
+      "healthy": "Healthy",
+      "degraded": "Degraded",
+      "down": "Down",
+      "notTested": "Not tested"
+    },
+    "action": {
+      "test": "Test connection",
+      "view": "View history",
+      "edit": "Edit"
+    }
+  },
   "dlq": {
     "title": "Dead Letter Queue",
     "subtitle": "{{count}} failed messages — investigate and replay",
@@ -231,6 +269,81 @@
     "ingestTitle": "Ingest sample payload",
     "ingestSubtitle": "Paste JSON from a partner system or load a file. The structure is parsed into a field tree for mapping.",
     "loadFile": "Load JSON file",
+    "cancel": "Cancel",
+    "sourceType": {
+      "title": "Source type",
+      "kafka": "Kafka Topic",
+      "kafkaDesc": "Stream from an existing raw topic.",
+      "kafkaHint": "Best for event pipelines",
+      "webhook": "Webhook",
+      "webhookDesc": "External systems send data to CanonBridge.",
+      "webhookHint": "URL + inbound API key",
+      "externalApi": "External API",
+      "externalApiDesc": "CanonBridge goes out and fetches data.",
+      "externalApiHint": "URL, method, auth, schedule",
+      "manual": "Manual Upload",
+      "manualDesc": "Paste or drop JSON for setup and tests.",
+      "manualHint": "Fastest demo path"
+    },
+    "sourceCommon": {
+      "uploadInstead": "Upload sample instead"
+    },
+    "sourceKafka": {
+      "title": "Kafka source",
+      "subtitle": "Use the existing raw topic as the runtime trigger and fetch a sample for mapping.",
+      "badge": "Existing pipeline",
+      "topic": "Topic",
+      "consumerGroup": "Consumer group",
+      "fetchSample": "Fetch latest sample"
+    },
+    "sourceWebhook": {
+      "title": "Webhook source",
+      "subtitle": "CanonBridge generates an inbound URL and key for the external system.",
+      "ready": "Endpoint ready",
+      "url": "Webhook URL",
+      "apiKey": "Inbound API key",
+      "rotate": "Rotate",
+      "captureSample": "Capture sample"
+    },
+    "sourceApi": {
+      "title": "External API source",
+      "subtitle": "Configure the request CanonBridge will run on schedule or during a test.",
+      "notTested": "Not tested",
+      "name": "Connection name",
+      "method": "Method",
+      "url": "URL",
+      "schedule": "Schedule",
+      "auth": "Authentication",
+      "test": "Test API call"
+    },
+    "sourceAuth": {
+      "add": "Add authentication",
+      "drawerTitle": "Add authentication",
+      "drawerSubtitle": "Secrets are saved write-only and reused by name.",
+      "name": "Credential name",
+      "type": "Credential type",
+      "headerName": "Header name",
+      "secretValue": "Value",
+      "username": "Username",
+      "password": "Password",
+      "token": "Token",
+      "tokenUrl": "Token URL",
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "scope": "Scope",
+      "writeOnly": "Secret values are never displayed again after saving.",
+      "save": "Save credential",
+      "saved": "Credential saved",
+      "savedDetail": "It is now available in the authentication selector.",
+      "unnamedCredential": "Unnamed credential",
+      "lastUsed": "Last used",
+      "typeLabel": {
+        "API_KEY": "API Key",
+        "BASIC_AUTH": "Basic Auth",
+        "BEARER_TOKEN": "Bearer Token",
+        "OAUTH2_CLIENT_CREDENTIALS": "OAuth2 Client Credentials"
+      }
+    },
     "upload": {
       "browse": "Browse",
       "loaded": "Loaded",
