@@ -110,6 +110,13 @@
               (onClick)="test(row)"
               [pTooltip]="'externalSystems.action.test' | i18n" />
             <p-button
+              icon="pi pi-eye"
+              variant="text"
+              severity="secondary"
+              size="small"
+              (onClick)="openDetail(row)"
+              [pTooltip]="'externalSystems.action.view' | i18n" />
+            <p-button
               icon="pi pi-pencil"
               variant="text"
               severity="secondary"
@@ -134,6 +141,96 @@
     </ng-template>
   </p-table>
 </p-card>
+
+<!-- ── Connection detail drawer ──────────────────────────────────────────── -->
+<p-drawer
+  [(visible)]="detailVisible"
+  position="right"
+  styleClass="external-detail-drawer">
+  @if (selectedConnection(); as selected) {
+    <ng-template pTemplate="header">
+      <div class="external-drawer-title">
+        <span>{{ 'externalSystems.detail.eyebrow' | i18n }}</span>
+        <strong>{{ selected.name }}</strong>
+      </div>
+    </ng-template>
+
+    <section class="external-detail-section">
+      <div class="external-detail-status">
+        <p-tag
+          [severity]="statusSeverity(selected.status)"
+          [value]="('externalSystems.status.' + selected.status) | i18n" />
+        <span>{{ healthExplanation(selected) }}</span>
+      </div>
+      <dl class="external-detail-grid">
+        <div>
+          <dt>{{ 'externalSystems.col.connection' | i18n }}</dt>
+          <dd>{{ selected.partner }} · {{ selected.eventType }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'externalSystems.col.type' | i18n }}</dt>
+          <dd>{{ selected.type }} · {{ selected.environment }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'externalSystems.form.method' | i18n }}</dt>
+          <dd>{{ selected.method }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'externalSystems.form.authType' | i18n }}</dt>
+          <dd>{{ selected.authType }}</dd>
+        </div>
+        <div class="external-detail-grid__wide">
+          <dt>{{ 'externalSystems.form.url' | i18n }}</dt>
+          <dd>{{ selected.url }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="external-detail-section">
+      <h3>{{ 'externalSystems.detail.metrics' | i18n }}</h3>
+      <div class="external-detail-metrics">
+        <article>
+          <span>{{ 'externalSystems.col.success' | i18n }}</span>
+          <strong>{{ selected.successRate ?? 0 }}%</strong>
+        </article>
+        <article>
+          <span>{{ 'externalSystems.col.latency' | i18n }}</span>
+          <strong>{{ selected.avgMs ?? 0 }}ms</strong>
+        </article>
+        <article>
+          <span>{{ 'externalSystems.colLast24h' | i18n }}</span>
+          <strong>{{ selected.calls24h | number }}</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="external-detail-section">
+      <div class="external-detail-section__head">
+        <h3>{{ 'externalSystems.detail.history' | i18n }}</h3>
+        <p-button
+          [label]="'externalSystems.action.test' | i18n"
+          icon="pi pi-play"
+          size="small"
+          [loading]="testingId() === selected.id"
+          (onClick)="test(selected)" />
+      </div>
+
+      <div class="external-history-list">
+        @for (call of selectedHistory(); track call.id) {
+          <article class="external-history-row">
+            <p-tag [severity]="callSeverity(call.result)" [value]="call.status ? 'HTTP ' + call.status : 'LOCAL'" />
+            <div>
+              <strong>{{ call.message }}</strong>
+              <span>{{ call.at }} · {{ call.durationMs }}ms · {{ call.requestId }}</span>
+            </div>
+          </article>
+        } @empty {
+          <p class="empty-cell">{{ 'externalSystems.detail.noHistory' | i18n }}</p>
+        }
+      </div>
+    </section>
+  }
+</p-drawer>
 
 <!-- ── Add / Edit dialog ─────────────────────────────────────────────────── -->
 <p-dialog

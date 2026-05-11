@@ -5,6 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { DrawerModule } from 'primeng/drawer';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
@@ -36,6 +37,17 @@ interface ExternalConnection {
   timeoutMs: number;
 }
 
+interface ExternalCallRecord {
+  id: string;
+  connectionId: string;
+  at: string;
+  status: number;
+  durationMs: number;
+  result: 'success' | 'failed';
+  message: string;
+  requestId: string;
+}
+
 type ConnectionForm = Omit<ExternalConnection, 'id' | 'status' | 'successRate' | 'avgMs' | 'p95Ms' | 'lastError' | 'lastSuccess' | 'calls24h'> & { id?: string };
 
 const EMPTY_FORM: ConnectionForm = {
@@ -60,6 +72,7 @@ const EMPTY_FORM: ConnectionForm = {
     CardModule,
     ConfirmDialogModule,
     DialogModule,
+    DrawerModule,
     InputNumberModule,
     InputTextModule,
     SelectModule,
@@ -87,6 +100,21 @@ export class ExternalSystemsComponent {
 
   readonly connections = this._connections.asReadonly();
   readonly testingId = signal<string | null>(null);
+  readonly selectedConnection = signal<ExternalConnection | null>(null);
+  detailVisible = false;
+
+  private readonly _callHistory = signal<ExternalCallRecord[]>([
+    { id: 'call-1', connectionId: 'conn-carrier-orders', at: '2 min ago', status: 200, durationMs: 184, result: 'success', message: 'Orders page fetched', requestId: 'req-car-1842' },
+    { id: 'call-2', connectionId: 'conn-carrier-orders', at: '9 min ago', status: 200, durationMs: 221, result: 'success', message: 'Orders page fetched', requestId: 'req-car-1841' },
+    { id: 'call-3', connectionId: 'conn-soap-tracking', at: '16 min ago', status: 500, durationMs: 1220, result: 'failed', message: 'SOAP fault: invalid tracking number', requestId: 'req-soap-418' },
+    { id: 'call-4', connectionId: 'conn-payment-risk', at: '48 min ago', status: 503, durationMs: 3200, result: 'failed', message: 'HTTP 503 after 3 attempts', requestId: 'req-risk-212' }
+  ]);
+  readonly callHistory = this._callHistory.asReadonly();
+  readonly selectedHistory = computed(() => {
+    const selected = this.selectedConnection();
+    if (!selected) return [];
+    return this._callHistory().filter(row => row.connectionId === selected.id).slice(0, 12);
+  });
 
   // ── Filters as signals (reactive) ─────────────────────────────────────────
   readonly partnerFilter    = signal('All');
@@ -186,6 +214,11 @@ export class ExternalSystemsComponent {
     });
   }
 
+  openDetail(connection: ExternalConnection): void {
+    this.selectedConnection.set(connection);
+    this.detailVisible = true;
+  }
+
   test(connection: ExternalConnection): void {
     if (this.testingId()) return;
     this.testingId.set(connection.id);
@@ -206,6 +239,22 @@ export class ExternalSystemsComponent {
         calls24h: c.calls24h + 1
       } : c));
 
+      this._callHistory.update(rows => [{
+        id: `call-${Date.now()}`,
+        connectionId: connection.id,
+        at: this.t('externalSystems.justNow'),
+        status: validUrl ? 200 : 0,
+        durationMs: latency ?? 0,
+        result: validUrl ? 'success' : 'failed',
+        message: validUrl ? this.t('externalSystems.history.demoSuccess') : this.t('externalSystems.toast.invalidUrl'),
+        requestId: `req-${Math.random().toString(36).slice(2, 8)}`
+      }, ...rows]);
+
+      if (this.selectedConnection()?.id === connection.id) {
+        const updated = this._connections().find(c => c.id === connection.id) ?? null;
+        this.selectedConnection.set(updated);
+      }
+
       this.toast.add({
         severity: validUrl ? 'success' : 'error',
         summary: validUrl ? this.t('externalSystems.toast.testPassed') : this.t('externalSystems.toast.testFailed'),
@@ -222,6 +271,17 @@ export class ExternalSystemsComponent {
       healthy: 'success', degraded: 'warn', down: 'danger', notTested: 'secondary'
     };
     return map[status];
+  }
+
+  callSeverity(result: ExternalCallRecord['result']): 'success' | 'danger' {
+    return result === 'success' ? 'success' : 'danger';
+  }
+
+  healthExplanation(connection: ExternalConnection): string {
+    if (connection.status === 'healthy') return this.t('externalSystems.health.healthy');
+    if (connection.status === 'degraded') return this.t('externalSystems.health.degraded');
+    if (connection.status === 'down') return this.t('externalSystems.health.down');
+    return this.t('externalSystems.health.notTested');
   }
 
   successWidth(connection: ExternalConnection): number {

@@ -663,6 +663,7 @@ export class IntegrationStudioComponent implements OnInit {
   externalApiName = signal('Carrier A orders');
   externalApiSchedule = signal('*/5 * * * *');
   externalApiLastTest = signal<{ status: number; durationMs: number; capturedAt: string } | null>(null);
+  externalApiLastError = signal<string | null>(null);
   authDrawerOpen = signal(false);
   authType = signal<SourceAuthType>('API_KEY');
   credentialName = signal('Carrier A Production API Key');
@@ -1020,6 +1021,7 @@ export class IntegrationStudioComponent implements OnInit {
   selectSourceType(type: StudioSourceType): void {
     this.sourceType.set(type);
     this.externalApiLastTest.set(null);
+    this.externalApiLastError.set(null);
   }
 
   setExternalApiMethod(value: string): void {
@@ -1093,6 +1095,8 @@ export class IntegrationStudioComponent implements OnInit {
   testExternalApi(): void {
     this.sourceType.set('externalApi');
     if (!/^https?:\/\//i.test(this.externalApiUrl().trim())) {
+      this.externalApiLastTest.set(null);
+      this.externalApiLastError.set(this.i18n.translate('studio.sourceApi.invalidUrl'));
       this.toast.add({
         severity: 'error',
         summary: this.i18n.translate('studio.sourceApi.invalidUrl'),
@@ -1101,6 +1105,7 @@ export class IntegrationStudioComponent implements OnInit {
       return;
     }
     const durationMs = 150 + Math.floor(Math.random() * 160);
+    this.externalApiLastError.set(null);
     this.externalApiLastTest.set({
       status: 200,
       durationMs,
@@ -1972,6 +1977,24 @@ export class IntegrationStudioComponent implements OnInit {
     this.rulesWithOutputSchemaErrors.set(new Set());
     this.canonicalSchemaIssuesDetail.set([]);
     this.testRunPending.set(true);
+    if (this.sourceType() === 'externalApi' && !this.externalApiLastTest()) {
+      this.testExternalApi();
+    }
+    if (this.sourceType() === 'externalApi' && this.externalApiLastError()) {
+      this.validationOk.set(false);
+      this.validationMessages.set([
+        this.i18n.translate('studio.sourceApi.testRequiredBeforeMapping'),
+        this.externalApiLastError()!
+      ]);
+      this.toast.add({
+        severity: 'error',
+        summary: this.i18n.translate('studio.sourceApi.testFailed'),
+        detail: this.externalApiLastError()!,
+        life: 4500
+      });
+      this.testRunPending.set(false);
+      return;
+    }
     let payload: unknown;
     try {
       payload = JSON.parse(this.sourceJson());

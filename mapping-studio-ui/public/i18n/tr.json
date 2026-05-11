@@ -219,6 +219,7 @@
       "lastError": "Son hata",
       "lastSuccess": "Son başarı"
     },
+    "colLast24h": "Çağrı / 24s",
     "status": {
       "healthy": "Sağlıklı",
       "degraded": "Sorunlu",
@@ -229,6 +230,18 @@
       "test": "Bağlantıyı test et",
       "view": "Geçmişi gör",
       "edit": "Düzenle"
+    },
+    "detail": {
+      "eyebrow": "Bağlantı detayı",
+      "metrics": "Sağlık metrikleri",
+      "history": "Son çağrılar",
+      "noHistory": "Henüz demo çağrı kaydı yok."
+    },
+    "health": {
+      "healthy": "Son demo kontrolleri sağlıklı. Gecikme ve başarı oranı beklenen aralıkta.",
+      "degraded": "Bu bağlantı cevap veriyor, fakat gecikme veya hata oranı dikkat istiyor.",
+      "down": "Son demo kontrolü başarısız. Yayın öncesi bunu dış sistem veya konfigürasyon riski sayın.",
+      "notTested": "Sağlık ve çağrı geçmişi üretmek için demo test çalıştırın."
     },
     "dialog": {
       "addTitle": "Dış bağlantı ekle",
@@ -257,6 +270,9 @@
       "testFailed": "Bağlantı testi başarısız",
       "invalidUrl": "URL http:// veya https:// ile başlamalı",
       "deleted": "Bağlantı silindi"
+    },
+    "history": {
+      "demoSuccess": "Demo isteği tamamlandı"
     },
     "results": "sonuç",
     "empty": "Mevcut filtrelere uyan bağlantı yok.",
@@ -499,7 +515,11 @@
       "test": "API çağrısını test et",
       "invalidUrl": "Testten önce geçerli bir HTTP veya HTTPS URL girin.",
       "testPassed": "Dış API testi başarılı",
-      "demoTestDetail": "Demo yanıt {{duration}}ms içinde yakalandı ve kaynak ağacına yüklendi."
+      "testFailed": "Dış API demo testi başarısız",
+      "testRequiredBeforeMapping": "Dış API kaynağı için mapping doğrulaması çalışmadan önce geçerli bir demo test gerekir.",
+      "demoTestDetail": "Demo yanıt {{duration}}ms içinde yakalandı ve kaynak ağacına yüklendi.",
+      "demoResultTitle": "Demo yanıt hazır",
+      "demoResultText": "HTTP {{status}} · {{duration}}ms · {{capturedAt}} saatinde yakalandı. Bu yanıt artık kaynak ağacıdır."
     },
     "sourceAuth": {
       "add": "Kimlik doğrulama ekle",

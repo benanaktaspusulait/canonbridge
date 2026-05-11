@@ -207,6 +207,7 @@
       "lastError": "Last error",
       "lastSuccess": "Last success"
     },
+    "colLast24h": "Calls / 24h",
     "status": {
       "healthy": "Healthy",
       "degraded": "Degraded",
@@ -217,6 +218,18 @@
       "test": "Test connection",
       "view": "View history",
       "edit": "Edit"
+    },
+    "detail": {
+      "eyebrow": "Connection detail",
+      "metrics": "Health metrics",
+      "history": "Recent calls",
+      "noHistory": "No demo calls recorded yet."
+    },
+    "health": {
+      "healthy": "The last demo checks are healthy. Latency and success rate are inside the expected range.",
+      "degraded": "This connection is responding, but latency or failures need attention.",
+      "down": "The latest demo check failed. Treat this as upstream or configuration risk before publishing.",
+      "notTested": "Run a demo test to generate health and call history."
     },
     "dialog": {
       "addTitle": "Add external connection",
@@ -245,6 +258,9 @@
       "testPassed": "Connection test passed",
       "testFailed": "Connection test failed",
       "invalidUrl": "URL must start with http:// or https://"
+    },
+    "history": {
+      "demoSuccess": "Demo request completed"
     }
   },
   "dlq": {
@@ -464,7 +480,11 @@
       "test": "Test API call",
       "invalidUrl": "Enter a valid HTTP or HTTPS URL before testing.",
       "testPassed": "External API test passed",
-      "demoTestDetail": "Demo response captured in {{duration}}ms and loaded into the source tree."
+      "testFailed": "External API demo test failed",
+      "testRequiredBeforeMapping": "External API source must have a valid demo test before mapping validation can run.",
+      "demoTestDetail": "Demo response captured in {{duration}}ms and loaded into the source tree.",
+      "demoResultTitle": "Demo response ready",
+      "demoResultText": "HTTP {{status}} · {{duration}}ms · captured at {{capturedAt}}. This response is now the source tree."
     },
     "sourceAuth": {
       "add": "Add authentication",

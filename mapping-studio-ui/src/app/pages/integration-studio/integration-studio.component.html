@@ -260,6 +260,18 @@
               <p-button [label]="'studio.sourceApi.test' | i18n" icon="pi pi-play" (onClick)="testExternalApi()" />
               <p-button [label]="'studio.sourceCommon.uploadInstead' | i18n" icon="pi pi-upload" variant="outlined" severity="secondary" (onClick)="fileIn.click()" />
             </div>
+            @if (externalApiLastTest(); as test) {
+              <div class="studio-source-test-result">
+                <i class="pi pi-check-circle" aria-hidden="true"></i>
+                <span>
+                  <strong>{{ 'studio.sourceApi.demoResultTitle' | i18n }}</strong>
+                  <small>{{ 'studio.sourceApi.demoResultText' | i18n: { status: test.status, duration: test.durationMs, capturedAt: test.capturedAt } }}</small>
+                </span>
+              </div>
+            }
+            @if (externalApiLastError(); as apiError) {
+              <p-message severity="error" [text]="apiError" styleClass="w-full mt-2" />
+            }
             @if (authDrawerOpen()) {
               <aside class="studio-auth-drawer">
                 <div class="studio-auth-drawer__head">
