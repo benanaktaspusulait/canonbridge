@@ -12,7 +12,7 @@
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Mapping Studio demo UI | In progress, demo-capable | Angular demo screens exist under `examples/mapping-studio-ui/`. Backend calls are intentionally simulated/local for now. |
+| Mapping Studio demo UI | In progress, demo-capable | Angular demo screens exist under [`mapping-studio-ui/`](../../mapping-studio-ui/). Backend calls are intentionally simulated/local for now. |
 | Transformer service | Scaffold exists | `services/transformer/` contains a Node.js/TypeScript scaffold with HTTP transform, Kafka runner, worker pool, cache, metrics, tests, Docker, and Kubernetes assets. |
 | Backend production services | Requirements defined | Service inventory and acceptance criteria are captured in [Backend Service Requirements](./11-backend-service-requirements.md). |
 | Mapping Studio API/data model | Specified | Data model, API surface, publish gates, credential metadata, outbound connections, webhook metadata, fixtures, and audit tables are specified in [Mapping Studio API and Data Model](../product/03-mapping-studio-api-data-model.md). |
