@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
@@ -18,22 +18,23 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { ExternalSystemService, OutboundConnection } from '../../core/services/external-system.service';
 
 interface ExternalConnection {
   id: string;
   name: string;
   partner: string;
   eventType: string;
-  type: 'REST' | 'SOAP' | 'Webhook' | 'Scheduled Poll';
-  environment: 'Production' | 'Sandbox';
-  status: 'healthy' | 'degraded' | 'down' | 'notTested';
+  type: 'REST' | 'SOAP' | 'GRAPHQL';
+  environment: 'PRODUCTION' | 'SANDBOX';
+  status: 'NOT_TESTED' | 'HEALTHY' | 'DEGRADED' | 'FAILED' | 'DISABLED';
   successRate: number | null;
   avgMs: number | null;
   p95Ms: number | null;
   lastError: string;
   lastSuccess: string;
   calls24h: number;
-  method: 'GET' | 'POST' | 'PUT';
+  method: string;
   url: string;
   authType: 'None' | 'API Key' | 'Basic Auth' | 'OAuth2';
   timeoutMs: number;
@@ -50,6 +51,16 @@ interface ExternalConnection {
   responsePreview: string;
   mappings: ConnectionMapping[];
   sparkline: number[];
+  // Backend fields
+  connectionId?: string;
+  purpose?: string;
+  protocol?: string;
+  credentialId?: string;
+  schedule?: string;
+  retryPolicy?: any;
+  responseHandling?: any;
+  lastTestAt?: string;
+  lastTestResult?: string;
 }
 
 interface ExternalCallRecord {
@@ -179,205 +190,144 @@ const SAMPLE_SOAP_JSON = `{
   templateUrl: './external-systems.component.html',
   styleUrl: './external-systems.component.scss'
 })
-export class ExternalSystemsComponent {
+export class ExternalSystemsComponent implements OnInit {
   private readonly confirmation = inject(ConfirmationService);
   private readonly toast = inject(MessageService);
   private readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
+  private readonly externalSystemService = inject(ExternalSystemService);
 
-  private readonly _connections = signal<ExternalConnection[]>([
-    {
-      id: 'conn-carrier-orders',
-      name: 'Carrier A Orders',
-      partner: 'ACME Marketplace',
-      eventType: 'OrderCreated',
-      type: 'REST',
-      environment: 'Production',
-      status: 'healthy',
-      successRate: 99.2,
-      avgMs: 184,
-      p95Ms: 312,
-      lastError: '—',
-      lastSuccess: '2 min ago',
-      calls24h: 1842,
-      method: 'GET',
-      url: 'https://carrier-a.example.com/orders',
-      authType: 'OAuth2',
-      timeoutMs: 5000,
-      credentialName: 'Carrier A Production OAuth2',
-      pollSchedule: '*/5 * * * *',
-      pollInterval: '5 minutes',
-      firstRunAt: '2026-05-12T08:00',
-      checkpointMode: 'watermark',
-      wsdlUrl: '',
-      wsdlFileName: '',
-      wsdlPreview: '',
-      sampleJson: SAMPLE_ORDERS_JSON,
-      requestPreview: '{\n  "method": "GET",\n  "path": "/orders?limit=10"\n}',
-      responsePreview: SAMPLE_ORDERS_JSON,
-      mappings: [
-        { name: 'order.created', version: 'v2.1.0', status: 'active' },
-        { name: 'order.cancelled', version: 'v1.0.2', status: 'active' }
-      ],
-      sparkline: [98, 99, 99, 100, 99, 98, 99]
-    },
-    {
-      id: 'conn-shopify-webhook',
-      name: 'Shopify Order Webhook',
-      partner: 'Shopify',
-      eventType: 'OrderCreated',
-      type: 'Webhook',
-      environment: 'Production',
-      status: 'healthy',
-      successRate: 100,
-      avgMs: 22,
-      p95Ms: 48,
-      lastError: '—',
-      lastSuccess: '1 min ago',
-      calls24h: 923,
-      method: 'POST',
-      url: 'https://hooks.shopify.example.com/orders',
-      authType: 'API Key',
-      timeoutMs: 3000,
-      credentialName: 'Shopify inbound webhook key',
-      pollSchedule: '',
-      pollInterval: '',
-      firstRunAt: '',
-      checkpointMode: 'idempotency_only',
-      wsdlUrl: '',
-      wsdlFileName: '',
-      wsdlPreview: '',
-      sampleJson: SAMPLE_WEBHOOK_JSON,
-      requestPreview: SAMPLE_WEBHOOK_JSON,
-      responsePreview: '{\n  "accepted": true,\n  "messageId": "msg-9841"\n}',
-      mappings: [{ name: 'order.created', version: 'v1.4.0', status: 'active' }],
-      sparkline: [100, 100, 100, 99, 100, 100, 100]
-    },
-    {
-      id: 'conn-soap-tracking',
-      name: 'SOAP Tracking Lookup',
-      partner: 'Logistics Xpress',
-      eventType: 'ShipmentUpdated',
-      type: 'SOAP',
-      environment: 'Sandbox',
-      status: 'degraded',
-      successRate: 91.1,
-      avgMs: 640,
-      p95Ms: 1220,
-      lastError: 'SOAP fault: invalid tracking number',
-      lastSuccess: '16 min ago',
-      calls24h: 418,
-      method: 'POST',
-      url: 'https://soap.logistics.example.com/tracking',
-      authType: 'Basic Auth',
-      timeoutMs: 8000,
-      credentialName: 'Logistics Xpress SOAP Basic',
-      pollSchedule: '',
-      pollInterval: '',
-      firstRunAt: '',
-      checkpointMode: 'idempotency_only',
-      wsdlUrl: 'https://soap.logistics.example.com/tracking?wsdl',
-      wsdlFileName: 'tracking.wsdl',
-      wsdlPreview: '<definitions name="TrackingService"><service name="TrackingPort"/></definitions>',
-      sampleJson: SAMPLE_SOAP_JSON,
-      requestPreview: '<soap:Envelope><soap:Body><GetTracking>TRK-44192</GetTracking></soap:Body></soap:Envelope>',
-      responsePreview: SAMPLE_SOAP_JSON,
-      mappings: [{ name: 'shipment.updated', version: 'v1.3.0', status: 'active' }],
-      sparkline: [94, 93, 91, 90, 92, 91, 89]
-    },
-    {
-      id: 'conn-payment-risk',
-      name: 'Payment Risk Score',
-      partner: 'Payment Gateway',
-      eventType: 'PaymentAuthorized',
-      type: 'REST',
-      environment: 'Production',
-      status: 'down',
-      successRate: 72.4,
-      avgMs: 1800,
-      p95Ms: 3200,
-      lastError: 'HTTP 503 after 3 attempts',
-      lastSuccess: '48 min ago',
-      calls24h: 212,
-      method: 'POST',
-      url: 'https://risk.payment.example.com/score',
-      authType: 'OAuth2',
-      timeoutMs: 10000,
-      credentialName: 'Payment Risk OAuth2',
-      pollSchedule: '',
-      pollInterval: '',
-      firstRunAt: '',
-      checkpointMode: 'idempotency_only',
-      wsdlUrl: '',
-      wsdlFileName: '',
-      wsdlPreview: '',
-      sampleJson: '{\n  "paymentId": "PAY-7781",\n  "riskScore": 87,\n  "decision": "REVIEW"\n}',
-      requestPreview: '{\n  "paymentId": "PAY-7781",\n  "amount": 184.2\n}',
-      responsePreview: '{\n  "error": "HTTP 503 after 3 attempts"\n}',
-      mappings: [{ name: 'payment.authorized', version: 'v3.0.1', status: 'draft' }],
-      sparkline: [91, 88, 76, 72, 70, 73, 72]
-    }
-  ]);
-
+  private readonly _connections = signal<ExternalConnection[]>([]);
   readonly connections = this._connections.asReadonly();
+  readonly loading = signal(false);
   readonly testingId = signal<string | null>(null);
   readonly selectedConnection = signal<ExternalConnection | null>(null);
   detailVisible = false;
 
-  private readonly _callHistory = signal<ExternalCallRecord[]>([
-    {
-      id: 'call-1',
-      connectionId: 'conn-carrier-orders',
-      at: '2 min ago',
-      status: 200,
-      durationMs: 184,
-      result: 'success',
-      message: 'Orders page fetched',
-      requestId: 'req-car-1842',
-      headers: 'Authorization: Bearer ****\nAccept: application/json',
-      requestBody: '{\n  "limit": 10,\n  "cursor": "latest"\n}',
-      responseBody: SAMPLE_ORDERS_JSON
-    },
-    {
-      id: 'call-2',
-      connectionId: 'conn-carrier-orders',
-      at: '9 min ago',
-      status: 200,
-      durationMs: 221,
-      result: 'success',
-      message: 'Orders page fetched',
-      requestId: 'req-car-1841',
-      headers: 'Authorization: Bearer ****\nAccept: application/json',
-      requestBody: '{\n  "limit": 10,\n  "cursor": "prev"\n}',
-      responseBody: SAMPLE_ORDERS_JSON
-    },
-    {
-      id: 'call-3',
-      connectionId: 'conn-soap-tracking',
-      at: '16 min ago',
-      status: 500,
-      durationMs: 1220,
-      result: 'failed',
-      message: 'SOAP fault: invalid tracking number',
-      requestId: 'req-soap-418',
-      headers: 'Authorization: Basic ****\nContent-Type: text/xml',
-      requestBody: '<soap:Envelope><soap:Body><GetTracking>TRK-00000</GetTracking></soap:Body></soap:Envelope>',
-      responseBody: '<soap:Fault><faultstring>invalid tracking number</faultstring></soap:Fault>'
-    },
-    {
-      id: 'call-4',
-      connectionId: 'conn-payment-risk',
-      at: '48 min ago',
-      status: 503,
-      durationMs: 3200,
-      result: 'failed',
-      message: 'HTTP 503 after 3 attempts',
-      requestId: 'req-risk-212',
-      headers: 'Authorization: Bearer ****\nContent-Type: application/json',
-      requestBody: '{\n  "paymentId": "PAY-7781",\n  "amount": 184.2\n}',
-      responseBody: '{\n  "error": "Service unavailable"\n}'
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+  ngOnInit(): void {
+    this.loadConnections();
+  }
+
+  loadConnections(): void {
+    this.loading.set(true);
+    this.externalSystemService.list().subscribe({
+      next: (apiConnections) => {
+        // Map API connections to UI format
+        const uiConnections: ExternalConnection[] = apiConnections.map(conn => this.mapApiToUi(conn));
+        this._connections.set(uiConnections);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load external systems:', err);
+        this.toast.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load external systems'
+        });
+        this.loading.set(false);
+      }
+    });
+  }
+
+  private mapApiToUi(conn: OutboundConnection): ExternalConnection {
+    const lastTestResult = conn.lastTestResult ? JSON.parse(conn.lastTestResult) : null;
+    const status = this.mapStatus(conn.status || 'NOT_TESTED');
+    
+    return {
+      id: conn.connectionId || '',
+      connectionId: conn.connectionId,
+      name: conn.name,
+      partner: this.extractPartnerFromName(conn.name),
+      eventType: this.extractEventType(conn.name),
+      type: conn.protocol as any || 'REST',
+      protocol: conn.protocol,
+      environment: conn.environment as any,
+      status: status,
+      successRate: lastTestResult?.success ? 99.5 : (status === 'FAILED' ? 0 : null),
+      avgMs: lastTestResult?.durationMs || null,
+      p95Ms: lastTestResult?.durationMs ? Math.round(lastTestResult.durationMs * 1.7) : null,
+      lastError: lastTestResult?.success === false ? (lastTestResult.error || 'Test failed') : '—',
+      lastSuccess: conn.lastTestAt ? this.formatTimestamp(conn.lastTestAt) : '—',
+      calls24h: 0,
+      method: conn.method || 'GET',
+      url: conn.url,
+      authType: conn.credentialId ? 'OAuth2' : 'None',
+      timeoutMs: conn.timeoutMs || 5000,
+      credentialName: conn.credentialId || '',
+      credentialId: conn.credentialId,
+      pollSchedule: conn.schedule || '',
+      schedule: conn.schedule,
+      pollInterval: '',
+      firstRunAt: '',
+      checkpointMode: 'idempotency_only',
+      wsdlUrl: '',
+      wsdlFileName: '',
+      wsdlPreview: '',
+      sampleJson: '{}',
+      requestPreview: '{}',
+      responsePreview: lastTestResult?.responseBody || '{}',
+      mappings: [],
+      sparkline: this.generateSparkline(status),
+      purpose: conn.purpose,
+      retryPolicy: conn.retryPolicy,
+      responseHandling: conn.responseHandling,
+      lastTestAt: conn.lastTestAt,
+      lastTestResult: conn.lastTestResult
+    };
+  }
+
+  private mapStatus(apiStatus: string): ExternalConnection['status'] {
+    const statusMap: Record<string, ExternalConnection['status']> = {
+      'NOT_TESTED': 'NOT_TESTED',
+      'HEALTHY': 'HEALTHY',
+      'DEGRADED': 'DEGRADED',
+      'FAILED': 'FAILED',
+      'DISABLED': 'DISABLED'
+    };
+    return statusMap[apiStatus] || 'NOT_TESTED';
+  }
+
+  private extractPartnerFromName(name: string): string {
+    // Extract partner from name like "Carrier A Orders API"
+    const words = name.split(' ');
+    return words.length > 1 ? words.slice(0, 2).join(' ') : name;
+  }
+
+  private extractEventType(name: string): string {
+    if (name.toLowerCase().includes('order')) return 'OrderCreated';
+    if (name.toLowerCase().includes('shipment')) return 'ShipmentUpdated';
+    if (name.toLowerCase().includes('payment')) return 'PaymentAuthorized';
+    if (name.toLowerCase().includes('customer')) return 'CustomerUpdated';
+    return 'Unknown';
+  }
+
+  private generateSparkline(status: ExternalConnection['status']): number[] {
+    if (status === 'HEALTHY') return [98, 99, 99, 100, 99, 98, 99];
+    if (status === 'DEGRADED') return [94, 93, 91, 90, 92, 91, 89];
+    if (status === 'FAILED') return [91, 88, 76, 72, 70, 73, 72];
+    return [0, 0, 0, 0, 0, 0, 0];
+  }
+
+  private formatTimestamp(timestamp: string): string {
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+
+      if (diffMins < 1) return 'just now';
+      if (diffMins < 60) return `${diffMins} min ago`;
+      if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+      
+      return date.toISOString().slice(0, 10);
+    } catch {
+      return timestamp;
     }
-  ]);
+  }
+  private readonly _callHistory = signal<ExternalCallRecord[]>([]);
   readonly callHistory = this._callHistory.asReadonly();
   readonly selectedHistory = computed(() => {
     const selected = this.selectedConnection();
@@ -390,10 +340,10 @@ export class ExternalSystemsComponent {
   readonly typeFilter       = signal('All');
   readonly environmentFilter = signal('All');
 
-  readonly typeOptions        = ['All', 'REST', 'SOAP', 'Webhook', 'Scheduled Poll'];
-  readonly environmentOptions = ['All', 'Production', 'Sandbox'];
-  readonly formTypeOptions    = ['REST', 'SOAP', 'Webhook', 'Scheduled Poll'];
-  readonly methodOptions      = ['GET', 'POST', 'PUT'];
+  readonly typeOptions        = ['All', 'REST', 'SOAP', 'GRAPHQL'];
+  readonly environmentOptions = ['All', 'PRODUCTION', 'SANDBOX'];
+  readonly formTypeOptions    = ['REST', 'SOAP', 'GRAPHQL'];
+  readonly methodOptions      = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
   readonly authOptions        = ['None', 'API Key', 'Basic Auth', 'OAuth2'];
   readonly credentialTypeOptions = ['API Key', 'Basic Auth', 'OAuth2'];
   readonly pollIntervalOptions = ['1 minute', '5 minutes', '15 minutes', '30 minutes', '1 hour'];
@@ -510,28 +460,53 @@ export class ExternalSystemsComponent {
       return;
     }
 
-    if (this.isEdit && this.form.id) {
-      this._connections.update(list =>
-        list.map(c => c.id === this.form.id ? { ...c, ...this.form } as ExternalConnection : c)
-      );
-      this.toast.add({ severity: 'success', summary: this.t('externalSystems.toast.updated'), detail: this.form.name });
-    } else {
-      const connection: ExternalConnection = {
-        id: `conn-${Date.now()}`,
-        ...this.form,
-        status: 'notTested',
-        successRate: null,
-        avgMs: null,
-        p95Ms: null,
-        lastError: '—',
-        lastSuccess: '—',
-        calls24h: 0
-      };
-      this._connections.update(list => [connection, ...list]);
-      this.toast.add({ severity: 'success', summary: this.t('externalSystems.toast.created'), detail: connection.name });
-    }
+    this.loading.set(true);
+    
+    // Map UI form to API format
+    const apiConnection: Partial<OutboundConnection> = {
+      name: this.form.name,
+      purpose: this.form.purpose as any || 'MANUAL_TEST',
+      protocol: this.form.type as any,
+      method: this.form.method,
+      url: this.form.url,
+      environment: this.form.environment as any,
+      schedule: this.form.pollSchedule || undefined,
+      timeoutMs: this.form.timeoutMs,
+      retryPolicy: this.form.retryPolicy,
+      responseHandling: this.form.responseHandling
+    };
 
-    this.dialogVisible = false;
+    if (this.isEdit && this.form.id) {
+      this.externalSystemService.update(this.form.id, apiConnection).subscribe({
+        next: (updated) => {
+          this._connections.update(list =>
+            list.map(c => c.id === this.form.id ? this.mapApiToUi(updated) : c)
+          );
+          this.toast.add({ severity: 'success', summary: this.t('externalSystems.toast.updated'), detail: this.form.name });
+          this.dialogVisible = false;
+          this.loading.set(false);
+        },
+        error: (err) => {
+          console.error('Failed to update connection:', err);
+          this.toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to update connection' });
+          this.loading.set(false);
+        }
+      });
+    } else {
+      this.externalSystemService.create(apiConnection).subscribe({
+        next: (created) => {
+          this._connections.update(list => [this.mapApiToUi(created), ...list]);
+          this.toast.add({ severity: 'success', summary: this.t('externalSystems.toast.created'), detail: created.name });
+          this.dialogVisible = false;
+          this.loading.set(false);
+        },
+        error: (err) => {
+          console.error('Failed to create connection:', err);
+          this.toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to create connection' });
+          this.loading.set(false);
+        }
+      });
+    }
   }
 
   confirmDelete(connection: ExternalConnection, event: Event): void {
@@ -543,8 +518,19 @@ export class ExternalSystemsComponent {
       acceptLabel: this.t('externalSystems.delete'),
       rejectLabel: this.t('externalSystems.cancel'),
       accept: () => {
-        this._connections.update(list => list.filter(c => c.id !== connection.id));
-        this.toast.add({ severity: 'warn', summary: this.t('externalSystems.toast.deleted'), detail: connection.name });
+        this.loading.set(true);
+        this.externalSystemService.delete(connection.id).subscribe({
+          next: () => {
+            this._connections.update(list => list.filter(c => c.id !== connection.id));
+            this.toast.add({ severity: 'warn', summary: this.t('externalSystems.toast.deleted'), detail: connection.name });
+            this.loading.set(false);
+          },
+          error: (err) => {
+            console.error('Failed to delete connection:', err);
+            this.toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to delete connection' });
+            this.loading.set(false);
+          }
+        });
       }
     });
   }
@@ -619,48 +605,47 @@ export class ExternalSystemsComponent {
     if (this.testingId()) return;
     this.testingId.set(connection.id);
 
-    setTimeout(() => {
-      const validUrl = /^https?:\/\//.test(connection.url);
-      const latency = validUrl ? this.latencyFor(connection) : null;
-      const nextStatus: ExternalConnection['status'] = !validUrl ? 'down' : latency! > 900 ? 'degraded' : 'healthy';
+    this.externalSystemService.test(connection.id, {
+      method: connection.method,
+      headers: {},
+      body: connection.requestPreview ? JSON.parse(connection.requestPreview) : undefined
+    }).subscribe({
+      next: (result) => {
+        const nextStatus: ExternalConnection['status'] = result.success ? 'HEALTHY' : 'FAILED';
+        
+        this._connections.update(list => list.map(c => c.id === connection.id ? {
+          ...c,
+          status: nextStatus,
+          successRate: result.success ? 99.7 : 0,
+          avgMs: result.durationMs,
+          p95Ms: Math.round(result.durationMs * 1.7),
+          lastError: result.success ? '—' : (result.errorMessage || 'Test failed'),
+          lastSuccess: result.success ? 'just now' : c.lastSuccess,
+          sparkline: this.generateSparkline(nextStatus)
+        } : c));
 
-      this._connections.update(list => list.map(c => c.id === connection.id ? {
-        ...c,
-        status: nextStatus,
-        successRate: validUrl ? (nextStatus === 'healthy' ? 99.7 : 92.4) : 0,
-        avgMs: latency,
-        p95Ms: latency ? Math.round(latency * 1.7) : null,
-        lastError: validUrl ? '—' : this.t('externalSystems.toast.invalidUrl'),
-        lastSuccess: validUrl ? this.t('externalSystems.justNow') : c.lastSuccess,
-        calls24h: c.calls24h + 1
-      } : c));
+        if (this.selectedConnection()?.id === connection.id) {
+          const updated = this._connections().find(c => c.id === connection.id) ?? null;
+          this.selectedConnection.set(updated);
+        }
 
-      this._callHistory.update(rows => [{
-        id: `call-${Date.now()}`,
-        connectionId: connection.id,
-        at: this.t('externalSystems.justNow'),
-        status: validUrl ? 200 : 0,
-        durationMs: latency ?? 0,
-        result: validUrl ? 'success' : 'failed',
-        message: validUrl ? this.t('externalSystems.history.demoSuccess') : this.t('externalSystems.toast.invalidUrl'),
-        requestId: `req-${Math.random().toString(36).slice(2, 8)}`,
-        headers: `${connection.authType === 'None' ? 'No authentication header' : `${connection.authType}: ****`}\nAccept: application/json`,
-        requestBody: connection.requestPreview,
-        responseBody: validUrl ? connection.sampleJson : '{\n  "error": "Invalid endpoint URL"\n}'
-      }, ...rows]);
-
-      if (this.selectedConnection()?.id === connection.id) {
-        const updated = this._connections().find(c => c.id === connection.id) ?? null;
-        this.selectedConnection.set(updated);
+        this.toast.add({
+          severity: result.success ? 'success' : 'error',
+          summary: result.success ? this.t('externalSystems.toast.testPassed') : this.t('externalSystems.toast.testFailed'),
+          detail: result.success ? `${connection.name} · ${result.durationMs}ms` : result.errorMessage
+        });
+        this.testingId.set(null);
+      },
+      error: (err) => {
+        console.error('Test failed:', err);
+        this.toast.add({
+          severity: 'error',
+          summary: this.t('externalSystems.toast.testFailed'),
+          detail: connection.name
+        });
+        this.testingId.set(null);
       }
-
-      this.toast.add({
-        severity: validUrl ? 'success' : 'error',
-        summary: validUrl ? this.t('externalSystems.toast.testPassed') : this.t('externalSystems.toast.testFailed'),
-        detail: validUrl ? `${connection.name} · ${latency}ms` : connection.url
-      });
-      this.testingId.set(null);
-    }, 650);
+    });
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

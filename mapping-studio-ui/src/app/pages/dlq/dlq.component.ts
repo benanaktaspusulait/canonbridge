@@ -109,8 +109,8 @@ export class DlqComponent implements OnInit {
           errorType: this.categorizeError(msg.errorMessage || ''),
           errorMessage: msg.errorMessage || 'Unknown error',
           attempts: msg.retryCount,
-          firstFailed: msg.failedAt,
-          lastFailed: msg.redriveAttemptedAt || msg.failedAt,
+          firstFailed: this.formatTimestamp(msg.failedAt),
+          lastFailed: this.formatTimestamp(msg.redriveAttemptedAt || msg.failedAt),
           payload: msg.payload,
           traceId: msg.key || msg.id,
           stackTrace: msg.errorStackTrace || ''
@@ -128,6 +128,26 @@ export class DlqComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  private formatTimestamp(timestamp: string): string {
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return 'just now';
+      if (diffMins < 60) return `${diffMins} min ago`;
+      if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+      if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+      
+      return date.toISOString().slice(0, 19).replace('T', ' ');
+    } catch {
+      return timestamp;
+    }
   }
 
   private extractPartnerFromTopic(topic: string): string {
