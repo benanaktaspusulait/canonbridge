@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, effect, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
@@ -33,11 +33,14 @@ import { ThemeService } from '../../core/theme/theme.service';
   styleUrl: './topbar.component.scss'
 })
 export class TopbarComponent {
+  @Input() collapsed = false;
   @Output() toggleSidebar = new EventEmitter<void>();
 
   readonly auth = inject(AuthService);
   readonly i18n = inject(I18nService);
   readonly theme = inject(ThemeService);
+
+  userMenuOpen = false;
 
   readonly langOptions: { label: string; value: LangId }[] = [
     { label: 'English', value: 'en' },

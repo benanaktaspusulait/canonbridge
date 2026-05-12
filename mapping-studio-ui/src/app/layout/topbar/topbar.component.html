@@ -1,4 +1,4 @@
-<p-toolbar styleClass="layout-toolbar border-none border-bottom-1 surface-border border-round-none">
+<p-toolbar styleClass="layout-toolbar border-none border-bottom-1 surface-border border-round-none" role="banner">
   <ng-template pTemplate="start">
     <div class="flex align-items-center gap-2">
       <p-button
@@ -8,7 +8,9 @@
         severity="secondary"
         (onClick)="toggleSidebar.emit()"
         [pTooltip]="'topbar.toggleSidebar' | i18n"
-        tooltipPosition="bottom" />
+        tooltipPosition="bottom"
+        [attr.aria-label]="'topbar.toggleSidebar' | i18n"
+        [attr.aria-expanded]="!collapsed" />
       <div class="layout-topbar-heading hidden md:flex flex-column">
         <span class="layout-topbar-product">CanonBridge</span>
         <span class="layout-topbar-context text-xs text-color-secondary font-medium">{{ 'sidebar.logoSub' | i18n }}</span>
@@ -17,8 +19,8 @@
   </ng-template>
 
   <ng-template pTemplate="end">
-    <div class="flex align-items-center flex-wrap gap-1 md:gap-2">
-      <p-tag [value]="'topbar.demo' | i18n" severity="warn" [rounded]="true" />
+    <div id="page-actions" class="flex align-items-center flex-wrap gap-1 md:gap-2" role="toolbar" aria-label="Page actions">
+      <p-tag [value]="'topbar.demo' | i18n" severity="warn" [rounded]="true" role="status" aria-label="Demo mode active" />
       <p-button
         [icon]="theme.darkMode() ? 'pi pi-sun' : 'pi pi-moon'"
         [rounded]="true"
@@ -26,7 +28,9 @@
         severity="secondary"
         (onClick)="toggleTheme()"
         [pTooltip]="theme.darkMode() ? ('topbar.lightMode' | i18n) : ('topbar.darkMode' | i18n)"
-        tooltipPosition="bottom" />
+        tooltipPosition="bottom"
+        [attr.aria-label]="theme.darkMode() ? ('topbar.lightMode' | i18n) : ('topbar.darkMode' | i18n)"
+        [attr.aria-pressed]="theme.darkMode()" />
 
       <div class="lang-wrap">
         <label class="sr-only" for="lang-select">{{ 'topbar.language' | i18n }}</label>
@@ -37,7 +41,8 @@
           optionValue="value"
           [ngModel]="i18n.lang()"
           (ngModelChange)="onLangChange($event)"
-          styleClass="lang-select" />
+          styleClass="lang-select"
+          [attr.aria-label]="'topbar.language' | i18n" />
       </div>
 
       <p-button
@@ -47,6 +52,7 @@
         severity="secondary"
         [pTooltip]="'topbar.notifications' | i18n"
         tooltipPosition="bottom"
+        [attr.aria-label]="'topbar.notifications' | i18n + ' (3 unread)'"
         pBadge
         value="3"
         badgeSeverity="danger" />
@@ -57,17 +63,27 @@
         [text]="true"
         severity="secondary"
         [pTooltip]="'topbar.documentation' | i18n"
-        tooltipPosition="bottom" />
+        tooltipPosition="bottom"
+        [attr.aria-label]="'topbar.documentation' | i18n" />
 
-      <div class="user-menu-trigger flex align-items-center gap-2" (click)="userMenu.toggle($event)">
+      <div class="user-menu-trigger flex align-items-center gap-2" 
+           (click)="userMenu.toggle($event)"
+           (keydown.enter)="userMenu.toggle($event)"
+           (keydown.space)="userMenu.toggle($event); $event.preventDefault()"
+           tabindex="0"
+           role="button"
+           [attr.aria-label]="'User menu for ' + (auth.currentUser()?.name ?? 'User')"
+           [attr.aria-expanded]="userMenuOpen"
+           [attr.aria-haspopup]="true">
         <p-avatar
           [label]="auth.currentUser()?.avatarInitials ?? 'U'"
           shape="circle"
-          styleClass="layout-avatar" />
-        <i class="pi pi-chevron-down text-xs text-color-secondary hidden lg:inline"></i>
+          styleClass="layout-avatar"
+          [attr.aria-hidden]="true" />
+        <i class="pi pi-chevron-down text-xs text-color-secondary hidden lg:inline" aria-hidden="true"></i>
       </div>
 
-      <p-menu #userMenu [model]="userMenuItems" [popup]="true" />
+      <p-menu #userMenu [model]="userMenuItems" [popup]="true" (onShow)="userMenuOpen = true" (onHide)="userMenuOpen = false" />
     </div>
   </ng-template>
 </p-toolbar>
