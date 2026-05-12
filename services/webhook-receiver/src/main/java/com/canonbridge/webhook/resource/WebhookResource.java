@@ -9,6 +9,11 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Path("/webhook")
@@ -23,6 +28,15 @@ public class WebhookResource {
     @POST
     @Path("/{partnerId}/{eventType}")
     @Operation(summary = "Receive webhook payload from partner")
+    @SecurityRequirement(name = "WebhookKey")
+    @APIResponses({
+        @APIResponse(responseCode = "202", description = "Webhook accepted and queued",
+            content = @Content(schema = @Schema(implementation = WebhookResponse.class))),
+        @APIResponse(responseCode = "401", description = "Missing or invalid X-Webhook-Key",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @APIResponse(responseCode = "500", description = "Internal processing error",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public Uni<Response> receive(
             @PathParam("partnerId") String partnerId,
             @PathParam("eventType") String eventType,
@@ -43,7 +57,7 @@ public class WebhookResource {
                 .entity(new WebhookResponse(eventId, "Webhook received and queued"))
                 .build())
             .onFailure(NotAuthorizedException.class)
-            .recoverWithItem(Response.status(Response.Status.UNAUTHORIZED)
+            .recoverWithItem(ex -> Response.status(Response.Status.UNAUTHORIZED)
                 .entity(new ErrorResponse("Invalid webhook key"))
                 .build())
             .onFailure()

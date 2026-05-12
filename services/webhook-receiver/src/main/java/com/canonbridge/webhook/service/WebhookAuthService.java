@@ -7,6 +7,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Base64;
 
@@ -37,16 +38,13 @@ public class WebhookAuthService {
             
             return storedHash.equals(providedHash);
         })
-        .onFailure().recoverWithItem(throwable -> {
-            LOG.error("Failed to validate webhook key", throwable);
-            return false;
-        });
+        .onFailure().invoke(throwable -> LOG.error("Failed to validate webhook key", throwable));
     }
 
     private String hashKey(String key) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(key.getBytes());
+            byte[] hash = digest.digest(key.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(hash);
         } catch (Exception e) {
             LOG.error("Failed to hash key", e);

@@ -5,6 +5,7 @@ import io.smallrye.reactive.messaging.kafka.Record;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.HttpHeaders;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -36,7 +37,7 @@ public class WebhookService {
         return authService.validateWebhookKey(partnerId, webhookKey)
             .flatMap(valid -> {
                 if (!valid) {
-                    return Uni.createFrom().failure(new jakarta.ws.rs.NotAuthorizedException("Invalid webhook key"));
+                    return Uni.createFrom().failure(new NotAuthorizedException("Invalid webhook key"));
                 }
 
                 String eventId = UUID.randomUUID().toString();
@@ -55,7 +56,7 @@ public class WebhookService {
                 Record<String, String> record = Record.of(partnerId + ":" + eventType, envelope.encode());
                 
                 return Uni.createFrom().completionStage(
-                    rawEventsEmitter.send(record)
+                    () -> rawEventsEmitter.send(record)
                 ).map(v -> {
                     LOG.infof("Webhook received: partnerId=%s, eventType=%s, eventId=%s", 
                         partnerId, eventType, eventId);
