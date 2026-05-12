@@ -132,6 +132,16 @@
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
         
+        <!-- XML Processing -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+        </dependency>
+        
         <!-- Testing -->
         <dependency>
             <groupId>io.quarkus</groupId>

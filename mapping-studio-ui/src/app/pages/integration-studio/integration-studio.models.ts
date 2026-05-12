@@ -25,11 +25,19 @@ export type TransformKind =
 
 export interface TargetField {
   key: string;
-  type: 'string' | 'number' | 'date';
+  type: 'string' | 'number' | 'date' | 'object' | 'array' | 'boolean';
   required: boolean;
   description: string;
   /** Requirement 3: fields derived from loaded canonical schema vs manual. */
   source?: 'manual' | 'schema';
+  /**
+   * Child fields for nested objects/arrays.
+   */
+  children?: TargetField[];
+  /**
+   * For arrays, the type of array items.
+   */
+  itemType?: 'string' | 'number' | 'date' | 'object' | 'boolean';
 }
 
 export interface MappingRule {
@@ -46,6 +54,19 @@ export interface MappingRule {
    * Optional alias per requirements doc; when set, takes precedence over `advancedExpression` and visual.
    */
   jsonataExpression?: string;
+  /**
+   * Nested rules for object/array fields.
+   * When targetKey is an object or array, this contains child field mappings.
+   */
+  children?: MappingRule[];
+  /**
+   * Indicates if this rule represents a nested object or array.
+   */
+  isNested?: boolean;
+  /**
+   * Parent rule ID for hierarchical tracking.
+   */
+  parentId?: string;
 }
 
 export type SourceValidationKind =
