@@ -11,14 +11,13 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/webhook")
 @RequiredArgsConstructor
 @Slf4j
 public class WebhookController {
 
     private final WebhookService webhookService;
 
-    @PostMapping("/payment")
+    @PostMapping("/webhook/payment")
     public ResponseEntity<Map<String, String>> receivePaymentWebhook(@RequestBody Map<String, Object> payload) {
         log.info("POST /webhook/payment - Received payment webhook");
         

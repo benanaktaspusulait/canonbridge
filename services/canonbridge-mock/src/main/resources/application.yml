@@ -37,6 +37,7 @@ mock:
   fastcargo:
     username: ${FASTCARGO_USERNAME:fastcargo-demo}
     password: ${FASTCARGO_PASSWORD:fastcargo-secret}
+    service-url: ${FASTCARGO_SERVICE_URL:http://localhost:8080}
   webhook:
     storage-dir: ${WEBHOOK_STORAGE_DIR:/tmp/webhooks}
   kafka:

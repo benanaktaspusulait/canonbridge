@@ -25,7 +25,7 @@ public class KafkaEventGeneratorService {
     private final MockConfiguration mockConfig;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Scheduled(fixedDelayString = "${mock.kafka.event-generator.shopmax-interval-seconds:30}000")
+    @Scheduled(fixedDelayString = "#{${mock.kafka.event-generator.shopmax-interval-seconds:30} * 1000}")
     public void generateShopMaxOrderEvent() {
         try {
             var orderId = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
@@ -61,7 +61,7 @@ public class KafkaEventGeneratorService {
         }
     }
 
-    @Scheduled(fixedDelayString = "${mock.kafka.event-generator.cargo-interval-seconds:120}000")
+    @Scheduled(fixedDelayString = "#{${mock.kafka.event-generator.cargo-interval-seconds:120} * 1000}")
     public void generateCargoUpdateEvent() {
         try {
             var trackingNumber = "FC" + ThreadLocalRandom.current().nextInt(100000, 999999);

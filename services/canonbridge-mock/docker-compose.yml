@@ -32,6 +32,33 @@ services:
     networks:
       - canonbridge-network
 
+  kafka-init:
+    image: apache/kafka:3.7.0
+    container_name: canonbridge-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    volumes:
+      - ./kafka/init-kafka.sh:/init-kafka.sh:ro
+    entrypoint: ["/bin/bash", "/init-kafka.sh"]
+    environment:
+      KAFKA_BROKER: kafka:9092
+    networks:
+      - canonbridge-network
+    restart: "no"
+
+  wiremock:
+    image: wiremock/wiremock:3.9.1
+    container_name: canonbridge-wiremock
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./wiremock/mappings:/home/wiremock/mappings:ro
+      - ./wiremock/__files:/home/wiremock/__files:ro
+    command: ["--global-response-templating", "--verbose"]
+    networks:
+      - canonbridge-network
+
   # CanonBridge Mock Service (All-in-one)
   canonbridge-mock:
     build:
@@ -48,6 +75,7 @@ services:
       FASTCARGO_USERNAME: fastcargo-demo
       FASTCARGO_PASSWORD: fastcargo-secret
       WEBHOOK_STORAGE_DIR: /tmp/webhooks
+      FASTCARGO_SERVICE_URL: http://canonbridge-mock:8080
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
       kafka:

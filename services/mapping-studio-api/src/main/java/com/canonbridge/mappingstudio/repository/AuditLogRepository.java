@@ -9,8 +9,7 @@ import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -21,29 +20,34 @@ public class AuditLogRepository {
     @Inject
     PgPool client;
 
-    public Uni<AuditLog> save(AuditLog log) {
+    public Uni<AuditLog> create(AuditLog log) {
+        UUID id = UUID.randomUUID();
+        log.setId(id);
+        if (log.getCreatedAt() == null) {
+            log.setCreatedAt(Instant.now());
+        }
+
         String sql = """
             INSERT INTO audit_logs (id, tenant_id, user_id, action, resource_type, resource_id,
                 details, outcome, ip_address, correlation_id, created_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING id
             """;
-        UUID id = UUID.randomUUID();
-        log.setId(id);
+            
+        Tuple tuple = Tuple.tuple()
+            .addUUID(id)
+            .addString(log.getTenantId())
+            .addString(log.getUserId())
+            .addString(log.getAction().name())
+            .addString(log.getResourceType())
+            .addString(log.getResourceId())
+            .addString(log.getDetails())
+            .addString(log.getOutcome().name())
+            .addString(log.getIpAddress())
+            .addString(log.getCorrelationId())
+            .addValue(log.getCreatedAt());
+
         return client.preparedQuery(sql)
-            .execute(Tuple.of(
-                id,
-                log.getTenantId(),
-                log.getUserId(),
-                log.getAction().name(),
-                log.getResourceType(),
-                log.getResourceId(),
-                log.getDetails(),
-                log.getOutcome().name(),
-                log.getIpAddress(),
-                log.getCorrelationId(),
-                log.getCreatedAt()
-            ))
+            .execute(tuple)
             .map(rowSet -> log);
     }
 
@@ -95,8 +99,7 @@ public class AuditLogRepository {
         log.setOutcome(AuditLog.AuditOutcome.valueOf(row.getString("outcome")));
         log.setIpAddress(row.getString("ip_address"));
         log.setCorrelationId(row.getString("correlation_id"));
-        LocalDateTime createdAt = row.getLocalDateTime("created_at");
-        if (createdAt != null) log.setCreatedAt(createdAt.toInstant(ZoneOffset.UTC));
+        log.setCreatedAt(row.getTemporal("created_at") == null ? null : row.getTemporal("created_at").query(Instant::from));
         return log;
     }
 }

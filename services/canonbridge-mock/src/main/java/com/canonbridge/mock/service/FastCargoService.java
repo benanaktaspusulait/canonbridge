@@ -1,11 +1,15 @@
 package com.canonbridge.mock.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 
 @Service
 public class FastCargoService {
+
+    @Value("${mock.fastcargo.service-url:http://localhost:8080}")
+    private String serviceUrl;
 
     public String getTrackingResponse(String trackingNumber) {
         var now = Instant.now();
@@ -133,10 +137,10 @@ public class FastCargoService {
                     <service name="FastCargoTrackingService">
                         <documentation>FastCargo Shipment Tracking Service</documentation>
                         <port name="TrackingPort" binding="tns:TrackingBinding">
-                            <soap:address location="http://localhost:8080/ws/track"/>
+                            <soap:address location="%s/ws/track"/>
                         </port>
                     </service>
                 </definitions>
-                """;
+                """.formatted(serviceUrl);
     }
 }

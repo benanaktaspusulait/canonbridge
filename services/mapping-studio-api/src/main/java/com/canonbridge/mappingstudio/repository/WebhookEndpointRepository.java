@@ -10,8 +10,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -70,23 +68,21 @@ public class WebhookEndpointRepository {
             RETURNING id, tenant_id, partner_id, name, path, secret_hash, target_topic,
                       status, created_at, updated_at, created_by, last_received_at, total_received
             """;
-        endpoint.setId(id);
-        endpoint.setPath(path);
-        endpoint.setCreatedAt(now);
-        endpoint.setUpdatedAt(now);
+            
+        Tuple tuple = Tuple.tuple()
+            .addUUID(id)
+            .addString(endpoint.getTenantId())
+            .addUUID(endpoint.getPartnerId())
+            .addString(endpoint.getName())
+            .addString(path)
+            .addString(endpoint.getSecretHash())
+            .addString(endpoint.getTargetTopic())
+            .addString(endpoint.getStatus().name())
+            .addValue(now)
+            .addString(endpoint.getCreatedBy());
+            
         return client.preparedQuery(sql)
-            .execute(Tuple.of(
-                id,
-                endpoint.getTenantId(),
-                endpoint.getPartnerId(),
-                endpoint.getName(),
-                path,
-                endpoint.getSecretHash(),
-                endpoint.getTargetTopic(),
-                endpoint.getStatus().name(),
-                now,
-                endpoint.getCreatedBy()
-            ))
+            .execute(tuple)
             .map(rowSet -> mapRow(rowSet.iterator().next()));
     }
 
@@ -98,8 +94,15 @@ public class WebhookEndpointRepository {
             RETURNING id, tenant_id, partner_id, name, path, secret_hash, target_topic,
                       status, created_at, updated_at, created_by, last_received_at, total_received
             """;
+            
+        Tuple tuple = Tuple.tuple()
+            .addString(status.name())
+            .addValue(Instant.now())
+            .addString(tenantId)
+            .addUUID(id);
+            
         return client.preparedQuery(sql)
-            .execute(Tuple.of(status.name(), Instant.now(), tenantId, id))
+            .execute(tuple)
             .map(rowSet -> rowSet.size() == 0 ? null : mapRow(rowSet.iterator().next()));
     }
 
@@ -139,20 +142,11 @@ public class WebhookEndpointRepository {
         e.setSecretHash(row.getString("secret_hash"));
         e.setTargetTopic(row.getString("target_topic"));
         e.setStatus(WebhookEndpoint.WebhookStatus.valueOf(row.getString("status")));
+        e.setCreatedAt(row.getTemporal("created_at") == null ? null : row.getTemporal("created_at").query(Instant::from));
+        e.setUpdatedAt(row.getTemporal("updated_at") == null ? null : row.getTemporal("updated_at").query(Instant::from));
         e.setCreatedBy(row.getString("created_by"));
-
-        LocalDateTime createdAt = row.getLocalDateTime("created_at");
-        if (createdAt != null) e.setCreatedAt(createdAt.toInstant(ZoneOffset.UTC));
-
-        LocalDateTime updatedAt = row.getLocalDateTime("updated_at");
-        if (updatedAt != null) e.setUpdatedAt(updatedAt.toInstant(ZoneOffset.UTC));
-
-        LocalDateTime lastReceived = row.getLocalDateTime("last_received_at");
-        if (lastReceived != null) e.setLastReceivedAt(lastReceived.toInstant(ZoneOffset.UTC));
-
-        Long total = row.getLong("total_received");
-        e.setTotalReceived(total != null ? total : 0L);
-
+        e.setLastReceivedAt(row.getTemporal("last_received_at") == null ? null : row.getTemporal("last_received_at").query(Instant::from));
+        e.setTotalReceived(row.getLong("total_received"));
         return e;
     }
 }
