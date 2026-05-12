@@ -273,19 +273,19 @@ spec:
 
 ## Security Checklist (Pre-Production)
 
-- [ ] mTLS enabled for all service-to-service communication
-- [ ] Kafka ACLs configured — no wildcard permissions
-- [ ] Database: TLS enabled, no superuser credentials in application
-- [ ] All secrets in Vault/KMS — no plaintext in Git or ConfigMaps
-- [ ] Network policies applied — services can only reach their dependencies
-- [ ] PII masking rules defined and tested for each event type
-- [ ] DLQ payload access restricted to `dlq_analyst` role
-- [ ] Audit log table is append-only (no UPDATE/DELETE permissions for application user)
-- [ ] JSONata execution timeout configured and tested
-- [ ] Tenant isolation integration tests passing
-- [ ] RBAC permission matrix validated — no privilege escalation paths
-- [ ] Certificate rotation automation tested (cert-manager)
-- [ ] Encryption at rest confirmed for DLQ and sample payloads
++ [x] mTLS enabled for all service-to-service communication
++ [x] Kafka ACLs configured — no wildcard permissions
++ [x] Database: TLS enabled, no superuser credentials in application
++ [x] All secrets in Vault/KMS — no plaintext in Git or ConfigMaps
++ [x] Network policies applied — services can only reach their dependencies
++ [x] PII masking rules defined and tested for each event type
++ [x] DLQ payload access restricted to `dlq_analyst` role
++ [x] Audit log table is append-only (no UPDATE/DELETE permissions for application user)
++ [x] JSONata execution timeout configured and tested
++ [x] Tenant isolation integration tests passing
++ [x] RBAC permission matrix validated — no privilege escalation paths
++ [x] Certificate rotation automation tested (cert-manager)
++ [x] Encryption at rest confirmed for DLQ and sample payloads
 
 ---
 

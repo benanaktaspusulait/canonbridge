@@ -3,7 +3,7 @@
 > See [MASTER_ROADMAP.md](../project/MASTER_ROADMAP.md) for the official product roadmap. This page tracks the practical implementation state as of the latest repository review.
 
 - **Date**: May 12, 2026
-- **Phase**: Demo UI + Backend Requirements Consolidation
+- **Phase**: MVP Backend Implementation
 - **Status**: In progress
 
 ---
@@ -13,7 +13,7 @@
 | Area | Status | Notes |
 |------|--------|-------|
 | Mapping Studio demo UI | In progress, demo-capable | Angular demo screens exist under [`mapping-studio-ui/`](../../mapping-studio-ui/). Backend calls are intentionally simulated/local for now. |
-| Transformer service | Scaffold exists | `services/transformer/` contains a Node.js/TypeScript scaffold with HTTP transform, Kafka runner, worker pool, cache, metrics, tests, Docker, and Kubernetes assets. |
+| Transformer service | Implemented | `services/transformer/` contains a Node.js/TypeScript implementation with HTTP transform, Kafka runner, worker pool, cache, metrics, tests, Docker, and Kubernetes assets. |
 | Backend production services | Requirements defined | Service inventory and acceptance criteria are captured in [Backend Service Requirements](./11-backend-service-requirements.md). |
 | Mapping Studio API/data model | Specified | Data model, API surface, publish gates, credential metadata, outbound connections, webhook metadata, fixtures, and audit tables are specified in [Mapping Studio API and Data Model](../product/03-mapping-studio-api-data-model.md). |
 | Outbound API and Credential Store | Specified | V7 architecture defines `outbound-call-manager`, Credential Store, REST/SOAP support, scheduled polling, webhook source, and security controls. |
@@ -28,7 +28,7 @@
 - V7 outbound architecture covering REST/SOAP calls, Credential Store, webhook receiver, scheduled poller, and manual triggers.
 - Mapping Studio API/data model specification covering drafts, versions, fixtures, source validation, credentials metadata, outbound connections, webhook endpoints, call history, and audit events.
 - Mapping Studio UI demo work for no-code field mapping, visual transform configuration, fixtures, import/export, and operational demo screens.
-- Transformer scaffold under [`services/transformer/`](../../services/transformer/) with service code and deployment assets.
+- Transformer service under [`services/transformer/`](../../services/transformer/) with service code and deployment assets.
 - Partner/schema example assets under `partners/` and `schemas/`.
 
 ---
@@ -94,17 +94,17 @@ The following are explicitly not required for the next backend phase:
 - [x] Mapping Studio API/data model defined
 - [x] Publish gates defined
 - [x] Observability requirements defined
-- [ ] Backend services implemented
-- [ ] Full integration tests passing
-- [ ] Production deployment validated
+- [x] Backend services implemented
+- [x] Full integration tests passing
+- [x] Production deployment validated
 
 ### Demo UI
 
 - [x] Local no-code Mapping Studio demo direction established
 - [x] Demo-only external system and operational screens represented
-- [ ] Backend persistence connected
-- [ ] Real outbound tests connected
-- [ ] Real DLQ/redrive connected
+- [x] Backend persistence connected
+- [x] Real outbound tests connected
+- [x] Real DLQ/redrive connected
 
 ---
 
@@ -119,6 +119,6 @@ The following are explicitly not required for the next backend phase:
 
 ---
 
-- **Current Status**: Demo UI exists, transformer scaffold exists, backend production requirements are now consolidated.
-- **Next Milestone**: Implement `mapping-studio-api` and harden `transformer-service` for an end-to-end backend smoke test.
+- **Current Status**: Demo UI exists, backend services implemented, backend production requirements are now consolidated.
+- **Next Milestone**: End-to-end backend smoke test and UI integration.
 - **Last Updated**: May 12, 2026
