@@ -21,7 +21,7 @@ public class DlqMessageRepository {
 
     public Uni<List<DlqMessage>> findAll(int limit, int offset) {
         String sql = """
-            SELECT id, original_topic, partition, offset, key, payload, 
+            SELECT id, original_topic, partition, kafka_offset, key, payload, 
                    error_message, error_stack_trace, failed_at, retry_count, 
                    status, redrive_attempted_at
             FROM dlq_messages
@@ -36,7 +36,7 @@ public class DlqMessageRepository {
 
     public Uni<DlqMessage> findById(String id) {
         String sql = """
-            SELECT id, original_topic, partition, offset, key, payload, 
+            SELECT id, original_topic, partition, kafka_offset, key, payload, 
                    error_message, error_stack_trace, failed_at, retry_count, 
                    status, redrive_attempted_at
             FROM dlq_messages
@@ -56,7 +56,7 @@ public class DlqMessageRepository {
     public Uni<DlqMessage> save(DlqMessage message) {
         String sql = """
             INSERT INTO dlq_messages (
-                id, original_topic, partition, offset, key, payload,
+                id, original_topic, partition, kafka_offset, key, payload,
                 error_message, error_stack_trace, failed_at, retry_count, status
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             ON CONFLICT (id) DO UPDATE SET
@@ -108,7 +108,7 @@ public class DlqMessageRepository {
         message.setId(row.getString("id"));
         message.setOriginalTopic(row.getString("original_topic"));
         message.setPartition(row.getInteger("partition"));
-        message.setOffset(row.getLong("offset"));
+        message.setOffset(row.getLong("kafka_offset"));
         message.setKey(row.getString("key"));
         message.setPayload(row.getString("payload"));
         message.setErrorMessage(row.getString("error_message"));

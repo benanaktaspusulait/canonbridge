@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS dlq_messages (
     id VARCHAR(255) PRIMARY KEY,
     original_topic VARCHAR(255) NOT NULL,
     partition INTEGER,
-    offset BIGINT,
+    kafka_offset BIGINT,
     key VARCHAR(500),
     payload TEXT NOT NULL,
     error_message TEXT,

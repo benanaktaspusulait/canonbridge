@@ -305,16 +305,7 @@ COMMENT ON TABLE outbox IS 'Outbox pattern table for transactional messaging';
 -- MAINTENANCE
 -- ============================================================================
 
--- Enable auto-vacuum for high-traffic tables
-ALTER TABLE events SET (
-    autovacuum_vacuum_scale_factor = 0.1,
-    autovacuum_analyze_scale_factor = 0.05
-);
-
-ALTER TABLE outbox SET (
-    autovacuum_vacuum_scale_factor = 0.1,
-    autovacuum_analyze_scale_factor = 0.05
-);
+-- Note: Autovacuum settings are managed at the database level for partitioned tables
 
 -- ============================================================================
 -- COMPLETION
