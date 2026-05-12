@@ -18,7 +18,7 @@ SET search_path TO etl, public;
 
 -- Events table (partitioned by created_at)
 CREATE TABLE IF NOT EXISTS events (
-    event_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    event_id UUID NOT NULL DEFAULT uuid_generate_v4(),
     correlation_id UUID NOT NULL,
     partner_id VARCHAR(50) NOT NULL,
     event_type VARCHAR(50) NOT NULL,
@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS events (
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     error_message TEXT,
     retry_count INTEGER DEFAULT 0,
+    PRIMARY KEY (event_id, created_at),
     CONSTRAINT events_status_check CHECK (status IN ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'))
 ) PARTITION BY RANGE (created_at);
 
@@ -272,12 +273,19 @@ GROUP BY partner_id, status;
 -- GRANTS
 -- ============================================================================
 
--- Grant permissions to etluser
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA etl TO etluser;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA etl TO etluser;
-GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA etl TO etluser;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA audit TO etluser;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA audit TO etluser;
+-- Grant permissions to canonbridge_user (from environment variable)
+-- Note: The actual username comes from POSTGRES_USER environment variable
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'canonbridge_user') THEN
+        GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA etl TO canonbridge_user;
+        GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA etl TO canonbridge_user;
+        GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA etl TO canonbridge_user;
+        GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA audit TO canonbridge_user;
+        GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA audit TO canonbridge_user;
+    END IF;
+END
+$$;
 
 -- ============================================================================
 -- INITIAL DATA
@@ -316,7 +324,7 @@ ALTER TABLE outbox SET (
 DO $$
 BEGIN
     RAISE NOTICE 'ETL Solutions database initialized successfully';
-    RAISE NOTICE 'Database: etldb';
-    RAISE NOTICE 'User: etluser';
+    RAISE NOTICE 'Database: canonbridge_db';
+    RAISE NOTICE 'User: canonbridge_user';
     RAISE NOTICE 'Schemas: etl, audit';
 END $$;
