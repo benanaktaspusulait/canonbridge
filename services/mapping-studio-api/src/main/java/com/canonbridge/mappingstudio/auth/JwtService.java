@@ -1,29 +1,22 @@
 package com.canonbridge.mappingstudio.auth;
 
 import com.canonbridge.mappingstudio.domain.User;
-import io.smallrye.jwt.build.Jwt;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import java.time.Duration;
-import java.util.Set;
-import java.util.UUID;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Base64;
 
 @ApplicationScoped
 public class JwtService {
 
-    @ConfigProperty(name = "mp.jwt.verify.issuer", defaultValue = "canonbridge")
-    String issuer;
+    private static final String SECRET = "canonbridge-jwt-secret-key-for-development-only-change-in-production";
 
     public String generateToken(User user) {
-        return Jwt.issuer(issuer)
-            .subject(user.getId().toString())
-            .claim("email", user.getEmail())
-            .claim("name", user.getName())
-            .claim("role", user.getRole())
-            .claim("tenantId", user.getTenantId())
-            .groups(Set.of(user.getRole()))
-            .expiresIn(Duration.ofHours(8))
-            .sign();
+        // Simple JWT-like token for MVP
+        // Format: base64(userId:email:role:tenantId:expiry)
+        long expiry = Instant.now().plusSeconds(8 * 3600).getEpochSecond(); // 8 hours
+        String payload = user.getId() + ":" + user.getEmail() + ":" + user.getRole() + ":" + user.getTenantId() + ":" + expiry;
+        return Base64.getEncoder().encodeToString(payload.getBytes(StandardCharsets.UTF_8));
     }
 }

@@ -12,7 +12,7 @@ interface LoginResponse {
     email: string;
     name: string;
     role: string;
-    tenantId: string;
+    tenant_id: string;  // Backend uses snake_case
   };
 }
 
@@ -49,7 +49,7 @@ export class AuthService {
         email: response.user.email,
         name: response.user.name,
         role: response.user.role as User['role'],
-        tenantId: response.user.tenantId,
+        tenantId: response.user.tenant_id,  // Map from snake_case to camelCase
         tenantName: 'Acme Corp', // TODO: Get from API
         avatarInitials: this.getInitials(response.user.name)
       };
