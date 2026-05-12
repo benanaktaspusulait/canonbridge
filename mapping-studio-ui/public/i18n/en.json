@@ -1050,6 +1050,17 @@
       "copied": "Generated rule copied"
     }
   },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "intro": "Use these keyboard shortcuts to work more efficiently in the Mapping Studio.",
+    "footerNote": "Shortcuts are disabled when typing in text fields.",
+    "save": "Save mapping draft",
+    "test": "Run transformation test",
+    "undo": "Undo last change",
+    "redo": "Redo last change",
+    "help": "Show keyboard shortcuts",
+    "close": "Close dialog or menu"
+  },
   "accessibility": {
     "skipToMain": "Skip to main content",
     "skipToNav": "Skip to navigation",

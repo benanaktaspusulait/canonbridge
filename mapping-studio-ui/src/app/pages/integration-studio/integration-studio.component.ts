@@ -16,6 +16,8 @@ import {
   JsonataCheckService,
   type JsonataBatchResultEntry
 } from '../../core/services/jsonata-check.service';
+import { KeyboardShortcutsService } from '../../core/services/keyboard-shortcuts.service';
+import { AccessibilityService } from '../../core/services/accessibility.service';
 import { FormsModule } from '@angular/forms';
 import { JsonPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -637,6 +639,8 @@ const STUDIO_EXTERNAL_SAMPLE_KEY = 'canonbridge:external-systems:selected-sample
 export class IntegrationStudioComponent implements OnInit, OnDestroy {
   private readonly i18n = inject(I18nService);
   private readonly jsonataCheck = inject(JsonataCheckService);
+  private readonly shortcuts = inject(KeyboardShortcutsService);
+  private readonly a11y = inject(AccessibilityService);
   private readonly ajv = createStudioAjv();
   private readonly sanitizer = inject(DomSanitizer);
   private readonly toast = inject(MessageService);
@@ -1022,6 +1026,47 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     this.analyzePayload();
     this.selectedRule.set(this.rules()[0] ?? null);
     this.autosaveTimer = setInterval(() => this.autosaveDraft(), 2500);
+    
+    // Register keyboard shortcuts
+    this.shortcuts.register({
+      key: 's',
+      ctrl: true,
+      meta: true,
+      description: this.i18n.translate('shortcuts.save'),
+      action: () => {
+        this.exportStudioConfig();
+        this.autosaveDraft();
+      },
+      context: 'mapping-editor'
+    });
+    
+    this.shortcuts.register({
+      key: 'Enter',
+      ctrl: true,
+      meta: true,
+      description: this.i18n.translate('shortcuts.test'),
+      action: () => void this.runTest(),
+      context: 'mapping-editor'
+    });
+    
+    this.shortcuts.register({
+      key: 'z',
+      ctrl: true,
+      meta: true,
+      description: this.i18n.translate('shortcuts.undo'),
+      action: () => this.undoRules(),
+      context: 'mapping-editor'
+    });
+    
+    this.shortcuts.register({
+      key: 'z',
+      ctrl: true,
+      meta: true,
+      shift: true,
+      description: this.i18n.translate('shortcuts.redo'),
+      action: () => this.redoRules(),
+      context: 'mapping-editor'
+    });
   }
 
   ngOnDestroy(): void {
@@ -1036,18 +1081,54 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
       ev.preventDefault();
       this.exportStudioConfig();
       this.autosaveDraft();
+      this.toast.add({
+        severity: 'success',
+        summary: this.i18n.translate('shortcuts.save'),
+        detail: this.i18n.translate('studio.config.exported'),
+        life: 2000
+      });
+      this.a11y.announceSuccess(this.i18n.translate('shortcuts.save'));
       return;
     }
     if ((ev.metaKey || ev.ctrlKey) && ev.key === 'Enter') {
       ev.preventDefault();
       void this.runTest();
+      this.toast.add({
+        severity: 'info',
+        summary: this.i18n.translate('shortcuts.test'),
+        detail: 'Running transformation test...',
+        life: 2000
+      });
       return;
     }
     const t = ev.target as HTMLElement | null;
     if (t && ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName)) return;
     if ((ev.metaKey || ev.ctrlKey) && (key === 'z' || key === 'y')) {
       ev.preventDefault();
-      if (key === 'z' && ev.shiftKey) this.redoRules();
+      if (key === 'z' && ev.shiftKey) {
+        this.redoRules();
+        if (this.canRedoRules()) {
+          this.toast.add({
+            severity: 'info',
+            summary: this.i18n.translate('shortcuts.redo'),
+            life: 1500
+          });
+          this.a11y.announce(this.i18n.translate('shortcuts.redo'));
+        }
+      } else if (key === 'z') {
+        this.undoRules();
+        if (this.canUndoRules()) {
+          this.toast.add({
+            severity: 'info',
+            summary: this.i18n.translate('shortcuts.undo'),
+            life: 1500
+          });
+          this.a11y.announce(this.i18n.translate('shortcuts.undo'));
+        }
+      }
+      return;
+    }
+  }
       else if (key === 'z') this.undoRules();
       else this.redoRules();
       return;

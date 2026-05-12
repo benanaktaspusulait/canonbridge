@@ -2,6 +2,7 @@ package com.canonbridge.mappingstudio.ratelimit;
 
 import io.quarkus.logging.Log;
 import io.quarkus.redis.datasource.RedisDataSource;
+import io.quarkus.redis.datasource.sortedset.ScoreRange;
 import io.quarkus.redis.datasource.sortedset.SortedSetCommands;
 import io.quarkus.redis.datasource.sortedset.ZAddArgs;
 import io.smallrye.mutiny.Uni;
@@ -63,7 +64,7 @@ public class RateLimitService {
         return Uni.createFrom().item(() -> {
             try {
                 // Remove old entries outside the sliding window
-                sortedSetCommands.zremrangebyscore(key, 0, windowStart);
+                sortedSetCommands.zremrangebyscore(key, ScoreRange.from(0L, windowStart));
 
                 // Count current requests in the window
                 long currentCount = sortedSetCommands.zcard(key);
@@ -83,7 +84,7 @@ public class RateLimitService {
 
                 // Add current request to the window
                 String requestId = UUID.randomUUID().toString();
-                sortedSetCommands.zadd(key, now, requestId, new ZAddArgs());
+                sortedSetCommands.zadd(key, new ZAddArgs(), (double) now, requestId);
 
                 // Set TTL on the key to auto-cleanup
                 redisDataSource.key().expire(key, Duration.ofSeconds(windowSeconds + 10));
@@ -107,8 +108,11 @@ public class RateLimitService {
             // Get the oldest request timestamp
             var oldestRequests = sortedSetCommands.zrange(key, 0, 0);
             if (!oldestRequests.isEmpty()) {
-                double oldestScore = sortedSetCommands.zscore(key, oldestRequests.get(0));
-                long oldestTimestamp = (long) oldestScore;
+                var oldestScore = sortedSetCommands.zscore(key, oldestRequests.get(0));
+                if (oldestScore.isEmpty()) {
+                    return windowSeconds;
+                }
+                long oldestTimestamp = (long) oldestScore.getAsDouble();
                 long windowEnd = oldestTimestamp + (windowSeconds * 1000L);
                 long retryAfterMs = windowEnd - now;
                 return Math.max(1, retryAfterMs / 1000); // Return seconds, minimum 1

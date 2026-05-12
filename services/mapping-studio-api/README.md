@@ -67,6 +67,7 @@ This service is fully reactive using:
 - `GET /api/external-systems/{connectionId}` - Get connection by ID
 - `POST /api/external-systems` - Create connection
 - `PUT /api/external-systems/{connectionId}` - Update connection
+- `POST /api/external-systems/{connectionId}/test` - Execute a test HTTP request using the linked credential
 - `DELETE /api/external-systems/{connectionId}` - Delete connection
 
 ### Credentials
@@ -74,6 +75,12 @@ This service is fully reactive using:
 - `GET /api/credentials/{credentialId}` - Get credential metadata by ID
 - `POST /api/credentials` - Create credential with write-only secret
 - `POST /api/credentials/{credentialId}/disable` - Disable credential
+
+Credential secret payloads are write-only. Supported `secret` shapes:
+- `API_KEY`: `{"apiKey":"...", "headerName":"X-API-Key"}`
+- `BASIC_AUTH`: `{"username":"...", "password":"..."}`
+- `BEARER_TOKEN`: `{"token":"..."}`
+- `OAUTH2_CLIENT_CREDENTIALS`: `{"tokenUrl":"...", "clientId":"...", "clientSecret":"...", "scope":"optional"}`
 
 ### Health & Observability
 - `GET /health/live` - Liveness probe
@@ -93,9 +100,11 @@ DB_USERNAME=postgres
 DB_PASSWORD=postgres
 REDIS_URL=redis://localhost:6379
 CANONBRIDGE_API_KEYS=replace-with-a-strong-api-key
+CANONBRIDGE_CREDENTIAL_ENCRYPTION_KEY=base64-encoded-32-byte-key
 ```
 
 Development defaults include `CANONBRIDGE_API_KEYS=dev-api-key`. Override this value outside local development.
+Credential secrets use AES-256-GCM and require a base64-encoded 32-byte key in `CANONBRIDGE_CREDENTIAL_ENCRYPTION_KEY` outside local development.
 
 ### Rate Limiting Configuration
 
