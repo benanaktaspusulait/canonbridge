@@ -252,7 +252,27 @@
     },
     "credentialStore": {
       "eyebrow": "Credential Store",
-      "title": "Tekrar kullanılabilir kimlik profilleri"
+      "title": "Tekrar kullanılabilir kimlik profilleri",
+      "manage": "Yönet",
+      "manageTitle": "Credential Store",
+      "addTitle": "Credential ekle",
+      "editTitle": "Credential düzenle",
+      "name": "Credential adı",
+      "type": "Credential tipi",
+      "owner": "Sahip",
+      "secretValue": "Gizli değer",
+      "secretPlaceholder": "Döndürmek için yeni değer girin",
+      "writeOnly": "Bu demo akışında secret değerler write-only tutulur; kaydedilen değerler geri gösterilmez.",
+      "save": "Credential kaydet",
+      "disable": "Credential pasifleştir",
+      "neverUsed": "Hiç kullanılmadı",
+      "invalidTitle": "Credential bilgisi eksik",
+      "invalidDetail": "Credential adı ve sahip zorunlu.",
+      "status": {
+        "active": "Aktif",
+        "disabled": "Pasif",
+        "rotationDue": "Döndür"
+      }
     },
     "health": {
       "healthy": "Son demo kontrolleri sağlıklı. Gecikme ve başarı oranı beklenen aralıkta.",
@@ -276,7 +296,12 @@
       "timeoutMs": "Timeout",
       "credentialName": "Kimlik profili",
       "pollSchedule": "Sorgu takvimi",
+      "pollInterval": "Tekrar aralığı",
+      "firstRunAt": "İlk çalışma",
+      "checkpointMode": "Checkpoint modu",
       "wsdlUrl": "WSDL URL",
+      "wsdlFile": "WSDL dosyası",
+      "wsdlUpload": "WSDL yükle",
       "sampleJson": "Demo örnek JSON"
     },
     "save": "Bağlantıyı kaydet",
@@ -291,7 +316,10 @@
       "testFailed": "Bağlantı testi başarısız",
       "invalidUrl": "URL http:// veya https:// ile başlamalı",
       "deleted": "Bağlantı silindi",
-      "sampleReady": "Örnek Mapping Studio'ya gönderildi"
+      "sampleReady": "Örnek Mapping Studio'ya gönderildi",
+      "credentialSaved": "Credential kaydedildi",
+      "credentialDisabled": "Credential pasifleştirildi",
+      "wsdlLoaded": "WSDL yüklendi"
     },
     "history": {
       "demoSuccess": "Demo isteği tamamlandı"
@@ -595,6 +623,8 @@
     "analyze": "Yükü analiz et",
     "next": "İleri",
     "back": "Geri",
+    "undo": "Geri al",
+    "redo": "Yinele",
     "treeTitle": "Alan ağacı",
     "treeSubtitle": "Geçerli JSON’dan çıkarılan hiyerarşi. Yaprak düğüme tıklayarak yolu kopyalayın veya seçili eşleme kuralına doğrudan atayın.",
     "treeEmpty": "Ağacı doldurmak için geçerli bir JSON analiz edin.",

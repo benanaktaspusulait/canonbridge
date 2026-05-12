@@ -40,6 +40,7 @@ export class OutboxRepository {
   async initialize(): Promise<void> {
     const client = await this.pool.connect();
     try {
+      await client.query('CREATE EXTENSION IF NOT EXISTS pgcrypto');
       await client.query(`
         CREATE TABLE IF NOT EXISTS outbox (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -48,9 +49,13 @@ export class OutboxRepository {
           value JSONB NOT NULL,
           headers JSONB,
           created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-          published_at TIMESTAMP,
-          INDEX idx_outbox_unpublished (published_at) WHERE published_at IS NULL
+          published_at TIMESTAMP
         )
+      `);
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_outbox_unpublished
+        ON outbox (created_at)
+        WHERE published_at IS NULL
       `);
     } finally {
       client.release();
@@ -94,8 +99,10 @@ export class OutboxRepository {
       id: row.id,
       topic: row.topic,
       key: row.key,
-      value: row.value,
-      headers: row.headers ? JSON.parse(row.headers) : undefined,
+      value: typeof row.value === 'string' ? row.value : JSON.stringify(row.value),
+      headers: row.headers
+        ? (typeof row.headers === 'string' ? JSON.parse(row.headers) : row.headers)
+        : undefined,
       createdAt: row.created_at,
       publishedAt: row.published_at,
     }));
@@ -131,7 +138,8 @@ export class OutboxRepository {
     const result = await this.pool.query(
       `DELETE FROM outbox
        WHERE published_at IS NOT NULL
-       AND published_at < NOW() - INTERVAL '${olderThanDays} days'`,
+       AND published_at < NOW() - ($1::int * INTERVAL '1 day')`,
+      [olderThanDays],
     );
     return result.rowCount ?? 0;
   }

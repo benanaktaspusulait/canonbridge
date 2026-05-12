@@ -4,6 +4,8 @@ import { TransformEngine } from './transformEngine.js';
 import { buildServer } from './httpServer.js';
 import { startKafkaConsumer } from './kafkaRunner.js';
 import { createCache } from './cache.js';
+import { WorkerPool } from './workerPool.js';
+import { OutboxRepository, OutboxRelay } from './outbox.js';
 
 async function main(): Promise<void> {
   const env = loadEnv();
@@ -11,7 +13,7 @@ async function main(): Promise<void> {
   await registry.load();
   
   // G-09: Create cache (Redis or in-memory based on REDIS_URL)
-  const cache = createCache(env.redisUrl);
+  const cache = createCache(env.redisUrl, env.redisCacheTtlSeconds);
   const engine = new TransformEngine(env.mappingsRoot, registry, cache);
   
   const app = await buildServer(env, registry, engine);

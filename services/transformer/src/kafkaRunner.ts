@@ -13,15 +13,33 @@ function parseJson(value: string): unknown {
   }
 }
 
-function partnerKeys(
-  parsed: unknown,
-): { partnerId: string; eventType: string } | undefined {
-  if (parsed === null || typeof parsed !== 'object') return undefined;
-  const o = parsed as Record<string, unknown>;
-  const partnerId = o.partnerId;
-  const eventType = o.eventType;
-  if (typeof partnerId !== 'string' || typeof eventType !== 'string') return undefined;
+export function parseTopicPartnerKeys(topic: string): { partnerId: string; eventType: string } | undefined {
+  const parts = topic.split('.');
+  if (parts.length < 4 || parts[1] !== 'raw') return undefined;
+  const partnerId = parts[2];
+  const eventType = parts.slice(3).join('.');
+  if (!partnerId || !eventType) return undefined;
   return { partnerId, eventType };
+}
+
+export function partnerKeys(
+  parsed: unknown,
+  topic?: string,
+): { partnerId: string; eventType: string; schemaVersion?: string } | undefined {
+  if (parsed !== null && typeof parsed === 'object') {
+    const o = parsed as Record<string, unknown>;
+    const partnerId = o.partnerId;
+    const eventType = o.eventType;
+    const schemaVersion = o.schemaVersion;
+    if (typeof partnerId === 'string' && typeof eventType === 'string') {
+      return {
+        partnerId,
+        eventType,
+        schemaVersion: typeof schemaVersion === 'string' ? schemaVersion : undefined,
+      };
+    }
+  }
+  return topic ? parseTopicPartnerKeys(topic) : undefined;
 }
 
 // G-03: retry connect with exponential backoff
@@ -144,8 +162,8 @@ export async function startKafkaConsumer(
       await heartbeat();
 
       const transformStart = Date.now();
-      const keys = partnerKeys(parsed);
-      const cfg = keys ? registry.resolve(keys.partnerId, keys.eventType) : undefined;
+      const keys = partnerKeys(parsed, topic);
+      const cfg = keys ? registry.resolve(keys.partnerId, keys.eventType, keys.schemaVersion) : undefined;
       const result = await engine.transformEnvelope(parsed, { topic, partition, offset });
       const transformDurationMs = Date.now() - transformStart;
 

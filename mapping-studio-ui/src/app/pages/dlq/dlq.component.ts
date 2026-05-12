@@ -1,8 +1,11 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DrawerModule } from 'primeng/drawer';
+import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
@@ -21,13 +24,17 @@ interface DlqMessage {
   firstFailed: string;
   lastFailed: string;
   payload: string;
+  traceId: string;
+  stackTrace: string;
 }
 
 @Component({
   selector: 'app-dlq',
   standalone: true,
   imports: [
+    FormsModule,
     ButtonModule, CardModule, ConfirmDialogModule, DrawerModule,
+    InputTextModule, SelectModule,
     TableModule, TagModule, ToastModule, TooltipModule,
     I18nPipe
   ],
@@ -50,32 +57,73 @@ export class DlqComponent {
       errorType: 'SCHEMA_VALIDATION',
       errorMessage: 'Required field "amount" is missing from payload',
       attempts: 3, firstFailed: '2026-05-10 13:45', lastFailed: '2026-05-10 14:15',
-      payload: '{"transactionId":"txn-999","currency":"USD"}'
+      payload: '{"transactionId":"txn-999","currency":"USD"}',
+      traceId: 'trc-pay-13f45',
+      stackTrace: 'SchemaValidationError: required property amount\n  at validateCanonicalPayment (mapping-runtime.js:88)\n  at transformPaymentCaptured (payment.captured.v2.js:42)\n  at DlqWriter.captureFailure (dlq-writer.js:19)'
     },
     {
       id: 'dlq-002', partner: 'payment-gateway',  eventType: 'payment.captured',
       errorType: 'TRANSFORMATION_ERROR',
       errorMessage: 'Mapping rule evaluation failed — missing field reference',
       attempts: 3, firstFailed: '2026-05-10 12:30', lastFailed: '2026-05-10 13:00',
-      payload: '{"transactionId":"txn-888","amount":null}'
+      payload: '{"transactionId":"txn-888","amount":null}',
+      traceId: 'trc-pay-12a30',
+      stackTrace: 'TransformationError: source path $.amount.value resolved to undefined\n  at evaluateJsonataRule (rule-engine.js:131)\n  at executeMappingRules (rule-engine.js:62)\n  at DlqWriter.captureFailure (dlq-writer.js:19)'
     },
     {
       id: 'dlq-003', partner: 'acme-marketplace', eventType: 'order.created',
       errorType: 'SCHEMA_VALIDATION',
       errorMessage: 'Field "customer.email" does not match format "email"',
       attempts: 1, firstFailed: '2026-05-10 11:00', lastFailed: '2026-05-10 11:00',
-      payload: '{"orderId":"ORD-777","customer":{"email":"not-an-email"}}'
+      payload: '{"orderId":"ORD-777","customer":{"email":"not-an-email"}}',
+      traceId: 'trc-acme-1100',
+      stackTrace: 'SchemaValidationError: customer.email failed email format\n  at validateOrderCreated (schema-validator.js:74)\n  at executeMappingRules (rule-engine.js:58)\n  at DlqWriter.captureFailure (dlq-writer.js:19)'
     },
     {
       id: 'dlq-004', partner: 'acme-marketplace', eventType: 'order.created',
       errorType: 'DOWNSTREAM_ERROR',
       errorMessage: 'Business service returned 503 after 3 retries',
       attempts: 3, firstFailed: '2026-05-10 09:15', lastFailed: '2026-05-10 09:45',
-      payload: '{"orderId":"ORD-666","status":"A"}'
+      payload: '{"orderId":"ORD-666","status":"A"}',
+      traceId: 'trc-acme-0945',
+      stackTrace: 'DownstreamError: HTTP 503 from order-business-service\n  at postCanonicalOrder (publisher.js:52)\n  at retryWithBackoff (retry.js:37)\n  at DlqWriter.captureFailure (dlq-writer.js:19)'
     }
   ]);
 
   readonly messages = this._messages.asReadonly();
+  readonly searchText = signal('');
+  readonly partnerFilter = signal('All');
+  readonly errorFilter = signal('All');
+  readonly dateFilter = signal('All');
+
+  readonly partnerOptions = computed(() =>
+    ['All', ...Array.from(new Set(this._messages().map(msg => msg.partner))).sort()]
+  );
+  readonly errorOptions = computed(() =>
+    ['All', ...Array.from(new Set(this._messages().map(msg => msg.errorType))).sort()]
+  );
+  readonly dateOptions = computed(() =>
+    ['All', ...Array.from(new Set(this._messages().map(msg => msg.firstFailed.slice(0, 10)))).sort().reverse()]
+  );
+  readonly filteredMessages = computed(() => {
+    const query = this.searchText().trim().toLowerCase();
+    return this._messages().filter(msg => {
+      const matchesQuery = !query || [
+        msg.id,
+        msg.partner,
+        msg.eventType,
+        msg.errorType,
+        msg.errorMessage,
+        msg.traceId
+      ].some(value => value.toLowerCase().includes(query));
+      return (
+        matchesQuery &&
+        (this.partnerFilter() === 'All' || msg.partner === this.partnerFilter()) &&
+        (this.errorFilter() === 'All' || msg.errorType === this.errorFilter()) &&
+        (this.dateFilter() === 'All' || msg.firstFailed.startsWith(this.dateFilter()))
+      );
+    });
+  });
 
   // ── Inspect ───────────────────────────────────────────────────────────────
 
@@ -103,7 +151,8 @@ export class DlqComponent {
   }
 
   redriveAll(): void {
-    const ids = this._messages().map(m => m.id);
+    const ids = this.filteredMessages().map(m => m.id);
+    if (!ids.length) return;
     this.removeMessages(ids);
     this.toast.add({ severity: 'success', summary: this.t('dlq.toast.redrivenAll'), detail: this.t('dlq.toast.count', { count: ids.length }) });
   }

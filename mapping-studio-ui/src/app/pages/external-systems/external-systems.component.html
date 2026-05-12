@@ -34,8 +34,17 @@
 <!-- ── Credential store summary ──────────────────────────────────────────── -->
 <section class="credential-store-strip" aria-label="Credential store summary">
   <div class="credential-store-strip__head">
-    <span>{{ 'externalSystems.credentialStore.eyebrow' | i18n }}</span>
-    <strong>{{ 'externalSystems.credentialStore.title' | i18n }}</strong>
+    <div>
+      <span>{{ 'externalSystems.credentialStore.eyebrow' | i18n }}</span>
+      <strong>{{ 'externalSystems.credentialStore.title' | i18n }}</strong>
+    </div>
+    <p-button
+      [label]="'externalSystems.credentialStore.manage' | i18n"
+      icon="pi pi-key"
+      size="small"
+      variant="outlined"
+      severity="secondary"
+      (onClick)="openCredentialStore()" />
   </div>
   @for (credential of credentials(); track credential.id) {
     <article>
@@ -44,6 +53,9 @@
         <strong>{{ credential.name }}</strong>
         <span>{{ credential.type }} · {{ credential.environment }} · {{ credential.lastUsed }}</span>
       </div>
+      <p-tag
+        [severity]="credentialSeverity(credential.status)"
+        [value]="('externalSystems.credentialStore.status.' + credential.status) | i18n" />
     </article>
   }
 </section>
@@ -340,7 +352,11 @@
     </label>
     <label class="field">
       <span>{{ 'externalSystems.form.credentialName' | i18n }}</span>
-      <input pInputText [(ngModel)]="form.credentialName" autocomplete="off" />
+      <p-select
+        [options]="credentialNameOptions()"
+        [(ngModel)]="form.credentialName"
+        [editable]="true"
+        appendTo="body" />
     </label>
     <label class="field">
       <span>{{ 'externalSystems.form.timeoutMs' | i18n }}</span>
@@ -351,12 +367,55 @@
         <span>{{ 'externalSystems.form.pollSchedule' | i18n }}</span>
         <input pInputText [(ngModel)]="form.pollSchedule" autocomplete="off" placeholder="*/5 * * * *" />
       </label>
+      <label class="field">
+        <span>{{ 'externalSystems.form.pollInterval' | i18n }}</span>
+        <p-select [options]="pollIntervalOptions" [(ngModel)]="form.pollInterval" [editable]="true" appendTo="body" />
+      </label>
+      <label class="field">
+        <span>{{ 'externalSystems.form.firstRunAt' | i18n }}</span>
+        <input pInputText type="datetime-local" [(ngModel)]="form.firstRunAt" autocomplete="off" />
+      </label>
+      <label class="field">
+        <span>{{ 'externalSystems.form.checkpointMode' | i18n }}</span>
+        <p-select
+          [options]="checkpointModeOptions"
+          optionLabel="label"
+          optionValue="value"
+          [(ngModel)]="form.checkpointMode"
+          appendTo="body" />
+      </label>
     }
     @if (form.type === 'SOAP') {
       <label class="field field-wide">
         <span>{{ 'externalSystems.form.wsdlUrl' | i18n }}</span>
         <input pInputText [(ngModel)]="form.wsdlUrl" autocomplete="off" placeholder="https://service.example.com?wsdl" />
       </label>
+      <div class="field field-wide">
+        <span>{{ 'externalSystems.form.wsdlFile' | i18n }}</span>
+        <div class="wsdl-upload-row">
+          <input
+            #wsdlInput
+            type="file"
+            accept=".wsdl,.xml,text/xml,application/xml"
+            class="visually-hidden"
+            (change)="onWsdlFileSelected($event)" />
+          <p-button
+            [label]="'externalSystems.form.wsdlUpload' | i18n"
+            icon="pi pi-upload"
+            variant="outlined"
+            severity="secondary"
+            (onClick)="wsdlInput.click()" />
+          @if (form.wsdlFileName) {
+            <span class="wsdl-file-pill">
+              <i class="pi pi-file" aria-hidden="true"></i>
+              {{ form.wsdlFileName }}
+            </span>
+          }
+        </div>
+        @if (form.wsdlPreview) {
+          <pre class="external-json-preview wsdl-preview">{{ form.wsdlPreview }}</pre>
+        }
+      </div>
     }
     <label class="field field-wide">
       <span>{{ 'externalSystems.form.sampleJson' | i18n }}</span>
@@ -373,4 +432,81 @@
     <p-button [label]="'externalSystems.cancel' | i18n" severity="secondary" variant="outlined" (onClick)="dialogVisible = false" />
     <p-button [label]="'externalSystems.save' | i18n" icon="pi pi-check" [disabled]="!formValid" (onClick)="save()" />
   </ng-template>
+</p-dialog>
+
+<!-- ── Credential Store manager ──────────────────────────────────────────── -->
+<p-dialog
+  [(visible)]="credentialDialogVisible"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: 'min(54rem, calc(100vw - 2rem))' }"
+  [header]="'externalSystems.credentialStore.manageTitle' | i18n">
+  <section class="credential-manager">
+    <div class="credential-manager__list">
+      @for (credential of credentials(); track credential.id) {
+        <article>
+          <div>
+            <strong>{{ credential.name }}</strong>
+            <span>{{ credential.type }} · {{ credential.environment }} · {{ credential.owner }} · {{ credential.lastUsed }}</span>
+          </div>
+          <p-tag
+            [severity]="credentialSeverity(credential.status)"
+            [value]="('externalSystems.credentialStore.status.' + credential.status) | i18n" />
+          <div class="credential-manager__actions">
+            <p-button
+              icon="pi pi-pencil"
+              variant="text"
+              severity="secondary"
+              size="small"
+              (onClick)="openCredentialEdit(credential)"
+              [pTooltip]="'externalSystems.action.edit' | i18n" />
+            <p-button
+              icon="pi pi-ban"
+              variant="text"
+              severity="danger"
+              size="small"
+              [disabled]="credential.status === 'disabled'"
+              (onClick)="disableCredential(credential)"
+              [pTooltip]="'externalSystems.credentialStore.disable' | i18n" />
+          </div>
+        </article>
+      }
+    </div>
+
+    <div class="credential-manager__form">
+      <h3>
+        {{ credentialIsEdit ? ('externalSystems.credentialStore.editTitle' | i18n) : ('externalSystems.credentialStore.addTitle' | i18n) }}
+      </h3>
+      <label class="field">
+        <span>{{ 'externalSystems.credentialStore.name' | i18n }}</span>
+        <input pInputText [(ngModel)]="credentialForm.name" autocomplete="off" />
+      </label>
+      <label class="field">
+        <span>{{ 'externalSystems.credentialStore.type' | i18n }}</span>
+        <p-select [options]="credentialTypeOptions" [(ngModel)]="credentialForm.type" appendTo="body" />
+      </label>
+      <label class="field">
+        <span>{{ 'externalSystems.form.environment' | i18n }}</span>
+        <p-select [options]="environmentOptions.slice(1)" [(ngModel)]="credentialForm.environment" appendTo="body" />
+      </label>
+      <label class="field">
+        <span>{{ 'externalSystems.credentialStore.owner' | i18n }}</span>
+        <input pInputText [(ngModel)]="credentialForm.owner" autocomplete="off" />
+      </label>
+      <label class="field">
+        <span>{{ 'externalSystems.credentialStore.secretValue' | i18n }}</span>
+        <input
+          pInputText
+          type="password"
+          [(ngModel)]="credentialForm.secretValue"
+          autocomplete="new-password"
+          [placeholder]="'externalSystems.credentialStore.secretPlaceholder' | i18n" />
+      </label>
+      <p class="credential-writeonly-note">{{ 'externalSystems.credentialStore.writeOnly' | i18n }}</p>
+      <p-button
+        [label]="'externalSystems.credentialStore.save' | i18n"
+        icon="pi pi-check"
+        (onClick)="saveCredentialRecord()" />
+    </div>
+  </section>
 </p-dialog>

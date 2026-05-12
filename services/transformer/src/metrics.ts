@@ -12,7 +12,10 @@ const DURATION_BUCKETS_MS = [5, 10, 25, 50, 100, 250, 500, 1000, 2500];
 type LabelSet = Record<string, string>;
 
 function labelStr(labels: LabelSet): string {
-  const parts = Object.entries(labels).map(([k, v]) => `${k}="${v.replace(/"/g, '\\"')}"`);
+  const parts = Object.entries(labels).map(([k, v]) => `${k}="${v
+    .replace(/\\/g, '\\\\')
+    .replace(/\n/g, '\\n')
+    .replace(/"/g, '\\"')}"`);
   return parts.length ? `{${parts.join(',')}}` : '';
 }
 
@@ -63,14 +66,13 @@ export function observeHistogram(name: string, valueMs: number, labels: LabelSet
   const h = getOrCreateHist(name, labels);
   h.sum += valueMs;
   h.count += 1;
-  let placed = false;
   for (const [bound] of h.buckets) {
     if (valueMs <= bound) {
       h.buckets.set(bound, (h.buckets.get(bound) ?? 0) + 1);
-      placed = true;
+      return;
     }
   }
-  if (!placed) h.infCount += 1;
+  h.infCount += 1;
 }
 
 // ── Gauges ────────────────────────────────────────────────────────────────────
@@ -85,10 +87,17 @@ export function setGauge(name: string, value: number, labels: LabelSet = {}): vo
 
 export function renderMetrics(): string {
   const lines: string[] = [];
+  const emittedTypes = new Set<string>();
+
+  const emitType = (name: string, type: 'counter' | 'histogram' | 'gauge') => {
+    if (emittedTypes.has(name)) return;
+    emittedTypes.add(name);
+    lines.push(`# TYPE ${name} ${type}`);
+  };
 
   // Counters
   for (const [key, value] of counters) {
-    lines.push(`# TYPE ${key.split('{')[0]} counter`);
+    emitType(key.split('{')[0], 'counter');
     lines.push(`${key} ${value}`);
   }
 
@@ -98,7 +107,7 @@ export function renderMetrics(): string {
     const labelPart = key.includes('{') ? key.slice(key.indexOf('{')) : '';
     const innerLabels = labelPart.slice(1, -1); // strip { }
 
-    lines.push(`# TYPE ${baseName} histogram`);
+    emitType(baseName, 'histogram');
 
     let cumulative = 0;
     for (const [bound, cnt] of h.buckets) {
@@ -118,7 +127,7 @@ export function renderMetrics(): string {
 
   // Gauges
   for (const [key, value] of gauges) {
-    lines.push(`# TYPE ${key.split('{')[0]} gauge`);
+    emitType(key.split('{')[0], 'gauge');
     lines.push(`${key} ${value}`);
   }
 

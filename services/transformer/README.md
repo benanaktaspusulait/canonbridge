@@ -4,7 +4,7 @@ Node.js service: **Ajv** input/output validation + **JSONata** mapping, same rul
 
 - **HTTP**: `GET /health`, `POST /v1/transform` (body = raw envelope JSON), `GET /metrics` (Prometheus), `POST /v1/admin/reload`, `POST /v1/jsonata/check-batch`
 - **Kafka** (optional): set `KAFKA_ENABLED=true` — consumes all `topics.raw` from loaded configs, produces canonical or DLQ payloads
-- **Tests**: `npm test` — 27 unit + integration tests with Vitest
+- **Tests**: `npm test` — 40 unit + integration tests with Vitest
 
 ## Prerequisites
 
@@ -87,7 +87,7 @@ Expect `200` and a JSON body `{ "canonical": { ... } }`.
 - **Structured Logging**: All logs include `{ topic, partition, offset, partnerId, eventType, durationMs }`
 
 ### 🔄 Operational
-- **Hot-Reload**: `POST /v1/admin/reload` — Reload partner configs without restart
+- **Hot-Reload**: `POST /v1/admin/reload` — Reload partner configs without restart; protected by `X-Api-Key` when `API_KEY` is set
 - **Graceful Shutdown**: SIGINT/SIGTERM handling with connection cleanup
 - **Connection Retry**: Exponential backoff for Kafka connection failures
 - **Manual Offset Commit**: Prevents data loss on crash (commit after DLQ write)
@@ -96,9 +96,10 @@ Expect `200` and a JSON body `{ "canonical": { ... } }`.
   - Falls back to in-memory cache if not configured
   - Stores raw schemas/mappings; compilation happens on cache miss
   - Configurable TTL via `REDIS_CACHE_TTL_SECONDS`
+- **Schema Version Resolution**: Partner configs can use `version` or `schemaVersion`; envelopes with `schemaVersion` resolve the matching immutable mapping version
 
 ### ✅ Testing
-- **32 Passing Tests**: Unit + integration tests with Vitest
+- **40 Passing Tests**: Unit + integration tests with Vitest
 - **Test Coverage**: Run `npm run test:coverage` for detailed report
 - **CI/CD Ready**: All tests run in < 1 second
 

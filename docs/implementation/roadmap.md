@@ -1,8 +1,8 @@
 # CanonBridge - Implementation Roadmap
 
-> ⚠️ **DEPRECATED**: This document is deprecated. Please refer to [MASTER_ROADMAP.md](../../MASTER_ROADMAP.md) for the official project roadmap.
+> ⚠️ **DEPRECATED**: This document is deprecated. Please refer to [MASTER_ROADMAP.md](../project/MASTER_ROADMAP.md) for the official product roadmap and [Backend Service Requirements](./11-backend-service-requirements.md) for the current backend implementation scope.
 > 
-> This file is kept for historical reference only.
+> This file is kept for historical reference only. The older React/Angular split and transformer-only backend assumptions below are not the active implementation plan.
 
 ---
 

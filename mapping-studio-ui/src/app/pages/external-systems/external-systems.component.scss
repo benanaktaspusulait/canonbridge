@@ -64,6 +64,11 @@
   padding: 0.25rem 0.35rem;
 }
 
+.credential-store-strip__head > div {
+  display: grid;
+  gap: 0.15rem;
+}
+
 .credential-store-strip__head span,
 .credential-store-strip article span {
   color: var(--text-color-secondary);
@@ -79,6 +84,11 @@
   padding: 0.7rem;
   border-radius: 8px;
   background: color-mix(in srgb, var(--surface-ground) 54%, var(--surface-card));
+}
+
+.credential-store-strip article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
 }
 
 .credential-store-strip i {
@@ -416,6 +426,98 @@ td small {
   padding: 0.8rem;
 }
 
+.wsdl-upload-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.wsdl-file-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  padding: 0 0.7rem;
+  border-radius: 999px;
+  color: var(--text-color);
+  background: color-mix(in srgb, var(--surface-ground) 66%, var(--surface-card));
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.wsdl-preview {
+  margin-top: 0.65rem;
+  max-height: 9rem;
+}
+
+.credential-manager {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
+  gap: 1rem;
+}
+
+.credential-manager__list {
+  display: grid;
+  align-content: start;
+  gap: 0.65rem;
+}
+
+.credential-manager__list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--surface-border) 76%, transparent);
+  background: color-mix(in srgb, var(--surface-ground) 48%, var(--surface-card));
+}
+
+.credential-manager__list article div:first-child,
+.credential-manager__form {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.credential-manager__list strong,
+.credential-manager__form h3 {
+  color: var(--text-color);
+}
+
+.credential-manager__list span,
+.credential-writeonly-note {
+  color: var(--text-color-secondary);
+  font-size: 0.78rem;
+}
+
+.credential-manager__actions {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.credential-manager__form {
+  gap: 0.85rem;
+  padding: 0.85rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-ground) 52%, var(--surface-card));
+}
+
+.credential-manager__form h3,
+.credential-writeonly-note {
+  margin: 0;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 :host ::ng-deep .external-sample-textarea {
   resize: vertical;
 }
@@ -444,6 +546,14 @@ td small {
   }
 
   .external-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .credential-manager {
+    grid-template-columns: 1fr;
+  }
+
+  .credential-manager__list article {
     grid-template-columns: 1fr;
   }
 }

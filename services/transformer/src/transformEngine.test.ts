@@ -328,4 +328,47 @@ describe('TransformEngine', () => {
       });
     }
   });
+
+  it('should resolve schemaVersion-specific mappings from the envelope', async () => {
+    await mkdir(path.join(testDir, 'partners/test-partner-v2'), { recursive: true });
+
+    const v2Mapping = `{
+  "id": orderId & "-v2",
+  "total": amount
+}`;
+
+    const v2Config = {
+      partnerId: 'test-partner',
+      eventType: 'order-created',
+      schemaVersion: 'v2',
+      inputSchema: 'partners/test-partner/input.schema.json',
+      canonicalSchema: 'partners/test-partner/canonical.schema.json',
+      mapping: 'partners/test-partner-v2/mapping.jsonata',
+      topics: {
+        raw: 'test.raw.v2',
+        canonical: 'test.canonical.v2',
+        dlq: 'test.dlq.v2',
+      },
+    };
+
+    await writeFile(path.join(testDir, 'partners/test-partner-v2', 'mapping.jsonata'), v2Mapping);
+    await writeFile(path.join(testDir, 'partners/test-partner-v2', 'config.json'), JSON.stringify(v2Config));
+    await registry.load();
+
+    const result = await engine.transformEnvelope({
+      partnerId: 'test-partner',
+      eventType: 'order-created',
+      schemaVersion: 'v2',
+      orderId: 'ORD-789',
+      amount: 249.99,
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.canonical).toEqual({
+        id: 'ORD-789-v2',
+        total: 249.99,
+      });
+    }
+  });
 });

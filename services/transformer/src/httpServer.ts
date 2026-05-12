@@ -1,4 +1,6 @@
 import cors from '@fastify/cors';
+import swagger from '@fastify/swagger';
+import swaggerUi from '@fastify/swagger-ui';
 import Fastify, { type FastifyInstance, type FastifyRequest, type FastifyReply } from 'fastify';
 import type { TransformEngine } from './transformEngine.js';
 import type { PartnerRegistry } from './partnerRegistry.js';
@@ -28,19 +30,111 @@ export async function buildServer(
   const corsOrigin = env.corsOrigins.length > 0 ? env.corsOrigins : true;
   await app.register(cors, { origin: corsOrigin });
 
-  app.get('/health', async () => ({ status: 'ok' }));
+  // G-15: OpenAPI/Swagger documentation
+  await app.register(swagger, {
+    openapi: {
+      info: {
+        title: 'CanonBridge Transformer API',
+        description: 'JSONata transformation engine with Ajv validation for partner data integration',
+        version: '0.1.0',
+      },
+      servers: [
+        {
+          url: 'http://localhost:8080',
+          description: 'Development server',
+        },
+      ],
+      tags: [
+        { name: 'transform', description: 'Data transformation endpoints' },
+        { name: 'admin', description: 'Administrative operations' },
+        { name: 'health', description: 'Health and monitoring' },
+      ],
+      components: {
+        securitySchemes: {
+          apiKey: {
+            type: 'apiKey',
+            name: 'X-Api-Key',
+            in: 'header',
+          },
+        },
+      },
+    },
+  });
+
+  await app.register(swaggerUi, {
+    routePrefix: '/docs',
+    uiConfig: {
+      docExpansion: 'list',
+      deepLinking: true,
+    },
+    staticCSP: true,
+  });
+
+  app.get('/health', {
+    schema: {
+      tags: ['health'],
+      description: 'Health check endpoint',
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            status: { type: 'string', example: 'ok' },
+          },
+        },
+      },
+    },
+  }, async () => ({ status: 'ok' }));
 
   // G-11: Fastify schema validation for /v1/transform
   app.post(
     '/v1/transform',
     {
       schema: {
+        tags: ['transform'],
+        description: 'Transform partner data to canonical format using JSONata mappings',
+        security: env.apiKey ? [{ apiKey: [] }] : [],
         body: {
           type: 'object',
           required: ['partnerId', 'eventType'],
           properties: {
-            partnerId: { type: 'string' },
-            eventType: { type: 'string' },
+            partnerId: { type: 'string', description: 'Partner identifier', example: 'acme-marketplace' },
+            eventType: { type: 'string', description: 'Event type', example: 'order-created' },
+            version: { type: 'string', description: 'Schema version (optional)', example: 'v1' },
+          },
+          additionalProperties: true,
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              canonical: { type: 'object', description: 'Transformed canonical data' },
+            },
+          },
+          400: {
+            type: 'object',
+            properties: {
+              error: {
+                type: 'object',
+                properties: {
+                  stage: { type: 'string' },
+                  message: { type: 'string' },
+                  details: { type: 'object' },
+                },
+              },
+            },
+          },
+          422: {
+            type: 'object',
+            properties: {
+              error: {
+                type: 'object',
+                properties: {
+                  stage: { type: 'string' },
+                  message: { type: 'string' },
+                  details: { type: 'object' },
+                },
+              },
+            },
           },
         },
       },
@@ -80,13 +174,48 @@ export async function buildServer(
     '/v1/jsonata/check-batch',
     {
       schema: {
+        tags: ['transform'],
+        description: 'Batch validate JSONata expressions against a payload',
+        security: env.apiKey ? [{ apiKey: [] }] : [],
         body: {
           type: 'object',
           required: ['expressions'],
           properties: {
-            payload: {},
-            expressions: { type: 'array' },
-            timeoutMs: { type: 'number' },
+            payload: { type: 'object', description: 'Test payload for expression evaluation' },
+            expressions: {
+              type: 'array',
+              description: 'Array of expressions to validate',
+              items: {
+                type: 'object',
+                required: ['ruleId', 'expression'],
+                properties: {
+                  ruleId: { type: 'string', description: 'Unique identifier for the rule' },
+                  expression: { type: 'string', description: 'JSONata expression to evaluate' },
+                },
+              },
+              maxItems: JSONATA_BATCH_MAX_ITEMS,
+            },
+            timeoutMs: { type: 'number', description: 'Evaluation timeout in milliseconds', minimum: 50, maximum: 5000, default: 500 },
+          },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              results: {
+                type: 'object',
+                description: 'Results keyed by ruleId',
+                additionalProperties: {
+                  type: 'object',
+                  properties: {
+                    ok: { type: 'boolean' },
+                    result: { description: 'Evaluation result (if ok=true)' },
+                    stage: { type: 'string', description: 'Error stage (if ok=false)' },
+                    message: { type: 'string', description: 'Error message (if ok=false)' },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -129,7 +258,18 @@ export async function buildServer(
   );
 
   // G-05: Prometheus metrics endpoint
-  app.get('/metrics', async (_request, reply) => {
+  app.get('/metrics', {
+    schema: {
+      tags: ['health'],
+      description: 'Prometheus metrics endpoint',
+      response: {
+        200: {
+          type: 'string',
+          description: 'Prometheus text format metrics',
+        },
+      },
+    },
+  }, async (_request, reply) => {
     // Update cache size gauge on each scrape
     setGauge('transform_engine_cache_size', await engine.cacheSize());
     setGauge('partner_registry_size', registry.listPartners().length);
@@ -138,21 +278,52 @@ export async function buildServer(
       .send(renderMetrics());
   });
 
-  // G-02: Admin reload endpoint (no auth — internal use only, add auth in production)
-  app.post('/v1/admin/reload', async (request, reply) => {
-    try {
-      await registry.load();
-      // Evict compiled cache so next transform picks up new mapping files
-      await engine.evictAll();
-      app.log.info({ count: registry.listPartners().length }, 'partner configs reloaded');
-      return reply.send({ ok: true, partners: registry.listPartners().length });
-    } catch (err) {
-      app.log.error(err, 'reload failed');
-      return reply.code(500).send({
-        error: { message: err instanceof Error ? err.message : String(err) },
-      });
-    }
-  });
+  // G-02: Admin reload endpoint
+  app.post(
+    '/v1/admin/reload',
+    {
+      schema: {
+        tags: ['admin'],
+        description: 'Reload partner configurations and clear cache',
+        security: env.apiKey ? [{ apiKey: [] }] : [],
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              ok: { type: 'boolean' },
+              partners: { type: 'number', description: 'Number of loaded partner configs' },
+            },
+          },
+          500: {
+            type: 'object',
+            properties: {
+              error: {
+                type: 'object',
+                properties: {
+                  message: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+      },
+      preHandler: async (request, reply) => apiKeyAuth(env, request, reply),
+    },
+    async (request, reply) => {
+      try {
+        await registry.load();
+        // Evict compiled cache so next transform picks up new mapping files
+        await engine.evictAll();
+        app.log.info({ count: registry.listPartners().length }, 'partner configs reloaded');
+        return reply.send({ ok: true, partners: registry.listPartners().length });
+      } catch (err) {
+        app.log.error(err, 'reload failed');
+        return reply.code(500).send({
+          error: { message: err instanceof Error ? err.message : String(err) },
+        });
+      }
+    },
+  );
 
   return app;
 }

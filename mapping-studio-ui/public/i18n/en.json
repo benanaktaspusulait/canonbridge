@@ -240,7 +240,27 @@
     },
     "credentialStore": {
       "eyebrow": "Credential Store",
-      "title": "Reusable auth profiles"
+      "title": "Reusable auth profiles",
+      "manage": "Manage",
+      "manageTitle": "Credential Store",
+      "addTitle": "Add credential",
+      "editTitle": "Edit credential",
+      "name": "Credential name",
+      "type": "Credential type",
+      "owner": "Owner",
+      "secretValue": "Secret value",
+      "secretPlaceholder": "Paste a new value to rotate",
+      "writeOnly": "Secrets are write-only in this demo flow; saved values are never displayed back.",
+      "save": "Save credential",
+      "disable": "Disable credential",
+      "neverUsed": "Never used",
+      "invalidTitle": "Missing credential details",
+      "invalidDetail": "Credential name and owner are required.",
+      "status": {
+        "active": "Active",
+        "disabled": "Disabled",
+        "rotationDue": "Rotate"
+      }
     },
     "health": {
       "healthy": "The last demo checks are healthy. Latency and success rate are inside the expected range.",
@@ -264,7 +284,12 @@
       "timeoutMs": "Timeout",
       "credentialName": "Credential profile",
       "pollSchedule": "Poll schedule",
+      "pollInterval": "Repeat interval",
+      "firstRunAt": "First run",
+      "checkpointMode": "Checkpoint mode",
       "wsdlUrl": "WSDL URL",
+      "wsdlFile": "WSDL file",
+      "wsdlUpload": "Upload WSDL",
       "sampleJson": "Demo sample JSON"
     },
     "save": "Save connection",
@@ -279,7 +304,10 @@
       "testPassed": "Connection test passed",
       "testFailed": "Connection test failed",
       "invalidUrl": "URL must start with http:// or https://",
-      "sampleReady": "Sample sent to Mapping Studio"
+      "sampleReady": "Sample sent to Mapping Studio",
+      "credentialSaved": "Credential saved",
+      "credentialDisabled": "Credential disabled",
+      "wsdlLoaded": "WSDL loaded"
     },
     "history": {
       "demoSuccess": "Demo request completed"
@@ -560,6 +588,8 @@
     "analyze": "Analyze payload",
     "next": "Next",
     "back": "Back",
+    "undo": "Undo",
+    "redo": "Redo",
     "treeTitle": "Field tree",
     "treeSubtitle": "Inferred hierarchy from the current JSON. Click a leaf to copy its path, or assign it directly to the selected mapping rule.",
     "treeEmpty": "Analyze a valid JSON document to populate the tree.",

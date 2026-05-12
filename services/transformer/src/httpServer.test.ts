@@ -316,6 +316,44 @@ describe('HTTP Server', () => {
       await authApp.close();
     });
 
+    it('should reject admin reload without API key when auth enabled', async () => {
+      const envWithAuth: Env = {
+        mappingsRoot: testDir,
+        port: 8080,
+        apiKey: 'secret-key',
+        corsOrigins: [],
+        kafkaEnabled: false,
+        kafkaBrokers: [],
+        kafkaGroupId: 'test',
+        kafkaFallbackDlqTopic: 'test.dlq',
+        kafkaConnectRetries: 3,
+        kafkaConnectRetryDelayMs: 100,
+        kafkaSslEnabled: false,
+        kafkaSaslMechanism: undefined,
+        kafkaSaslUsername: undefined,
+        kafkaSaslPassword: undefined,
+        redisUrl: undefined,
+        redisCacheTtlSeconds: 3600,
+        workerPoolEnabled: false,
+        workerPoolSize: 0,
+        outboxEnabled: false,
+        outboxDatabaseUrl: undefined,
+        outboxPollIntervalMs: 1000,
+        outboxBatchSize: 100,
+        logLevel: 'silent',
+      };
+
+      const authApp = await buildServer(envWithAuth, registry, engine);
+
+      const response = await authApp.inject({
+        method: 'POST',
+        url: '/v1/admin/reload',
+      });
+
+      expect(response.statusCode).toBe(401);
+      await authApp.close();
+    });
+
     it('should accept request with valid API key', async () => {
       const envWithAuth: Env = {
         mappingsRoot: testDir,

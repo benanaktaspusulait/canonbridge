@@ -183,9 +183,9 @@ export class RedisCache implements TransformCache {
 /**
  * Factory function to create cache instance based on configuration.
  */
-export function createCache(redisUrl?: string): TransformCache {
+export function createCache(redisUrl?: string, ttlSeconds = 3600): TransformCache {
   if (redisUrl) {
-    return new RedisCache(redisUrl);
+    return new RedisCache(redisUrl, 'canonbridge:transform:', ttlSeconds);
   }
   return new InMemoryCache();
 }

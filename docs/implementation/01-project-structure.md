@@ -1,6 +1,117 @@
 # Project Structure
 
-## Recommended Directory Layout
+## Backend Monorepo / Service Layout
+
+The production backend is a small set of services, not a single transformer-only package. The current repository already contains a `services/transformer/` scaffold; the remaining backend services below are requirements for the next implementation phase.
+
+```text
+etlsolutions/
+  services/
+    mapping-studio-api/
+      src/main/java/
+        api/
+        application/
+        domain/
+        infrastructure/
+          persistence/
+          security/
+          audit/
+      src/main/resources/
+        db/migration/
+        application.yaml
+      pom.xml
+
+    transformer/
+      src/
+        kafkaRunner.ts
+        transformEngine.ts
+        partnerRegistry.ts
+        jsonataWorker.ts
+        workerPool.ts
+        httpServer.ts
+        metrics.ts
+        env.ts
+      package.json
+      Dockerfile
+      k8s/
+
+    outbound-call-manager/
+      src/main/java/
+        api/
+        application/
+        auth/
+        rest/
+        soap/
+        security/
+        persistence/
+      src/main/resources/
+        db/migration/
+        application.yaml
+      pom.xml
+
+    webhook-receiver/
+      # May be folded into mapping-studio-api for MVP.
+      src/main/java/
+        api/
+        auth/
+        producer/
+      pom.xml
+
+    scheduled-poller/
+      # May be folded into outbound-call-manager for MVP.
+      src/main/java/
+        scheduler/
+        checkpoint/
+        producer/
+      pom.xml
+
+    business-consumer-service/
+      src/main/java/
+        consumer/
+        domain/
+        persistence/
+        outbox/
+      pom.xml
+
+    outbox-publisher/
+      src/main/java/
+        publisher/
+        persistence/
+      pom.xml
+
+  partners/
+    <partner-id>/
+      <event-type>/
+        config.json
+        input.v1.schema.json
+        inbound.v1.jsonata
+        fixtures/
+
+  schemas/
+    envelope.schema.json
+    canonical/
+
+  docs/
+    implementation/11-backend-service-requirements.md
+    product/03-mapping-studio-api-data-model.md
+    architecture/architecture-v7-outbound.md
+```
+
+### Service Ownership
+
+| Path | Owner | Notes |
+|------|-------|-------|
+| `services/mapping-studio-api` | Management backend | Stores drafts, versions, partners, credentials metadata, outbound config, fixtures, validation runs, and audit events. |
+| `services/transformer` | Transformation runtime | Existing scaffold. Owns JSONata, Ajv, Kafka transform flow, retry, DLQ, and dry-run transform API. |
+| `services/outbound-call-manager` | External API runtime | Owns REST/SOAP network calls, credential resolution, masking, allowlists, retry, and call history. |
+| `services/webhook-receiver` | Inbound HTTP source | Converts webhook requests into raw envelopes. Can be a module inside `mapping-studio-api` for MVP. |
+| `services/scheduled-poller` | Scheduled API source | Runs configured polling jobs and checkpoints. Can be a module inside `outbound-call-manager` for MVP. |
+| `services/business-consumer-service` | Canonical event processing | Applies business rules, idempotency, dependencies, and domain writes. |
+| `services/outbox-publisher` | Durable event publication | Publishes outbox rows to Kafka. |
+
+## Transformer Service Package Layout
+
+The layout below is the transformer-specific structure. It is no longer the entire backend architecture.
 
 ```text
 partner-transformer-service/
@@ -128,6 +239,8 @@ partner-transformer-service/
 
 ## Partner Configuration Structure
 
+The example below is the minimal transformer configuration for a Kafka-sourced flow. Production configs can also include `source`, `triggers`, `authentication`, and `outbound` blocks for webhook, scheduled poll, REST, SOAP, and credential-backed flows. See [Architecture V7](../architecture/architecture-v7-outbound.md#40-partnerevent-configuration-update) for the full outbound-aware shape.
+
 ```json
 {
   \"partnerId\": \"companyA\",
@@ -228,12 +341,14 @@ partner-transformer-service/
 
 ## Next Steps
 
-1. Review [Configuration](./02-configuration.md)
-2. Study [Mapping Versioning](./03-mapping-versioning.md)
-3. Understand [Schema Validation](./04-schema-validation.md)
+1. Review [Backend Service Requirements](./11-backend-service-requirements.md)
+2. Review [Configuration](./02-configuration.md)
+3. Study [Mapping Versioning](./03-mapping-versioning.md)
+4. Understand [Schema Validation](./04-schema-validation.md)
 
 ---
 
 **See Also**:
 - [Architecture Overview](../architecture/01-overview.md)
+- [Architecture V7 - Outbound API Calling and Credential Store](../architecture/architecture-v7-outbound.md)
 - [Technology Decisions](../architecture/03-technology-decisions.md)

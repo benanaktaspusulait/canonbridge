@@ -2,9 +2,9 @@
 
 **🪄 Complete guide to solving integration problems without code**
 
-> ⚠️ **Project Status**: This project is currently in the **DESIGN & VALIDATION PHASE**.
-> - Documentation is complete (architecture, implementation guides, operations)
-> - Code has not been written yet
+> ⚠️ **Project Status**: This project is currently in the **DEMO + BACKEND DESIGN PHASE**.
+> - Mapping Studio UI demo screens and transformer scaffold exist in the repository
+> - Backend production services are specified but not fully implemented
 > - Customer validation has not been completed
 > - All performance claims are targets, not measured results
 > 
@@ -112,6 +112,7 @@ Mapping Studio is the core management workflow: upload or paste sample JSON, ins
 
 - [Implementation Roadmap](./implementation/roadmap.md)
 - [Implementation Status](./implementation/status.md)
+- [Backend Service Requirements](./implementation/11-backend-service-requirements.md)
 - [Implementation-Ready Assets](./implementation/implementation-ready-assets.md)
 - [Project Structure](./implementation/01-project-structure.md)
 - [Configuration](./implementation/02-configuration.md)
@@ -176,7 +177,7 @@ Mapping Studio is the core management workflow: upload or paste sample JSON, ins
 |------|------|
 | Product Manager | [product/overview.md](./product/overview.md) -> [product/roadmap.md](./product/roadmap.md) -> [product/README.md](./product/README.md) |
 | Frontend Developer | [product/02-mapping-studio-ux-flow.md](./product/02-mapping-studio-ux-flow.md) -> [implementation/FRONTEND_REACT_GUIDE.md](./implementation/FRONTEND_REACT_GUIDE.md) -> [implementation/FORMS_ANGULAR_GUIDE.md](./implementation/FORMS_ANGULAR_GUIDE.md) |
-| Backend Developer | [architecture/05-transformation-layer.md](./architecture/05-transformation-layer.md) -> [implementation/TRANSFORMER_NODEJS_GUIDE.md](./implementation/TRANSFORMER_NODEJS_GUIDE.md) -> [implementation/03-mapping-versioning.md](./implementation/03-mapping-versioning.md) |
+| Backend Developer | [implementation/11-backend-service-requirements.md](./implementation/11-backend-service-requirements.md) -> [architecture/architecture-v7-outbound.md](./architecture/architecture-v7-outbound.md) -> [product/03-mapping-studio-api-data-model.md](./product/03-mapping-studio-api-data-model.md) -> [implementation/TRANSFORMER_NODEJS_GUIDE.md](./implementation/TRANSFORMER_NODEJS_GUIDE.md) |
 | DevOps/SRE | [deployment/setup-guide.md](./deployment/setup-guide.md) -> [deployment/DOCKER_COMPOSE_LOCAL.md](./deployment/DOCKER_COMPOSE_LOCAL.md) -> [deployment/KUBERNETES_DEPLOYMENT_GUIDE.md](./deployment/KUBERNETES_DEPLOYMENT_GUIDE.md) -> [operations/08-runbook.md](./operations/08-runbook.md) |
 | QA | [testing/07-test-environment.md](./testing/07-test-environment.md) -> [testing/01-unit-tests.md](./testing/01-unit-tests.md) -> [testing/03-e2e-tests.md](./testing/03-e2e-tests.md) |
 

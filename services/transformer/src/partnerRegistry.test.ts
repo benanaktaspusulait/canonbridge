@@ -38,8 +38,36 @@ describe('PartnerRegistry', () => {
 
     const partners = registry.listPartners();
     expect(partners).toHaveLength(1);
-    expect(partners[0]).toEqual({ partnerId: 'partner-a', eventType: 'order-created' });
+    expect(partners[0]).toEqual({ partnerId: 'partner-a', eventType: 'order-created', version: 'v1' });
     expect(registry.resolve('partner-a', 'order-created')).toEqual(config);
+  });
+
+  it('should use schemaVersion as mapping version when present', async () => {
+    await mkdir(path.join(testDir, 'partners', 'partner-a'), { recursive: true });
+    const config = {
+      partnerId: 'partner-a',
+      eventType: 'order-created',
+      schemaVersion: 'v2',
+      inputSchema: 'partner-a/input.schema.json',
+      canonicalSchema: 'partner-a/canonical.schema.json',
+      mapping: 'partner-a/mapping.jsonata',
+      topics: {
+        raw: 'partner-a.raw',
+        canonical: 'partner-a.canonical',
+        dlq: 'partner-a.dlq',
+      },
+    };
+
+    await writeFile(path.join(testDir, 'partners', 'partner-a', 'config.json'), JSON.stringify(config));
+    await registry.load();
+
+    expect(registry.resolve('partner-a', 'order-created')).toBeUndefined();
+    expect(registry.resolve('partner-a', 'order-created', 'v2')).toEqual(config);
+    expect(registry.listPartners()[0]).toEqual({
+      partnerId: 'partner-a',
+      eventType: 'order-created',
+      version: 'v2',
+    });
   });
 
   it('should load multiple partner configs', async () => {
@@ -173,7 +201,7 @@ describe('PartnerRegistry', () => {
 
     const partners1 = registry.listPartners();
     expect(partners1).toHaveLength(1);
-    expect(partners1[0]).toEqual({ partnerId: 'partner-a', eventType: 'order-created' });
+    expect(partners1[0]).toEqual({ partnerId: 'partner-a', eventType: 'order-created', version: 'v1' });
 
     // Add another partner
     await mkdir(path.join(testDir, 'partners/partner-b'), { recursive: true });

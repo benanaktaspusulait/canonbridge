@@ -9,7 +9,9 @@ import addFormats from 'ajv-formats';
 import jsonata from 'jsonata';
 import type { PartnerMappingConfig } from './partnerRegistry.js';
 import type { PartnerRegistry } from './partnerRegistry.js';
+import { mappingVersion } from './partnerRegistry.js';
 import type { TransformCache, Compiled, CacheEntry } from './cache.js';
+import type { WorkerPool } from './workerPool.js';
 
 function formatAjvErrors(validate: ValidateFunction): string {
   const errs = validate.errors;
@@ -47,6 +49,7 @@ export class TransformEngine {
     private readonly mappingsRoot: string,
     private readonly registry: PartnerRegistry,
     private readonly cache: TransformCache,
+    private readonly workerPool?: WorkerPool,
   ) {}
 
   /** Expose cache size for metrics. */
@@ -55,8 +58,8 @@ export class TransformEngine {
   }
 
   /** Invalidate a single compiled entry (called after hot-reload). */
-  async evict(partnerId: string, eventType: string): Promise<void> {
-    await this.cache.delete(`${partnerId}:${eventType}`);
+  async evict(partnerId: string, eventType: string, version = 'v1'): Promise<void> {
+    await this.cache.delete(`${partnerId}:${eventType}:${version}`);
   }
 
   /** Invalidate all compiled entries. */
@@ -88,12 +91,17 @@ export class TransformEngine {
   private resolvePartnerKeys(
     envelope: Record<string, unknown>,
     context?: EnvelopeContext,
-  ): { partnerId: string; eventType: string } | undefined {
+  ): { partnerId: string; eventType: string; schemaVersion?: string } | undefined {
     // Strategy 1: Root-level fields (backward compatible)
     const partnerId = envelope.partnerId;
     const eventType = envelope.eventType;
+    const schemaVersion = envelope.schemaVersion;
     if (typeof partnerId === 'string' && typeof eventType === 'string') {
-      return { partnerId, eventType };
+      return {
+        partnerId,
+        eventType,
+        schemaVersion: typeof schemaVersion === 'string' ? schemaVersion : undefined,
+      };
     }
 
     // Strategy 2: Topic-based resolution
@@ -159,24 +167,24 @@ export class TransformEngine {
       };
     }
 
-    const { partnerId, eventType } = keys;
+    const { partnerId, eventType, schemaVersion } = keys;
     
     // G-10: If keys were resolved from topic, inject them into envelope for validation
     if (!envelope.partnerId || !envelope.eventType) {
       envelope = { ...envelope, partnerId, eventType };
     }
     
-    const config = this.registry.resolve(partnerId, eventType);
+    const config = this.registry.resolve(partnerId, eventType, schemaVersion);
     if (!config) {
       return {
         ok: false,
         stage: 'resolve',
-        message: `No inbound mapping for partnerId=${partnerId} eventType=${eventType}`,
+        message: `No inbound mapping for partnerId=${partnerId} eventType=${eventType}${schemaVersion ? ` schemaVersion=${schemaVersion}` : ''}`,
         durationMs: elapsed(),
       };
     }
 
-    const key = `${partnerId}:${eventType}`;
+    const key = `${partnerId}:${eventType}:${mappingVersion(config)}`;
     let compiled: Compiled;
     try {
       compiled = await this.compile(key, config);
@@ -202,7 +210,24 @@ export class TransformEngine {
 
     let transformed: unknown;
     try {
-      transformed = await compiled.evaluate(envelope);
+      // G-16: Use worker pool for CPU-intensive JSONata evaluation if available
+      if (this.workerPool) {
+        const mappingPath = path.join(this.mappingsRoot, config.mapping);
+        const mappingText = await readFile(mappingPath, 'utf8');
+        const result = await this.workerPool.evaluate(mappingText, envelope);
+        if (!result.ok) {
+          return {
+            ok: false,
+            stage: 'transform',
+            message: result.error ?? 'Worker pool evaluation failed',
+            durationMs: elapsed(),
+          };
+        }
+        transformed = result.result;
+      } else {
+        // Fallback to main thread evaluation
+        transformed = await compiled.evaluate(envelope);
+      }
     } catch (err) {
       return {
         ok: false,

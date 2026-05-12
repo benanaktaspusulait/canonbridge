@@ -39,7 +39,12 @@ interface ExternalConnection {
   timeoutMs: number;
   credentialName: string;
   pollSchedule: string;
+  pollInterval: string;
+  firstRunAt: string;
+  checkpointMode: 'watermark' | 'page_token' | 'idempotency_only';
   wsdlUrl: string;
+  wsdlFileName: string;
+  wsdlPreview: string;
   sampleJson: string;
   requestPreview: string;
   responsePreview: string;
@@ -74,9 +79,11 @@ interface CredentialRecord {
   environment: ExternalConnection['environment'];
   lastUsed: string;
   owner: string;
+  status: 'active' | 'disabled' | 'rotationDue';
 }
 
 type ConnectionForm = Omit<ExternalConnection, 'id' | 'status' | 'successRate' | 'avgMs' | 'p95Ms' | 'lastError' | 'lastSuccess' | 'calls24h'> & { id?: string };
+type CredentialForm = Omit<CredentialRecord, 'id' | 'lastUsed' | 'status'> & { id?: string; secretValue: string };
 
 const EMPTY_FORM: ConnectionForm = {
   name: '',
@@ -90,12 +97,25 @@ const EMPTY_FORM: ConnectionForm = {
   timeoutMs: 5000,
   credentialName: '',
   pollSchedule: '*/5 * * * *',
+  pollInterval: '5 minutes',
+  firstRunAt: '',
+  checkpointMode: 'watermark',
   wsdlUrl: '',
+  wsdlFileName: '',
+  wsdlPreview: '',
   sampleJson: '{\n  "orders": []\n}',
   requestPreview: '{\n  "limit": 10\n}',
   responsePreview: '{\n  "orders": []\n}',
   mappings: [],
   sparkline: [96, 97, 98, 99, 99, 98, 100]
+};
+
+const EMPTY_CREDENTIAL_FORM: CredentialForm = {
+  name: '',
+  type: 'API Key',
+  environment: 'Sandbox',
+  owner: '',
+  secretValue: ''
 };
 
 const STUDIO_EXTERNAL_SAMPLE_KEY = 'canonbridge:external-systems:selected-sample';
@@ -186,7 +206,12 @@ export class ExternalSystemsComponent {
       timeoutMs: 5000,
       credentialName: 'Carrier A Production OAuth2',
       pollSchedule: '*/5 * * * *',
+      pollInterval: '5 minutes',
+      firstRunAt: '2026-05-12T08:00',
+      checkpointMode: 'watermark',
       wsdlUrl: '',
+      wsdlFileName: '',
+      wsdlPreview: '',
       sampleJson: SAMPLE_ORDERS_JSON,
       requestPreview: '{\n  "method": "GET",\n  "path": "/orders?limit=10"\n}',
       responsePreview: SAMPLE_ORDERS_JSON,
@@ -216,7 +241,12 @@ export class ExternalSystemsComponent {
       timeoutMs: 3000,
       credentialName: 'Shopify inbound webhook key',
       pollSchedule: '',
+      pollInterval: '',
+      firstRunAt: '',
+      checkpointMode: 'idempotency_only',
       wsdlUrl: '',
+      wsdlFileName: '',
+      wsdlPreview: '',
       sampleJson: SAMPLE_WEBHOOK_JSON,
       requestPreview: SAMPLE_WEBHOOK_JSON,
       responsePreview: '{\n  "accepted": true,\n  "messageId": "msg-9841"\n}',
@@ -243,7 +273,12 @@ export class ExternalSystemsComponent {
       timeoutMs: 8000,
       credentialName: 'Logistics Xpress SOAP Basic',
       pollSchedule: '',
+      pollInterval: '',
+      firstRunAt: '',
+      checkpointMode: 'idempotency_only',
       wsdlUrl: 'https://soap.logistics.example.com/tracking?wsdl',
+      wsdlFileName: 'tracking.wsdl',
+      wsdlPreview: '<definitions name="TrackingService"><service name="TrackingPort"/></definitions>',
       sampleJson: SAMPLE_SOAP_JSON,
       requestPreview: '<soap:Envelope><soap:Body><GetTracking>TRK-44192</GetTracking></soap:Body></soap:Envelope>',
       responsePreview: SAMPLE_SOAP_JSON,
@@ -270,7 +305,12 @@ export class ExternalSystemsComponent {
       timeoutMs: 10000,
       credentialName: 'Payment Risk OAuth2',
       pollSchedule: '',
+      pollInterval: '',
+      firstRunAt: '',
+      checkpointMode: 'idempotency_only',
       wsdlUrl: '',
+      wsdlFileName: '',
+      wsdlPreview: '',
       sampleJson: '{\n  "paymentId": "PAY-7781",\n  "riskScore": 87,\n  "decision": "REVIEW"\n}',
       requestPreview: '{\n  "paymentId": "PAY-7781",\n  "amount": 184.2\n}',
       responsePreview: '{\n  "error": "HTTP 503 after 3 attempts"\n}',
@@ -355,13 +395,21 @@ export class ExternalSystemsComponent {
   readonly formTypeOptions    = ['REST', 'SOAP', 'Webhook', 'Scheduled Poll'];
   readonly methodOptions      = ['GET', 'POST', 'PUT'];
   readonly authOptions        = ['None', 'API Key', 'Basic Auth', 'OAuth2'];
+  readonly credentialTypeOptions = ['API Key', 'Basic Auth', 'OAuth2'];
+  readonly pollIntervalOptions = ['1 minute', '5 minutes', '15 minutes', '30 minutes', '1 hour'];
+  readonly checkpointModeOptions = [
+    { label: 'Watermark', value: 'watermark' },
+    { label: 'Page token', value: 'page_token' },
+    { label: 'Idempotency only', value: 'idempotency_only' }
+  ];
 
   readonly credentials = signal<CredentialRecord[]>([
-    { id: 'cred-carrier-oauth', name: 'Carrier A Production OAuth2', type: 'OAuth2', environment: 'Production', lastUsed: '2 min ago', owner: 'Integration Team' },
-    { id: 'cred-shopify-webhook', name: 'Shopify inbound webhook key', type: 'API Key', environment: 'Production', lastUsed: '1 min ago', owner: 'Platform Team' },
-    { id: 'cred-logistics-basic', name: 'Logistics Xpress SOAP Basic', type: 'Basic Auth', environment: 'Sandbox', lastUsed: '16 min ago', owner: 'Support Team' },
-    { id: 'cred-payment-oauth', name: 'Payment Risk OAuth2', type: 'OAuth2', environment: 'Production', lastUsed: '48 min ago', owner: 'Risk Team' }
+    { id: 'cred-carrier-oauth', name: 'Carrier A Production OAuth2', type: 'OAuth2', environment: 'Production', lastUsed: '2 min ago', owner: 'Integration Team', status: 'active' },
+    { id: 'cred-shopify-webhook', name: 'Shopify inbound webhook key', type: 'API Key', environment: 'Production', lastUsed: '1 min ago', owner: 'Platform Team', status: 'active' },
+    { id: 'cred-logistics-basic', name: 'Logistics Xpress SOAP Basic', type: 'Basic Auth', environment: 'Sandbox', lastUsed: '16 min ago', owner: 'Support Team', status: 'rotationDue' },
+    { id: 'cred-payment-oauth', name: 'Payment Risk OAuth2', type: 'OAuth2', environment: 'Production', lastUsed: '48 min ago', owner: 'Risk Team', status: 'active' }
   ]);
+  readonly credentialNameOptions = computed(() => this.credentials().filter(c => c.status !== 'disabled').map(c => c.name));
 
   readonly partnerOptions = computed(() =>
     ['All', ...Array.from(new Set(this._connections().map(c => c.partner))).sort()]
@@ -389,6 +437,9 @@ export class ExternalSystemsComponent {
   dialogVisible = false;
   isEdit = false;
   form: ConnectionForm = { ...EMPTY_FORM };
+  credentialDialogVisible = false;
+  credentialIsEdit = false;
+  credentialForm: CredentialForm = { ...EMPTY_CREDENTIAL_FORM };
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
 
@@ -413,7 +464,12 @@ export class ExternalSystemsComponent {
       timeoutMs,
       credentialName,
       pollSchedule,
+      pollInterval,
+      firstRunAt,
+      checkpointMode,
       wsdlUrl,
+      wsdlFileName,
+      wsdlPreview,
       sampleJson,
       requestPreview,
       responsePreview,
@@ -433,7 +489,12 @@ export class ExternalSystemsComponent {
       timeoutMs,
       credentialName,
       pollSchedule,
+      pollInterval,
+      firstRunAt,
+      checkpointMode,
       wsdlUrl,
+      wsdlFileName,
+      wsdlPreview,
       sampleJson,
       requestPreview,
       responsePreview,
@@ -491,6 +552,67 @@ export class ExternalSystemsComponent {
   openDetail(connection: ExternalConnection): void {
     this.selectedConnection.set(connection);
     this.detailVisible = true;
+  }
+
+  openCredentialStore(): void {
+    this.credentialIsEdit = false;
+    this.credentialForm = { ...EMPTY_CREDENTIAL_FORM };
+    this.credentialDialogVisible = true;
+  }
+
+  openCredentialEdit(credential: CredentialRecord): void {
+    this.credentialIsEdit = true;
+    const { id, name, type, environment, owner } = credential;
+    this.credentialForm = { id, name, type, environment, owner, secretValue: '' };
+    this.credentialDialogVisible = true;
+  }
+
+  saveCredentialRecord(): void {
+    if (!this.credentialForm.name.trim() || !this.credentialForm.owner.trim()) {
+      this.toast.add({
+        severity: 'warn',
+        summary: this.t('externalSystems.credentialStore.invalidTitle'),
+        detail: this.t('externalSystems.credentialStore.invalidDetail')
+      });
+      return;
+    }
+
+    if (this.credentialIsEdit && this.credentialForm.id) {
+      this.credentials.update(list => list.map(credential => credential.id === this.credentialForm.id ? {
+        ...credential,
+        name: this.credentialForm.name,
+        type: this.credentialForm.type,
+        environment: this.credentialForm.environment,
+        owner: this.credentialForm.owner,
+        status: 'active'
+      } : credential));
+    } else {
+      this.credentials.update(list => [{
+        id: `cred-${Date.now()}`,
+        name: this.credentialForm.name,
+        type: this.credentialForm.type,
+        environment: this.credentialForm.environment,
+        owner: this.credentialForm.owner,
+        lastUsed: this.t('externalSystems.credentialStore.neverUsed'),
+        status: 'active'
+      }, ...list]);
+    }
+
+    this.credentialDialogVisible = false;
+    this.toast.add({
+      severity: 'success',
+      summary: this.t('externalSystems.toast.credentialSaved'),
+      detail: this.credentialForm.name
+    });
+  }
+
+  disableCredential(credential: CredentialRecord): void {
+    this.credentials.update(list => list.map(row => row.id === credential.id ? { ...row, status: 'disabled' } : row));
+    this.toast.add({
+      severity: 'warn',
+      summary: this.t('externalSystems.toast.credentialDisabled'),
+      detail: credential.name
+    });
   }
 
   test(connection: ExternalConnection): void {
@@ -571,6 +693,12 @@ export class ExternalSystemsComponent {
     return 'secondary';
   }
 
+  credentialSeverity(status: CredentialRecord['status']): 'success' | 'warn' | 'secondary' {
+    if (status === 'active') return 'success';
+    if (status === 'rotationDue') return 'warn';
+    return 'secondary';
+  }
+
   connectionCredential(connection: ExternalConnection): CredentialRecord | null {
     return this.credentials().find(credential => credential.name === connection.credentialName) ?? null;
   }
@@ -612,10 +740,13 @@ export class ExternalSystemsComponent {
 
   typeConfigHint(connection: ExternalConnection): string {
     if (connection.type === 'Scheduled Poll') {
-      return this.t('externalSystems.detail.pollHint', { schedule: connection.pollSchedule || 'manual' });
+      const detail = [connection.pollSchedule || 'manual', connection.pollInterval, connection.firstRunAt]
+        .filter(Boolean)
+        .join(' · ');
+      return this.t('externalSystems.detail.pollHint', { schedule: detail });
     }
     if (connection.type === 'SOAP') {
-      return this.t('externalSystems.detail.wsdlHint', { wsdl: connection.wsdlUrl || connection.url });
+      return this.t('externalSystems.detail.wsdlHint', { wsdl: connection.wsdlFileName || connection.wsdlUrl || connection.url });
     }
     if (connection.type === 'Webhook') {
       return this.t('externalSystems.detail.webhookHint');
@@ -629,9 +760,27 @@ export class ExternalSystemsComponent {
       !!this.form.partner.trim() &&
       !!this.form.eventType.trim() &&
       !!this.form.url.trim() &&
-      (this.form.type !== 'SOAP' || !!this.form.wsdlUrl.trim()) &&
-      (this.form.type !== 'Scheduled Poll' || !!this.form.pollSchedule.trim())
+      (this.form.type !== 'SOAP' || !!this.form.wsdlUrl.trim() || !!this.form.wsdlFileName.trim()) &&
+      (this.form.type !== 'Scheduled Poll' || (!!this.form.pollSchedule.trim() && !!this.form.pollInterval.trim()))
     );
+  }
+
+  onWsdlFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.form.wsdlFileName = file.name;
+      this.form.wsdlPreview = String(reader.result ?? '').slice(0, 1800);
+      this.toast.add({
+        severity: 'success',
+        summary: this.t('externalSystems.toast.wsdlLoaded'),
+        detail: file.name
+      });
+      input.value = '';
+    };
+    reader.readAsText(file);
   }
 
   private latencyFor(connection: ExternalConnection): number {

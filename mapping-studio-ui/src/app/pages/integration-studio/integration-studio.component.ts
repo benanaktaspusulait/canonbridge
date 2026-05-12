@@ -717,6 +717,12 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
 
   selectedRule = signal<MappingRule | null>(null);
   ruleInspectorTab = signal<string>('visual');
+  readonly canUndoRules = signal(false);
+  readonly canRedoRules = signal(false);
+
+  private readonly ruleHistoryLimit = 40;
+  private ruleHistoryPast: MappingRule[][] = [];
+  private ruleHistoryFuture: MappingRule[][] = [];
 
   testOutput = signal<Record<string, unknown> | null>(null);
   altFixtureJson = signal('');
@@ -1039,6 +1045,13 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     }
     const t = ev.target as HTMLElement | null;
     if (t && ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName)) return;
+    if ((ev.metaKey || ev.ctrlKey) && (key === 'z' || key === 'y')) {
+      ev.preventDefault();
+      if (key === 'z' && ev.shiftKey) this.redoRules();
+      else if (key === 'z') this.undoRules();
+      else this.redoRules();
+      return;
+    }
     if (ev.key === 'ArrowRight') {
       ev.preventDefault();
       const next = Math.min(4, this.activeStep() + 1);
@@ -1578,6 +1591,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   onRuleDrop(event: CdkDragDrop<MappingRule[]>): void {
     const copy = [...this.rules()];
     moveItemInArray(copy, event.previousIndex, event.currentIndex);
+    this.pushRuleHistory();
     this.rules.set(copy);
   }
 
@@ -1641,6 +1655,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
       paramC: '',
       advancedExpression: ''
     };
+    this.pushRuleHistory();
     this.rules.update(rs => [...rs, newRule]);
     const added = this.rules().find(r => r.id === newRule.id) ?? null;
     this.selectedRule.set(added);
@@ -1660,6 +1675,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
         paramC: '',
         advancedExpression: ''
       };
+      this.pushRuleHistory();
       this.rules.update(rs => [...rs, newRule]);
       rule = newRule;
     }
@@ -1672,6 +1688,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
 
   removeRule(rule: MappingRule): void {
     const id = rule.id;
+    this.pushRuleHistory();
     this.rules.update(rs => rs.filter(r => r !== rule));
     if (this.selectedRule()?.id === id) {
       this.selectedRule.set(this.rules()[0] ?? null);
@@ -1679,11 +1696,59 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   }
 
   patchRule(id: string, patch: Partial<MappingRule>): void {
+    this.pushRuleHistory();
     this.rules.update(rs => rs.map(r => (r.id === id ? { ...r, ...patch } : r)));
     if (this.selectedRule()?.id === id) {
       const next = this.rules().find(r => r.id === id) ?? null;
       this.selectedRule.set(next);
     }
+  }
+
+  undoRules(): void {
+    const previous = this.ruleHistoryPast.pop();
+    if (!previous) return;
+    this.ruleHistoryFuture.push(this.snapshotRules());
+    this.rules.set(previous);
+    this.reselectRuleAfterHistory();
+    this.updateRuleHistorySignals();
+  }
+
+  redoRules(): void {
+    const next = this.ruleHistoryFuture.pop();
+    if (!next) return;
+    this.ruleHistoryPast.push(this.snapshotRules());
+    this.rules.set(next);
+    this.reselectRuleAfterHistory();
+    this.updateRuleHistorySignals();
+  }
+
+  private pushRuleHistory(): void {
+    this.ruleHistoryPast.push(this.snapshotRules());
+    if (this.ruleHistoryPast.length > this.ruleHistoryLimit) this.ruleHistoryPast.shift();
+    this.ruleHistoryFuture = [];
+    this.updateRuleHistorySignals();
+  }
+
+  private snapshotRules(): MappingRule[] {
+    return this.rules().map(rule => ({ ...rule }));
+  }
+
+  private reselectRuleAfterHistory(): void {
+    const selectedId = this.selectedRule()?.id;
+    const next = (selectedId ? this.rules().find(rule => rule.id === selectedId) : null) ?? this.rules()[0] ?? null;
+    this.selectedRule.set(next);
+    this.ruleInspectorTab.set('visual');
+  }
+
+  private resetRuleHistory(): void {
+    this.ruleHistoryPast = [];
+    this.ruleHistoryFuture = [];
+    this.updateRuleHistorySignals();
+  }
+
+  private updateRuleHistorySignals(): void {
+    this.canUndoRules.set(this.ruleHistoryPast.length > 0);
+    this.canRedoRules.set(this.ruleHistoryFuture.length > 0);
   }
 
   patchTargetAt(index: number, patch: Partial<TargetField>): void {
@@ -2334,6 +2399,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
         this.fixtures.set(cfg.fixtures ?? this.fixtures());
         this.selectedRule.set(cfg.rules[0] ?? null);
         this.ruleInspectorTab.set('visual');
+        this.resetRuleHistory();
         this.validationOk.set(null);
         this.validationMessages.set([]);
         this.published.set(false);

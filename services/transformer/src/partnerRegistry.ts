@@ -6,6 +6,7 @@ export interface PartnerMappingConfig {
   eventType: string;
   direction?: string;
   version?: string; // G-17: Schema versioning (ADR-007)
+  schemaVersion?: string;
   inputSchema: string;
   mapping: string;
   canonicalSchema: string;
@@ -20,6 +21,10 @@ function registryKey(partnerId: string, eventType: string, version?: string): st
   // G-17: Include version in key if provided (default to 'v1' for backward compat)
   const v = version ?? 'v1';
   return `${partnerId}:${eventType}:${v}`;
+}
+
+export function mappingVersion(config: Pick<PartnerMappingConfig, 'version' | 'schemaVersion'>): string {
+  return config.version ?? config.schemaVersion ?? 'v1';
 }
 
 async function walkFiles(relDir: string, baseDir: string): Promise<string[]> {
@@ -60,7 +65,7 @@ export class PartnerRegistry {
       if (!raw.topics?.raw || !raw.topics?.canonical || !raw.topics?.dlq) {
         throw new Error(`Config ${full} missing topics.raw, topics.canonical, or topics.dlq`);
       }
-      const key = registryKey(raw.partnerId, raw.eventType, raw.version);
+      const key = registryKey(raw.partnerId, raw.eventType, mappingVersion(raw));
       if (next.has(key)) {
         throw new Error(`Duplicate mapping for ${key} (second file: ${full})`);
       }
@@ -91,7 +96,7 @@ export class PartnerRegistry {
     return [...this.byKey.values()].map((c) => ({ 
       partnerId: c.partnerId, 
       eventType: c.eventType,
-      version: c.version,
+      version: mappingVersion(c),
     }));
   }
 
