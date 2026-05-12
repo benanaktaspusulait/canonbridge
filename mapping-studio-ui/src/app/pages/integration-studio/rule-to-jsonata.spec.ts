@@ -363,7 +363,7 @@ describe('rule-to-jsonata', () => {
           transform: 'template_string',
           paramA: ''
         });
-        const result = ruleToJsonataFragment(rule));
+        const result = ruleToJsonataFragment(rule);
         expect(result).toBe("''");
       });
 
