@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const transformerRoot = path.join(rootDir, 'services/transformer');
 
 async function importDependencies() {
   try {
@@ -21,14 +22,14 @@ async function importDependencies() {
   }
 }
 
-async function readJson(relativePath) {
-  const contents = await readFile(path.join(rootDir, relativePath), 'utf8');
+async function readJson(relativePath, base = rootDir) {
+  const contents = await readFile(path.join(base, relativePath), 'utf8');
   return JSON.parse(contents);
 }
 
-async function fileExists(relativePath) {
+async function fileExists(relativePath, base = rootDir) {
   try {
-    await readFile(path.join(rootDir, relativePath), 'utf8');
+    await readFile(path.join(base, relativePath), 'utf8');
     return true;
   } catch {
     return false;
@@ -85,10 +86,10 @@ const { jsonata, Ajv, addFormats } = await importDependencies();
 const ajv = new Ajv({ allErrors: true, strict: false });
 addFormats(ajv);
 
-const configFiles = (await walk('partners')).filter((file) => file.endsWith('/config.json'));
+const configFiles = (await walk('services/transformer/partners')).filter((file) => file.endsWith('/config.json'));
 
 if (configFiles.length === 0) {
-  throw new Error('No partner mapping config files found under partners/**/config.json');
+  throw new Error('No partner mapping config files found under services/transformer/partners/**/config.json');
 }
 
 let fixtureCount = 0;
@@ -100,18 +101,21 @@ for (const configFile of configFiles) {
   const canonicalSchemaPath = config.canonicalSchema;
 
   for (const requiredPath of [mappingPath, inputSchemaPath, canonicalSchemaPath]) {
-    if (!requiredPath || !await fileExists(requiredPath)) {
+    if (!requiredPath || !await fileExists(requiredPath, transformerRoot)) {
       throw new Error(`${configFile} references missing file: ${requiredPath}`);
     }
   }
 
-  const inputSchema = await readJson(inputSchemaPath);
-  const canonicalSchema = await readJson(canonicalSchemaPath);
+  const inputSchema = await readJson(inputSchemaPath, transformerRoot);
+  const canonicalSchema = await readJson(canonicalSchemaPath, transformerRoot);
   const validateInput = ajv.compile(inputSchema);
   const validateOutput = ajv.compile(canonicalSchema);
-  const mapping = await readFile(path.join(rootDir, mappingPath), 'utf8');
+  const mapping = await readFile(path.join(transformerRoot, mappingPath), 'utf8');
   const expression = jsonata(mapping);
-  const fixtureDir = path.dirname(config.fixtures?.[0] ?? path.join(path.dirname(configFile), 'fixtures/example.input.json'));
+  const rawFixtureDir = config.fixtures?.[0]
+    ? path.dirname(config.fixtures[0])
+    : path.join(path.dirname(configFile).replace(/^services\/transformer\//, ''), 'fixtures');
+  const fixtureDir = path.join('services/transformer', rawFixtureDir);
   const inputFiles = (await walk(fixtureDir)).filter((file) => file.endsWith('.input.json'));
 
   if (inputFiles.length === 0) {

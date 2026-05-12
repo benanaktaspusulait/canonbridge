@@ -39,7 +39,7 @@ export interface Env {
 }
 
 export function loadEnv(): Env {
-  const defaultMappings = path.resolve(__dirname, '../../../mappings');
+  const defaultMappings = path.resolve(__dirname, '..');
 
   const corsRaw = process.env.CORS_ORIGINS ?? '';
   const corsOrigins = corsRaw

@@ -73,7 +73,7 @@ services:
       # API_KEY: "change-me-in-production"
       # CORS_ORIGINS: "https://studio.canonbridge.example"
     volumes:
-      - ../../mappings:/mappings:ro
+      - .:/mappings:ro
     depends_on:
       redpanda-init:
         condition: service_completed_successfully

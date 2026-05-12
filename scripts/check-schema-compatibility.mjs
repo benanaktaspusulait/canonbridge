@@ -49,12 +49,12 @@ const ajv = new Ajv({ allErrors: true, strict: false });
 addFormats(ajv);
 
 const schemaFiles = [
-  ...await walkIfExists('schemas'),
-  ...await walkIfExists('partners')
+  ...await walkIfExists('services/transformer/schemas'),
+  ...await walkIfExists('services/transformer/partners')
 ].filter((file) => file.endsWith('.schema.json'));
 
 if (schemaFiles.length === 0) {
-  throw new Error('No JSON Schema files found under schemas/ or partners/');
+  throw new Error('No JSON Schema files found under services/transformer/schemas/ or services/transformer/partners/');
 }
 
 for (const schemaFile of schemaFiles) {
@@ -64,7 +64,7 @@ for (const schemaFile of schemaFiles) {
     throw new Error(`${schemaFile} is not a valid JSON Schema: ${ajv.errorsText(ajv.errors)}`);
   }
 
-  if (schemaFile.startsWith('schemas/canonical/') && !schema.required?.includes('eventId')) {
+  if (schemaFile.startsWith('services/transformer/schemas/canonical/') && !schema.required?.includes('eventId')) {
     throw new Error(`${schemaFile} must preserve the canonical envelope field: eventId`);
   }
 
