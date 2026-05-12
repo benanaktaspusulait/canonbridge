@@ -82,15 +82,15 @@
     - Mapping kuralı ekleme/silme/düzenleme işlemlerini geri almak için bir yığın (stack) bulunmuyor.
     - **⏱️ Tahmini süre:** 2 saat.
 
-9.  **Boş durum (empty state) ekranları**
+9.  ~~**Boş durum (empty state) ekranları**~~
     - Mapping listesi, DLQ, partner listesi boşken “Henüz bir kayıt yok” mesajı ve illüstrasyon eksik.
     - **⏱️ Tahmini süre:** 30 dk.
 
-10. **CSS değişken hatası**
+10. ~~**CSS değişken hatası**~~
     - `styles.scss` içinde `$primaryColor` ile `var(--primary-color)` karışıklığı derleme hatasına yol açabilir.
     - **⏱️ Tahmini süre:** 15 dk.
 
-11. **Test kapsamı**
+11. ~~**Test kapsamı**~~
     - Bazı birim testler mevcut ancak Wizard’ın tüm adımlarını ve 24 dönüşüm tipini kapsayan kapsamlı testler yok.
     - **⏱️ Tahmini süre:** 3‑4 saat.
 
@@ -100,7 +100,7 @@
 
 12. ~~**Klavye kısayolları** (`Ctrl+S`, `Ctrl+Enter`, `Ctrl+Z/Y`)~~
 13. **Responsive tasarım iyileştirmesi** (Wizard’ın çok sütunlu yapısı)
-14. **Erişilebilirlik (a11y)** (ARIA etiketleri, klavye navigasyonu)
+14. ~~**Erişilebilirlik (a11y)** (ARIA etiketleri, klavye navigasyonu)~~
 15. **Performans optimizasyonu** (büyük JSON yükleme)
 
 ---

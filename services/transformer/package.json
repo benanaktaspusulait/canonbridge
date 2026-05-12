@@ -11,7 +11,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:mapping-fixtures": "node scripts/validate-mapping-fixtures.mjs",
+    "test:schema-compatibility": "node scripts/check-schema-compatibility.mjs"
   },
   "engines": {
     "node": ">=20"
