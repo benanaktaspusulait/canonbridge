@@ -146,8 +146,7 @@ export async function startKafkaConsumer(
       const transformStart = Date.now();
       const keys = partnerKeys(parsed);
       const cfg = keys ? registry.resolve(keys.partnerId, keys.eventType) : undefined;
-      // G-10: Pass topic hint for fallback resolution
-      const result = await engine.transformEnvelope(parsed, topic);
+      const result = await engine.transformEnvelope(parsed, { topic, partition, offset });
       const transformDurationMs = Date.now() - transformStart;
 
       if (!result.ok) {

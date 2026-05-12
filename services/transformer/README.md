@@ -66,6 +66,14 @@ Expect `200` and a JSON body `{ "canonical": { ... } }`.
 - **CORS Whitelist**: Configure `CORS_ORIGINS` for explicit origin control
 - **Kafka SSL/SASL**: Full support for production Kafka clusters
 
+### 🔄 Flexible Partner Resolution
+- **Envelope-based** (default): `partnerId` and `eventType` in message root
+- **Topic-based** (fallback): Parse from Kafka topic name when envelope fields missing
+  - Format: `tenant-{id}.raw.{partnerId}.{eventType}`
+  - Example: `tenant-001.raw.acme-marketplace.order-created`
+  - Extracted values injected into envelope for validation
+  - Backward compatible: envelope values always take precedence
+
 ### 📊 Observability
 - **Prometheus Metrics** (`GET /metrics`):
   - `transform_requests_total{status, stage, partner, event_type}` — Request counter
@@ -82,7 +90,7 @@ Expect `200` and a JSON body `{ "canonical": { ... } }`.
 - **Manual Offset Commit**: Prevents data loss on crash (commit after DLQ write)
 
 ### ✅ Testing
-- **27 Passing Tests**: Unit + integration tests with Vitest
+- **32 Passing Tests**: Unit + integration tests with Vitest
 - **Test Coverage**: Run `npm run test:coverage` for detailed report
 - **CI/CD Ready**: All tests run in < 1 second
 

@@ -139,40 +139,32 @@ export class TransformEngine {
     return compiled;
   }
 
-  async transformEnvelope(raw: unknown, topicHint?: string): Promise<TransformResult> {
+  async transformEnvelope(raw: unknown, context?: EnvelopeContext): Promise<TransformResult> {
     const start = Date.now();
     const elapsed = () => Date.now() - start;
 
     if (raw === null || typeof raw !== 'object') {
       return { ok: false, stage: 'resolve', message: 'Body must be a JSON object', durationMs: elapsed() };
     }
-    const envelope = raw as Record<string, unknown>;
-    
-    // G-10: Try envelope first, then fall back to topic-based resolution
-    let partnerId = envelope.partnerId;
-    let eventType = envelope.eventType;
-    
-    if (typeof partnerId !== 'string' || typeof eventType !== 'string') {
-      // Try to extract from topic name if provided
-      if (topicHint) {
-        const extracted = this.extractFromTopic(topicHint);
-        if (extracted) {
-          partnerId = extracted.partnerId;
-          eventType = extracted.eventType;
-        }
-      }
-      
-      // If still not resolved, return error
-      if (typeof partnerId !== 'string' || typeof eventType !== 'string') {
-        return { 
-          ok: false, 
-          stage: 'resolve', 
-          message: 'partnerId and eventType must be strings in envelope or resolvable from topic', 
-          durationMs: elapsed() 
-        };
-      }
+    let envelope = raw as Record<string, unknown>;
+
+    const keys = this.resolvePartnerKeys(envelope, context);
+    if (!keys) {
+      return {
+        ok: false,
+        stage: 'resolve',
+        message: 'partnerId and eventType must be in envelope root or resolvable from topic',
+        durationMs: elapsed(),
+      };
     }
 
+    const { partnerId, eventType } = keys;
+    
+    // G-10: If keys were resolved from topic, inject them into envelope for validation
+    if (!envelope.partnerId || !envelope.eventType) {
+      envelope = { ...envelope, partnerId, eventType };
+    }
+    
     const config = this.registry.resolve(partnerId, eventType);
     if (!config) {
       return {

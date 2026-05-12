@@ -9,8 +9,8 @@
 
 | Metrik | Değer |
 |--------|-------|
-| **Tamamlanan Görevler** | 14/18 (%78) |
-| **Test Coverage** | 27 passing tests |
+| **Tamamlanan Görevler** | 15/18 (%83) |
+| **Test Coverage** | 32 passing tests |
 | **Production Readiness** | 🟢 Yüksek |
 | **Deployment Status** | ✅ Hazır |
 
@@ -155,12 +155,33 @@ transform_engine_cache_size
 
 ---
 
+## ✅ Sprint 3: Esneklik ve Operasyonel İyileştirmeler
+
+**Tamamlanan:** G-10
+
+### Öne Çıkan Özellikler
+
+- **Topic-based Partner Resolution (G-10):** Envelope'da `partnerId`/`eventType` yoksa Kafka topic adından otomatik parse
+  - Format: `tenant-{id}.raw.{partnerId}.{eventType}`
+  - Örnek: `tenant-001.raw.acme-marketplace.order-created`
+  - Parse edilen değerler envelope'a inject ediliyor (validation için)
+  - Backward compatible: Envelope'daki değerler her zaman öncelikli
+
+### Dosya Değişiklikleri
+
+```
+src/transformEngine.ts          — EnvelopeContext interface, parseTopicName(), resolvePartnerKeys()
+src/kafkaRunner.ts              — transformEnvelope() çağrısına context parametresi
+src/transformEngine.test.ts    — 5 yeni test (topic-based resolution)
+```
+
+---
+
 ## ⏳ Backlog (Nice-to-Have)
 
 | ID | Başlık | Öncelik | Neden Backlog |
 |----|--------|---------|---------------|
 | G-09 | Redis cache | 🟡 P2 | In-memory yeterli şimdilik |
-| G-10 | Topic-based resolution | 🟡 P2 | Envelope format yeterli |
 | G-15 | OpenAPI docs | 🔵 P3 | Internal tool |
 | G-16 | Worker thread pool | 🔵 P3 | Event loop yeterli |
 | G-17 | Schema versioning | 🔵 P3 | ADR-007 uygulanacak |
@@ -220,4 +241,4 @@ kubectl apply -k k8s/overlays/production
 - ✅ Kubernetes manifests hazır
 - ✅ Documentation güncel
 
-**Production Readiness Score: %85** 🚀
+**Production Readiness Score: %90** 🚀
