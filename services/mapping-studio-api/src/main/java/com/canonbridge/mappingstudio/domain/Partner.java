@@ -39,6 +39,9 @@ public class Partner {
     @JsonProperty("updated_by")
     private String updatedBy;
 
+    @JsonProperty("rate_limit_per_minute")
+    private Integer rateLimitPerMinute;
+
     public Partner() {
         this.status = PartnerStatus.ACTIVE;
     }
@@ -76,6 +79,9 @@ public class Partner {
 
     public String getUpdatedBy() { return updatedBy; }
     public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
+
+    public Integer getRateLimitPerMinute() { return rateLimitPerMinute; }
+    public void setRateLimitPerMinute(Integer rateLimitPerMinute) { this.rateLimitPerMinute = rateLimitPerMinute; }
 
     public enum PartnerStatus {
         ACTIVE,

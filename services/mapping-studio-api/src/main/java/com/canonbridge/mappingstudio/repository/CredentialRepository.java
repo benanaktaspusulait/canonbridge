@@ -47,6 +47,18 @@ public class CredentialRepository {
                 .map(rows -> rows.iterator().hasNext() ? toCredential(rows.iterator().next()) : null);
     }
 
+    public Uni<StoredCredentialSecret> findSecretById(UUID credentialId, String tenantId) {
+        String sql = """
+                SELECT credential_id, tenant_id, auth_type, environment, status, encrypted_secret_json
+                FROM etl_credentials
+                WHERE credential_id = $1 AND tenant_id = $2
+                """;
+
+        return client.preparedQuery(sql)
+                .execute(Tuple.of(credentialId, tenantId))
+                .map(rows -> rows.iterator().hasNext() ? toStoredCredentialSecret(rows.iterator().next()) : null);
+    }
+
     public Uni<Credential> create(Credential credential, String encryptedSecret) {
         String sql = """
                 INSERT INTO etl_credentials (
@@ -89,6 +101,20 @@ public class CredentialRepository {
                 .map(rows -> rows.iterator().hasNext() ? toCredential(rows.iterator().next()) : null);
     }
 
+    public Uni<Credential> updateLastUsed(UUID credentialId, String tenantId) {
+        String sql = """
+                UPDATE etl_credentials
+                SET last_used_at = $1, updated_at = $1
+                WHERE credential_id = $2 AND tenant_id = $3
+                RETURNING credential_id, tenant_id, display_name, auth_type, environment, status,
+                          rotation_due_at, last_used_at, created_by, created_at, updated_by, updated_at
+                """;
+
+        return client.preparedQuery(sql)
+                .execute(Tuple.of(Instant.now(), credentialId, tenantId))
+                .map(rows -> rows.iterator().hasNext() ? toCredential(rows.iterator().next()) : null);
+    }
+
     private List<Credential> toCredentialList(RowSet<Row> rows) {
         List<Credential> credentials = new ArrayList<>();
         for (Row row : rows) {
@@ -114,5 +140,26 @@ public class CredentialRepository {
                 row.getString("updated_by"),
                 row.getLocalDateTime("updated_at").toInstant(java.time.ZoneOffset.UTC)
         );
+    }
+
+    private StoredCredentialSecret toStoredCredentialSecret(Row row) {
+        return new StoredCredentialSecret(
+                row.getUUID("credential_id"),
+                row.getString("tenant_id"),
+                Credential.AuthType.valueOf(row.getString("auth_type")),
+                Credential.Environment.valueOf(row.getString("environment")),
+                Credential.CredentialStatus.valueOf(row.getString("status")),
+                row.getString("encrypted_secret_json")
+        );
+    }
+
+    public record StoredCredentialSecret(
+            UUID credentialId,
+            String tenantId,
+            Credential.AuthType authType,
+            Credential.Environment environment,
+            Credential.CredentialStatus status,
+            String encryptedSecretJson
+    ) {
     }
 }

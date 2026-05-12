@@ -1,5 +1,6 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.lifecycle.GracefulShutdownManager;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.pgclient.PgPool;
 import jakarta.inject.Inject;
@@ -18,6 +19,9 @@ public class HealthResource {
     @Inject
     PgPool client;
 
+    @Inject
+    GracefulShutdownManager shutdownManager;
+
     @Liveness
     public static class LivenessCheck implements HealthCheck {
         @Override
@@ -32,8 +36,16 @@ public class HealthResource {
         @Inject
         PgPool client;
 
+        @Inject
+        GracefulShutdownManager shutdownManager;
+
         @Override
         public HealthCheckResponse call() {
+            // Fail readiness check during shutdown
+            if (!shutdownManager.isReady()) {
+                return HealthCheckResponse.down("shutdown-in-progress");
+            }
+
             try {
                 client.query("SELECT 1")
                     .execute()
@@ -57,11 +69,29 @@ public class HealthResource {
     @Path("/ready")
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<HealthStatus> ready() {
+        // Fail readiness check during shutdown
+        if (!shutdownManager.isReady()) {
+            return Uni.createFrom().item(
+                new HealthStatus("DOWN", "shutdown in progress")
+            );
+        }
+
         return client.query("SELECT 1")
             .execute()
             .map(rs -> new HealthStatus("UP", "database connection is ready"))
             .onFailure()
             .recoverWithItem(new HealthStatus("DOWN", "database connection failed"));
+    }
+
+    @GET
+    @Path("/status")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<ServiceStatus> status() {
+        return Uni.createFrom().item(new ServiceStatus(
+            shutdownManager.isReady(),
+            shutdownManager.isShuttingDown(),
+            shutdownManager.getInFlightRequestCount()
+        ));
     }
 
     public static class HealthStatus {
@@ -73,6 +103,20 @@ public class HealthResource {
         public HealthStatus(String status, String message) {
             this.status = status;
             this.message = message;
+        }
+    }
+
+    public static class ServiceStatus {
+        public boolean ready;
+        public boolean shuttingDown;
+        public int inFlightRequests;
+
+        public ServiceStatus() {}
+
+        public ServiceStatus(boolean ready, boolean shuttingDown, int inFlightRequests) {
+            this.ready = ready;
+            this.shuttingDown = shuttingDown;
+            this.inFlightRequests = inFlightRequests;
         }
     }
 }

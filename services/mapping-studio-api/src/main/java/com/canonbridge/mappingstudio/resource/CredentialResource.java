@@ -1,8 +1,10 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.credential.CredentialSecretCodec;
 import com.canonbridge.mappingstudio.domain.Credential;
 import com.canonbridge.mappingstudio.repository.CredentialRepository;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -11,6 +13,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Path("/api/credentials")
@@ -21,6 +24,9 @@ public class CredentialResource {
 
     @Inject
     CredentialRepository credentialRepository;
+
+    @Inject
+    CredentialSecretCodec secretCodec;
 
     @GET
     @Operation(summary = "List all credentials (metadata only, no secrets)")
@@ -62,8 +68,7 @@ public class CredentialResource {
             throw new BadRequestException("X-Tenant-Id header is required");
         }
 
-        // TODO: Encrypt the secret before storing
-        String encryptedSecret = encryptSecret(request.secret());
+        String encryptedSecret = secretCodec.encrypt(normalizeSecret(request.secret(), request.authType()));
 
         Credential credential = new Credential(
                 null, // Will be generated
@@ -109,17 +114,36 @@ public class CredentialResource {
         });
     }
 
-    // TODO: Implement proper encryption
-    private String encryptSecret(String secret) {
-        // Placeholder - should use proper encryption (AES-256-GCM)
-        return "ENCRYPTED:" + secret;
+    @SuppressWarnings("unchecked")
+    private JsonObject normalizeSecret(Object secret, Credential.AuthType authType) {
+        if (secret == null) {
+            throw new BadRequestException("Credential secret is required");
+        }
+
+        if (secret instanceof JsonObject jsonObject) {
+            return jsonObject;
+        }
+
+        if (secret instanceof Map<?, ?> map) {
+            return new JsonObject((Map<String, Object>) map);
+        }
+
+        if (secret instanceof String value && !value.isBlank()) {
+            return switch (authType) {
+                case API_KEY -> new JsonObject().put("apiKey", value);
+                case BEARER_TOKEN -> new JsonObject().put("token", value);
+                default -> new JsonObject().put("secret", value);
+            };
+        }
+
+        throw new BadRequestException("Credential secret must be a non-empty string or JSON object");
     }
 
     public record CreateCredentialRequest(
             String displayName,
             Credential.AuthType authType,
             Credential.Environment environment,
-            String secret,
+            Object secret,
             java.time.Instant rotationDueAt
     ) {}
 }

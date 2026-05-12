@@ -91,10 +91,130 @@ DB_URL=postgresql://localhost:5432/canonbridge
 JDBC_DB_URL=jdbc:postgresql://localhost:5432/canonbridge
 DB_USERNAME=postgres
 DB_PASSWORD=postgres
+REDIS_URL=redis://localhost:6379
 CANONBRIDGE_API_KEYS=replace-with-a-strong-api-key
 ```
 
 Development defaults include `CANONBRIDGE_API_KEYS=dev-api-key`. Override this value outside local development.
+
+### Rate Limiting Configuration
+
+The API enforces rate limits to prevent abuse and ensure fair resource allocation:
+
+```bash
+# Enable/disable rate limiting (default: true)
+RATELIMIT_ENABLED=true
+
+# Authenticated endpoint limits (default: 100 requests per 60 seconds)
+RATELIMIT_AUTHENTICATED_DEFAULT_LIMIT=100
+RATELIMIT_AUTHENTICATED_WINDOW_SECONDS=60
+
+# Unauthenticated endpoint limits (default: 10 requests per 60 seconds per IP)
+RATELIMIT_UNAUTHENTICATED_DEFAULT_LIMIT=10
+RATELIMIT_UNAUTHENTICATED_WINDOW_SECONDS=60
+
+# Redis configuration for rate limit state
+REDIS_URL=redis://localhost:6379
+```
+
+**Rate Limiting Behavior:**
+
+- **Authenticated requests**: Rate limited per client identifier (JWT subject or API key)
+  - Default: 100 requests per minute
+  - Per-tenant overrides supported via `rate_limit_per_minute` column in `partners` table
+  
+- **Unauthenticated requests**: Rate limited per IP address
+  - Default: 10 requests per minute
+  - Uses `X-Forwarded-For` header for proxied requests
+
+- **Algorithm**: Sliding window using Redis sorted sets
+  - Prevents burst traffic at window boundaries
+  - Automatic cleanup via TTL
+
+- **Excluded endpoints**: Health, metrics, OpenAPI, and Swagger UI are not rate limited
+
+**Rate Limit Headers:**
+
+All API responses include rate limit information:
+
+```
+X-RateLimit-Limit: 100          # Maximum requests allowed in window
+X-RateLimit-Remaining: 95       # Requests remaining in current window
+X-RateLimit-Reset: 1704067200000 # Unix timestamp (ms) when limit resets
+```
+
+**Rate Limit Exceeded Response:**
+
+When the rate limit is exceeded, the API returns HTTP 429:
+
+```json
+{
+  "error": "rate_limit_exceeded",
+  "message": "Rate limit exceeded. Maximum 100 requests per 60 seconds allowed.",
+  "limit": 100,
+  "window_seconds": 60,
+  "retry_after_seconds": 45
+}
+```
+
+Headers:
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 45
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1704067200000
+```
+
+**Per-Tenant Rate Limit Overrides:**
+
+Set custom rate limits for specific tenants by updating the `partners` table:
+
+```sql
+UPDATE partners 
+SET rate_limit_per_minute = 500 
+WHERE tenant_id = 'premium-tenant';
+```
+
+Set to `NULL` to use the default limit.
+
+**Logging:**
+
+Rate limit violations are logged at WARN level:
+
+```
+WARN Rate limit exceeded for client premium-api-key: 101/100 requests in 60s window
+```
+
+### Graceful Shutdown Configuration
+
+The API supports graceful shutdown for clean deployments with zero data loss:
+
+```bash
+# Maximum time to wait for in-flight requests to complete (default: 30s, min: 10s, max: 60s)
+SHUTDOWN_DRAIN_TIMEOUT=30
+
+# Maximum time to wait for Kafka producer flush (default: 10s)
+SHUTDOWN_PRODUCER_FLUSH_TIMEOUT=10
+```
+
+**Kubernetes Configuration:**
+
+Ensure `terminationGracePeriodSeconds` exceeds the total shutdown time (drain + flush + 5s buffer):
+
+```yaml
+spec:
+  template:
+    spec:
+      terminationGracePeriodSeconds: 45  # drain(30) + flush(10) + buffer(5)
+      containers:
+      - name: mapping-studio-api
+        env:
+        - name: SHUTDOWN_DRAIN_TIMEOUT
+          value: "30"
+        - name: SHUTDOWN_PRODUCER_FLUSH_TIMEOUT
+          value: "10"
+```
 
 ## Running Locally
 
@@ -121,6 +241,7 @@ docker run -p 8080:8080 \
   -e JDBC_DB_URL=jdbc:postgresql://host.docker.internal:5432/canonbridge \
   -e DB_USERNAME=postgres \
   -e DB_PASSWORD=postgres \
+  -e REDIS_URL=redis://host.docker.internal:6379 \
   -e CANONBRIDGE_API_KEYS=replace-with-a-strong-api-key \
   mapping-studio-api
 ```
@@ -169,6 +290,110 @@ Optional headers:
 ```bash
 mvn test
 ```
+
+## Graceful Shutdown Behavior
+
+The Mapping Studio API implements graceful shutdown to ensure clean deployments with zero data loss.
+
+### Shutdown Sequence
+
+When the API receives a `SIGTERM` or `SIGINT` signal (e.g., during Kubernetes pod termination):
+
+1. **Readiness Probe Fails** - The `/health/ready` endpoint immediately returns `DOWN` status, causing Kubernetes to stop routing new traffic to the pod
+2. **New Requests Rejected** - All new HTTP requests (except health checks) receive `503 Service Unavailable`
+3. **Kafka Consumption Paused** - Kafka consumers stop polling for new messages (if applicable)
+4. **In-Flight Request Drain** - The service waits for active HTTP requests to complete within the configured timeout (default: 30s)
+5. **Kafka Producer Flush** - Any pending Kafka messages are flushed to ensure delivery (if applicable)
+6. **Database Connections Closed** - PostgreSQL connection pool is gracefully closed
+7. **Clean Exit** - The service logs shutdown completion and exits with status code 0
+
+### Monitoring Shutdown
+
+Check the current service status:
+
+```bash
+curl http://localhost:8080/health/status
+```
+
+Response during normal operation:
+```json
+{
+  "ready": true,
+  "shuttingDown": false,
+  "inFlightRequests": 3
+}
+```
+
+Response during shutdown:
+```json
+{
+  "ready": false,
+  "shuttingDown": true,
+  "inFlightRequests": 1
+}
+```
+
+### Shutdown Logs
+
+The service logs detailed shutdown progress:
+
+```
+INFO  Mapping Studio API started - graceful shutdown manager initialized
+INFO  Shutdown configuration: drain-timeout=30s, producer-flush-timeout=10s
+...
+INFO  === Graceful shutdown initiated ===
+INFO  Step 1: Marking readiness probe as failing
+INFO  Step 2: Stopped accepting new HTTP requests (will return 503)
+INFO  Step 3: Kafka consumption pause (not applicable - no Kafka consumer)
+INFO  Step 4: Waiting for 5 in-flight requests to complete (timeout: 30s)
+INFO  All in-flight requests completed in 2341ms
+INFO  Step 5: Kafka producer flush (not applicable - no Kafka producer)
+INFO  Step 6: Closing database connection pools
+INFO  Database connection pool closed successfully
+INFO  === Graceful shutdown completed in 2456ms ===
+```
+
+### Interrupted Requests
+
+If the drain timeout expires before all requests complete, the service logs the count of interrupted requests:
+
+```
+WARN  Drain timeout expired after 30000ms - 2 requests interrupted
+```
+
+These interrupted requests may result in:
+- Client-side connection errors
+- Incomplete transactions (rolled back by the database)
+- Retry attempts from clients (ensure idempotency)
+
+### Testing Graceful Shutdown
+
+Test shutdown behavior locally:
+
+```bash
+# Start the service
+mvn quarkus:dev
+
+# In another terminal, send some requests
+for i in {1..10}; do
+  curl http://localhost:8080/api/partners \
+    -H 'X-Tenant-Id: demo-tenant' \
+    -H 'X-API-Key: dev-api-key' &
+done
+
+# Trigger shutdown
+kill -SIGTERM $(pgrep -f quarkus)
+
+# Observe shutdown logs and verify clean exit
+```
+
+### Best Practices
+
+1. **Set Appropriate Timeouts** - Ensure drain timeout exceeds your longest expected request duration
+2. **Monitor In-Flight Requests** - Use the `/health/status` endpoint to track active requests
+3. **Configure Kubernetes Properly** - Set `terminationGracePeriodSeconds` to drain timeout + 15s buffer
+4. **Implement Idempotency** - Clients should safely retry interrupted requests
+5. **Test Under Load** - Verify shutdown behavior during load testing to ensure no data loss
 
 ## See Also
 
