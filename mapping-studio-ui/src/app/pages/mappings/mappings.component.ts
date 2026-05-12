@@ -17,6 +17,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { EmptyStateComponent } from '../../core/components/empty-state.component';
 import { MappingService, MappingDraft } from '../../core/services/mapping.service';
 
 interface MappingVersion {
@@ -44,6 +45,7 @@ interface MappingVersion {
     CardModule,
     ConfirmDialogModule,
     DrawerModule,
+    EmptyStateComponent,
     IconFieldModule,
     InputIconModule,
     InputTextModule,
@@ -58,10 +60,13 @@ interface MappingVersion {
   templateUrl: './mappings.component.html',
   styleUrl: './mappings.component.scss'
 })
-export class MappingsComponent {
+export class MappingsComponent implements OnInit {
   private readonly confirmation = inject(ConfirmationService);
   private readonly toast = inject(MessageService);
   private readonly i18n = inject(I18nService);
+  private readonly mappingService = inject(MappingService);
+
+  readonly loading = signal(false);
 
   // ── Signals (reactive) ────────────────────────────────────────────────────
   readonly search = signal('');
@@ -76,16 +81,7 @@ export class MappingsComponent {
     { label: 'Deprecated',   value: 'deprecated' },
   ];
 
-  private readonly _mappings = signal<MappingVersion[]>([
-    { id: 'm1', partner: 'acme-marketplace',  eventType: 'order.created',    version: 'v2.1.0', status: 'active',     createdAt: '2026-05-10', publishedBy: 'Admin User',           transformations: 48320,  checksum: 'sha256:8c40f0a', notes: 'Adds outbound carrier enrichment and canonical validation.',  rules: ['Direct map orderId', 'Enum normalize status', 'Array map line items', 'Default currency TRY'] },
-    { id: 'm2', partner: 'acme-marketplace',  eventType: 'order.created',    version: 'v2.0.0', status: 'deprecated', createdAt: '2026-04-01', publishedBy: 'Admin User',           transformations: 210000, checksum: 'sha256:5d19c2f', notes: 'Superseded by v2.1.0.',                                        rules: ['Direct map orderId', 'Format orderDate', 'Array map line items'] },
-    { id: 'm3', partner: 'acme-marketplace',  eventType: 'order.cancelled',  version: 'v1.0.2', status: 'active',     createdAt: '2026-03-15', publishedBy: 'Integration Engineer', transformations: 5210,   checksum: 'sha256:fb71220', notes: 'Cancellation event mapping.',                                  rules: ['Direct map cancellationId', 'Condition reason code'] },
-    { id: 'm4', partner: 'logistics-xpress',  eventType: 'shipment.updated', version: 'v1.3.0', status: 'active',     createdAt: '2026-05-09', publishedBy: 'Integration Engineer', transformations: 91200,  checksum: 'sha256:ab993ee', notes: 'Shipment state and ETA mapping.',                              rules: ['Enum map shipment state', 'Format ETA date', 'Template tracking URL'] },
-    { id: 'm5', partner: 'logistics-xpress',  eventType: 'shipment.created', version: 'v1.0.0', status: 'active',     createdAt: '2026-02-20', publishedBy: 'Integration Engineer', transformations: 33400,  checksum: 'sha256:10a2dd1', notes: 'Initial shipment created release.',                           rules: ['Direct map trackingNo', 'Uppercase carrier code'] },
-    { id: 'm6', partner: 'payment-gateway',   eventType: 'payment.captured', version: 'v3.0.1', status: 'draft',      createdAt: '2026-05-08', publishedBy: 'Integration Engineer', transformations: 0,      checksum: 'draft:local',   notes: 'Draft with risk score enrichment.',                              rules: ['Number coercion amount', 'Outbound risk score lookup'] },
-    { id: 'm7', partner: 'payment-gateway',   eventType: 'payment.captured', version: 'v3.0.0', status: 'active',     createdAt: '2026-04-22', publishedBy: 'Admin User',           transformations: 72100,  checksum: 'sha256:e91cc1d', notes: 'Production payment capture mapping.',                         rules: ['Number coercion amount', 'Enum map capture status'] },
-    { id: 'm8', partner: 'crm-connect',       eventType: 'customer.updated', version: 'v2.0.0', status: 'deprecated', createdAt: '2026-01-10', publishedBy: 'Platform Operator',    transformations: 18900,  checksum: 'sha256:cba991f', notes: 'Deprecated CRM sync mapping.',                               rules: ['Combine first and last name', 'Lowercase email'] }
-  ]);
+  private readonly _mappings = signal<MappingVersion[]>([]);
 
   readonly mappings = this._mappings.asReadonly();
 
@@ -99,6 +95,57 @@ export class MappingsComponent {
       return matchesSearch && matchesStatus;
     });
   });
+
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+  ngOnInit(): void {
+    this.loadMappings();
+  }
+
+  loadMappings(): void {
+    this.loading.set(true);
+    const tenantId = 'default';
+    this.mappingService.list(tenantId).subscribe({
+      next: (drafts) => {
+        const mapped = drafts.map(d => this.draftToViewModel(d));
+        this._mappings.set(mapped);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+      }
+    });
+  }
+
+  private draftToViewModel(d: MappingDraft): MappingVersion {
+    return {
+      id: d.id ?? '',
+      partner: d.partner_id ?? '',
+      eventType: d.event_type ?? '',
+      version: d.status === 'DRAFT' ? 'draft' : 'v1.0.0',
+      status: this.mapDraftStatus(d.status),
+      createdAt: d.created_at ? d.created_at.slice(0, 10) : '',
+      publishedBy: d.created_by ?? '',
+      transformations: 0,
+      checksum: d.id ? `draft:${d.id.slice(0, 7)}` : '',
+      notes: d.description ?? '',
+      rules: d.mapping_rules ? this.parseRuleNames(d.mapping_rules) : []
+    };
+  }
+
+  private mapDraftStatus(status?: string): 'active' | 'draft' | 'deprecated' {
+    if (status === 'READY_TO_PUBLISH' || status === 'VALID') return 'active';
+    if (status === 'INVALID') return 'deprecated';
+    return 'draft';
+  }
+
+  private parseRuleNames(rulesJson: string): string[] {
+    try {
+      const parsed = JSON.parse(rulesJson);
+      if (Array.isArray(parsed)) return parsed.map((r: { name?: string }) => r.name ?? '').filter(Boolean);
+    } catch { /* empty */ }
+    return [];
+  }
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -133,9 +180,16 @@ export class MappingsComponent {
       acceptLabel: this.t('mappings.delete'),
       rejectLabel: this.t('mappings.cancel'),
       accept: () => {
-        this._mappings.update(list => list.filter(m => m.id !== mapping.id));
-        this.toast.add({ severity: 'success', summary: this.t('mappings.toast.deleted'), detail: mapping.version });
-        if (this.selectedMapping()?.id === mapping.id) this.detailVisible = false;
+        this.mappingService.delete('default', mapping.id).subscribe({
+          next: () => {
+            this._mappings.update(list => list.filter(m => m.id !== mapping.id));
+            this.toast.add({ severity: 'success', summary: this.t('mappings.toast.deleted'), detail: mapping.version });
+            if (this.selectedMapping()?.id === mapping.id) this.detailVisible = false;
+          },
+          error: () => {
+            this.toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to delete mapping' });
+          }
+        });
       }
     });
   }

@@ -29,7 +29,7 @@ import { ButtonModule } from 'primeng/button';
               [label]="actionLabel"
               [icon]="actionIcon || 'pi pi-plus'"
               (onClick)="action.emit()"
-              [size]="compact ? 'small' : 'normal'" />
+              [size]="compact ? 'small' : undefined" />
             
             @if (secondaryActionLabel) {
               <p-button
@@ -38,7 +38,7 @@ import { ButtonModule } from 'primeng/button';
                 (onClick)="secondaryAction.emit()"
                 [outlined]="true"
                 severity="secondary"
-                [size]="compact ? 'small' : 'normal'" />
+                [size]="compact ? 'small' : undefined" />
             }
           </div>
         }

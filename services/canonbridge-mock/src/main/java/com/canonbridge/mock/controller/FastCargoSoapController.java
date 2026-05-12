@@ -24,9 +24,21 @@ public class FastCargoSoapController {
     @PostMapping(value = "/track", consumes = MediaType.TEXT_XML_VALUE, produces = MediaType.TEXT_XML_VALUE)
     public ResponseEntity<String> trackShipment(
             @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestParam(required = false) String scenario,
             @RequestBody String soapRequest) {
 
-        log.info("POST /ws/track - SOAP request received");
+        log.info("POST /ws/track - SOAP request received, scenario: {}", scenario);
+
+        if ("invalid-basic-auth".equals(scenario)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .header("WWW-Authenticate", "Basic realm=\"FastCargo SOAP API\"")
+                    .body(createSoapFault("InvalidCredentials", "The provided Basic Auth credentials are invalid"));
+        }
+
+        if ("service-unavailable".equals(scenario)) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(createSoapFault("ServiceUnavailable", "FastCargo tracking service is temporarily unavailable"));
+        }
 
         // Basic Auth check
         if (!isValidBasicAuth(authorization)) {

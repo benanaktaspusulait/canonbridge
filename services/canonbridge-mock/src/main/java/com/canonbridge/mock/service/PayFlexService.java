@@ -118,6 +118,59 @@ public class PayFlexService {
         );
     }
 
+    public Map<String, Object> getSpecialCharactersPayload() {
+        return Map.of(
+                "scenario", "special-characters",
+                "description", "Edge case payload with unicode, emoji and special characters",
+                "unicodeNames", List.of(
+                        "Ünsal Çeliköz",
+                        "İbrahim Öztürk",
+                        "Müge Şahin",
+                        "Résumé / naïve / Ångström",
+                        "日本語テスト",
+                        "中文测试",
+                        "한국어 테스트",
+                        "Ελληνικά",
+                        "العربية",
+                        "Ру́сский язы́к"
+                ),
+                "emojiFields", Map.of(
+                        "status", "✅ COMPLETED",
+                        "priority", "🔴 HIGH",
+                        "category", "🛒 Shopping",
+                        "note", "Payment received 💰 — thank you! 🎉",
+                        "tags", List.of("🏷️ sale", "⭐ premium", "🚀 express")
+                ),
+                "specialCharsInValues", Map.of(
+                        "xmlEntities", "<payment amount=\"1000\" currency=\"EUR\" & more='data'/>",
+                        "jsonSpecial", "quote: \"hello\" \\ backslash \n newline \t tab \r return",
+                        "sqlInjection", "'; DROP TABLE payments; --",
+                        "htmlEntities", "<script>alert('xss')</script> &amp; &lt;div&gt;",
+                        "urlEncoded", "amount=100%2C50&currency=EUR%E2%82%AC",
+                        "nullBytes", "before\u0000after",
+                        "controlChars", "bell:\u0007 backspace:\u0008 formfeed:\u000C"
+                ),
+                "largeDecimalAmount", 99999999999.99999,
+                "negativeAmount", -0.000001,
+                "zeroAmount", 0,
+                "emptyStringField", "",
+                "nullableField", null,
+                "booleanFlags", Map.of(
+                        "isTest", true,
+                        "isRefund", false
+                ),
+                "nestedSpecial", Map.of(
+                        "merchant", Map.of(
+                                "name", "Büro & Schreibwaren GmbH – Müller & Söhne",
+                                "address", "Straße des 17. Juni, 10623 Berlin, Deutschland",
+                                "vatId", "DE123456789",
+                                "description", "Selling 100% organic & natural products; speciality: café goods"
+                        )
+                ),
+                "generatedAt", Instant.now().toString()
+        );
+    }
+
     public Map<String, Object> getDeepNestedPayload() {
         return Map.of(
                 "scenario", "deep-nested",

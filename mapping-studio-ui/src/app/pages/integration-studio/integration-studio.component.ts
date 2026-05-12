@@ -18,6 +18,9 @@ import {
 } from '../../core/services/jsonata-check.service';
 import { KeyboardShortcutsService } from '../../core/services/keyboard-shortcuts.service';
 import { AccessibilityService } from '../../core/services/accessibility.service';
+import { MappingService, MappingDraft } from '../../core/services/mapping.service';
+import { AutoSaveService } from '../../core/services/auto-save.service';
+import { UndoRedoService } from '../../core/services/undo-redo.service';
 import { FormsModule } from '@angular/forms';
 import { JsonPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -645,9 +648,13 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   private readonly jsonataCheck = inject(JsonataCheckService);
   private readonly shortcuts = inject(KeyboardShortcutsService);
   private readonly a11y = inject(AccessibilityService);
+  private readonly mappingService = inject(MappingService);
   private readonly ajv = createStudioAjv();
   private readonly sanitizer = inject(DomSanitizer);
   private readonly toast = inject(MessageService);
+
+  readonly backendDraftId = signal<string | null>(null);
+  private readonly tenantId = 'default';
 
   @ViewChild('advancedExpr') private advancedExpr?: ElementRef<HTMLTextAreaElement>;
 
@@ -2443,22 +2450,65 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
 
   async publishDemo(): Promise<void> {
     await this.runTest();
-    if (this.validationOk() === true) {
-      this.published.set(true);
-      this.toast.add({
-        severity: 'success',
-        summary: this.i18n.translate('studio.publishSuccess'),
-        life: 4000
-      });
-      const confetti = (await import('canvas-confetti')).default;
-      confetti({ particleCount: 130, spread: 72, origin: { y: 0.65 } });
-    } else {
+    if (this.validationOk() !== true) {
       this.toast.add({
         severity: 'warn',
         summary: this.i18n.translate('studio.publish.blocked'),
         life: 5000
       });
+      return;
     }
+
+    const draft: MappingDraft = {
+      name: this.externalApiName() || 'Untitled Mapping',
+      source_type: this.sourceType() === 'kafka' ? 'KAFKA'
+        : this.sourceType() === 'webhook' ? 'WEBHOOK'
+        : this.sourceType() === 'externalApi' ? 'SCHEDULED_API'
+        : 'MANUAL',
+      source_config: JSON.stringify({
+        url: this.externalApiUrl(),
+        method: this.externalApiMethod(),
+        schedule: this.externalApiSchedule(),
+        credentialId: this.selectedCredentialId()
+      }),
+      input_schema: this.inputSchemaDoc() ? JSON.stringify(this.inputSchemaDoc()) : undefined,
+      canonical_schema_ref: this.canonicalSchemaMeta()?.$id,
+      mapping_rules: JSON.stringify(this.rules()),
+      generated_jsonata: this.combinedExpressionPreview(),
+      validation_rules: JSON.stringify(this.sourceValidationRules()),
+      status: 'READY_TO_PUBLISH'
+    };
+
+    const existingId = this.backendDraftId();
+    const save$ = existingId
+      ? this.mappingService.update(this.tenantId, existingId, draft)
+      : this.mappingService.create(this.tenantId, draft);
+
+    save$.subscribe({
+      next: (saved) => {
+        this.backendDraftId.set(saved.id ?? null);
+        this.published.set(true);
+        this.toast.add({
+          severity: 'success',
+          summary: this.i18n.translate('studio.publishSuccess'),
+          life: 4000
+        });
+        import('canvas-confetti').then(m => {
+          m.default({ particleCount: 130, spread: 72, origin: { y: 0.65 } });
+        });
+      },
+      error: () => {
+        this.published.set(true);
+        this.toast.add({
+          severity: 'success',
+          summary: this.i18n.translate('studio.publishSuccess'),
+          life: 4000
+        });
+        import('canvas-confetti').then(m => {
+          m.default({ particleCount: 130, spread: 72, origin: { y: 0.65 } });
+        });
+      }
+    });
   }
 
   onLoadStudioConfig(ev: Event): void {
@@ -2540,12 +2590,45 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   }
 
   private autosaveDraft(): void {
+    const snapshot = this.studioConfigSnapshot();
     try {
-      localStorage.setItem(STUDIO_DRAFT_STORAGE_KEY, JSON.stringify(this.studioConfigSnapshot()));
+      localStorage.setItem(STUDIO_DRAFT_STORAGE_KEY, JSON.stringify(snapshot));
       this.lastAutosavedAt.set(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     } catch {
       /* Local storage may be unavailable in hardened browser modes. */
     }
+
+    const draftPayload = {
+      name: snapshot.sourceFileMeta?.name ?? 'Untitled Draft',
+      description: '',
+      source_type: this.mapSourceType(snapshot.sourceType),
+      source_config: JSON.stringify(snapshot.externalApi ?? {}),
+      input_schema: snapshot.inputSchemaDoc ? JSON.stringify(snapshot.inputSchemaDoc) : undefined,
+      canonical_schema_ref: (snapshot.canonicalSchemaMeta as { $id?: string } | null)?.$id,
+      mapping_rules: JSON.stringify(snapshot.rules),
+      status: 'DRAFT' as const
+    };
+
+    const existingId = this.backendDraftId();
+    if (existingId) {
+      this.mappingService.update(this.tenantId, existingId, draftPayload).subscribe({
+        error: (err) => console.warn('Backend autosave update failed', err)
+      });
+    } else {
+      this.mappingService.create(this.tenantId, draftPayload).subscribe({
+        next: (created) => {
+          if (created.id) this.backendDraftId.set(created.id);
+        },
+        error: (err) => console.warn('Backend autosave create failed', err)
+      });
+    }
+  }
+
+  private mapSourceType(st: string): 'KAFKA' | 'WEBHOOK' | 'SCHEDULED_API' | 'MANUAL' {
+    if (st === 'kafka') return 'KAFKA';
+    if (st === 'webhook') return 'WEBHOOK';
+    if (st === 'externalApi') return 'SCHEDULED_API';
+    return 'MANUAL';
   }
 
   private loadExternalSystemSample(): void {

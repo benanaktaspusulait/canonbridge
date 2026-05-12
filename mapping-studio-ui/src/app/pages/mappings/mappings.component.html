@@ -39,6 +39,17 @@
     </div>
   </div>
 
+  @if (mappings().length === 0) {
+    <app-empty-state
+      icon="pi pi-map"
+      [title]="'mappings.emptyTitle' | i18n"
+      [description]="'mappings.emptyDescription' | i18n"
+      [actionLabel]="'mappings.newDemo' | i18n"
+      actionIcon="pi pi-plus"
+      routerLink="/studio" />
+  }
+
+  @if (mappings().length > 0) {
   <p-table [value]="filtered()" styleClass="p-datatable-sm p-datatable-striped" [paginator]="true" [rows]="10">
     <ng-template pTemplate="header">
       <tr>

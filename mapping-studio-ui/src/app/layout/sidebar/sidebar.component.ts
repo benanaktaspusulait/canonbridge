@@ -34,6 +34,7 @@ const PRIMARY_NAV: NavEntry[] = [
 ];
 
 const SECONDARY_NAV: NavEntry[] = [
+  { route: '/demo', icon: 'pi pi-play-circle', labelKey: 'nav.demo' },
   { route: '/settings', icon: 'pi pi-cog', labelKey: 'nav.settings' }
 ];
 

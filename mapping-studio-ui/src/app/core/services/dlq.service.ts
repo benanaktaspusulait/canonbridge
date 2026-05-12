@@ -31,7 +31,7 @@ export interface DlqStats {
 })
 export class DlqService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}/api/dlq`;
+  private readonly baseUrl = `${environment.api.baseUrl}/dlq`;
 
   /**
    * List all DLQ messages with pagination

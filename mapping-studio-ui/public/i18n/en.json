@@ -19,7 +19,8 @@
     "externalSystems": "External Systems",
     "dlq": "DLQ",
     "monitoring": "Monitoring",
-    "settings": "Settings"
+    "settings": "Settings",
+    "demo": "Demo Mode"
   },
   "sidebar": {
     "logoSub": "Mapping Studio",
@@ -68,6 +69,7 @@
     "subtitle": "Operational snapshot of CanonBridge — metrics below are illustrative for demo purposes.",
     "studio": "Integration Studio",
     "monitoring": "Monitoring",
+    "demo": "Demo Mode",
     "recentTitle": "Recent Mappings",
     "recentSubtitle": "Latest mapping activity across all partners",
     "viewAll": "View All",

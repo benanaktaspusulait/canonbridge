@@ -123,8 +123,14 @@ public class PayFlexController {
                 }
                 yield ResponseEntity.ok(payFlexService.getLatestPaymentDetailed());
             }
+            case "unavailable" -> ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of(
+                            "error", "Service temporarily unavailable",
+                            "message", "The PayFlex payment service is currently undergoing maintenance"
+                    ));
             case "large-payload" -> ResponseEntity.ok(payFlexService.getLargePayload());
             case "deep-nested" -> ResponseEntity.ok(payFlexService.getDeepNestedPayload());
+            case "special-characters" -> ResponseEntity.ok(payFlexService.getSpecialCharactersPayload());
             default -> ResponseEntity.ok(payFlexService.getLatestPaymentDetailed());
         };
     }
