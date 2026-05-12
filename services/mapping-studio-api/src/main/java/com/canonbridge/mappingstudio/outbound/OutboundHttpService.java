@@ -62,11 +62,11 @@ public class OutboundHttpService {
         requestVolumeThreshold = 10,
         failureRatio = 0.5,
         delay = 30,
-        delayUnit = java.util.concurrent.TimeUnit.SECONDS,
+        delayUnit = java.time.temporal.ChronoUnit.SECONDS,
         successThreshold = 2
     )
     @CircuitBreakerName("outbound-http")
-    @Timeout(value = 10, unit = java.util.concurrent.TimeUnit.SECONDS)
+    @Timeout(value = 10, unit = java.time.temporal.ChronoUnit.SECONDS)
     public Uni<OutboundHttpResult> execute(String tenantId, OutboundConnection connection, OutboundHttpRequest request) {
         if (connection == null) {
             throw new BadRequestException("External system connection is required");

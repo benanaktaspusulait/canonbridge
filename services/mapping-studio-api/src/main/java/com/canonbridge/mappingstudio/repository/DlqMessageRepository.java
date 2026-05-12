@@ -67,19 +67,19 @@ public class DlqMessageRepository {
             """;
 
         return client.preparedQuery(sql)
-            .execute(Tuple.of(
-                message.getId(),
-                message.getOriginalTopic(),
-                message.getPartition(),
-                message.getOffset(),
-                message.getKey(),
-                message.getPayload(),
-                message.getErrorMessage(),
-                message.getErrorStackTrace(),
-                message.getFailedAt(),
-                message.getRetryCount(),
-                message.getStatus().name()
-            ))
+            .execute(Tuple.tuple()
+                .addString(message.getId())
+                .addString(message.getOriginalTopic())
+                .addInteger(message.getPartition())
+                .addLong(message.getOffset())
+                .addString(message.getKey())
+                .addString(message.getPayload())
+                .addString(message.getErrorMessage())
+                .addString(message.getErrorStackTrace())
+                .addValue(message.getFailedAt())
+                .addInteger(message.getRetryCount())
+                .addString(message.getStatus().name())
+            )
             .map(rowSet -> message);
     }
 
