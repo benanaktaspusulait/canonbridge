@@ -5,12 +5,15 @@ import com.canonbridge.mappingstudio.credential.CredentialMaterialResolver;
 import com.canonbridge.mappingstudio.credential.CredentialStoreService;
 import com.canonbridge.mappingstudio.domain.Credential;
 import com.canonbridge.mappingstudio.domain.OutboundConnection;
+import io.smallrye.faulttolerance.api.CircuitBreakerName;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
+import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
+import org.eclipse.microprofile.faulttolerance.Timeout;
 
 import java.io.IOException;
 import java.net.URI;
@@ -55,6 +58,15 @@ public class OutboundHttpService {
         }
     }
 
+    @CircuitBreaker(
+        requestVolumeThreshold = 10,
+        failureRatio = 0.5,
+        delay = 30,
+        delayUnit = java.util.concurrent.TimeUnit.SECONDS,
+        successThreshold = 2
+    )
+    @CircuitBreakerName("outbound-http")
+    @Timeout(value = 10, unit = java.util.concurrent.TimeUnit.SECONDS)
     public Uni<OutboundHttpResult> execute(String tenantId, OutboundConnection connection, OutboundHttpRequest request) {
         if (connection == null) {
             throw new BadRequestException("External system connection is required");

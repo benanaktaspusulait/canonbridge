@@ -106,6 +106,12 @@
             <artifactId>quarkus-smallrye-openapi</artifactId>
         </dependency>
         
+        <!-- Fault Tolerance (Circuit Breaker, Timeout, Retry) -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-fault-tolerance</artifactId>
+        </dependency>
+
         <!-- Redis for rate limiting -->
         <dependency>
             <groupId>io.quarkus</groupId>
