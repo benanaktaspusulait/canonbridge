@@ -66,7 +66,10 @@ Required environment variables:
 DB_URL=postgresql://localhost:5432/canonbridge
 DB_USERNAME=postgres
 DB_PASSWORD=postgres
+CANONBRIDGE_API_KEYS=replace-with-a-strong-api-key
 ```
+
+Development defaults include `CANONBRIDGE_API_KEYS=dev-api-key`. Override this value outside local development.
 
 ## Running Locally
 
@@ -92,7 +95,39 @@ docker run -p 8080:8080 \
   -e DB_URL=postgresql://host.docker.internal:5432/canonbridge \
   -e DB_USERNAME=postgres \
   -e DB_PASSWORD=postgres \
+  -e CANONBRIDGE_API_KEYS=replace-with-a-strong-api-key \
   mapping-studio-api
+```
+
+## Authentication
+
+All `/api/*` endpoints require API credentials. Send either:
+
+```bash
+X-API-Key: dev-api-key
+```
+
+or:
+
+```bash
+Authorization: Bearer dev-api-key
+```
+
+Example:
+
+```bash
+curl http://localhost:8080/api/partners \
+  -H 'X-Tenant-Id: demo-tenant' \
+  -H 'X-API-Key: dev-api-key'
+```
+
+Unauthenticated requests return a consistent JSON error:
+
+```json
+{
+  "error": "missing_credentials",
+  "message": "Missing API credentials"
+}
 ```
 
 ## Multi-tenancy

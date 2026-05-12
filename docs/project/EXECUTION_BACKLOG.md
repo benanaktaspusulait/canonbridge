@@ -11,9 +11,10 @@ This file is the single source for: upcoming work, done criteria, and related do
 
 ### P0 - Critical Demo/Pilot Blockers
 
-- [ ] **CB-P0-001 - Add API authentication**  
+- [x] **CB-P0-001 - Add API authentication**  
   **Repo**: `services/mapping-studio-api`  
-  **Done when**: protected endpoints require JWT or API key auth, auth failures return consistent errors, and at least one automated test covers unauthorized access.
+  **Done when**: protected endpoints require JWT or API key auth, auth failures return consistent errors, and at least one automated test covers unauthorized access.  
+  **Completed**: 2026-05-12 - `/api/*` now requires `X-API-Key` or `Authorization: Bearer <key>`; health/metrics/OpenAPI routes remain public.
 
 - [ ] **CB-P0-002 - Add API CRUD endpoints and database persistence**  
   **Repo**: `services/mapping-studio-api`  

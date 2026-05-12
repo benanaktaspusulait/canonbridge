@@ -59,7 +59,7 @@ public class CredentialRepository {
 
         Instant now = Instant.now();
         return client.preparedQuery(sql)
-                .execute(Tuple.of(
+                .execute(Tuples.of(
                         credential.credentialId() != null ? credential.credentialId() : UUID.randomUUID(),
                         credential.tenantId(),
                         credential.displayName(),

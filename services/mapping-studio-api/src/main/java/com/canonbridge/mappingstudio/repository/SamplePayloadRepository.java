@@ -69,7 +69,7 @@ public class SamplePayloadRepository {
         long sizeBytes = payloadJson.getBytes().length;
 
         return client.preparedQuery(sql)
-                .execute(Tuple.of(
+                .execute(Tuples.of(
                         sampleId,
                         sample.tenantId(),
                         sample.draftId(),

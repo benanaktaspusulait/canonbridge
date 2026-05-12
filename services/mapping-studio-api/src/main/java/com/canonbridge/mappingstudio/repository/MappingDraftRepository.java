@@ -79,7 +79,7 @@ public class MappingDraftRepository {
             "$12, $13::jsonb, $14, $15, $16::jsonb, $17, $18, $19, $20" +
             ") RETURNING *"
         )
-        .execute(Tuple.of(
+        .execute(Tuples.of(
             draft.getId(),
             draft.getTenantId(),
             draft.getPartnerId(),
@@ -117,7 +117,7 @@ public class MappingDraftRepository {
             "WHERE tenant_id = $15 AND id = $16 " +
             "RETURNING *"
         )
-        .execute(Tuple.of(
+        .execute(Tuples.of(
             draft.getName(),
             draft.getDescription(),
             draft.getSourceType().name(),
