@@ -1,5 +1,7 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.audit.AuditLogService;
+import com.canonbridge.mappingstudio.domain.AuditLog;
 import com.canonbridge.mappingstudio.domain.DlqMessage;
 import com.canonbridge.mappingstudio.kafka.KafkaProducerService;
 import com.canonbridge.mappingstudio.repository.DlqMessageRepository;
@@ -32,6 +34,9 @@ public class DlqResource {
     @Inject
     KafkaProducerService kafkaProducerService;
 
+    @Inject
+    AuditLogService auditLogService;
+
     @GET
     @Operation(summary = "List DLQ messages", description = "Retrieve all messages in the dead letter queue")
     public Uni<List<DlqMessage>> listDlqMessages(
@@ -62,7 +67,11 @@ public class DlqResource {
     @POST
     @Path("/{id}/redrive")
     @Operation(summary = "Redrive DLQ message", description = "Retry processing a failed message")
-    public Uni<Response> redriveDlqMessage(@PathParam("id") String id) {
+    public Uni<Response> redriveDlqMessage(
+            @PathParam("id") String id,
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            @HeaderParam("X-User-Id") String userId,
+            @HeaderParam("X-Correlation-Id") String correlationId) {
         LOG.infof("Redriving DLQ message: %s", id);
         
         return dlqRepository.findById(id)
@@ -75,21 +84,28 @@ public class DlqResource {
                     );
                 }
 
-                // Update status to REDRIVING
                 return dlqRepository.updateStatus(id, DlqMessage.DlqStatus.REDRIVING, Instant.now())
-                    .flatMap(v -> {
-                        // Republish to original topic or processing queue
-                        return kafkaProducerService.publishCanonicalEvent(message.getKey(), message.getPayload())
-                            .flatMap(v2 -> {
-                                // Update status to REDRIVEN
-                                return dlqRepository.updateStatus(id, DlqMessage.DlqStatus.REDRIVEN, Instant.now())
-                                    .map(v3 -> Response.ok()
-                                        .entity("{\"message\":\"Message redriven successfully\",\"id\":\"" + id + "\"}")
-                                        .build());
-                            });
-                    })
+                    .flatMap(v ->
+                        kafkaProducerService.publishCanonicalEvent(message.getKey(), message.getPayload())
+                            .flatMap(v2 ->
+                                dlqRepository.updateStatus(id, DlqMessage.DlqStatus.REDRIVEN, Instant.now())
+                                    .flatMap(v3 ->
+                                        auditLogService.logSuccess(
+                                            tenantId, userId,
+                                            AuditLog.AuditAction.DLQ_REDRIVE,
+                                            "dlq_message", id,
+                                            "Redrived DLQ message to topic: " + message.getOriginalTopic(),
+                                            correlationId
+                                        ).map(ignored -> Response.ok()
+                                            .entity("{\"message\":\"Message redriven successfully\",\"id\":\"" + id + "\"}")
+                                            .build())
+                                    )
+                            )
+                    )
                     .onFailure().recoverWithItem(throwable -> {
                         LOG.errorf(throwable, "Failed to redrive message: %s", id);
+                        auditLogService.logFailure(tenantId, userId, AuditLog.AuditAction.DLQ_REDRIVE,
+                            "dlq_message", id, throwable.getMessage(), correlationId).subscribe().with(x -> {});
                         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                             .entity("{\"error\":\"Failed to redrive message: " + throwable.getMessage() + "\"}")
                             .build();

@@ -1,5 +1,7 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.audit.AuditLogService;
+import com.canonbridge.mappingstudio.domain.AuditLog;
 import com.canonbridge.mappingstudio.domain.MappingDraft;
 import com.canonbridge.mappingstudio.repository.MappingDraftRepository;
 import io.smallrye.mutiny.Uni;
@@ -21,6 +23,9 @@ public class MappingDraftResource {
 
     @Inject
     MappingDraftRepository draftRepository;
+
+    @Inject
+    AuditLogService auditLogService;
 
     @GET
     @Operation(summary = "List all mapping drafts for tenant")
@@ -76,7 +81,13 @@ public class MappingDraftResource {
         draft.setUpdatedBy(userId);
         
         return draftRepository.create(draft)
-            .map(created -> Response.status(Response.Status.CREATED).entity(created).build());
+            .flatMap(created -> auditLogService.logSuccess(
+                tenantId, userId,
+                AuditLog.AuditAction.MAPPING_CREATED,
+                "mapping_draft", created.getId() != null ? created.getId().toString() : "",
+                "Created mapping draft: " + created.getName(),
+                null
+            ).map(ignored -> Response.status(Response.Status.CREATED).entity(created).build()));
     }
 
     @PUT

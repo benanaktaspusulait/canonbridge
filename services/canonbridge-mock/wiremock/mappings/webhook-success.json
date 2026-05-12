@@ -1,0 +1,30 @@
+{
+  "mappings": [
+    {
+      "name": "Webhook - Successful receipt (partner-001, ORDER_CREATED)",
+      "request": {
+        "method": "POST",
+        "urlPathPattern": "/webhook/([^/]+)/([^/]+)",
+        "headers": {
+          "X-Webhook-Key": {
+            "present": true
+          },
+          "Content-Type": {
+            "contains": "application/json"
+          }
+        }
+      },
+      "response": {
+        "status": 202,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "eventId": "evt-{{randomValue type='UUID'}}",
+          "message": "Webhook received and queued"
+        },
+        "transformers": ["response-template"]
+      }
+    }
+  ]
+}

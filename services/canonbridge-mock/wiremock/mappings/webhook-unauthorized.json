@@ -1,0 +1,48 @@
+{
+  "mappings": [
+    {
+      "name": "Webhook - Missing X-Webhook-Key header → 401",
+      "priority": 1,
+      "request": {
+        "method": "POST",
+        "urlPathPattern": "/webhook/([^/]+)/([^/]+)",
+        "headers": {
+          "X-Webhook-Key": {
+            "absent": true
+          }
+        }
+      },
+      "response": {
+        "status": 401,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "error": "X-Webhook-Key header is required"
+        }
+      }
+    },
+    {
+      "name": "Webhook - Invalid X-Webhook-Key → 401",
+      "priority": 2,
+      "request": {
+        "method": "POST",
+        "urlPathPattern": "/webhook/([^/]+)/([^/]+)",
+        "headers": {
+          "X-Webhook-Key": {
+            "equalTo": "invalid-key"
+          }
+        }
+      },
+      "response": {
+        "status": 401,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "error": "Invalid webhook key"
+        }
+      }
+    }
+  ]
+}

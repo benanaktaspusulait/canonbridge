@@ -1,0 +1,106 @@
+{
+  "mappings": [
+    {
+      "name": "Webhook - ShopMax ORDER_CREATED event",
+      "request": {
+        "method": "POST",
+        "urlPath": "/webhook/shopmax/ORDER_CREATED",
+        "headers": {
+          "X-Webhook-Key": {
+            "present": true
+          }
+        },
+        "bodyPatterns": [
+          {
+            "matchesJsonPath": "$.orderId"
+          }
+        ]
+      },
+      "response": {
+        "status": 202,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "eventId": "evt-shopmax-order-001",
+          "message": "Webhook received and queued"
+        }
+      }
+    },
+    {
+      "name": "Webhook - PayFlex PAYMENT_CAPTURED event",
+      "request": {
+        "method": "POST",
+        "urlPath": "/webhook/payflex/PAYMENT_CAPTURED",
+        "headers": {
+          "X-Webhook-Key": {
+            "present": true
+          }
+        },
+        "bodyPatterns": [
+          {
+            "matchesJsonPath": "$.paymentId"
+          }
+        ]
+      },
+      "response": {
+        "status": 202,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "eventId": "evt-payflex-payment-001",
+          "message": "Webhook received and queued"
+        }
+      }
+    },
+    {
+      "name": "Webhook - FastCargo SHIPMENT_DELIVERED event",
+      "request": {
+        "method": "POST",
+        "urlPath": "/webhook/fastcargo/SHIPMENT_DELIVERED",
+        "headers": {
+          "X-Webhook-Key": {
+            "present": true
+          }
+        },
+        "bodyPatterns": [
+          {
+            "matchesJsonPath": "$.trackingNumber"
+          }
+        ]
+      },
+      "response": {
+        "status": 202,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "eventId": "evt-fastcargo-shipment-001",
+          "message": "Webhook received and queued"
+        }
+      }
+    },
+    {
+      "name": "Webhook - Internal server error scenario",
+      "request": {
+        "method": "POST",
+        "urlPathPattern": "/webhook/([^/]+)/([^/]+)",
+        "queryParameters": {
+          "scenario": {
+            "equalTo": "server-error"
+          }
+        }
+      },
+      "response": {
+        "status": 500,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "error": "Failed to process webhook: Internal server error"
+        }
+      }
+    }
+  ]
+}
