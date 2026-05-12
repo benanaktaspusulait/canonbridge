@@ -13,17 +13,30 @@ async function main(): Promise<void> {
 
   let kafkaShutdown: (() => Promise<void>) | undefined;
   if (env.kafkaEnabled) {
+    // G-03: startKafkaConsumer now retries internally — if it throws, we let it bubble
+    // so the process exits and the orchestrator (k8s/compose) restarts it.
     const kafka = await startKafkaConsumer(env, registry, engine, app.log);
     kafkaShutdown = kafka.shutdown;
     app.log.info({ topics: registry.allRawTopics() }, 'kafka consumer started');
   }
 
   await app.listen({ port: env.port, host: '0.0.0.0' });
-  app.log.info({ port: env.port, mappingsRoot: env.mappingsRoot }, 'server listening');
+  app.log.info(
+    {
+      port: env.port,
+      mappingsRoot: env.mappingsRoot,
+      partners: registry.listPartners().length,
+      authEnabled: env.apiKey !== undefined,
+      kafkaEnabled: env.kafkaEnabled,
+    },
+    'server listening',
+  );
 
   const stop = async () => {
+    app.log.info('shutdown signal received');
     await app.close();
     if (kafkaShutdown) await kafkaShutdown();
+    app.log.info('shutdown complete');
   };
 
   process.on('SIGINT', () => {

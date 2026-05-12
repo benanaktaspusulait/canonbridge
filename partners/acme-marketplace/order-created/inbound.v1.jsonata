@@ -1,0 +1,34 @@
+(
+  $p := payload;
+  $statusMap := {
+    "A": "ACTIVE",
+    "B": "INACTIVE",
+    "C": "SUSPENDED"
+  };
+  $statusValue := $lookup($statusMap, $p.order_header.status);
+  {
+    "eventId": eventId,
+    "tenantId": tenantId,
+    "partnerId": partnerId,
+    "eventType": "CanonicalOrderCreated",
+    "schemaVersion": "v1",
+    "occurredAt": occurredAt,
+    "correlationId": correlationId,
+    "payload": {
+      "orderId": $p.order_header.order_id,
+      "customerName": $trim($p.customer.full_name),
+      "customerEmail": ($exists($p.customer.email) and $p.customer.email != "") ? $p.customer.email : "no-reply@test.com",
+      "orderDate": $fromMillis($toMillis($p.order_header.order_date, "[Y0001]-[M01]-[D01]")),
+      "status": $exists($statusValue) ? $statusValue : "UNKNOWN",
+      "currency": ($exists($p.order_header.currency) and $p.order_header.currency != "") ? $p.order_header.currency : "USD",
+      "lines": [$p.items[status = "ACTIVE"].{
+        "lineId": item_id,
+        "productId": product_code,
+        "quantity": $floor($number(qty)),
+        "unitPrice": $round($number(price), 2),
+        "lineTotal": $round($number(qty) * $number(price), 2)
+      }],
+      "totalAmount": $round($sum([$p.items[status = "ACTIVE"].($number(qty) * $number(price))]), 2)
+    }
+  }
+)

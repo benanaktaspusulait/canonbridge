@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://getcanonbridge.com/partners/acme-marketplace/order-created/input.v1.schema.json",
+  "title": "Acme Marketplace OrderCreated Raw Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "eventId",
+    "tenantId",
+    "partnerId",
+    "eventType",
+    "schemaVersion",
+    "occurredAt",
+    "correlationId",
+    "payload"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tenantId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "partnerId": {
+      "const": "acme-marketplace"
+    },
+    "eventType": {
+      "const": "OrderCreated"
+    },
+    "schemaVersion": {
+      "const": "v1"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlationId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["order_header", "customer", "items"],
+      "properties": {
+        "order_header": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["order_id", "order_date", "status"],
+          "properties": {
+            "order_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "order_date": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+            },
+            "status": {
+              "type": "string"
+            },
+            "currency": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 3
+            }
+          }
+        },
+        "customer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["full_name"],
+          "properties": {
+            "full_name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "email": {
+              "type": "string"
+            }
+          }
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["item_id", "product_code", "qty", "price", "status"],
+            "properties": {
+              "item_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "product_code": {
+                "type": "string",
+                "minLength": 1
+              },
+              "qty": {
+                "type": "string",
+                "pattern": "^[0-9]+(\\.[0-9]+)?$"
+              },
+              "price": {
+                "type": "string",
+                "pattern": "^[0-9]+(\\.[0-9]+)?$"
+              },
+              "status": {
+                "type": "string"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

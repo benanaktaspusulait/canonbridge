@@ -1,0 +1,27 @@
+/* PrimeNG + PrimeFlex + PrimeIcons */
+@import "primeicons/primeicons.css";
+@import "primeflex/primeflex.css";
+
+/* Base resets */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  background-color: var(--surface-ground);
+  color: var(--text-color);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface-100); }
+::-webkit-scrollbar-thumb { background: var(--surface-400); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--surface-500); }
+
+/* Utilities */
+.full-height { height: 100vh; }
+.cursor-pointer { cursor: pointer; }

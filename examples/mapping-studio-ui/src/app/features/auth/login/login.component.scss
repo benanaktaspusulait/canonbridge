@@ -1,0 +1,222 @@
+.login-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── Left brand panel ─────────────────────────── */
+.login-brand {
+  flex: 0 0 440px;
+  background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  position: relative;
+  overflow: hidden;
+
+  // Decorative background circles
+  &::before {
+    content: '';
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.03);
+    top: -100px;
+    right: -100px;
+  }
+  &::after {
+    content: '';
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.03);
+    bottom: -80px;
+    left: -80px;
+  }
+}
+
+.brand-content {
+  position: relative;
+  z-index: 1;
+  color: white;
+  text-align: left;
+  width: 100%;
+}
+
+.logo-mark {
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  backdrop-filter: blur(8px);
+
+  i {
+    font-size: 1.75rem;
+    color: #60a5fa;
+  }
+}
+
+.brand-content h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 0.375rem;
+  letter-spacing: -0.5px;
+  color: white;
+}
+
+.tagline {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0 0 2.5rem;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.brand-features {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.925rem;
+  color: rgba(255, 255, 255, 0.8);
+
+  i {
+    color: #34d399;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+}
+
+/* ── Right form panel ─────────────────────────── */
+.login-form-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-ground);
+  padding: 2rem;
+}
+
+.login-form-container {
+  width: 100%;
+  max-width: 420px;
+}
+
+.form-header {
+  margin-bottom: 1.75rem;
+
+  h2 {
+    font-size: 1.625rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0 0 0.375rem;
+  }
+
+  p {
+    font-size: 0.925rem;
+    color: var(--text-color-secondary);
+    margin: 0;
+  }
+}
+
+/* Demo banner */
+.demo-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  background: var(--blue-50, #eff6ff);
+  border: 1px solid var(--blue-200, #bfdbfe);
+  color: var(--blue-700, #1d4ed8);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  margin-bottom: 1.25rem;
+
+  i {
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+}
+
+/* Fields */
+.field {
+  margin-bottom: 1.25rem;
+}
+
+.field-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+}
+
+.forgot-link {
+  font-size: 0.8rem;
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 400;
+
+  &:hover { text-decoration: underline; }
+}
+
+/* Role badge in dropdown */
+.role-badge {
+  font-size: 0.7rem;
+  background: var(--primary-100, #dbeafe);
+  color: var(--primary-700, #1d4ed8);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Divider text */
+.divider-text {
+  font-size: 0.8rem;
+  color: var(--text-color-secondary);
+}
+
+/* Form footer */
+.form-footer {
+  margin-top: 2rem;
+  text-align: center;
+
+  p {
+    font-size: 0.8rem;
+    color: var(--text-color-secondary);
+    margin: 0;
+
+    a {
+      color: var(--primary-color);
+      text-decoration: none;
+      &:hover { text-decoration: underline; }
+    }
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .login-brand {
+    display: none;
+  }
+  .login-form-panel {
+    padding: 1.5rem;
+  }
+}

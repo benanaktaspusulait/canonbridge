@@ -16,13 +16,16 @@ function formatAjvErrors(validate: ValidateFunction): string {
   return new Ajv2020({ allErrors: true, strict: false }).errorsText(errs);
 }
 
+export type TransformStage = 'resolve' | 'input_validation' | 'transform' | 'output_validation';
+
 export type TransformResult =
-  | { ok: true; canonical: unknown }
+  | { ok: true; canonical: unknown; durationMs: number }
   | {
       ok: false;
-      stage: 'resolve' | 'input_validation' | 'transform' | 'output_validation';
+      stage: TransformStage;
       message: string;
       details?: unknown;
+      durationMs: number;
     };
 
 type Compiled = {
@@ -38,6 +41,21 @@ export class TransformEngine {
     private readonly mappingsRoot: string,
     private readonly registry: PartnerRegistry,
   ) {}
+
+  /** Expose cache size for metrics. */
+  get cacheSize(): number {
+    return this.cache.size;
+  }
+
+  /** Invalidate a single compiled entry (called after hot-reload). */
+  evict(partnerId: string, eventType: string): void {
+    this.cache.delete(`${partnerId}:${eventType}`);
+  }
+
+  /** Invalidate all compiled entries. */
+  evictAll(): void {
+    this.cache.clear();
+  }
 
   private async compile(key: string, config: PartnerMappingConfig): Promise<Compiled> {
     const cached = this.cache.get(key);
@@ -69,14 +87,17 @@ export class TransformEngine {
   }
 
   async transformEnvelope(raw: unknown): Promise<TransformResult> {
+    const start = Date.now();
+    const elapsed = () => Date.now() - start;
+
     if (raw === null || typeof raw !== 'object') {
-      return { ok: false, stage: 'resolve', message: 'Body must be a JSON object' };
+      return { ok: false, stage: 'resolve', message: 'Body must be a JSON object', durationMs: elapsed() };
     }
     const envelope = raw as Record<string, unknown>;
     const partnerId = envelope.partnerId;
     const eventType = envelope.eventType;
     if (typeof partnerId !== 'string' || typeof eventType !== 'string') {
-      return { ok: false, stage: 'resolve', message: 'partnerId and eventType must be strings' };
+      return { ok: false, stage: 'resolve', message: 'partnerId and eventType must be strings', durationMs: elapsed() };
     }
 
     const config = this.registry.resolve(partnerId, eventType);
@@ -85,6 +106,7 @@ export class TransformEngine {
         ok: false,
         stage: 'resolve',
         message: `No inbound mapping for partnerId=${partnerId} eventType=${eventType}`,
+        durationMs: elapsed(),
       };
     }
 
@@ -98,6 +120,7 @@ export class TransformEngine {
         stage: 'resolve',
         message: err instanceof Error ? err.message : String(err),
         details: err,
+        durationMs: elapsed(),
       };
     }
 
@@ -107,6 +130,7 @@ export class TransformEngine {
         stage: 'input_validation',
         message: formatAjvErrors(compiled.validateInput),
         details: compiled.validateInput.errors,
+        durationMs: elapsed(),
       };
     }
 
@@ -119,6 +143,7 @@ export class TransformEngine {
         stage: 'transform',
         message: err instanceof Error ? err.message : String(err),
         details: err,
+        durationMs: elapsed(),
       };
     }
 
@@ -128,9 +153,10 @@ export class TransformEngine {
         stage: 'output_validation',
         message: formatAjvErrors(compiled.validateOutput),
         details: compiled.validateOutput.errors,
+        durationMs: elapsed(),
       };
     }
 
-    return { ok: true, canonical: transformed };
+    return { ok: true, canonical: transformed, durationMs: elapsed() };
   }
 }

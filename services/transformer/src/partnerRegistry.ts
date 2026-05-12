@@ -35,12 +35,12 @@ async function walkFiles(relDir: string, baseDir: string): Promise<string[]> {
 }
 
 export class PartnerRegistry {
-  private readonly byKey = new Map<string, PartnerMappingConfig>();
+  private byKey = new Map<string, PartnerMappingConfig>();
 
   constructor(private readonly mappingsRoot: string) {}
 
   async load(): Promise<void> {
-    this.byKey.clear();
+    const next = new Map<string, PartnerMappingConfig>();
     const partnersDir = path.join(this.mappingsRoot, 'partners');
     const files = await walkFiles('', partnersDir);
 
@@ -58,15 +58,18 @@ export class PartnerRegistry {
         throw new Error(`Config ${full} missing topics.raw, topics.canonical, or topics.dlq`);
       }
       const key = registryKey(raw.partnerId, raw.eventType);
-      if (this.byKey.has(key)) {
+      if (next.has(key)) {
         throw new Error(`Duplicate mapping for ${key} (second file: ${full})`);
       }
-      this.byKey.set(key, raw);
+      next.set(key, raw);
     }
 
-    if (this.byKey.size === 0) {
+    if (next.size === 0) {
       throw new Error(`No inbound mapping configs found under ${path.join(partnersDir, '**', 'config.json')}`);
     }
+
+    // Atomic swap — only replace if load succeeded
+    this.byKey = next;
   }
 
   resolve(partnerId: string, eventType: string): PartnerMappingConfig | undefined {
@@ -85,6 +88,8 @@ export class PartnerRegistry {
     return [...this.byKey.values()].map((c) => ({ partnerId: c.partnerId, eventType: c.eventType }));
   }
 
+  // G-08: fallback DLQ is now driven by env, not first-loaded config
+  // This method is kept for backward compat but callers should prefer env.kafkaFallbackDlqTopic
   fallbackDlqTopic(): string {
     const first = this.byKey.values().next().value as PartnerMappingConfig | undefined;
     if (!first) throw new Error('No mapping configs loaded');

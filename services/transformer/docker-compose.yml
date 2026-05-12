@@ -12,6 +12,31 @@ services:
       - internal://redpanda:9092,external://localhost:19092
     ports:
       - "19092:19092"
+    healthcheck:
+      test: ["CMD", "rpk", "cluster", "info", "--brokers", "localhost:9092"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # G-14: create topics before transformer starts
+  redpanda-init:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.5
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      rpk topic create \
+        tenant-001.raw.acme-marketplace.order-created \
+        tenant-001.canonical.order \
+        tenant-001.dlq \
+        canonbridge.dlq \
+        --brokers redpanda:9092 \
+        --partitions 3 \
+        --replicas 1 \
+        --if-not-exists
+    restart: "no"
 
   transformer:
     build: .
@@ -21,10 +46,18 @@ services:
       MAPPINGS_ROOT: /mappings
       PORT: "8080"
       LOG_LEVEL: info
+      # Kafka
       KAFKA_ENABLED: "true"
       KAFKA_BROKERS: redpanda:9092
       KAFKA_GROUP_ID: canonbridge-transformer
+      KAFKA_FALLBACK_DLQ_TOPIC: canonbridge.dlq
+      KAFKA_CONNECT_RETRIES: "10"
+      KAFKA_CONNECT_RETRY_DELAY_MS: "3000"
+      # Auth — set API_KEY to enable; leave unset for open dev access
+      # API_KEY: "change-me-in-production"
+      # CORS_ORIGINS: "https://studio.canonbridge.example"
     volumes:
       - ../../mappings:/mappings:ro
     depends_on:
-      - redpanda
+      redpanda-init:
+        condition: service_completed_successfully
