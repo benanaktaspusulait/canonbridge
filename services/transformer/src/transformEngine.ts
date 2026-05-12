@@ -9,6 +9,7 @@ import addFormats from 'ajv-formats';
 import jsonata from 'jsonata';
 import type { PartnerMappingConfig } from './partnerRegistry.js';
 import type { PartnerRegistry } from './partnerRegistry.js';
+import type { TransformCache, Compiled, CacheEntry } from './cache.js';
 
 function formatAjvErrors(validate: ValidateFunction): string {
   const errs = validate.errors;
@@ -41,33 +42,26 @@ export interface EnvelopeContext {
   offset?: string;
 }
 
-type Compiled = {
-  validateInput: ValidateFunction;
-  validateOutput: ValidateFunction;
-  evaluate: (input: unknown) => Promise<unknown>;
-};
-
 export class TransformEngine {
-  private readonly cache = new Map<string, Compiled>();
-
   constructor(
     private readonly mappingsRoot: string,
     private readonly registry: PartnerRegistry,
+    private readonly cache: TransformCache,
   ) {}
 
   /** Expose cache size for metrics. */
-  get cacheSize(): number {
-    return this.cache.size;
+  async cacheSize(): Promise<number> {
+    return this.cache.size();
   }
 
   /** Invalidate a single compiled entry (called after hot-reload). */
-  evict(partnerId: string, eventType: string): void {
-    this.cache.delete(`${partnerId}:${eventType}`);
+  async evict(partnerId: string, eventType: string): Promise<void> {
+    await this.cache.delete(`${partnerId}:${eventType}`);
   }
 
   /** Invalidate all compiled entries. */
-  evictAll(): void {
-    this.cache.clear();
+  async evictAll(): Promise<void> {
+    await this.cache.clear();
   }
 
   /**
@@ -111,7 +105,7 @@ export class TransformEngine {
   }
 
   private async compile(key: string, config: PartnerMappingConfig): Promise<Compiled> {
-    const cached = this.cache.get(key);
+    const cached = await this.cache.get(key);
     if (cached) return cached;
 
     const inputSchemaPath = path.join(this.mappingsRoot, config.inputSchema);
@@ -135,7 +129,14 @@ export class TransformEngine {
       validateOutput,
       evaluate: (input: unknown) => expression.evaluate(input) as Promise<unknown>,
     };
-    this.cache.set(key, compiled);
+    
+    const entry: CacheEntry = {
+      inputSchema,
+      canonicalSchema,
+      mappingText,
+    };
+    
+    await this.cache.set(key, compiled, entry);
     return compiled;
   }
 

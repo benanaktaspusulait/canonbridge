@@ -21,6 +21,17 @@ export interface Env {
   kafkaSaslMechanism: 'plain' | 'scram-sha-256' | 'scram-sha-512' | undefined;
   kafkaSaslUsername: string | undefined;
   kafkaSaslPassword: string | undefined;
+  // G-09: Redis cache
+  redisUrl: string | undefined;
+  redisCacheTtlSeconds: number;
+  // G-16: Worker pool
+  workerPoolEnabled: boolean;
+  workerPoolSize: number;
+  // G-18: Outbox pattern
+  outboxEnabled: boolean;
+  outboxDatabaseUrl: string | undefined;
+  outboxPollIntervalMs: number;
+  outboxBatchSize: number;
   // Logging
   logLevel: string;
 }
@@ -62,6 +73,17 @@ export function loadEnv(): Env {
     kafkaSaslMechanism,
     kafkaSaslUsername: process.env.KAFKA_SASL_USERNAME || undefined,
     kafkaSaslPassword: process.env.KAFKA_SASL_PASSWORD || undefined,
+    // G-09: Redis cache (optional, defaults to in-memory)
+    redisUrl: process.env.REDIS_URL || undefined,
+    redisCacheTtlSeconds: Number.parseInt(process.env.REDIS_CACHE_TTL_SECONDS ?? '3600', 10),
+    // G-16: Worker pool for CPU-intensive JSONata evaluations
+    workerPoolEnabled: process.env.WORKER_POOL_ENABLED !== 'false', // enabled by default
+    workerPoolSize: Number.parseInt(process.env.WORKER_POOL_SIZE ?? '0', 10), // 0 = auto (CPU count - 1)
+    // G-18: Outbox pattern for exactly-once delivery
+    outboxEnabled: process.env.OUTBOX_ENABLED === 'true',
+    outboxDatabaseUrl: process.env.OUTBOX_DATABASE_URL || undefined,
+    outboxPollIntervalMs: Number.parseInt(process.env.OUTBOX_POLL_INTERVAL_MS ?? '1000', 10),
+    outboxBatchSize: Number.parseInt(process.env.OUTBOX_BATCH_SIZE ?? '100', 10),
     logLevel: process.env.LOG_LEVEL ?? 'info',
   };
 }

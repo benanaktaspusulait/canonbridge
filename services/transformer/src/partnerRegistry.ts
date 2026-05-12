@@ -5,6 +5,7 @@ export interface PartnerMappingConfig {
   partnerId: string;
   eventType: string;
   direction?: string;
+  version?: string; // G-17: Schema versioning (ADR-007)
   inputSchema: string;
   mapping: string;
   canonicalSchema: string;
@@ -15,8 +16,10 @@ export interface PartnerMappingConfig {
   };
 }
 
-function registryKey(partnerId: string, eventType: string): string {
-  return `${partnerId}:${eventType}`;
+function registryKey(partnerId: string, eventType: string, version?: string): string {
+  // G-17: Include version in key if provided (default to 'v1' for backward compat)
+  const v = version ?? 'v1';
+  return `${partnerId}:${eventType}:${v}`;
 }
 
 async function walkFiles(relDir: string, baseDir: string): Promise<string[]> {
@@ -57,7 +60,7 @@ export class PartnerRegistry {
       if (!raw.topics?.raw || !raw.topics?.canonical || !raw.topics?.dlq) {
         throw new Error(`Config ${full} missing topics.raw, topics.canonical, or topics.dlq`);
       }
-      const key = registryKey(raw.partnerId, raw.eventType);
+      const key = registryKey(raw.partnerId, raw.eventType, raw.version);
       if (next.has(key)) {
         throw new Error(`Duplicate mapping for ${key} (second file: ${full})`);
       }
@@ -72,8 +75,8 @@ export class PartnerRegistry {
     this.byKey = next;
   }
 
-  resolve(partnerId: string, eventType: string): PartnerMappingConfig | undefined {
-    return this.byKey.get(registryKey(partnerId, eventType));
+  resolve(partnerId: string, eventType: string, version?: string): PartnerMappingConfig | undefined {
+    return this.byKey.get(registryKey(partnerId, eventType, version));
   }
 
   allRawTopics(): string[] {
@@ -84,8 +87,12 @@ export class PartnerRegistry {
     return [...topics];
   }
 
-  listPartners(): { partnerId: string; eventType: string }[] {
-    return [...this.byKey.values()].map((c) => ({ partnerId: c.partnerId, eventType: c.eventType }));
+  listPartners(): { partnerId: string; eventType: string; version?: string }[] {
+    return [...this.byKey.values()].map((c) => ({ 
+      partnerId: c.partnerId, 
+      eventType: c.eventType,
+      version: c.version,
+    }));
   }
 
   // G-08: fallback DLQ is now driven by env, not first-loaded config

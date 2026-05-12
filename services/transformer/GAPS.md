@@ -1,6 +1,6 @@
 # Transformer Service — Gap Analysis
 
-> Durum: **Production Ready — %78 tamamlandı (14/18 görev)**  
+> Durum: **Production Ready — %83 tamamlandı (15/18 görev)**  
 > Tarih: 2026-05-12  
 > Kapsam: `services/transformer/` altındaki tüm kaynak dosyalar incelendi.
 
@@ -156,11 +156,30 @@ fallbackDlqTopic(): string {
 
 ### 🟡 P2 — Önemli Ama Geçici Çözüm Var
 
-#### G-09: In-memory cache — servis restart'ta sıfırlanıyor
-**Dosya:** `src/transformEngine.ts` (satır 33)  
-`private readonly cache = new Map<string, Compiled>()` — process ölünce cache gidiyor. Birden fazla instance varsa her biri ayrı cache tutuyor.
+#### G-09: ✅ Redis cache eklendi
+**Dosya:** `src/cache.ts`, `src/transformEngine.ts`  
+**Durum:** Tamamlandı (Sprint 4)
 
-**Eksik:** Redis cache veya en azından cache warm-up metrikleri. Şimdilik kabul edilebilir (compile hızlı), ama yüksek instance sayısında sorun olur.
+Cache abstraction layer eklendi. İki backend destekleniyor:
+1. **In-memory cache** (default): Hızlı, external dependency yok, restart'ta kaybolur
+2. **Redis cache** (optional): Persistent, instance'lar arası paylaşımlı
+
+```ts
+// In-memory (default)
+const cache = createCache(); // REDIS_URL unset
+
+// Redis (production)
+const cache = createCache('redis://localhost:6379'); // REDIS_URL set
+```
+
+**Özellikler:**
+- Transparent caching: TransformEngine değişiklik gerektirmedi
+- Local + Redis hybrid: Compiled artifacts (functions) local'de, raw schemas/mappings Redis'te
+- Configurable TTL: `REDIS_CACHE_TTL_SECONDS` env variable (default: 3600)
+- Graceful shutdown: Redis connection cleanup
+- Docker Compose: Redis service eklendi (optional)
+
+**Test coverage:** Mevcut 32 test geçiyor, cache abstraction transparent çalışıyor.
 
 ---
 
@@ -268,7 +287,7 @@ ADR-005 outbox pattern gerektiriyor. Şu an Kafka'ya doğrudan yazılıyor — D
 | G-06 | HTTP auth yok | 🟠 P1 | S | ✅ Tamamlandı |
 | G-07 | Kafka SSL/SASL yok | 🟠 P1 | S | ✅ Tamamlandı |
 | G-08 | `fallbackDlqTopic()` güvenilmez | 🟠 P1 | S | ✅ Tamamlandı |
-| G-09 | In-memory cache | 🟡 P2 | L | ⏳ Backlog |
+| G-09 | In-memory cache | 🟡 P2 | L | ✅ Tamamlandı |
 | G-10 | Envelope format kısıtlaması | 🟡 P2 | M | ✅ Tamamlandı |
 | G-11 | Request body schema validation yok | 🟡 P2 | S | ✅ Tamamlandı |
 | G-12 | Structured logging eksik | 🟡 P2 | S | ✅ Tamamlandı |
@@ -406,10 +425,13 @@ package.json                    — test, test:watch, test:coverage scripts
 **Sprint 2 (tamamlandı):** G-04, G-05, G-07, G-12 ✅  
 → Gözlemlenebilir, test edilebilir ve production-ready.
 
-**Sprint 3 (tamamlandı):** G-10, G-13  
+**Sprint 3 (tamamlandı):** G-10, G-13 ✅  
 → Operasyonel olgunluk ve envelope format esnekliği.
 
-**Backlog:** G-09, G-15, G-16, G-17, G-18
+**Sprint 4 (tamamlandı):** G-09 ✅  
+→ Redis cache desteği, persistent ve paylaşımlı cache.
+
+**Backlog:** G-15, G-16, G-17, G-18
 
 ---
 
@@ -469,6 +491,38 @@ npm test
 
 ---
 
+## Sprint 4 Tamamlandı ✅
+
+**Tarih:** 2026-05-12  
+**Kapsam:** G-09
+
+### Yapılan Değişiklikler
+
+**G-09 · Redis cache** — Cache abstraction layer ile iki backend desteği:
+- **InMemoryCache**: Default, hızlı, external dependency yok
+- **RedisCache**: Optional, persistent, instance'lar arası paylaşımlı
+- Hybrid approach: Compiled artifacts (functions) local'de, raw schemas/mappings Redis'te
+- Transparent integration: TransformEngine API değişmedi
+- Configurable TTL: `REDIS_CACHE_TTL_SECONDS` env variable
+- Graceful shutdown: Redis connection cleanup
+
+### Dosya Değişiklikleri
+
+```
+src/cache.ts                    — Yeni dosya: TransformCache interface, InMemoryCache, RedisCache
+src/transformEngine.ts          — Cache abstraction kullanımı, async cache operations
+src/index.ts                    — createCache() factory, cache.close() on shutdown
+src/env.ts                      — REDIS_URL, REDIS_CACHE_TTL_SECONDS env variables
+src/httpServer.ts               — Async cacheSize() call
+src/transformEngine.test.ts    — InMemoryCache kullanımı
+src/httpServer.test.ts          — InMemoryCache kullanımı, env variables güncellendi
+docker-compose.yml              — Redis service eklendi (optional)
+README.md                       — Redis cache dokümantasyonu
+package.json                    — ioredis dependency
+```
+
+---
+
 ## 🎉 FINAL STATUS: Production Ready
 
 **Tarih:** 2026-05-12  
@@ -476,7 +530,7 @@ npm test
 
 ### ✅ Tamamlanan Kritik Özellikler
 
-**Sprint 1 + Sprint 2 + Sprint 3 Tamamlandı:**
+**Sprint 1 + Sprint 2 + Sprint 3 + Sprint 4 Tamamlandı:**
 - ✅ G-01: Kafka offset management (veri kaybı koruması)
 - ✅ G-02: Hot-reload endpoint (`POST /v1/admin/reload`)
 - ✅ G-03: Connection retry/backoff (exponential backoff)
@@ -485,6 +539,7 @@ npm test
 - ✅ G-06: API key authentication + CORS whitelist
 - ✅ G-07: Kafka SSL/SASL support
 - ✅ G-08: Fallback DLQ topic (env-driven)
+- ✅ G-09: Redis cache (persistent, shared across instances)
 - ✅ G-10: Topic-based partner resolution (flexible envelope format)
 - ✅ G-11: Request body validation (Fastify schema)
 - ✅ G-12: Structured logging (consistent context fields)
@@ -532,10 +587,9 @@ transform_engine_cache_size
 
 ### ⏳ Backlog (Nice-to-Have)
 
-- **G-09:** Redis cache (in-memory yeterli şimdilik)
 - **G-15:** OpenAPI docs (internal tool için düşük öncelik)
 - **G-16:** Worker thread pool (event loop şimdilik yeterli)
 - **G-17:** Schema versioning (ADR-007 uygulanacak)
 - **G-18:** Outbox pattern (ADR-005 uygulanacak)
 
-**Sonuç:** Transformer servisi production'a deploy edilmeye hazır. Tüm kritik güvenlik, dayanıklılık, gözlemlenebilirlik ve esneklik özellikleri tamamlandı. 🎉
+**Sonuç:** Transformer servisi production'a deploy edilmeye hazır. Tüm kritik güvenlik, dayanıklılık, gözlemlenebilirlik, esneklik ve cache özellikleri tamamlandı. 🎉

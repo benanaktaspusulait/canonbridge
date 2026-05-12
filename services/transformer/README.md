@@ -58,6 +58,9 @@ Expect `200` and a JSON body `{ "canonical": { ... } }`.
 | `KAFKA_SASL_MECHANISM` | (unset) | `plain`, `scram-sha-256`, or `scram-sha-512` |
 | `KAFKA_SASL_USERNAME` | (unset) | SASL username |
 | `KAFKA_SASL_PASSWORD` | (unset) | SASL password |
+| **Cache** | | |
+| `REDIS_URL` | (unset) | Redis connection URL (e.g., `redis://localhost:6379`). If unset, uses in-memory cache |
+| `REDIS_CACHE_TTL_SECONDS` | `3600` | TTL for cached compiled mappings in Redis |
 
 ## Production Features
 
@@ -88,6 +91,11 @@ Expect `200` and a JSON body `{ "canonical": { ... } }`.
 - **Graceful Shutdown**: SIGINT/SIGTERM handling with connection cleanup
 - **Connection Retry**: Exponential backoff for Kafka connection failures
 - **Manual Offset Commit**: Prevents data loss on crash (commit after DLQ write)
+- **Redis Cache** (optional): Persistent cache across restarts, shared between instances
+  - Set `REDIS_URL` to enable (e.g., `redis://localhost:6379`)
+  - Falls back to in-memory cache if not configured
+  - Stores raw schemas/mappings; compilation happens on cache miss
+  - Configurable TTL via `REDIS_CACHE_TTL_SECONDS`
 
 ### ✅ Testing
 - **32 Passing Tests**: Unit + integration tests with Vitest

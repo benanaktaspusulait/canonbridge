@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TransformEngine } from './transformEngine.js';
 import { PartnerRegistry } from './partnerRegistry.js';
+import { InMemoryCache } from './cache.js';
 import { writeFile, mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
@@ -64,7 +65,8 @@ describe('TransformEngine', () => {
 
     registry = new PartnerRegistry(testDir);
     await registry.load();
-    engine = new TransformEngine(testDir, registry);
+    const cache = new InMemoryCache();
+    engine = new TransformEngine(testDir, registry, cache);
   });
 
   afterEach(async () => {
@@ -170,14 +172,14 @@ describe('TransformEngine', () => {
       amount: 99.99,
     };
 
-    expect(engine.cacheSize).toBe(0);
+    expect(await engine.cacheSize()).toBe(0);
 
     await engine.transformEnvelope(envelope);
-    expect(engine.cacheSize).toBe(1);
+    expect(await engine.cacheSize()).toBe(1);
 
     // Second call should use cache
     await engine.transformEnvelope(envelope);
-    expect(engine.cacheSize).toBe(1);
+    expect(await engine.cacheSize()).toBe(1);
   });
 
   it('should evict cache entry', async () => {
@@ -189,10 +191,10 @@ describe('TransformEngine', () => {
     };
 
     await engine.transformEnvelope(envelope);
-    expect(engine.cacheSize).toBe(1);
+    expect(await engine.cacheSize()).toBe(1);
 
-    engine.evict('test-partner', 'order-created');
-    expect(engine.cacheSize).toBe(0);
+    await engine.evict('test-partner', 'order-created');
+    expect(await engine.cacheSize()).toBe(0);
   });
 
   it('should evict all cache entries', async () => {
@@ -204,10 +206,10 @@ describe('TransformEngine', () => {
     };
 
     await engine.transformEnvelope(envelope);
-    expect(engine.cacheSize).toBe(1);
+    expect(await engine.cacheSize()).toBe(1);
 
-    engine.evictAll();
-    expect(engine.cacheSize).toBe(0);
+    await engine.evictAll();
+    expect(await engine.cacheSize()).toBe(0);
   });
 
   // G-10: Topic-based resolution tests
@@ -307,7 +309,8 @@ describe('TransformEngine', () => {
     // Reload registry to pick up new config
     await registry.load();
     // Create new engine with updated registry
-    const newEngine = new TransformEngine(testDir, registry);
+    const cache = new InMemoryCache();
+    const newEngine = new TransformEngine(testDir, registry, cache);
 
     const envelope = {
       orderId: 'ORD-456',

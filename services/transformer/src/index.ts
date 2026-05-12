@@ -3,12 +3,17 @@ import { PartnerRegistry } from './partnerRegistry.js';
 import { TransformEngine } from './transformEngine.js';
 import { buildServer } from './httpServer.js';
 import { startKafkaConsumer } from './kafkaRunner.js';
+import { createCache } from './cache.js';
 
 async function main(): Promise<void> {
   const env = loadEnv();
   const registry = new PartnerRegistry(env.mappingsRoot);
   await registry.load();
-  const engine = new TransformEngine(env.mappingsRoot, registry);
+  
+  // G-09: Create cache (Redis or in-memory based on REDIS_URL)
+  const cache = createCache(env.redisUrl);
+  const engine = new TransformEngine(env.mappingsRoot, registry, cache);
+  
   const app = await buildServer(env, registry, engine);
 
   let kafkaShutdown: (() => Promise<void>) | undefined;
@@ -28,6 +33,7 @@ async function main(): Promise<void> {
       partners: registry.listPartners().length,
       authEnabled: env.apiKey !== undefined,
       kafkaEnabled: env.kafkaEnabled,
+      cacheType: env.redisUrl ? 'redis' : 'in-memory',
     },
     'server listening',
   );
@@ -36,6 +42,7 @@ async function main(): Promise<void> {
     app.log.info('shutdown signal received');
     await app.close();
     if (kafkaShutdown) await kafkaShutdown();
+    await cache.close(); // G-09: Close Redis connection
     app.log.info('shutdown complete');
   };
 

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { buildServer } from './httpServer.js';
 import { TransformEngine } from './transformEngine.js';
 import { PartnerRegistry } from './partnerRegistry.js';
+import { InMemoryCache } from './cache.js';
 import type { Env } from './env.js';
 import { writeFile, mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
@@ -66,7 +67,8 @@ describe('HTTP Server', () => {
 
     registry = new PartnerRegistry(testDir);
     await registry.load();
-    engine = new TransformEngine(testDir, registry);
+    const cache = new InMemoryCache();
+    engine = new TransformEngine(testDir, registry, cache);
 
     const env: Env = {
       mappingsRoot: testDir,
@@ -83,6 +85,14 @@ describe('HTTP Server', () => {
       kafkaSaslMechanism: undefined,
       kafkaSaslUsername: undefined,
       kafkaSaslPassword: undefined,
+      redisUrl: undefined,
+      redisCacheTtlSeconds: 3600,
+      workerPoolEnabled: false,
+      workerPoolSize: 0,
+      outboxEnabled: false,
+      outboxDatabaseUrl: undefined,
+      outboxPollIntervalMs: 1000,
+      outboxBatchSize: 100,
       logLevel: 'silent',
     };
 
@@ -278,6 +288,14 @@ describe('HTTP Server', () => {
         kafkaSaslMechanism: undefined,
         kafkaSaslUsername: undefined,
         kafkaSaslPassword: undefined,
+        redisUrl: undefined,
+        redisCacheTtlSeconds: 3600,
+        workerPoolEnabled: false,
+        workerPoolSize: 0,
+        outboxEnabled: false,
+        outboxDatabaseUrl: undefined,
+        outboxPollIntervalMs: 1000,
+        outboxBatchSize: 100,
         logLevel: 'silent',
       };
 
@@ -314,6 +332,14 @@ describe('HTTP Server', () => {
         kafkaSaslMechanism: undefined,
         kafkaSaslUsername: undefined,
         kafkaSaslPassword: undefined,
+        redisUrl: undefined,
+        redisCacheTtlSeconds: 3600,
+        workerPoolEnabled: false,
+        workerPoolSize: 0,
+        outboxEnabled: false,
+        outboxDatabaseUrl: undefined,
+        outboxPollIntervalMs: 1000,
+        outboxBatchSize: 100,
         logLevel: 'silent',
       };
 

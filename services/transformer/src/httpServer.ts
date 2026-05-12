@@ -131,7 +131,7 @@ export async function buildServer(
   // G-05: Prometheus metrics endpoint
   app.get('/metrics', async (_request, reply) => {
     // Update cache size gauge on each scrape
-    setGauge('transform_engine_cache_size', engine.cacheSize);
+    setGauge('transform_engine_cache_size', await engine.cacheSize());
     setGauge('partner_registry_size', registry.listPartners().length);
     return reply
       .header('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
@@ -143,7 +143,7 @@ export async function buildServer(
     try {
       await registry.load();
       // Evict compiled cache so next transform picks up new mapping files
-      engine.evictAll();
+      await engine.evictAll();
       app.log.info({ count: registry.listPartners().length }, 'partner configs reloaded');
       return reply.send({ ok: true, partners: registry.listPartners().length });
     } catch (err) {

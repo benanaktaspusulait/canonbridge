@@ -38,6 +38,19 @@ services:
         --if-not-exists
     restart: "no"
 
+  # G-09: Redis cache (optional, comment out to use in-memory cache)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis-data:/data
+
   transformer:
     build: .
     ports:
@@ -53,6 +66,9 @@ services:
       KAFKA_FALLBACK_DLQ_TOPIC: canonbridge.dlq
       KAFKA_CONNECT_RETRIES: "10"
       KAFKA_CONNECT_RETRY_DELAY_MS: "3000"
+      # G-09: Redis cache (comment out to use in-memory cache)
+      REDIS_URL: redis://redis:6379
+      REDIS_CACHE_TTL_SECONDS: "3600"
       # Auth — set API_KEY to enable; leave unset for open dev access
       # API_KEY: "change-me-in-production"
       # CORS_ORIGINS: "https://studio.canonbridge.example"
@@ -61,3 +77,8 @@ services:
     depends_on:
       redpanda-init:
         condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+volumes:
+  redis-data:
