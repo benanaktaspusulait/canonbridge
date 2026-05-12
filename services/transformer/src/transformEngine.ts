@@ -116,14 +116,14 @@ export class TransformEngine {
     const cached = await this.cache.get(key);
     if (cached) return cached;
 
-    let inputSchema: unknown;
-    let canonicalSchema: unknown;
+    let inputSchema: import('ajv').AnySchema;
+    let canonicalSchema: import('ajv').AnySchema;
     let mappingText: string;
 
     const rawEntry = this.cache.getRaw ? await this.cache.getRaw(key) : undefined;
     if (rawEntry) {
-      inputSchema = rawEntry.inputSchema;
-      canonicalSchema = rawEntry.canonicalSchema;
+      inputSchema = rawEntry.inputSchema as import('ajv').AnySchema;
+      canonicalSchema = rawEntry.canonicalSchema as import('ajv').AnySchema;
       mappingText = rawEntry.mappingText;
     } else {
       const inputSchemaPath = path.join(this.mappingsRoot, config.inputSchema);

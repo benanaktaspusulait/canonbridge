@@ -170,6 +170,12 @@ export class OutboxRepository {
   }
 }
 
+type OutboxLogger = {
+  info: (obj: Record<string, unknown>, msg: string) => void;
+  warn: (obj: Record<string, unknown>, msg: string) => void;
+  error: (obj: Record<string, unknown> | unknown, msg: string) => void;
+};
+
 /**
  * Outbox relay process.
  * Continuously polls outbox table and publishes to Kafka.
@@ -188,6 +194,7 @@ export class OutboxRelay {
     },
     private readonly pollIntervalMs: number = 1000,
     private readonly batchSize: number = 100,
+    private readonly logger?: OutboxLogger,
   ) {}
 
   async start(): Promise<void> {
@@ -198,7 +205,10 @@ export class OutboxRelay {
       void this.poll();
     }, this.pollIntervalMs);
 
-    console.log(`Outbox relay started (poll interval: ${this.pollIntervalMs}ms, batch size: ${this.batchSize})`);
+    this.logger?.info(
+      { pollIntervalMs: this.pollIntervalMs, batchSize: this.batchSize },
+      'outbox relay started',
+    );
   }
 
   async stop(): Promise<void> {
@@ -207,7 +217,7 @@ export class OutboxRelay {
       clearInterval(this.intervalHandle);
       this.intervalHandle = undefined;
     }
-    console.log('Outbox relay stopped');
+    this.logger?.info({}, 'outbox relay stopped');
   }
 
   private async poll(): Promise<void> {
@@ -241,18 +251,17 @@ export class OutboxRelay {
           // Collect IDs for batch update
           publishedIds.push(...batch.map((m) => m.id!));
         } catch (err) {
-          console.error(`Failed to publish batch to topic ${topic}:`, err);
-          // Don't mark as published on error — will retry next poll
+          this.logger?.error({ err, topic }, 'outbox relay failed to publish batch');
         }
       }
 
       // Mark all successfully published messages
       if (publishedIds.length > 0) {
         await this.outbox.markPublishedBatch(publishedIds);
-        console.log(`Published ${publishedIds.length} messages from outbox`);
+        this.logger?.info({ count: publishedIds.length }, 'outbox relay published messages');
       }
     } catch (err) {
-      console.error('Outbox relay poll error:', err);
+      this.logger?.error({ err }, 'outbox relay poll error');
     }
   }
 }

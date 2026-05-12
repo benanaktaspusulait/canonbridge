@@ -100,11 +100,4 @@ export class PartnerRegistry {
     }));
   }
 
-  // G-08: fallback DLQ is now driven by env, not first-loaded config
-  // This method is kept for backward compat but callers should prefer env.kafkaFallbackDlqTopic
-  fallbackDlqTopic(): string {
-    const first = this.byKey.values().next().value as PartnerMappingConfig | undefined;
-    if (!first) throw new Error('No mapping configs loaded');
-    return first.topics.dlq;
-  }
 }

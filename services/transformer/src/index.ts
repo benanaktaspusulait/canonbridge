@@ -87,6 +87,7 @@ async function main(): Promise<void> {
         kafka.producer,
         env.outboxPollIntervalMs,
         env.outboxBatchSize,
+        app.log,
       );
       await outboxRelay.start();
     }

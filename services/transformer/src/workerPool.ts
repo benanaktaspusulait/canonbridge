@@ -71,23 +71,47 @@ export class WorkerPool {
     }
   }
 
-  async evaluate(expression: string, input: unknown): Promise<EvaluationResult> {
+  async evaluate(
+    expression: string,
+    input: unknown,
+    timeoutMs = 5000,
+  ): Promise<EvaluationResult> {
     if (this.shuttingDown) {
       return { ok: false, error: 'Worker pool is shutting down' };
     }
 
     return new Promise((resolve, reject) => {
+      let settled = false;
+      const timeoutHandle = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        resolve({ ok: false, error: `Worker evaluation timed out after ${timeoutMs}ms` });
+      }, timeoutMs);
+
+      const wrappedResolve = (result: EvaluationResult) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutHandle);
+        resolve(result);
+      };
+
+      const wrappedReject = (err: Error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutHandle);
+        reject(err);
+      };
+
       const task: PendingTask = {
         task: { expression, input },
-        resolve,
-        reject,
+        resolve: wrappedResolve,
+        reject: wrappedReject,
       };
 
       const worker = this.availableWorkers.pop();
       if (worker) {
         this.executeTask(worker, task);
       } else {
-        // All workers busy, queue the task
         this.taskQueue.push(task);
       }
     });
