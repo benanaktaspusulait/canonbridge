@@ -45,7 +45,11 @@ export class AuthService {
 
       // Create user object with avatar initials
       const user: User = {
-        ...response.user,
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.name,
+        role: response.user.role as User['role'],
+        tenantId: response.user.tenantId,
         tenantName: 'Acme Corp', // TODO: Get from API
         avatarInitials: this.getInitials(response.user.name)
       };

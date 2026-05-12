@@ -88,17 +88,17 @@ export class PartnersComponent implements OnInit {
     try {
       const apiPartners = await this.partnerService.getAll();
       // Transform API partners to UI format
-      const uiPartners: Partner[] = apiPartners.map(p => ({
+      const uiPartners: Partner[] = apiPartners.map((p: any) => ({
         id: p.id,
         name: p.name,
-        slug: p.slug,
-        status: p.status as 'active' | 'inactive' | 'degraded',
+        slug: p.external_id,
+        status: this.mapApiStatusToUi(p.status),
         eventTypes: 0, // TODO: Get from API
         activeMappings: 0, // TODO: Get from API
         dlqCount: 0, // TODO: Get from API
-        throughput: p.status === 'active' ? '~0/hr' : '—',
+        throughput: p.status === 'ACTIVE' ? '~0/hr' : '—',
         lastSeen: 'just now',
-        contactEmail: p.contactEmail || '',
+        contactEmail: p.contact_email || '',
         description: p.description || ''
       }));
       this._partners.set(uiPartners);
@@ -109,6 +109,25 @@ export class PartnersComponent implements OnInit {
         summary: 'Error',
         detail: 'Failed to load partners'
       });
+    }
+  }
+
+  private mapApiStatusToUi(apiStatus: string): 'active' | 'inactive' | 'degraded' {
+    switch (apiStatus) {
+      case 'ACTIVE': return 'active';
+      case 'INACTIVE': return 'inactive';
+      case 'SUSPENDED': return 'degraded';
+      case 'ARCHIVED': return 'inactive';
+      default: return 'inactive';
+    }
+  }
+
+  private mapUiStatusToApi(uiStatus: 'active' | 'inactive' | 'degraded'): 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'ARCHIVED' {
+    switch (uiStatus) {
+      case 'active': return 'ACTIVE';
+      case 'inactive': return 'INACTIVE';
+      case 'degraded': return 'SUSPENDED';
+      default: return 'INACTIVE';
     }
   }
 
@@ -166,18 +185,15 @@ export class PartnersComponent implements OnInit {
       if (this.isEdit && this.form.id) {
         await this.partnerService.update(this.form.id, {
           name: this.form.name.trim(),
-          slug,
-          status: this.form.status,
-          contactEmail: this.form.contactEmail.trim(),
+          status: this.mapUiStatusToApi(this.form.status),
           description: this.form.description.trim()
         });
         this.messageService.add({ severity: 'success', summary: this.t('partners.toast.updated'), detail: this.form.name });
       } else {
         await this.partnerService.create({
+          external_id: slug,
           name: this.form.name.trim(),
-          slug,
-          status: this.form.status,
-          contactEmail: this.form.contactEmail.trim(),
+          status: this.mapUiStatusToApi(this.form.status),
           description: this.form.description.trim()
         });
         this.messageService.add({ severity: 'success', summary: this.t('partners.toast.onboarded'), detail: this.form.name });
