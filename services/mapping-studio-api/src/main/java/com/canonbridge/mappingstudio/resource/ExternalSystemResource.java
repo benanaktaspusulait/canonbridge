@@ -1,8 +1,12 @@
 package com.canonbridge.mappingstudio.resource;
 
 import com.canonbridge.mappingstudio.domain.OutboundConnection;
+import com.canonbridge.mappingstudio.outbound.OutboundHttpRequest;
+import com.canonbridge.mappingstudio.outbound.OutboundHttpResult;
+import com.canonbridge.mappingstudio.outbound.OutboundHttpService;
 import com.canonbridge.mappingstudio.repository.OutboundConnectionRepository;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -30,6 +34,9 @@ public class ExternalSystemResource {
 
     @Inject
     OutboundConnectionRepository connectionRepository;
+
+    @Inject
+    OutboundHttpService outboundHttpService;
 
     @GET
     @Operation(summary = "List all external system connections for tenant")
@@ -87,6 +94,24 @@ public class ExternalSystemResource {
                 .map(deleted -> deleted ? Response.noContent().build() : Response.status(Response.Status.NOT_FOUND).build());
     }
 
+    @POST
+    @Path("/{connectionId}/test")
+    @Operation(summary = "Execute a test request against an external system connection")
+    public Uni<Response> test(
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            @PathParam("connectionId") UUID connectionId,
+            OutboundHttpRequest request) {
+        String requiredTenantId = requireTenantId(tenantId);
+        return connectionRepository.findById(requiredTenantId, connectionId)
+                .chain(connection -> {
+                    if (connection == null) {
+                        return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND).build());
+                    }
+                    return outboundHttpService.execute(requiredTenantId, connection, request)
+                            .chain(result -> recordAndRespond(requiredTenantId, connectionId, result));
+                });
+    }
+
     private String requireTenantId(String tenantId) {
         if (tenantId == null || tenantId.isBlank()) {
             throw new BadRequestException("X-Tenant-Id header is required");
@@ -99,6 +124,18 @@ public class ExternalSystemResource {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         return Response.ok(connection).build();
+    }
+
+    private Uni<Response> recordAndRespond(String tenantId, UUID connectionId, OutboundHttpResult result) {
+        OutboundConnection.ConnectionStatus status = result.success()
+                ? OutboundConnection.ConnectionStatus.HEALTHY
+                : OutboundConnection.ConnectionStatus.FAILED;
+        JsonObject summary = new JsonObject()
+                .put("statusCode", result.statusCode())
+                .put("success", result.success())
+                .put("durationMs", result.durationMs());
+        return connectionRepository.recordTestResult(tenantId, connectionId, status, summary.encode())
+                .replaceWith(Response.ok(result).build());
     }
 
     private OutboundConnection withTenant(String tenantId, OutboundConnection connection) {

@@ -141,6 +141,21 @@ public class OutboundConnectionRepository {
         .map(rows -> rows.rowCount() > 0);
     }
 
+    public Uni<OutboundConnection> recordTestResult(
+            String tenantId,
+            UUID connectionId,
+            OutboundConnection.ConnectionStatus status,
+            String result
+    ) {
+        return client.preparedQuery(
+                "UPDATE etl_outbound_connections " +
+                "SET status = $1, last_test_at = $2, last_test_result = $3, updated_at = $2 " +
+                "WHERE tenant_id = $4 AND connection_id = $5 RETURNING *"
+        )
+        .execute(Tuples.of(status.name(), Instant.now(), result, tenantId, connectionId))
+        .map(rows -> rows.iterator().hasNext() ? toConnection(rows.iterator().next()) : null);
+    }
+
     private List<OutboundConnection> toConnectionList(RowSet<Row> rows) {
         List<OutboundConnection> connections = new ArrayList<>();
         for (Row row : rows) {
