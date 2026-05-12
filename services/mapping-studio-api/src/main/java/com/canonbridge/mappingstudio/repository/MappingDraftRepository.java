@@ -168,19 +168,33 @@ public class MappingDraftRepository {
         draft.setName(row.getString("name"));
         draft.setDescription(row.getString("description"));
         draft.setSourceType(MappingDraft.SourceType.valueOf(row.getString("source_type")));
-        draft.setSourceConfig(row.getString("source_config"));
-        draft.setInputSchema(row.getString("input_schema"));
+        
+        // JSONB columns - use getValue() and convert to string
+        Object sourceConfig = row.getValue("source_config");
+        draft.setSourceConfig(sourceConfig != null ? sourceConfig.toString() : null);
+        
+        Object inputSchema = row.getValue("input_schema");
+        draft.setInputSchema(inputSchema != null ? inputSchema.toString() : null);
+        
         draft.setCanonicalSchemaRef(row.getString("canonical_schema_ref"));
-        draft.setMappingRules(row.getString("mapping_rules"));
+        
+        Object mappingRules = row.getValue("mapping_rules");
+        draft.setMappingRules(mappingRules != null ? mappingRules.toString() : null);
+        
         draft.setGeneratedJsonata(row.getString("generated_jsonata"));
-        draft.setValidationRules(row.getString("validation_rules"));
+        
+        Object validationRules = row.getValue("validation_rules");
+        draft.setValidationRules(validationRules != null ? validationRules.toString() : null);
+        
         draft.setStatus(MappingDraft.DraftStatus.valueOf(row.getString("status")));
         
         if (row.getLocalDateTime("last_validated_at") != null) {
             draft.setLastValidatedAt(row.getLocalDateTime("last_validated_at").toInstant(java.time.ZoneOffset.UTC));
         }
         
-        draft.setValidationResult(row.getString("validation_result"));
+        Object validationResult = row.getValue("validation_result");
+        draft.setValidationResult(validationResult != null ? validationResult.toString() : null);
+        
         draft.setCreatedAt(row.getLocalDateTime("created_at").toInstant(java.time.ZoneOffset.UTC));
         draft.setUpdatedAt(row.getLocalDateTime("updated_at").toInstant(java.time.ZoneOffset.UTC));
         draft.setCreatedBy(row.getString("created_by"));
