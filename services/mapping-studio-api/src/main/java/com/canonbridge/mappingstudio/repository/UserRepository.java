@@ -63,7 +63,7 @@ public class UserRepository {
             """;
 
         return client.preparedQuery(sql)
-            .execute(Tuple.of(Instant.now(), userId))
+            .execute(Tuple.of(LocalDateTime.now(), userId))
             .replaceWithVoid();
     }
 

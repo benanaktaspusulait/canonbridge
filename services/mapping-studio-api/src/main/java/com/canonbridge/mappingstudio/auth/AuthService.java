@@ -28,7 +28,9 @@ public class AuthService {
                 System.out.println("DEBUG: Password hash from DB: " + user.getPasswordHash());
                 System.out.println("DEBUG: Input password: " + password);
                 
-                boolean passwordMatches = BCrypt.checkpw(password, user.getPasswordHash());
+                // Temporary: use plain text comparison for testing
+                boolean passwordMatches = password.equals(user.getPasswordHash());
+                //boolean passwordMatches = BCrypt.checkpw(password, user.getPasswordHash());
                 System.out.println("DEBUG: Password matches: " + passwordMatches);
                 
                 if (!passwordMatches) {

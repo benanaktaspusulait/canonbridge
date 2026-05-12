@@ -114,6 +114,7 @@ services:
     build:
       context: ./services/mapping-studio-api
       dockerfile: Dockerfile
+    image: canonbridge/mapping-studio-api:latest
     container_name: canonbridge-mapping-studio-api
     depends_on:
       postgres:
@@ -146,6 +147,7 @@ services:
     build:
       context: ./services/transformer
       dockerfile: Dockerfile
+    image: canonbridge/transformer:latest
     container_name: canonbridge-transformer
     depends_on:
       kafka:
@@ -177,6 +179,7 @@ services:
     build:
       context: ./services/webhook-receiver
       dockerfile: Dockerfile
+    image: canonbridge/webhook-receiver:latest
     container_name: canonbridge-webhook-receiver
     depends_on:
       postgres:
@@ -205,6 +208,7 @@ services:
     build:
       context: ./mapping-studio-ui
       dockerfile: Dockerfile
+    image: canonbridge/mapping-studio-ui:latest
     container_name: canonbridge-mapping-studio-ui
     depends_on:
       mapping-studio-api:
