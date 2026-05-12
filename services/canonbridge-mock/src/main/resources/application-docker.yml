@@ -1,0 +1,8 @@
+spring:
+  kafka:
+    bootstrap-servers: kafka:9092
+
+logging:
+  level:
+    root: INFO
+    com.canonbridge: INFO

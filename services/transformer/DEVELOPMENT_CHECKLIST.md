@@ -14,19 +14,19 @@ Bu liste, transformer servisinde kod incelemesi sonrası kalan işleri ve geliş
 | API key auth | Geliştirildi | Admin reload dahil `/v1/*` kritik endpointlerde tutarlı |
 | Metrics | Geliştirildi | Histogram bucket üretimi ve Prometheus output düzeltildi |
 | Redis cache | Geliştirildi | TTL env değeri cache factory'ye bağlandı |
-| Outbox repository | Kısmen düzeltildi | PostgreSQL schema init ve JSONB okuma düzeltildi |
-| OpenAPI docs | Eksik | Swagger dependency var, route registration yok |
-| Worker pool | Eksik | WorkerPool var, transform engine'e bağlı değil |
-| Outbox runtime integration | Eksik | Repository/relay var, Kafka publish path'e bağlanmamış |
-| Dokümantasyon tutarlılığı | Kısmen eksik | README güncellendi, gap/history dosyaları eski ifadeler içeriyor |
+| Outbox repository | Geliştirildi | PostgreSQL schema init ve JSONB okuma düzeltildi |
+| OpenAPI docs | Tamamlandı | `/docs` ve `/docs/json` route'ları eklendi |
+| Worker pool | Tamamlandı | Opsiyonel WorkerPool transform path'e bağlandı |
+| Outbox runtime integration | Tamamlandı | Kafka canonical/DLQ publish path outbox helper'ına bağlandı |
+| Dokümantasyon tutarlılığı | Kısmen eksik | README ve bu checklist güncellendi, gap/history dosyaları tarihsel kalabilir |
 
 ## Geliştirme Sırası
 
-1. OpenAPI/Swagger endpointlerini ekle.
-2. Worker pool entegrasyonunu gerçek transform path'e bağla.
-3. Outbox runtime entegrasyonunu değerlendir; güvenli ve küçükse bağla, büyükse ayrı backlog olarak bırak.
-4. README ve checklist'i son duruma göre güncelle.
-5. `npm run build` ve `npm test` ile doğrula.
+1. OpenAPI/Swagger endpointlerini ekle. Tamamlandı.
+2. Worker pool entegrasyonunu gerçek transform path'e bağla. Tamamlandı.
+3. Outbox runtime entegrasyonunu Kafka publish path'e bağla. Tamamlandı.
+4. README ve checklist'i son duruma göre güncelle. Tamamlandı.
+5. `npm run build` ve `npm test` ile doğrula. Tamamlandı.
 
 ## Kabul Kriterleri
 
@@ -36,3 +36,9 @@ Bu liste, transformer servisinde kod incelemesi sonrası kalan işleri ve geliş
 - Var olan mapping fixture akışı bozulmamalı.
 - Kafka DLQ/canonical routing davranışı geriye uyumlu kalmalı.
 
+## Son Doğrulama
+
+| Komut | Sonuç |
+|---|---|
+| `npm run build` | Geçti |
+| `npm test` | Geçti: 43 test, 6 test dosyası |

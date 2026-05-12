@@ -1,4 +1,4 @@
-# CanonBridge - Final Tech Stack
+# CanonBridge - Current Tech Stack
 
 ## 🎯 Confirmed Technology Stack
 
@@ -64,7 +64,7 @@
 │                                         │
 │  ┌──────────────┐  ┌──────────────┐   │
 │  │   KafkaJS    │  │   Pino       │   │
-│  │   2.x        │  │   8.x        │   │
+│  │   2.x        │  │   9.x        │   │
 │  └──────────────┘  └──────────────┘   │
 │                                         │
 └─────────────────────────────────────────┘
@@ -376,23 +376,26 @@
 ### Local Development
 
 ```bash
-# Frontend (React)
-cd frontend
-npm install
-npm run dev
-
 # Mapping Studio UI (Angular)
 cd mapping-studio-ui
 npm install
 ng serve
 
 # Transformer (Node.js)
-cd transformer
+cd services/transformer
 npm install
 npm run dev
 
+# Mapping Studio API (Java)
+cd services/mapping-studio-api
+mvn quarkus:dev
+
+# Outbound Call Manager (Java)
+cd services/outbound-call-manager
+mvn quarkus:dev
+
 # Business Service (Java)
-cd business-service
+cd services/business-consumer-service
 mvn quarkus:dev
 
 # Infrastructure
@@ -403,15 +406,17 @@ docker-compose up -d
 
 ```bash
 # Build Docker images
-docker build -t etl-transformer:latest ./transformer
-docker build -t etl-business:latest ./business-service
-docker build -t etl-frontend:latest ./frontend
+docker build -t etl-transformer:latest ./services/transformer
+docker build -t etl-mapping-studio-api:latest ./services/mapping-studio-api
+docker build -t etl-outbound-call-manager:latest ./services/outbound-call-manager
+docker build -t etl-business:latest ./services/business-consumer-service
 docker build -t etl-mapping-studio:latest ./mapping-studio-ui
 
 # Push to registry
 docker push etl-transformer:latest
+docker push etl-mapping-studio-api:latest
+docker push etl-outbound-call-manager:latest
 docker push etl-business:latest
-docker push etl-frontend:latest
 docker push etl-mapping-studio:latest
 
 # Deploy with Kubernetes
@@ -428,10 +433,11 @@ argocd app create etl-solutions --repo <repo> --path k8s/
 
 | Component | Throughput | Latency | Memory | CPU |
 |-----------|-----------|---------|--------|-----|
-| React Frontend | N/A | < 100ms | 100-200MB | Low |
 | Mapping Studio UI | N/A | < 200ms | 150-300MB | Low |
 | Node.js Transformer | 10,000+ msg/sec | < 50ms p99 | 500MB-1GB | Medium |
-| Java Services | 5,000+ msg/sec | < 100ms p99 | 1-2GB | Medium-High |
+| Mapping Studio API | API-bound | < 150ms p95 | 512MB-1GB | Medium |
+| Outbound Call Manager | Partner API-bound | timeout policy driven | 512MB-1GB | Medium |
+| Java Business Services | 5,000+ msg/sec | < 100ms p99 | 1-2GB | Medium-High |
 | PostgreSQL | 10,000+ ops/sec | < 10ms | 2-4GB | Medium |
 | Kafka | 100,000+ msg/sec | < 5ms | 4-8GB | High |
 
@@ -455,10 +461,10 @@ argocd app create etl-solutions --repo <repo> --path k8s/
 ## 📈 Scaling Strategy
 
 ### Horizontal Scaling
-- React Frontend: CDN + multiple instances
 - Mapping Studio UI: Multiple instances behind load balancer
 - Node.js Transformer: Kubernetes auto-scaling (CPU/Memory)
-- Java Services: Kubernetes auto-scaling (CPU/Memory)
+- Mapping Studio API and outbound services: Kubernetes auto-scaling (CPU/Memory and request rate)
+- Java business services: Kubernetes auto-scaling (CPU/Memory and Kafka lag)
 - PostgreSQL: Read replicas + connection pooling
 - Kafka: Partition scaling + consumer groups
 - Redis: Cluster mode
@@ -474,16 +480,16 @@ argocd app create etl-solutions --repo <repo> --path k8s/
 ## 🎯 Next Steps
 
 1. **Setup Development Environment**
-   - Install Node.js 18+
+   - Install Node.js 20+
    - Install Java 21
    - Install Docker & Kubernetes
    - Clone repositories
 
 2. **Initialize Projects**
-   - Create React project
-   - Create Angular Mapping Studio project
-   - Create Node.js Fastify project
-   - Create Java Quarkus project
+   - Maintain Angular Mapping Studio project
+   - Harden Node.js Fastify transformer project
+   - Create Java Quarkus Mapping Studio API
+   - Create Java Quarkus outbound, webhook, scheduled poller, business, and outbox services
 
 3. **Configure Infrastructure**
    - Set up PostgreSQL
@@ -492,9 +498,11 @@ argocd app create etl-solutions --repo <repo> --path k8s/
    - Set up monitoring
 
 4. **Implement Services**
-   - Frontend dashboard
    - Mapping Studio UI (no-code visual mapping)
    - Transformer service
+   - Mapping Studio API
+   - Outbound call manager and credential store
+   - Webhook receiver and scheduled poller
    - Business service
 
 5. **Deploy & Test**

@@ -4,7 +4,7 @@ Node.js service: **Ajv** input/output validation + **JSONata** mapping, same rul
 
 - **HTTP**: `GET /health`, `POST /v1/transform` (body = raw envelope JSON), `GET /metrics` (Prometheus), `POST /v1/admin/reload`, `POST /v1/jsonata/check-batch`, `GET /docs` (Swagger UI)
 - **Kafka** (optional): set `KAFKA_ENABLED=true` — consumes all `topics.raw` from loaded configs, produces canonical or DLQ payloads
-- **Tests**: `npm test` — 40 unit + integration tests with Vitest
+- **Tests**: `npm test` — 43 unit + integration tests with Vitest
 
 ## Prerequisites
 
@@ -86,6 +86,7 @@ Expect `200` and a JSON body `{ "canonical": { ... } }`.
   - Backward compatible: envelope values always take precedence
 
 ### 📊 Observability
+- **OpenAPI Docs**: `GET /docs` for Swagger UI and `GET /docs/json` for the OpenAPI document
 - **Prometheus Metrics** (`GET /metrics`):
   - `transform_requests_total{status, stage, partner, event_type}` — Request counter
   - `transform_duration_ms{partner, event_type}` — Latency histogram
@@ -105,9 +106,11 @@ Expect `200` and a JSON body `{ "canonical": { ... } }`.
   - Stores raw schemas/mappings; compilation happens on cache miss
   - Configurable TTL via `REDIS_CACHE_TTL_SECONDS`
 - **Schema Version Resolution**: Partner configs can use `version` or `schemaVersion`; envelopes with `schemaVersion` resolve the matching immutable mapping version
+- **Worker Pool** (optional): Set `WORKER_POOL_ENABLED=true` to evaluate JSONata in worker threads for CPU-heavy mappings
+- **Outbox Pattern** (optional): Set `OUTBOX_ENABLED=true` with `OUTBOX_DATABASE_URL` to persist canonical/DLQ publishes before Kafka relay
 
 ### ✅ Testing
-- **40 Passing Tests**: Unit + integration tests with Vitest
+- **43 Passing Tests**: Unit + integration tests with Vitest
 - **Test Coverage**: Run `npm run test:coverage` for detailed report
 - **CI/CD Ready**: All tests run in < 1 second
 

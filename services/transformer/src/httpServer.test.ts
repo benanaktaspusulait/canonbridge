@@ -257,6 +257,21 @@ describe('HTTP Server', () => {
     });
   });
 
+  describe('GET /docs/json', () => {
+    it('should expose OpenAPI metadata', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/docs/json',
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.openapi).toBeDefined();
+      expect(body.info.title).toBe('CanonBridge Transformer API');
+      expect(body.paths['/v1/transform']).toBeDefined();
+    });
+  });
+
   describe('POST /v1/admin/reload', () => {
     it('should reload partner configs', async () => {
       const response = await app.inject({

@@ -119,53 +119,6 @@
 - ✅ JSON structure explorer
 - ✅ Field type inference
 - ✅ Input schema generation
-- ✅ Visual field mapping
-- ✅ JSONata preview
-- ✅ Transformation preview
-- ✅ Fixture creation
-- ✅ Validation testing
-- ✅ Mapping version publish
-- ✅ Basic authentication
-
-**Out of Scope**:
-- ❌ Advanced JSONata editor
-- ❌ Multi-user collaboration
-- ❌ RBAC
-- ❌ Audit trail UI
-- ❌ Advanced analytics
-
-**Activities**:
-- Week 1: React setup + sample JSON upload + structure explorer
-- Week 2: Field mapping UI + JSONata generation
-- Week 3: Preview + validation + fixtures
-- Week 4: Publish workflow + testing + documentation
-
-**Deliverables**:
-- Mapping Studio React application
-- API for mapping management
-- User guide
-- Demo video
-
-**Success Criteria**:
-- [ ] Business user can create mapping in < 30 minutes
-- [ ] No code required
-- [ ] Preview shows accurate results
-- [ ] Published mappings work in transformer service
-
-**Timeline**: 4 weeks  
-**Team**: 2 Frontend Engineers + 1 Backend Engineer
-
----
-
-### Phase 2: Mapping Studio UI (4 weeks)
-
-**Goal**: Enable business users to create mappings without code
-
-**Scope**:
-- ✅ Sample JSON upload/paste
-- ✅ JSON structure explorer
-- ✅ Field type inference
-- ✅ Input schema generation
 - ✅ Visual field mapping (drag-and-drop)
 - ✅ JSONata preview (read-only for users)
 - ✅ Transformation preview with live data
@@ -177,21 +130,20 @@
 **Key Feature**: Users don't need to know JSONata - the UI generates it automatically from visual mappings.
 
 **Out of Scope**:
-- ❌ Advanced JSONata editor (manual editing)
 - ❌ Multi-user collaboration
-- ❌ RBAC
-- ❌ Audit trail UI
 - ❌ Advanced analytics
 
+**Backend dependency**: RBAC, audit, credential metadata, publish gates, and mapping management are no longer out of scope for the platform. They are owned by the backend services defined in [Backend Service Requirements](../implementation/11-backend-service-requirements.md).
+
 **Activities**:
-- Week 1: React setup + sample JSON upload + structure explorer
+- Week 1: Angular Mapping Studio setup + sample JSON upload + structure explorer
 - Week 2: Visual field mapping UI + automatic JSONata generation
 - Week 3: Preview + validation + fixtures
 - Week 4: Publish workflow + testing + documentation
 
 **Deliverables**:
-- Mapping Studio React application
-- API for mapping management
+- Angular Mapping Studio application
+- Mapping Studio API for mapping management
 - User guide
 - Demo video
 
