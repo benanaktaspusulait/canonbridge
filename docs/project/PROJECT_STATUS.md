@@ -144,12 +144,11 @@
 ### Technology Stack
 
 **Frontend**:
-- React 18 + TypeScript (Dashboard, monitoring)
-- Angular 17 + TypeScript (Mapping Studio UI - no-code visual mapping)
+- Angular 21 + TypeScript (Mapping Studio UI, admin screens, no-code visual mapping)
 
 **Backend**:
-- Node.js 18+ + Fastify (Transformer service)
-- Java 21 + Quarkus (Business service)
+- Node.js 20+ + Fastify (Transformer service)
+- Java 21 + Quarkus (Mapping Studio API, outbound manager, webhook/scheduler, business, outbox)
 
 **Infrastructure**:
 - Kafka 3.x (Event streaming)
@@ -495,4 +494,3 @@
 ---
 
 **Made with ❤️ for integration engineers**
-

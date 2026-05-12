@@ -83,7 +83,7 @@ Business users define field mappings visually and publish in minutes. The platfo
 - Basic monitoring
 
 ### Phase 2: Mapping Studio UI (4 weeks)
-- React application
+- Angular Mapping Studio application
 - Visual field mapping
 - Preview functionality
 
@@ -167,10 +167,10 @@ See [BRAND_IDENTITY.md](./BRAND_IDENTITY.md) for details.
 
 ### Technology Stack
 - **Transformation**: Node.js + TypeScript + JSONata
-- **Business Logic**: Java + Quarkus
+- **Backend Services**: Java + Quarkus for Mapping Studio API, outbound manager, webhook/scheduler, business, and outbox
 - **Message Broker**: Apache Kafka
 - **Database**: PostgreSQL
-- **Frontend**: React + TypeScript
+- **Frontend**: Angular + TypeScript
 - **Monitoring**: Prometheus + Grafana + Jaeger
 
 See [docs/architecture/tech-stack.md](./docs/architecture/tech-stack.md) for details.
