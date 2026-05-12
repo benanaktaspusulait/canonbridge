@@ -1150,11 +1150,6 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
       }
       return;
     }
-  }
-      else if (key === 'z') this.undoRules();
-      else this.redoRules();
-      return;
-    }
     if (ev.key === 'ArrowRight') {
       ev.preventDefault();
       const next = Math.min(4, this.activeStep() + 1);

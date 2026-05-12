@@ -23,7 +23,7 @@ interface DemoStep {
 @Component({
   selector: 'app-demo',
   standalone: true,
-  imports: [ButtonModule, CardModule, TagModule, ToastModule, TooltipModule, ProgressBarModule, I18nPipe],
+  imports: [ButtonModule, CardModule, TagModule, ToastModule, TooltipModule, ProgressBarModule],
   providers: [MessageService],
   template: `
     <p-toast />
