@@ -11,6 +11,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.Iterator;
@@ -79,18 +80,18 @@ class WebhookAuthServiceTest {
     }
 
     @Test
-    void givenDatabaseError_whenValidate_thenReturnsFalse() {
+    void givenDatabaseError_whenValidate_thenThrowsException() {
         PreparedQuery<RowSet<Row>> preparedQuery = Mockito.mock(PreparedQuery.class);
 
         Mockito.when(pgPool.preparedQuery(anyString())).thenReturn(preparedQuery);
         Mockito.when(preparedQuery.execute(any()))
             .thenReturn(Uni.createFrom().failure(new RuntimeException("Connection refused")));
 
-        Boolean result = webhookAuthService
-            .validateWebhookKey("partner-001", "any-key")
-            .await().indefinitely();
-
-        assertFalse(result);
+        assertThrows(RuntimeException.class, () ->
+            webhookAuthService
+                .validateWebhookKey("partner-001", "any-key")
+                .await().indefinitely()
+        );
     }
 
     private RowSet<Row> mockRowSetWithHash(String hash) {
@@ -120,7 +121,7 @@ class WebhookAuthServiceTest {
 
     private String hashKey(String key) throws Exception {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] hash = digest.digest(key.getBytes());
+        byte[] hash = digest.digest(key.getBytes(StandardCharsets.UTF_8));
         return Base64.getEncoder().encodeToString(hash);
     }
 }
