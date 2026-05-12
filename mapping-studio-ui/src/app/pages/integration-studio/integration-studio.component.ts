@@ -934,6 +934,83 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     return Math.round((this.mappedTargetKeys().size / total) * 100);
   });
 
+  /** Live preview: instantly shows the transform result for the selected rule using the current source JSON. */
+  readonly livePreviewResult = computed((): { value: unknown; error: string | null } => {
+    const rule = this.selectedRule();
+    if (!rule || !rule.sourcePath) return { value: undefined, error: null };
+    if (effectiveJsonataExpression(rule)) {
+      return { value: undefined, error: null }; // JSONata requires async eval
+    }
+    try {
+      const payload = JSON.parse(this.sourceJson());
+      const result = applyVisualTransform(rule, payload);
+      return { value: result, error: null };
+    } catch (e) {
+      return { value: undefined, error: e instanceof Error ? e.message : String(e) };
+    }
+  });
+
+  /** Param label + icon config per transform type. */
+  readonly paramLabelConfig = computed((): Record<string, { labelA?: string; iconA?: string; labelB?: string; iconB?: string; labelC?: string; iconC?: string }> => {
+    this.i18n.translations();
+    return {
+      date_format: {
+        labelA: this.i18n.translate('studio.date.inputFormat'),
+        iconA: 'pi pi-calendar',
+        labelB: this.i18n.translate('studio.date.outputFormat'),
+        iconB: 'pi pi-calendar-clock'
+      },
+      default_value: {
+        labelA: this.i18n.translate('studio.defaultValue.valueLabel'),
+        iconA: 'pi pi-shield'
+      },
+      combine: {
+        labelA: this.i18n.translate('studio.combine.secondField'),
+        iconA: 'pi pi-link',
+        labelB: this.i18n.translate('studio.combine.separator'),
+        iconB: 'pi pi-minus'
+      },
+      string_substring: {
+        labelA: this.i18n.translate('studio.substring.start'),
+        iconA: 'pi pi-step-forward',
+        labelB: this.i18n.translate('studio.substring.length'),
+        iconB: 'pi pi-arrows-h'
+      },
+      string_replace: {
+        labelA: this.i18n.translate('studio.replace.find'),
+        iconA: 'pi pi-search',
+        labelB: this.i18n.translate('studio.replace.with'),
+        iconB: 'pi pi-pencil'
+      },
+      array_join: {
+        labelA: this.i18n.translate('studio.array.delimiterLabel'),
+        iconA: 'pi pi-minus'
+      },
+      array_element: {
+        labelA: this.i18n.translate('studio.array.positionLabel'),
+        iconA: 'pi pi-sort-numeric-down'
+      },
+      array_filter_equals: {
+        labelA: this.i18n.translate('studio.array.itemFieldLabel'),
+        iconA: 'pi pi-tag',
+        labelB: this.i18n.translate('studio.array.itemValueLabel'),
+        iconB: 'pi pi-equals'
+      },
+      conditional_value: {
+        labelA: this.i18n.translate('studio.condition.when'),
+        iconA: 'pi pi-question-circle',
+        labelB: this.i18n.translate('studio.condition.then'),
+        iconB: 'pi pi-check-circle',
+        labelC: this.i18n.translate('studio.condition.else'),
+        iconC: 'pi pi-times-circle'
+      },
+      template_string: {
+        labelA: this.i18n.translate('studio.template.body'),
+        iconA: 'pi pi-pencil'
+      }
+    };
+  });
+
   ngOnInit(): void {
     this.loadExternalSystemSample();
     this.analyzePayload();
@@ -1357,6 +1434,31 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
           severity: 'success',
           summary: this.i18n.translate('studio.tree.pathCopied'),
           life: 2000
+        });
+      });
+    }
+  }
+
+  /** Assign a tree node's path to the currently selected rule's sourcePath. */
+  assignTreePathToRule(ev: { node?: TreeNode }): void {
+    const node = ev.node;
+    if (!node?.data || typeof (node.data as { path?: string }).path !== 'string') return;
+    const path = (node.data as { path: string }).path;
+    const rule = this.selectedRule();
+    if (rule) {
+      this.patchRule(rule.id, { sourcePath: path });
+      this.toast.add({
+        severity: 'success',
+        summary: this.i18n.translate('studio.tree.assignedToRule', { path }),
+        life: 2500
+      });
+    } else {
+      // No rule selected — copy to clipboard as fallback
+      void navigator.clipboard.writeText(path).then(() => {
+        this.toast.add({
+          severity: 'info',
+          summary: this.i18n.translate('studio.tree.noRuleSelected'),
+          life: 2500
         });
       });
     }

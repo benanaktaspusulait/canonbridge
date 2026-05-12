@@ -561,10 +561,13 @@
     "next": "Next",
     "back": "Back",
     "treeTitle": "Field tree",
-    "treeSubtitle": "Inferred hierarchy from the current JSON (read-only preview).",
+    "treeSubtitle": "Inferred hierarchy from the current JSON. Click a leaf to copy its path, or assign it directly to the selected mapping rule.",
     "treeEmpty": "Analyze a valid JSON document to populate the tree.",
     "tree": {
-      "pathCopied": "Path copied to clipboard"
+      "pathCopied": "Path copied to clipboard",
+      "assignedToRule": "{{path}} assigned to selected rule",
+      "noRuleSelected": "No rule selected — path copied to clipboard",
+      "assignHint": "Click a leaf to assign it as the source for → {{target}}"
     },
     "sourceValidation": {
       "title": "Incoming JSON rules",
@@ -669,7 +672,14 @@
       "missingTarget": "Choose a target field",
       "required": "required",
       "optional": "optional",
-      "runTestForPreview": "Run test to preview"
+      "runTestForPreview": "Run test to preview",
+      "livePreviewTitle": "Live preview",
+      "livePreviewHint": "Result updates as you change the rule — no test run needed.",
+      "livePreviewEmpty": "Choose a source field to see a preview.",
+      "livePreviewAdvanced": "Advanced rules require a test run to preview.",
+      "livePreviewError": "Preview error",
+      "livePreviewSource": "Source value",
+      "livePreviewResult": "Result"
     },
     "tab": {
       "visual": "Wizard",

@@ -523,11 +523,17 @@
         </div>
       </ng-template>
       @if (treeNodes().length) {
+        @if (activeStep() === 2 && selectedRule()) {
+          <div class="studio-tree-assign-hint">
+            <i class="pi pi-info-circle" aria-hidden="true"></i>
+            <span>{{ 'studio.tree.assignHint' | i18n: { target: selectedRule()!.targetKey || '—' } }}</span>
+          </div>
+        }
         <p-tree
           [value]="treeNodes()"
           styleClass="field-tree w-full"
           selectionMode="single"
-          (onNodeSelect)="onTreeNodeSelect($event)">
+          (onNodeSelect)="activeStep() === 2 ? assignTreePathToRule($event) : onTreeNodeSelect($event)">
           <ng-template let-node pTemplate="default">
             <span>{{ node.label }}</span>
             @if (node.data?.type) {
@@ -931,6 +937,50 @@
             <p>{{ ruleSummaryText(rule) }}</p>
           </div>
 
+          <!-- Live Preview Card -->
+          <div class="studio-live-preview" aria-live="polite" aria-label="Live preview">
+            <div class="studio-live-preview__header">
+              <i class="pi pi-bolt" aria-hidden="true"></i>
+              <span>{{ 'studio.ruleContext.livePreviewTitle' | i18n }}</span>
+              <small>{{ 'studio.ruleContext.livePreviewHint' | i18n }}</small>
+            </div>
+            @if (ruleUsesAdvancedLogic(rule)) {
+              <div class="studio-live-preview__advanced">
+                <i class="pi pi-code" aria-hidden="true"></i>
+                <span>{{ 'studio.ruleContext.livePreviewAdvanced' | i18n }}</span>
+              </div>
+            } @else if (!rule.sourcePath) {
+              <div class="studio-live-preview__empty">
+                <span>{{ 'studio.ruleContext.livePreviewEmpty' | i18n }}</span>
+              </div>
+            } @else if (livePreviewResult().error) {
+              <div class="studio-live-preview__error">
+                <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+                <span>{{ 'studio.ruleContext.livePreviewError' | i18n }}: {{ livePreviewResult().error }}</span>
+              </div>
+            } @else {
+              <div class="studio-live-preview__values">
+                <div class="studio-live-preview__cell">
+                  <span class="studio-live-preview__label">
+                    <i class="pi pi-arrow-right-arrow-left" aria-hidden="true"></i>
+                    {{ 'studio.ruleContext.livePreviewSource' | i18n }}
+                  </span>
+                  <code class="studio-live-preview__code">{{ ruleSourceValuePreview(rule) }}</code>
+                </div>
+                <div class="studio-live-preview__arrow" aria-hidden="true">
+                  <i [class]="transformIcon(rule.transform)"></i>
+                </div>
+                <div class="studio-live-preview__cell studio-live-preview__cell--result">
+                  <span class="studio-live-preview__label">
+                    <i class="pi pi-check-circle" aria-hidden="true"></i>
+                    {{ 'studio.ruleContext.livePreviewResult' | i18n }}
+                  </span>
+                  <code class="studio-live-preview__code studio-live-preview__code--result">{{ livePreviewResult().value | json }}</code>
+                </div>
+              </div>
+            }
+          </div>
+
           <div class="studio-inspector-tabs-wrap">
             <p-tabs [value]="ruleInspectorTab()" (valueChange)="onInspectorTabChange($event)">
               <p-tablist>
@@ -1032,7 +1082,12 @@
                     @case ('date_format') {
                       <div class="param-grid mt-2">
                         <label class="studio-field-shell">
-                          <span>{{ 'studio.date.inputFormat' | i18n }}</span>
+                          <span>
+                            @if (paramLabelConfig()['date_format']?.iconA) {
+                              <i [class]="paramLabelConfig()['date_format'].iconA" aria-hidden="true"></i>
+                            }
+                            {{ paramLabelConfig()['date_format']?.labelA || ('studio.date.inputFormat' | i18n) }}
+                          </span>
                           <p-select
                           [options]="dateFormatOptions()"
                           [ngModel]="rule.paramA"
@@ -1045,7 +1100,12 @@
                           [disabled]="ruleUsesAdvancedLogic(rule)" />
                         </label>
                         <label class="studio-field-shell">
-                          <span>{{ 'studio.date.outputFormat' | i18n }}</span>
+                          <span>
+                            @if (paramLabelConfig()['date_format']?.iconB) {
+                              <i [class]="paramLabelConfig()['date_format'].iconB" aria-hidden="true"></i>
+                            }
+                            {{ paramLabelConfig()['date_format']?.labelB || ('studio.date.outputFormat' | i18n) }}
+                          </span>
                           <p-select
                           [options]="dateFormatOptions()"
                           [ngModel]="rule.paramB"
@@ -1129,7 +1189,10 @@
                     }
                     @case ('default_value') {
                       <label class="studio-field-shell">
-                        <span>{{ 'studio.defaultValue.valueLabel' | i18n }}</span>
+                        <span>
+                          <i class="pi pi-shield" aria-hidden="true"></i>
+                          {{ paramLabelConfig()['default_value']?.labelA || ('studio.defaultValue.valueLabel' | i18n) }}
+                        </span>
                         <input
                           pInputText
                           [placeholder]="'studio.phDefault' | i18n"
@@ -1141,7 +1204,10 @@
                     @case ('combine') {
                       <div class="param-grid mt-2">
                         <label class="studio-field-shell">
-                          <span>{{ 'studio.combine.secondField' | i18n }}</span>
+                          <span>
+                            <i class="pi pi-link" aria-hidden="true"></i>
+                            {{ paramLabelConfig()['combine']?.labelA || ('studio.combine.secondField' | i18n) }}
+                          </span>
                           <p-select
                             [options]="sourcePathOptions()"
                             [ngModel]="rule.paramA"
@@ -1154,7 +1220,10 @@
                             [disabled]="ruleUsesAdvancedLogic(rule)" />
                         </label>
                         <label class="studio-field-shell">
-                          <span>{{ 'studio.combine.separator' | i18n }}</span>
+                          <span>
+                            <i class="pi pi-minus" aria-hidden="true"></i>
+                            {{ paramLabelConfig()['combine']?.labelB || ('studio.combine.separator' | i18n) }}
+                          </span>
                           <input
                             pInputText
                             [placeholder]="'studio.phSeparator' | i18n"
@@ -1185,7 +1254,10 @@
                     @case ('string_substring') {
                       <div class="param-grid mt-2">
                         <label class="studio-field-shell">
-                          <span>{{ 'studio.substring.start' | i18n }}</span>
+                          <span>
+                            <i class="pi pi-step-forward" aria-hidden="true"></i>
+                            {{ paramLabelConfig()['string_substring']?.labelA || ('studio.substring.start' | i18n) }}
+                          </span>
                           <input
                             pInputText
                             type="number"
@@ -1197,7 +1269,10 @@
                             [disabled]="ruleUsesAdvancedLogic(rule)" />
                         </label>
                         <label class="studio-field-shell">
-                          <span>{{ 'studio.substring.length' | i18n }}</span>
+                          <span>
+                            <i class="pi pi-arrows-h" aria-hidden="true"></i>
+                            {{ paramLabelConfig()['string_substring']?.labelB || ('studio.substring.length' | i18n) }}
+                          </span>
                           <input
                             pInputText
                             type="number"
@@ -1213,7 +1288,10 @@
                     @case ('string_replace') {
                       <div class="param-grid mt-2">
                         <label class="studio-field-shell">
-                          <span>{{ 'studio.replace.find' | i18n }}</span>
+                          <span>
+                            <i class="pi pi-search" aria-hidden="true"></i>
+                            {{ paramLabelConfig()['string_replace']?.labelA || ('studio.replace.find' | i18n) }}
+                          </span>
                           <input
                             pInputText
                             [placeholder]="'studio.phReplaceFrom' | i18n"
@@ -1222,7 +1300,10 @@
                             [disabled]="ruleUsesAdvancedLogic(rule)" />
                         </label>
                         <label class="studio-field-shell">
-                          <span>{{ 'studio.replace.with' | i18n }}</span>
+                          <span>
+                            <i class="pi pi-pencil" aria-hidden="true"></i>
+                            {{ paramLabelConfig()['string_replace']?.labelB || ('studio.replace.with' | i18n) }}
+                          </span>
                           <input
                             pInputText
                             [placeholder]="'studio.phReplaceTo' | i18n"
@@ -1334,7 +1415,10 @@
                     @case ('conditional_value') {
                       <div class="param-grid mt-2">
                         <label class="studio-field-shell">
-                          <span>{{ 'studio.condition.when' | i18n }}</span>
+                          <span>
+                            <i class="pi pi-question-circle" aria-hidden="true"></i>
+                            {{ paramLabelConfig()['conditional_value']?.labelA || ('studio.condition.when' | i18n) }}
+                          </span>
                           <input
                             pInputText
                             [placeholder]="'studio.phWhenEquals' | i18n"
@@ -1343,7 +1427,10 @@
                             [disabled]="ruleUsesAdvancedLogic(rule)" />
                         </label>
                         <label class="studio-field-shell">
-                          <span>{{ 'studio.condition.then' | i18n }}</span>
+                          <span>
+                            <i class="pi pi-check-circle" aria-hidden="true"></i>
+                            {{ paramLabelConfig()['conditional_value']?.labelB || ('studio.condition.then' | i18n) }}
+                          </span>
                           <input
                             pInputText
                             [placeholder]="'studio.phThenValue' | i18n"
@@ -1352,7 +1439,10 @@
                             [disabled]="ruleUsesAdvancedLogic(rule)" />
                         </label>
                         <label class="studio-field-shell">
-                          <span>{{ 'studio.condition.else' | i18n }}</span>
+                          <span>
+                            <i class="pi pi-times-circle" aria-hidden="true"></i>
+                            {{ paramLabelConfig()['conditional_value']?.labelC || ('studio.condition.else' | i18n) }}
+                          </span>
                           <input
                             pInputText
                             [placeholder]="'studio.phElseValue' | i18n"
@@ -1364,7 +1454,10 @@
                     }
                     @case ('template_string') {
                       <label class="studio-field-shell">
-                        <span>{{ 'studio.template.body' | i18n }}</span>
+                        <span>
+                          <i class="pi pi-pencil" aria-hidden="true"></i>
+                          {{ paramLabelConfig()['template_string']?.labelA || ('studio.template.body' | i18n) }}
+                        </span>
                         <textarea
                           pTextarea
                           class="w-full mono-textarea"

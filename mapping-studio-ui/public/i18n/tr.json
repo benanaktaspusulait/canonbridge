@@ -596,10 +596,13 @@
     "next": "İleri",
     "back": "Geri",
     "treeTitle": "Alan ağacı",
-    "treeSubtitle": "Geçerli JSON’dan çıkarılan hiyerarşi (salt okunur önizleme).",
+    "treeSubtitle": "Geçerli JSON’dan çıkarılan hiyerarşi. Yaprak düğüme tıklayarak yolu kopyalayın veya seçili eşleme kuralına doğrudan atayın.",
     "treeEmpty": "Ağacı doldurmak için geçerli bir JSON analiz edin.",
     "tree": {
-      "pathCopied": "Yol panoya kopyalandı"
+      "pathCopied": "Yol panoya kopyalandı",
+      "assignedToRule": "{{path}} seçili kurala atandı",
+      "noRuleSelected": "Seçili kural yok — yol panoya kopyalandı",
+      "assignHint": "Yaprak düğüme tıklayarak → {{target}} için kaynak atayın"
     },
     "sourceValidation": {
       "title": "Gelen JSON kuralları",
@@ -704,7 +707,14 @@
       "missingTarget": "Hedef alan seçin",
       "required": "zorunlu",
       "optional": "isteğe bağlı",
-      "runTestForPreview": "Önizleme için test çalıştırın"
+      "runTestForPreview": "Önizleme için test çalıştırın",
+      "livePreviewTitle": "Canlı önizleme",
+      "livePreviewHint": "Kural değiştikçe sonuç anında güncellenir — test çalıştırmaya gerek yok.",
+      "livePreviewEmpty": "Önizleme için kaynak alan seçin.",
+      "livePreviewAdvanced": "Gelişmiş kurallar önizleme için test çalıştırması gerektirir.",
+      "livePreviewError": "Önizleme hatası",
+      "livePreviewSource": "Kaynak değer",
+      "livePreviewResult": "Sonuç"
     },
     "tab": {
       "visual": "Wizard",
