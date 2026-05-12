@@ -229,13 +229,30 @@
     "action": {
       "test": "Bağlantıyı test et",
       "view": "Geçmişi gör",
-      "edit": "Düzenle"
+      "edit": "Düzenle",
+      "useInStudio": "Studio'da kullan"
     },
     "detail": {
       "eyebrow": "Bağlantı detayı",
       "metrics": "Sağlık metrikleri",
       "history": "Son çağrılar",
-      "noHistory": "Henüz demo çağrı kaydı yok."
+      "noHistory": "Henüz demo çağrı kaydı yok.",
+      "sample": "Yakalanan örnek yanıt",
+      "mappings": "Bu bağlantıyı kullanan mapping'ler",
+      "noMappings": "Bu bağlantıya bağlı mapping yok.",
+      "logDetail": "İstek / yanıt logunu gör",
+      "headers": "Header'lar",
+      "request": "İstek",
+      "response": "Yanıt",
+      "typeConfig": "Tip konfigürasyonu",
+      "pollHint": "Zamanlı sorgu: {{schedule}}",
+      "wsdlHint": "WSDL: {{wsdl}}",
+      "webhookHint": "Üretilmiş URL ve inbound API key ile webhook alıcısı.",
+      "restHint": "Demo outbound okuma veya zenginleştirme için REST endpoint."
+    },
+    "credentialStore": {
+      "eyebrow": "Credential Store",
+      "title": "Tekrar kullanılabilir kimlik profilleri"
     },
     "health": {
       "healthy": "Son demo kontrolleri sağlıklı. Gecikme ve başarı oranı beklenen aralıkta.",
@@ -256,7 +273,11 @@
       "method": "HTTP metodu",
       "url": "Endpoint URL",
       "authType": "Kimlik doğrulama",
-      "timeoutMs": "Timeout"
+      "timeoutMs": "Timeout",
+      "credentialName": "Kimlik profili",
+      "pollSchedule": "Sorgu takvimi",
+      "wsdlUrl": "WSDL URL",
+      "sampleJson": "Demo örnek JSON"
     },
     "save": "Bağlantıyı kaydet",
     "cancel": "İptal",
@@ -269,7 +290,8 @@
       "testPassed": "Bağlantı testi başarılı",
       "testFailed": "Bağlantı testi başarısız",
       "invalidUrl": "URL http:// veya https:// ile başlamalı",
-      "deleted": "Bağlantı silindi"
+      "deleted": "Bağlantı silindi",
+      "sampleReady": "Örnek Mapping Studio'ya gönderildi"
     },
     "history": {
       "demoSuccess": "Demo isteği tamamlandı"
@@ -462,6 +484,9 @@
       "importFailed": "Studio config içe alınamadı",
       "exported": "Studio config dışa aktarıldı"
     },
+    "autosave": {
+      "savedAt": "Otomatik kayıt {{time}}"
+    },
     "sourceType": {
       "title": "Kaynak tipi",
       "kafka": "Kafka Topic",
@@ -519,7 +544,9 @@
       "testRequiredBeforeMapping": "Dış API kaynağı için mapping doğrulaması çalışmadan önce geçerli bir demo test gerekir.",
       "demoTestDetail": "Demo yanıt {{duration}}ms içinde yakalandı ve kaynak ağacına yüklendi.",
       "demoResultTitle": "Demo yanıt hazır",
-      "demoResultText": "HTTP {{status}} · {{duration}}ms · {{capturedAt}} saatinde yakalandı. Bu yanıt artık kaynak ağacıdır."
+      "demoResultText": "HTTP {{status}} · {{duration}}ms · {{capturedAt}} saatinde yakalandı. Bu yanıt artık kaynak ağacıdır.",
+      "sampleImported": "Dış sistem örneği içe alındı",
+      "importedFrom": "{{name}} kaynağından"
     },
     "sourceAuth": {
       "add": "Kimlik doğrulama ekle",
@@ -548,6 +575,12 @@
         "BEARER_TOKEN": "Bearer Token",
         "OAUTH2_CLIENT_CREDENTIALS": "OAuth2 Client Credentials"
       }
+    },
+    "publishSummary": {
+      "eyebrow": "Yayın onayı",
+      "version": "demo-v{{fields}}.{{rules}}.{{advanced}}",
+      "ready": "Doğrulama geçti. Yayınlama bu yerel demo versiyonunu sabitler ve teslimata hazır gösterir.",
+      "blocked": "Bu yerel demo versiyonunu yayınlamadan önce başarılı bir test çalıştırın."
     },
     "upload": {
       "browse": "Dosya seç",

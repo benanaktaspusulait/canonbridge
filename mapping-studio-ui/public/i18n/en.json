@@ -217,13 +217,30 @@
     "action": {
       "test": "Test connection",
       "view": "View history",
-      "edit": "Edit"
+      "edit": "Edit",
+      "useInStudio": "Use in Studio"
     },
     "detail": {
       "eyebrow": "Connection detail",
       "metrics": "Health metrics",
       "history": "Recent calls",
-      "noHistory": "No demo calls recorded yet."
+      "noHistory": "No demo calls recorded yet.",
+      "sample": "Captured sample response",
+      "mappings": "Mappings using this connection",
+      "noMappings": "No mappings are linked to this connection yet.",
+      "logDetail": "View request / response log",
+      "headers": "Headers",
+      "request": "Request",
+      "response": "Response",
+      "typeConfig": "Type config",
+      "pollHint": "Scheduled poll: {{schedule}}",
+      "wsdlHint": "WSDL: {{wsdl}}",
+      "webhookHint": "Webhook receiver with generated URL and inbound API key.",
+      "restHint": "REST endpoint used for demo outbound reads or enrichment."
+    },
+    "credentialStore": {
+      "eyebrow": "Credential Store",
+      "title": "Reusable auth profiles"
     },
     "health": {
       "healthy": "The last demo checks are healthy. Latency and success rate are inside the expected range.",
@@ -244,7 +261,11 @@
       "method": "HTTP method",
       "url": "Endpoint URL",
       "authType": "Authentication",
-      "timeoutMs": "Timeout"
+      "timeoutMs": "Timeout",
+      "credentialName": "Credential profile",
+      "pollSchedule": "Poll schedule",
+      "wsdlUrl": "WSDL URL",
+      "sampleJson": "Demo sample JSON"
     },
     "save": "Save connection",
     "cancel": "Cancel",
@@ -257,7 +278,8 @@
       "deleted": "Connection deleted",
       "testPassed": "Connection test passed",
       "testFailed": "Connection test failed",
-      "invalidUrl": "URL must start with http:// or https://"
+      "invalidUrl": "URL must start with http:// or https://",
+      "sampleReady": "Sample sent to Mapping Studio"
     },
     "history": {
       "demoSuccess": "Demo request completed"
@@ -427,6 +449,9 @@
       "importFailed": "Studio config could not be imported",
       "exported": "Studio config exported"
     },
+    "autosave": {
+      "savedAt": "Autosaved {{time}}"
+    },
     "sourceType": {
       "title": "Source type",
       "kafka": "Kafka Topic",
@@ -484,7 +509,9 @@
       "testRequiredBeforeMapping": "External API source must have a valid demo test before mapping validation can run.",
       "demoTestDetail": "Demo response captured in {{duration}}ms and loaded into the source tree.",
       "demoResultTitle": "Demo response ready",
-      "demoResultText": "HTTP {{status}} · {{duration}}ms · captured at {{capturedAt}}. This response is now the source tree."
+      "demoResultText": "HTTP {{status}} · {{duration}}ms · captured at {{capturedAt}}. This response is now the source tree.",
+      "sampleImported": "External system sample imported",
+      "importedFrom": "From {{name}}"
     },
     "sourceAuth": {
       "add": "Add authentication",
@@ -513,6 +540,12 @@
         "BEARER_TOKEN": "Bearer Token",
         "OAUTH2_CLIENT_CREDENTIALS": "OAuth2 Client Credentials"
       }
+    },
+    "publishSummary": {
+      "eyebrow": "Publish confirmation",
+      "version": "demo-v{{fields}}.{{rules}}.{{advanced}}",
+      "ready": "Validation passed. Publishing will freeze this local demo version and show it as ready for handoff.",
+      "blocked": "Run a successful test before publishing this local demo version."
     },
     "upload": {
       "browse": "Browse",

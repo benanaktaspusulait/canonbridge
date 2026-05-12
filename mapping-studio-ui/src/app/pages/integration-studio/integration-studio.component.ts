@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   HostListener,
+  OnDestroy,
   OnInit,
   ViewChild,
   computed,
@@ -599,6 +600,9 @@ function applyVisualTransform(rule: MappingRule, payload: unknown): unknown {
   }
 }
 
+const STUDIO_DRAFT_STORAGE_KEY = 'canonbridge:studio:draft';
+const STUDIO_EXTERNAL_SAMPLE_KEY = 'canonbridge:external-systems:selected-sample';
+
 @Component({
   selector: 'app-integration-studio',
   standalone: true,
@@ -630,7 +634,7 @@ function applyVisualTransform(rule: MappingRule, payload: unknown): unknown {
   templateUrl: './integration-studio.component.html',
   styleUrl: './integration-studio.component.scss'
 })
-export class IntegrationStudioComponent implements OnInit {
+export class IntegrationStudioComponent implements OnInit, OnDestroy {
   private readonly i18n = inject(I18nService);
   private readonly jsonataCheck = inject(JsonataCheckService);
   private readonly ajv = createStudioAjv();
@@ -640,6 +644,7 @@ export class IntegrationStudioComponent implements OnInit {
   @ViewChild('advancedExpr') private advancedExpr?: ElementRef<HTMLTextAreaElement>;
 
   private sourceDebounceTimer: ReturnType<typeof setTimeout> | undefined;
+  private autosaveTimer: ReturnType<typeof setInterval> | undefined;
 
   /** When `mapping.transformerApiUrl` is set, advanced formulas are mirrored to the transformer for validation. */
   get transformerConfigured(): boolean {
@@ -657,6 +662,8 @@ export class IntegrationStudioComponent implements OnInit {
   /** Highest step index the user may open (sequential wizard). */
   maxUnlockedStep = signal(0);
   testRunPending = signal(false);
+  lastAutosavedAt = signal<string | null>(null);
+  draftSourceLabel = signal<string | null>(null);
   sourceDropHighlight = signal(false);
   uploadDropTarget = signal<UploadDropTarget | null>(null);
   sourceFileMeta = signal<{ name: string; size: string } | null>(null);
@@ -928,12 +935,31 @@ export class IntegrationStudioComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.loadExternalSystemSample();
     this.analyzePayload();
     this.selectedRule.set(this.rules()[0] ?? null);
+    this.autosaveTimer = setInterval(() => this.autosaveDraft(), 2500);
+  }
+
+  ngOnDestroy(): void {
+    if (this.autosaveTimer) clearInterval(this.autosaveTimer);
+    if (this.sourceDebounceTimer) clearTimeout(this.sourceDebounceTimer);
   }
 
   @HostListener('document:keydown', ['$event'])
   onWizardKeydown(ev: KeyboardEvent): void {
+    const key = ev.key.toLowerCase();
+    if ((ev.metaKey || ev.ctrlKey) && key === 's') {
+      ev.preventDefault();
+      this.exportStudioConfig();
+      this.autosaveDraft();
+      return;
+    }
+    if ((ev.metaKey || ev.ctrlKey) && ev.key === 'Enter') {
+      ev.preventDefault();
+      void this.runTest();
+      return;
+    }
     const t = ev.target as HTMLElement | null;
     if (t && ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName)) return;
     if (ev.key === 'ArrowRight') {
@@ -944,6 +970,18 @@ export class IntegrationStudioComponent implements OnInit {
       ev.preventDefault();
       this.setStep(Math.max(0, this.activeStep() - 1));
     }
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(ev: BeforeUnloadEvent): void {
+    if (this.hasUnpublishedDraft()) {
+      ev.preventDefault();
+      ev.returnValue = '';
+    }
+  }
+
+  private hasUnpublishedDraft(): boolean {
+    return !this.published() && (this.rules().length > 0 || this.activeStep() > 0 || this.testOutput() !== null);
   }
 
   stepClass(i: number): string {
@@ -2217,7 +2255,55 @@ export class IntegrationStudioComponent implements OnInit {
   }
 
   exportStudioConfig(): void {
-    const cfg: StudioConfigExport = {
+    const cfg = this.studioConfigSnapshot();
+    this.downloadText('canonbridge-studio-config.json', JSON.stringify(cfg, null, 2), 'application/json');
+    this.toast.add({
+      severity: 'success',
+      summary: this.i18n.translate('studio.config.exported'),
+      life: 3000
+    });
+  }
+
+  private autosaveDraft(): void {
+    try {
+      localStorage.setItem(STUDIO_DRAFT_STORAGE_KEY, JSON.stringify(this.studioConfigSnapshot()));
+      this.lastAutosavedAt.set(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    } catch {
+      /* Local storage may be unavailable in hardened browser modes. */
+    }
+  }
+
+  private loadExternalSystemSample(): void {
+    try {
+      const raw = localStorage.getItem(STUDIO_EXTERNAL_SAMPLE_KEY);
+      if (!raw) return;
+      const sample = JSON.parse(raw) as Record<string, unknown>;
+      if (typeof sample['sampleJson'] !== 'string') return;
+      const connectionName = String(sample['connectionName'] ?? 'External system sample');
+      this.sourceType.set('externalApi');
+      this.externalApiName.set(connectionName);
+      this.sourceJson.set(sample['sampleJson']);
+      this.sourceFileMeta.set({ name: `${connectionName}.sample.json`, size: this.formatFileSize(sample['sampleJson'].length) });
+      this.draftSourceLabel.set(connectionName);
+      this.externalApiLastTest.set({
+        status: 200,
+        durationMs: 184,
+        capturedAt: new Date().toLocaleTimeString()
+      });
+      localStorage.removeItem(STUDIO_EXTERNAL_SAMPLE_KEY);
+      this.toast.add({
+        severity: 'success',
+        summary: this.i18n.translate('studio.sourceApi.sampleImported'),
+        detail: connectionName,
+        life: 3500
+      });
+    } catch {
+      localStorage.removeItem(STUDIO_EXTERNAL_SAMPLE_KEY);
+    }
+  }
+
+  private studioConfigSnapshot(): StudioConfigExport {
+    return {
       version: 1,
       exportedAt: new Date().toISOString(),
       sourceType: this.sourceType(),
@@ -2244,12 +2330,6 @@ export class IntegrationStudioComponent implements OnInit {
       },
       fixtures: this.fixtures()
     };
-    this.downloadText('canonbridge-studio-config.json', JSON.stringify(cfg, null, 2), 'application/json');
-    this.toast.add({
-      severity: 'success',
-      summary: this.i18n.translate('studio.config.exported'),
-      life: 3000
-    });
   }
 
   onLoadInputSchema(ev: Event): void {

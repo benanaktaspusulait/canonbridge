@@ -31,6 +31,23 @@
   </article>
 </section>
 
+<!-- ── Credential store summary ──────────────────────────────────────────── -->
+<section class="credential-store-strip" aria-label="Credential store summary">
+  <div class="credential-store-strip__head">
+    <span>{{ 'externalSystems.credentialStore.eyebrow' | i18n }}</span>
+    <strong>{{ 'externalSystems.credentialStore.title' | i18n }}</strong>
+  </div>
+  @for (credential of credentials(); track credential.id) {
+    <article>
+      <i class="pi pi-key" aria-hidden="true"></i>
+      <div>
+        <strong>{{ credential.name }}</strong>
+        <span>{{ credential.type }} · {{ credential.environment }} · {{ credential.lastUsed }}</span>
+      </div>
+    </article>
+  }
+</section>
+
 <p-card styleClass="external-card">
   <!-- ── Filter bar ──────────────────────────────────────────────────────── -->
   <div class="external-filter-bar">
@@ -89,6 +106,9 @@
           <div class="external-success-cell">
             <strong>{{ row.successRate ?? 0 }}%</strong>
             <span class="external-meter"><span [style.width.%]="successWidth(row)"></span></span>
+            <svg class="external-sparkline" viewBox="0 0 100 52" preserveAspectRatio="none" aria-hidden="true">
+              <polyline [attr.points]="sparklinePoints(row)" />
+            </svg>
           </div>
         </td>
         <td>
@@ -179,6 +199,14 @@
           <dt>{{ 'externalSystems.form.authType' | i18n }}</dt>
           <dd>{{ selected.authType }}</dd>
         </div>
+        <div>
+          <dt>{{ 'externalSystems.form.credentialName' | i18n }}</dt>
+          <dd>{{ selected.credentialName || '—' }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'externalSystems.detail.typeConfig' | i18n }}</dt>
+          <dd>{{ typeConfigHint(selected) }}</dd>
+        </div>
         <div class="external-detail-grid__wide">
           <dt>{{ 'externalSystems.form.url' | i18n }}</dt>
           <dd>{{ selected.url }}</dd>
@@ -206,6 +234,35 @@
 
     <section class="external-detail-section">
       <div class="external-detail-section__head">
+        <h3>{{ 'externalSystems.detail.sample' | i18n }}</h3>
+        <p-button
+          [label]="'externalSystems.action.useInStudio' | i18n"
+          icon="pi pi-arrow-right"
+          size="small"
+          (onClick)="useSampleInStudio(selected)" />
+      </div>
+      <pre class="external-json-preview">{{ selected.sampleJson }}</pre>
+    </section>
+
+    <section class="external-detail-section">
+      <h3>{{ 'externalSystems.detail.mappings' | i18n }}</h3>
+      <div class="external-mapping-list">
+        @for (mapping of selected.mappings; track mapping.name + mapping.version) {
+          <article>
+            <div>
+              <strong>{{ mapping.name }}</strong>
+              <span>{{ mapping.version }}</span>
+            </div>
+            <p-tag [severity]="mappingSeverity(mapping.status)" [value]="('status.' + mapping.status) | i18n" />
+          </article>
+        } @empty {
+          <p class="empty-cell">{{ 'externalSystems.detail.noMappings' | i18n }}</p>
+        }
+      </div>
+    </section>
+
+    <section class="external-detail-section">
+      <div class="external-detail-section__head">
         <h3>{{ 'externalSystems.detail.history' | i18n }}</h3>
         <p-button
           [label]="'externalSystems.action.test' | i18n"
@@ -223,6 +280,15 @@
               <strong>{{ call.message }}</strong>
               <span>{{ call.at }} · {{ call.durationMs }}ms · {{ call.requestId }}</span>
             </div>
+            <details class="external-log-detail">
+              <summary>{{ 'externalSystems.detail.logDetail' | i18n }}</summary>
+              <label>{{ 'externalSystems.detail.headers' | i18n }}</label>
+              <pre>{{ call.headers }}</pre>
+              <label>{{ 'externalSystems.detail.request' | i18n }}</label>
+              <pre>{{ call.requestBody }}</pre>
+              <label>{{ 'externalSystems.detail.response' | i18n }}</label>
+              <pre>{{ call.responseBody }}</pre>
+            </details>
           </article>
         } @empty {
           <p class="empty-cell">{{ 'externalSystems.detail.noHistory' | i18n }}</p>
@@ -273,8 +339,33 @@
       <p-select [options]="authOptions" [(ngModel)]="form.authType" appendTo="body" />
     </label>
     <label class="field">
+      <span>{{ 'externalSystems.form.credentialName' | i18n }}</span>
+      <input pInputText [(ngModel)]="form.credentialName" autocomplete="off" />
+    </label>
+    <label class="field">
       <span>{{ 'externalSystems.form.timeoutMs' | i18n }}</span>
       <p-inputNumber [(ngModel)]="form.timeoutMs" [min]="500" [step]="500" [showButtons]="true" inputStyleClass="w-full" />
+    </label>
+    @if (form.type === 'Scheduled Poll') {
+      <label class="field">
+        <span>{{ 'externalSystems.form.pollSchedule' | i18n }}</span>
+        <input pInputText [(ngModel)]="form.pollSchedule" autocomplete="off" placeholder="*/5 * * * *" />
+      </label>
+    }
+    @if (form.type === 'SOAP') {
+      <label class="field field-wide">
+        <span>{{ 'externalSystems.form.wsdlUrl' | i18n }}</span>
+        <input pInputText [(ngModel)]="form.wsdlUrl" autocomplete="off" placeholder="https://service.example.com?wsdl" />
+      </label>
+    }
+    <label class="field field-wide">
+      <span>{{ 'externalSystems.form.sampleJson' | i18n }}</span>
+      <textarea
+        pTextarea
+        [(ngModel)]="form.sampleJson"
+        rows="7"
+        class="external-sample-textarea"
+        autocomplete="off"></textarea>
     </label>
   </div>
 

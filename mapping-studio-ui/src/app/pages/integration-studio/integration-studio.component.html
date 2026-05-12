@@ -12,6 +12,18 @@
             [value]="
               transformerConfigured ? ('studio.heroBadgeHybrid' | i18n) : ('studio.heroBadge' | i18n)
             " />
+          @if (lastAutosavedAt(); as savedAt) {
+            <p-tag
+              severity="success"
+              [rounded]="true"
+              [value]="'studio.autosave.savedAt' | i18n: { time: savedAt }" />
+          }
+          @if (draftSourceLabel(); as sourceLabel) {
+            <p-tag
+              severity="info"
+              [rounded]="true"
+              [value]="'studio.sourceApi.importedFrom' | i18n: { name: sourceLabel }" />
+          }
           <span class="studio-hero__step-meta" aria-live="polite">
             {{ 'studio.stepProgress' | i18n: { current: activeStep() + 1, total: steps.length } }}
           </span>
@@ -1612,6 +1624,19 @@
           <p-tabpanels>
             <p-tabpanel value="test">
               <div class="inspector-panel">
+                <div class="studio-publish-summary">
+                  <div>
+                    <span>{{ 'studio.publishSummary.eyebrow' | i18n }}</span>
+                    <strong>{{ 'studio.publishSummary.version' | i18n: { fields: targetFields().length, rules: rules().length, advanced: advancedRuleCount() } }}</strong>
+                  </div>
+                  <p>
+                    {{
+                      validationOk() === true
+                        ? ('studio.publishSummary.ready' | i18n)
+                        : ('studio.publishSummary.blocked' | i18n)
+                    }}
+                  </p>
+                </div>
                 <div class="toolbar-row">
                   <p-button
                     [label]="'studio.back' | i18n"

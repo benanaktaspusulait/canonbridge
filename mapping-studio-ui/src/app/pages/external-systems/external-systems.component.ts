@@ -1,6 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -11,6 +12,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { TextareaModule } from 'primeng/textarea';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -35,6 +37,14 @@ interface ExternalConnection {
   url: string;
   authType: 'None' | 'API Key' | 'Basic Auth' | 'OAuth2';
   timeoutMs: number;
+  credentialName: string;
+  pollSchedule: string;
+  wsdlUrl: string;
+  sampleJson: string;
+  requestPreview: string;
+  responsePreview: string;
+  mappings: ConnectionMapping[];
+  sparkline: number[];
 }
 
 interface ExternalCallRecord {
@@ -46,6 +56,24 @@ interface ExternalCallRecord {
   result: 'success' | 'failed';
   message: string;
   requestId: string;
+  headers: string;
+  requestBody: string;
+  responseBody: string;
+}
+
+interface ConnectionMapping {
+  name: string;
+  version: string;
+  status: 'active' | 'draft' | 'deprecated';
+}
+
+interface CredentialRecord {
+  id: string;
+  name: string;
+  type: ExternalConnection['authType'];
+  environment: ExternalConnection['environment'];
+  lastUsed: string;
+  owner: string;
 }
 
 type ConnectionForm = Omit<ExternalConnection, 'id' | 'status' | 'successRate' | 'avgMs' | 'p95Ms' | 'lastError' | 'lastSuccess' | 'calls24h'> & { id?: string };
@@ -59,8 +87,52 @@ const EMPTY_FORM: ConnectionForm = {
   method: 'GET',
   url: 'https://api.example.com/orders',
   authType: 'None',
-  timeoutMs: 5000
+  timeoutMs: 5000,
+  credentialName: '',
+  pollSchedule: '*/5 * * * *',
+  wsdlUrl: '',
+  sampleJson: '{\n  "orders": []\n}',
+  requestPreview: '{\n  "limit": 10\n}',
+  responsePreview: '{\n  "orders": []\n}',
+  mappings: [],
+  sparkline: [96, 97, 98, 99, 99, 98, 100]
 };
+
+const STUDIO_EXTERNAL_SAMPLE_KEY = 'canonbridge:external-systems:selected-sample';
+
+const SAMPLE_ORDERS_JSON = `{
+  "orders": [
+    {
+      "id": "ORD-123",
+      "customer": "Ada Lovelace",
+      "status": "A",
+      "total": 250.5,
+      "created_at": "2026-05-10T09:15:00.000Z"
+    }
+  ]
+}`;
+
+const SAMPLE_WEBHOOK_JSON = `{
+  "webhook_id": "wh_evt_9841",
+  "topic": "orders/create",
+  "payload": {
+    "order_id": "ORD-9841",
+    "status": "paid",
+    "total_price": "184.20"
+  }
+}`;
+
+const SAMPLE_SOAP_JSON = `{
+  "Envelope": {
+    "Body": {
+      "TrackingResponse": {
+        "trackingNumber": "TRK-44192",
+        "state": "IN_TRANSIT",
+        "eta": "2026-05-14"
+      }
+    }
+  }
+}`;
 
 @Component({
   selector: 'app-external-systems',
@@ -78,6 +150,7 @@ const EMPTY_FORM: ConnectionForm = {
     SelectModule,
     TableModule,
     TagModule,
+    TextareaModule,
     ToastModule,
     TooltipModule,
     I18nPipe
@@ -90,12 +163,120 @@ export class ExternalSystemsComponent {
   private readonly confirmation = inject(ConfirmationService);
   private readonly toast = inject(MessageService);
   private readonly i18n = inject(I18nService);
+  private readonly router = inject(Router);
 
   private readonly _connections = signal<ExternalConnection[]>([
-    { id: 'conn-carrier-orders',  name: 'Carrier A Orders',      partner: 'ACME Marketplace',  eventType: 'OrderCreated',      type: 'REST',           environment: 'Production', status: 'healthy',  successRate: 99.2, avgMs: 184,  p95Ms: 312,  lastError: '—',                              lastSuccess: '2 min ago',  calls24h: 1842, method: 'GET',  url: 'https://carrier-a.example.com/orders',       authType: 'OAuth2',    timeoutMs: 5000  },
-    { id: 'conn-shopify-webhook', name: 'Shopify Order Webhook',  partner: 'Shopify',           eventType: 'OrderCreated',      type: 'Webhook',        environment: 'Production', status: 'healthy',  successRate: 100,  avgMs: 22,   p95Ms: 48,   lastError: '—',                              lastSuccess: '1 min ago',  calls24h: 923,  method: 'POST', url: 'https://hooks.shopify.example.com/orders',   authType: 'API Key',   timeoutMs: 3000  },
-    { id: 'conn-soap-tracking',   name: 'SOAP Tracking Lookup',   partner: 'Logistics Xpress',  eventType: 'ShipmentUpdated',   type: 'SOAP',           environment: 'Sandbox',    status: 'degraded', successRate: 91.1, avgMs: 640,  p95Ms: 1220, lastError: 'SOAP fault: invalid tracking number', lastSuccess: '16 min ago', calls24h: 418,  method: 'POST', url: 'https://soap.logistics.example.com/tracking', authType: 'Basic Auth', timeoutMs: 8000 },
-    { id: 'conn-payment-risk',    name: 'Payment Risk Score',     partner: 'Payment Gateway',   eventType: 'PaymentAuthorized', type: 'REST',           environment: 'Production', status: 'down',     successRate: 72.4, avgMs: 1800, p95Ms: 3200, lastError: 'HTTP 503 after 3 attempts',           lastSuccess: '48 min ago', calls24h: 212,  method: 'POST', url: 'https://risk.payment.example.com/score',     authType: 'OAuth2',    timeoutMs: 10000 }
+    {
+      id: 'conn-carrier-orders',
+      name: 'Carrier A Orders',
+      partner: 'ACME Marketplace',
+      eventType: 'OrderCreated',
+      type: 'REST',
+      environment: 'Production',
+      status: 'healthy',
+      successRate: 99.2,
+      avgMs: 184,
+      p95Ms: 312,
+      lastError: '—',
+      lastSuccess: '2 min ago',
+      calls24h: 1842,
+      method: 'GET',
+      url: 'https://carrier-a.example.com/orders',
+      authType: 'OAuth2',
+      timeoutMs: 5000,
+      credentialName: 'Carrier A Production OAuth2',
+      pollSchedule: '*/5 * * * *',
+      wsdlUrl: '',
+      sampleJson: SAMPLE_ORDERS_JSON,
+      requestPreview: '{\n  "method": "GET",\n  "path": "/orders?limit=10"\n}',
+      responsePreview: SAMPLE_ORDERS_JSON,
+      mappings: [
+        { name: 'order.created', version: 'v2.1.0', status: 'active' },
+        { name: 'order.cancelled', version: 'v1.0.2', status: 'active' }
+      ],
+      sparkline: [98, 99, 99, 100, 99, 98, 99]
+    },
+    {
+      id: 'conn-shopify-webhook',
+      name: 'Shopify Order Webhook',
+      partner: 'Shopify',
+      eventType: 'OrderCreated',
+      type: 'Webhook',
+      environment: 'Production',
+      status: 'healthy',
+      successRate: 100,
+      avgMs: 22,
+      p95Ms: 48,
+      lastError: '—',
+      lastSuccess: '1 min ago',
+      calls24h: 923,
+      method: 'POST',
+      url: 'https://hooks.shopify.example.com/orders',
+      authType: 'API Key',
+      timeoutMs: 3000,
+      credentialName: 'Shopify inbound webhook key',
+      pollSchedule: '',
+      wsdlUrl: '',
+      sampleJson: SAMPLE_WEBHOOK_JSON,
+      requestPreview: SAMPLE_WEBHOOK_JSON,
+      responsePreview: '{\n  "accepted": true,\n  "messageId": "msg-9841"\n}',
+      mappings: [{ name: 'order.created', version: 'v1.4.0', status: 'active' }],
+      sparkline: [100, 100, 100, 99, 100, 100, 100]
+    },
+    {
+      id: 'conn-soap-tracking',
+      name: 'SOAP Tracking Lookup',
+      partner: 'Logistics Xpress',
+      eventType: 'ShipmentUpdated',
+      type: 'SOAP',
+      environment: 'Sandbox',
+      status: 'degraded',
+      successRate: 91.1,
+      avgMs: 640,
+      p95Ms: 1220,
+      lastError: 'SOAP fault: invalid tracking number',
+      lastSuccess: '16 min ago',
+      calls24h: 418,
+      method: 'POST',
+      url: 'https://soap.logistics.example.com/tracking',
+      authType: 'Basic Auth',
+      timeoutMs: 8000,
+      credentialName: 'Logistics Xpress SOAP Basic',
+      pollSchedule: '',
+      wsdlUrl: 'https://soap.logistics.example.com/tracking?wsdl',
+      sampleJson: SAMPLE_SOAP_JSON,
+      requestPreview: '<soap:Envelope><soap:Body><GetTracking>TRK-44192</GetTracking></soap:Body></soap:Envelope>',
+      responsePreview: SAMPLE_SOAP_JSON,
+      mappings: [{ name: 'shipment.updated', version: 'v1.3.0', status: 'active' }],
+      sparkline: [94, 93, 91, 90, 92, 91, 89]
+    },
+    {
+      id: 'conn-payment-risk',
+      name: 'Payment Risk Score',
+      partner: 'Payment Gateway',
+      eventType: 'PaymentAuthorized',
+      type: 'REST',
+      environment: 'Production',
+      status: 'down',
+      successRate: 72.4,
+      avgMs: 1800,
+      p95Ms: 3200,
+      lastError: 'HTTP 503 after 3 attempts',
+      lastSuccess: '48 min ago',
+      calls24h: 212,
+      method: 'POST',
+      url: 'https://risk.payment.example.com/score',
+      authType: 'OAuth2',
+      timeoutMs: 10000,
+      credentialName: 'Payment Risk OAuth2',
+      pollSchedule: '',
+      wsdlUrl: '',
+      sampleJson: '{\n  "paymentId": "PAY-7781",\n  "riskScore": 87,\n  "decision": "REVIEW"\n}',
+      requestPreview: '{\n  "paymentId": "PAY-7781",\n  "amount": 184.2\n}',
+      responsePreview: '{\n  "error": "HTTP 503 after 3 attempts"\n}',
+      mappings: [{ name: 'payment.authorized', version: 'v3.0.1', status: 'draft' }],
+      sparkline: [91, 88, 76, 72, 70, 73, 72]
+    }
   ]);
 
   readonly connections = this._connections.asReadonly();
@@ -104,10 +285,58 @@ export class ExternalSystemsComponent {
   detailVisible = false;
 
   private readonly _callHistory = signal<ExternalCallRecord[]>([
-    { id: 'call-1', connectionId: 'conn-carrier-orders', at: '2 min ago', status: 200, durationMs: 184, result: 'success', message: 'Orders page fetched', requestId: 'req-car-1842' },
-    { id: 'call-2', connectionId: 'conn-carrier-orders', at: '9 min ago', status: 200, durationMs: 221, result: 'success', message: 'Orders page fetched', requestId: 'req-car-1841' },
-    { id: 'call-3', connectionId: 'conn-soap-tracking', at: '16 min ago', status: 500, durationMs: 1220, result: 'failed', message: 'SOAP fault: invalid tracking number', requestId: 'req-soap-418' },
-    { id: 'call-4', connectionId: 'conn-payment-risk', at: '48 min ago', status: 503, durationMs: 3200, result: 'failed', message: 'HTTP 503 after 3 attempts', requestId: 'req-risk-212' }
+    {
+      id: 'call-1',
+      connectionId: 'conn-carrier-orders',
+      at: '2 min ago',
+      status: 200,
+      durationMs: 184,
+      result: 'success',
+      message: 'Orders page fetched',
+      requestId: 'req-car-1842',
+      headers: 'Authorization: Bearer ****\nAccept: application/json',
+      requestBody: '{\n  "limit": 10,\n  "cursor": "latest"\n}',
+      responseBody: SAMPLE_ORDERS_JSON
+    },
+    {
+      id: 'call-2',
+      connectionId: 'conn-carrier-orders',
+      at: '9 min ago',
+      status: 200,
+      durationMs: 221,
+      result: 'success',
+      message: 'Orders page fetched',
+      requestId: 'req-car-1841',
+      headers: 'Authorization: Bearer ****\nAccept: application/json',
+      requestBody: '{\n  "limit": 10,\n  "cursor": "prev"\n}',
+      responseBody: SAMPLE_ORDERS_JSON
+    },
+    {
+      id: 'call-3',
+      connectionId: 'conn-soap-tracking',
+      at: '16 min ago',
+      status: 500,
+      durationMs: 1220,
+      result: 'failed',
+      message: 'SOAP fault: invalid tracking number',
+      requestId: 'req-soap-418',
+      headers: 'Authorization: Basic ****\nContent-Type: text/xml',
+      requestBody: '<soap:Envelope><soap:Body><GetTracking>TRK-00000</GetTracking></soap:Body></soap:Envelope>',
+      responseBody: '<soap:Fault><faultstring>invalid tracking number</faultstring></soap:Fault>'
+    },
+    {
+      id: 'call-4',
+      connectionId: 'conn-payment-risk',
+      at: '48 min ago',
+      status: 503,
+      durationMs: 3200,
+      result: 'failed',
+      message: 'HTTP 503 after 3 attempts',
+      requestId: 'req-risk-212',
+      headers: 'Authorization: Bearer ****\nContent-Type: application/json',
+      requestBody: '{\n  "paymentId": "PAY-7781",\n  "amount": 184.2\n}',
+      responseBody: '{\n  "error": "Service unavailable"\n}'
+    }
   ]);
   readonly callHistory = this._callHistory.asReadonly();
   readonly selectedHistory = computed(() => {
@@ -126,6 +355,13 @@ export class ExternalSystemsComponent {
   readonly formTypeOptions    = ['REST', 'SOAP', 'Webhook', 'Scheduled Poll'];
   readonly methodOptions      = ['GET', 'POST', 'PUT'];
   readonly authOptions        = ['None', 'API Key', 'Basic Auth', 'OAuth2'];
+
+  readonly credentials = signal<CredentialRecord[]>([
+    { id: 'cred-carrier-oauth', name: 'Carrier A Production OAuth2', type: 'OAuth2', environment: 'Production', lastUsed: '2 min ago', owner: 'Integration Team' },
+    { id: 'cred-shopify-webhook', name: 'Shopify inbound webhook key', type: 'API Key', environment: 'Production', lastUsed: '1 min ago', owner: 'Platform Team' },
+    { id: 'cred-logistics-basic', name: 'Logistics Xpress SOAP Basic', type: 'Basic Auth', environment: 'Sandbox', lastUsed: '16 min ago', owner: 'Support Team' },
+    { id: 'cred-payment-oauth', name: 'Payment Risk OAuth2', type: 'OAuth2', environment: 'Production', lastUsed: '48 min ago', owner: 'Risk Team' }
+  ]);
 
   readonly partnerOptions = computed(() =>
     ['All', ...Array.from(new Set(this._connections().map(c => c.partner))).sort()]
@@ -164,8 +400,46 @@ export class ExternalSystemsComponent {
 
   openEdit(connection: ExternalConnection): void {
     this.isEdit = true;
-    const { id, name, partner, eventType, type, environment, method, url, authType, timeoutMs } = connection;
-    this.form = { id, name, partner, eventType, type, environment, method, url, authType, timeoutMs };
+    const {
+      id,
+      name,
+      partner,
+      eventType,
+      type,
+      environment,
+      method,
+      url,
+      authType,
+      timeoutMs,
+      credentialName,
+      pollSchedule,
+      wsdlUrl,
+      sampleJson,
+      requestPreview,
+      responsePreview,
+      mappings,
+      sparkline
+    } = connection;
+    this.form = {
+      id,
+      name,
+      partner,
+      eventType,
+      type,
+      environment,
+      method,
+      url,
+      authType,
+      timeoutMs,
+      credentialName,
+      pollSchedule,
+      wsdlUrl,
+      sampleJson,
+      requestPreview,
+      responsePreview,
+      mappings: [...mappings],
+      sparkline: [...sparkline]
+    };
     this.dialogVisible = true;
   }
 
@@ -247,7 +521,10 @@ export class ExternalSystemsComponent {
         durationMs: latency ?? 0,
         result: validUrl ? 'success' : 'failed',
         message: validUrl ? this.t('externalSystems.history.demoSuccess') : this.t('externalSystems.toast.invalidUrl'),
-        requestId: `req-${Math.random().toString(36).slice(2, 8)}`
+        requestId: `req-${Math.random().toString(36).slice(2, 8)}`,
+        headers: `${connection.authType === 'None' ? 'No authentication header' : `${connection.authType}: ****`}\nAccept: application/json`,
+        requestBody: connection.requestPreview,
+        responseBody: validUrl ? connection.sampleJson : '{\n  "error": "Invalid endpoint URL"\n}'
       }, ...rows]);
 
       if (this.selectedConnection()?.id === connection.id) {
@@ -288,8 +565,73 @@ export class ExternalSystemsComponent {
     return Math.max(0, Math.min(100, connection.successRate ?? 0));
   }
 
+  mappingSeverity(status: ConnectionMapping['status']): 'success' | 'warn' | 'secondary' {
+    if (status === 'active') return 'success';
+    if (status === 'draft') return 'warn';
+    return 'secondary';
+  }
+
+  connectionCredential(connection: ExternalConnection): CredentialRecord | null {
+    return this.credentials().find(credential => credential.name === connection.credentialName) ?? null;
+  }
+
+  sparklinePoints(connection: ExternalConnection): string {
+    const values = connection.sparkline.length ? connection.sparkline : [0];
+    const max = Math.max(...values, 100);
+    const min = Math.min(...values, 0);
+    const spread = Math.max(1, max - min);
+    return values
+      .map((value, index) => {
+        const x = values.length === 1 ? 50 : (index / (values.length - 1)) * 100;
+        const y = 48 - ((value - min) / spread) * 40;
+        return `${x},${y}`;
+      })
+      .join(' ');
+  }
+
+  useSampleInStudio(connection: ExternalConnection): void {
+    localStorage.setItem(
+      STUDIO_EXTERNAL_SAMPLE_KEY,
+      JSON.stringify({
+        connectionId: connection.id,
+        connectionName: connection.name,
+        partner: connection.partner,
+        eventType: connection.eventType,
+        sampleJson: connection.sampleJson,
+        capturedAt: new Date().toISOString()
+      })
+    );
+    this.toast.add({
+      severity: 'success',
+      summary: this.t('externalSystems.toast.sampleReady'),
+      detail: connection.name,
+      life: 3000
+    });
+    void this.router.navigate(['/studio']);
+  }
+
+  typeConfigHint(connection: ExternalConnection): string {
+    if (connection.type === 'Scheduled Poll') {
+      return this.t('externalSystems.detail.pollHint', { schedule: connection.pollSchedule || 'manual' });
+    }
+    if (connection.type === 'SOAP') {
+      return this.t('externalSystems.detail.wsdlHint', { wsdl: connection.wsdlUrl || connection.url });
+    }
+    if (connection.type === 'Webhook') {
+      return this.t('externalSystems.detail.webhookHint');
+    }
+    return this.t('externalSystems.detail.restHint');
+  }
+
   get formValid(): boolean {
-    return !!this.form.name.trim() && !!this.form.partner.trim() && !!this.form.eventType.trim() && !!this.form.url.trim();
+    return (
+      !!this.form.name.trim() &&
+      !!this.form.partner.trim() &&
+      !!this.form.eventType.trim() &&
+      !!this.form.url.trim() &&
+      (this.form.type !== 'SOAP' || !!this.form.wsdlUrl.trim()) &&
+      (this.form.type !== 'Scheduled Poll' || !!this.form.pollSchedule.trim())
+    );
   }
 
   private latencyFor(connection: ExternalConnection): number {
