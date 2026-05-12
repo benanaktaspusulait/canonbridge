@@ -11,9 +11,11 @@
         tooltipPosition="bottom"
         [attr.aria-label]="'topbar.toggleSidebar' | i18n"
         [attr.aria-expanded]="!collapsed" />
-      <div class="layout-topbar-heading hidden md:flex flex-column">
-        <span class="layout-topbar-product">CanonBridge</span>
-        <span class="layout-topbar-context text-xs text-color-secondary font-medium">{{ 'sidebar.logoSub' | i18n }}</span>
+      <div class="layout-topbar-heading hidden md:flex align-items-center">
+        <img
+          [src]="theme.darkMode() ? 'img/canonbridgelogowhite.jpeg' : 'img/canonbridgelogoblack.jpeg'"
+          alt="CanonBridge"
+          class="layout-topbar-logo" />
       </div>
     </div>
   </ng-template>

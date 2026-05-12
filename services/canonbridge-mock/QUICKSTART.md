@@ -70,6 +70,24 @@ curl -X POST "http://localhost:8080/api/payments/query?scenario=server-error" \
   -H "X-API-Key: demo-api-key-12345" \
   -H "Content-Type: application/json" \
   -d '{}'
+
+# Bad gateway (502)
+curl -X POST "http://localhost:8080/api/payments/query?scenario=bad-gateway" \
+  -H "X-API-Key: demo-api-key-12345" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+
+# Slow response (2s delay)
+curl -X GET "http://localhost:8080/api/payments/latest?scenario=slow-2s" \
+  -H "X-API-Key: demo-api-key-12345"
+
+# Large payload (~5000 transactions)
+curl -X GET "http://localhost:8080/api/payments/latest?scenario=large-payload" \
+  -H "X-API-Key: demo-api-key-12345"
+
+# Deep nested JSON (10 levels)
+curl -X GET "http://localhost:8080/api/payments/latest?scenario=deep-nested" \
+  -H "X-API-Key: demo-api-key-12345"
 ```
 
 #### 2. ShopMax OAuth2 + REST API
@@ -94,6 +112,22 @@ curl -X GET "http://localhost:8080/api/orders/recent?format=compact" \
 # Service unavailable
 curl -X GET "http://localhost:8080/api/orders/recent?scenario=unavailable" \
   -H "Authorization: Bearer $ACCESS_TOKEN"
+
+# Slow response (2s delay)
+curl -X GET "http://localhost:8080/api/orders/recent?scenario=slow-2s" \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+
+# OAuth2 token expired scenario
+EXPIRED_TOKEN_RESPONSE=$(curl -s -X POST "http://localhost:8080/oauth/token?scenario=expired-token" \
+  -d "grant_type=client_credentials" \
+  -d "client_id=shopmax-demo-client" \
+  -d "client_secret=shopmax-demo-secret")
+
+EXPIRED_TOKEN=$(echo $EXPIRED_TOKEN_RESPONSE | jq -r '.access_token')
+
+# Bu istek 401 token_expired hatası döndürür
+curl -X GET "http://localhost:8080/api/orders/recent" \
+  -H "Authorization: Bearer $EXPIRED_TOKEN"
 ```
 
 #### 3. FastCargo SOAP API
@@ -284,15 +318,28 @@ password: fastcargo-secret
 ### PayFlex Senaryoları
 - `?scenario=missing-amount` - 400 Validation Error
 - `?scenario=server-error` - 500 Internal Server Error
+- `?scenario=bad-gateway` - 502 Bad Gateway
 - `?scenario=rate-limit` - 429 Too Many Requests
-- `?scenario=timeout` - Timeout simulation
+- `?scenario=timeout` - 504 Gateway Timeout (12s delay)
+- `?scenario=slow-2s` - 200 OK with 2s delay
+- `?scenario=slow-5s` - 200 OK with 5s delay
+- `?scenario=large-payload` - 200 OK with ~5000 transaction records (>1MB)
+- `?scenario=deep-nested` - 200 OK with 10-level nested JSON structure
 
 ### ShopMax Senaryoları
 - `?scenario=unavailable` - 503 Service Unavailable
 - `?scenario=rate-limit` - 429 Too Many Requests
+- `?scenario=slow-2s` - 200 OK with 2s delay
+- `?scenario=slow-5s` - 200 OK with 5s delay
+
+### ShopMax OAuth2 Senaryoları
+- Normal: `POST /oauth/token` - Geçerli token (expires_in: 3600)
+- `?scenario=expired-token` - Süresi dolmuş token döner (`expired_` prefix'li)
+  - Bu token ile `/api/orders/recent` çağrısı → 401 `token_expired`
 
 ### FastCargo Senaryoları
 - `trackingNumber=UNKNOWN-123` - SOAP Fault (Not Found)
+- Geçersiz Basic Auth (yanlış user/password) → 401 SOAP Fault
 
 ## 🔍 Monitoring
 

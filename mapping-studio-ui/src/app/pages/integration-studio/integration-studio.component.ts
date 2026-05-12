@@ -61,6 +61,8 @@ import {
   type AjvIssue
 } from './studio-ajv';
 import { highlightJsonToHtml, highlightJsonValueToHtml } from './json-highlight';
+import { JsonataPreviewPanelComponent } from './jsonata-preview-panel.component';
+import { NestedMappingDialogComponent } from './nested-mapping-dialog.component';
 
 const TARGET_KEY_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*$/;
 type UploadDropTarget = string;
@@ -631,7 +633,9 @@ const STUDIO_EXTERNAL_SAMPLE_KEY = 'canonbridge:external-systems:selected-sample
     FieldsetModule,
     ScrollPanelModule,
     ToastModule,
-    I18nPipe
+    I18nPipe,
+    JsonataPreviewPanelComponent,
+    NestedMappingDialogComponent
   ],
   templateUrl: './integration-studio.component.html',
   styleUrl: './integration-studio.component.scss'
@@ -723,6 +727,10 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   ruleInspectorTab = signal<string>('visual');
   readonly canUndoRules = signal(false);
   readonly canRedoRules = signal(false);
+  readonly showExpertMode = signal(false);
+
+  nestedMappingVisible = false;
+  readonly nestedMappingParentRule = signal<MappingRule | null>(null);
 
   private readonly ruleHistoryLimit = 40;
   private ruleHistoryPast: MappingRule[][] = [];
@@ -1825,6 +1833,24 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     this.ruleHistoryPast = [];
     this.ruleHistoryFuture = [];
     this.updateRuleHistorySignals();
+  }
+
+  openNestedMapping(rule: MappingRule): void {
+    this.nestedMappingParentRule.set(rule);
+    this.nestedMappingVisible = true;
+  }
+
+  onNestedMappingSave(childRules: MappingRule[]): void {
+    const parent = this.nestedMappingParentRule();
+    if (!parent) return;
+    this.pushRuleHistory();
+    this.patchRule(parent.id, { children: childRules, isNested: true });
+    this.nestedMappingVisible = false;
+  }
+
+  isObjectOrArrayRule(rule: MappingRule): boolean {
+    const field = this.targetFields().find(f => f.key === rule.targetKey);
+    return field?.type === 'object' || field?.type === 'array';
   }
 
   private updateRuleHistorySignals(): void {

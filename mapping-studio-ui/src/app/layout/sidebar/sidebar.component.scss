@@ -93,19 +93,18 @@ html.dark-mode .layout-sidebar-frame {
 }
 
 .layout-sidebar-logo {
-  display: grid;
-  place-items: center;
-  width: 2.55rem;
+  display: flex;
+  align-items: center;
   height: 2.55rem;
   flex: 0 0 auto;
-  border-radius: 10px;
-  color: #ffffff;
-  background: linear-gradient(145deg, #14b8a6 0%, #2563eb 100%);
-  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.25);
 }
 
-.layout-sidebar-logo i {
-  font-size: 1rem;
+.layout-sidebar-logo-img {
+  height: 2.55rem;
+  width: auto;
+  max-width: 9rem;
+  object-fit: contain;
+  display: block;
 }
 
 .layout-sidebar-titles {
@@ -312,8 +311,13 @@ html.dark-mode .layout-nav-item--active .layout-nav-item__icon {
 }
 
 .layout-sidebar-collapsed .layout-sidebar-logo {
-  width: 2.65rem;
   height: 2.65rem;
+  justify-content: center;
+}
+
+.layout-sidebar-collapsed .layout-sidebar-logo-img {
+  height: 2.65rem;
+  max-width: 3.5rem;
 }
 
 .layout-rail-item {

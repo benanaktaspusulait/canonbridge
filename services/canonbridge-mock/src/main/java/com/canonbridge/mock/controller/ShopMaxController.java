@@ -31,6 +31,15 @@ public class ShopMaxController {
                     .body(Map.of("error", "Invalid or missing bearer token"));
         }
 
+        if (isExpiredBearerToken(authorization)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of(
+                            "error", "token_expired",
+                            "error_description", "The access token has expired. Please obtain a new token.",
+                            "hint", "Use POST /oauth/token to refresh your token"
+                    ));
+        }
+
         // Handle scenarios
         if (scenario != null) {
             return handleScenario(scenario);
@@ -48,9 +57,15 @@ public class ShopMaxController {
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             return false;
         }
-        // In a real scenario, we would validate the token
-        // For demo purposes, we just check if it's present
         return authorization.length() > 7;
+    }
+
+    private boolean isExpiredBearerToken(String authorization) {
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            return false;
+        }
+        String token = authorization.substring(7);
+        return token.startsWith("expired_");
     }
 
     private ResponseEntity<?> handleScenario(String scenario) {
@@ -66,6 +81,22 @@ public class ShopMaxController {
                             "message", "Too many requests. Please try again later.",
                             "retryAfter", 60
                     ));
+            case "slow-2s" -> {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                yield ResponseEntity.ok(shopMaxService.getRecentOrdersDetailed());
+            }
+            case "slow-5s" -> {
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                yield ResponseEntity.ok(shopMaxService.getRecentOrdersDetailed());
+            }
             default -> ResponseEntity.ok(shopMaxService.getRecentOrdersDetailed());
         };
     }

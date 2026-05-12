@@ -4,7 +4,7 @@ import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { MappingRule } from './integration-studio.models';
-import { ruleToJsonata } from './rule-to-jsonata';
+import { ruleToJsonataFragment } from './rule-to-jsonata';
 
 @Component({
   selector: 'app-jsonata-preview-panel',
@@ -198,7 +198,7 @@ export class JsonataPreviewPanelComponent {
       const expressions = this.rules
         .map(rule => {
           try {
-            const expr = ruleToJsonata(rule);
+            const expr = ruleToJsonataFragment(rule);
             return `  "${rule.targetKey}": ${expr}`;
           } catch (err) {
             console.error(`Failed to generate JSONata for rule ${rule.id}:`, err);

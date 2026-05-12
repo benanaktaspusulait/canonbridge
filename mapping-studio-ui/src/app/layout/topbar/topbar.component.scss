@@ -15,16 +15,11 @@ html.dark-mode :host ::ng-deep .layout-toolbar.p-toolbar {
   background: color-mix(in srgb, var(--surface-card) 92%, transparent);
 }
 
-.layout-topbar-product {
-  font-size: 0.9375rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text-color);
-  line-height: 1.2;
-}
-
-.layout-topbar-context {
-  line-height: 1.2;
+.layout-topbar-logo {
+  height: 2rem;
+  width: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .lang-wrap {

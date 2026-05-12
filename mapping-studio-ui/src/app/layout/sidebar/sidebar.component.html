@@ -3,7 +3,10 @@
     <div class="layout-sidebar-header">
       <a class="layout-sidebar-brand" routerLink="/studio" aria-label="CanonBridge Mapping Studio - Go to home">
         <span class="layout-sidebar-logo" aria-hidden="true">
-          <i class="pi pi-sitemap" aria-hidden="true"></i>
+          <img
+            [src]="theme.darkMode() ? 'img/canonbridgelogowhite.jpeg' : 'img/canonbridgelogoblack.jpeg'"
+            alt=""
+            class="layout-sidebar-logo-img" />
         </span>
         @if (!collapsed) {
           <span class="layout-sidebar-titles">

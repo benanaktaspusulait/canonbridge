@@ -5,6 +5,8 @@ import com.canonbridge.mock.model.payflex.PaymentFlatResponse;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -89,7 +91,60 @@ public class PayFlexService {
     }
 
     public List<PaymentDetailedResponse> queryPayments(Map<String, Object> queryRequest) {
-        // For demo purposes, return a list with one payment
         return List.of(getLatestPaymentDetailed());
+    }
+
+    public Map<String, Object> getLargePayload() {
+        var now = Instant.now();
+        List<Map<String, Object>> transactions = new ArrayList<>();
+        for (int i = 0; i < 5000; i++) {
+            transactions.add(Map.of(
+                    "transactionId", "TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(),
+                    "amount", 10.0 + i,
+                    "currency", "EUR",
+                    "status", i % 3 == 0 ? "FAILED" : "COMPLETED",
+                    "merchantId", "MERCH-" + (1000 + i % 50),
+                    "payerId", "PAYER-" + (2000 + i % 200),
+                    "timestamp", now.minusSeconds(i * 60L).toString(),
+                    "description", "Payment transaction number " + i + " for demo large payload scenario",
+                    "reference", "REF-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16)
+            ));
+        }
+        return Map.of(
+                "scenario", "large-payload",
+                "totalCount", transactions.size(),
+                "generatedAt", now.toString(),
+                "transactions", transactions
+        );
+    }
+
+    public Map<String, Object> getDeepNestedPayload() {
+        return Map.of(
+                "scenario", "deep-nested",
+                "level1", Map.of(
+                        "level2", Map.of(
+                                "level3", Map.of(
+                                        "level4", Map.of(
+                                                "level5", Map.of(
+                                                        "level6", Map.of(
+                                                                "level7", Map.of(
+                                                                        "level8", Map.of(
+                                                                                "level9", Map.of(
+                                                                                        "level10", Map.of(
+                                                                                                "value", "deep-nested-value",
+                                                                                                "paymentId", "PAY-DEEP-001",
+                                                                                                "amount", 999.99,
+                                                                                                "currency", "EUR"
+                                                                                        )
+                                                                                )
+                                                                        )
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                )
+        );
     }
 }

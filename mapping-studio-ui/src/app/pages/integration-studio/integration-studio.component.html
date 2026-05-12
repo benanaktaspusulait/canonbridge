@@ -844,6 +844,13 @@
         severity="secondary"
         (onClick)="prevStep()" />
       <p-button [label]="'studio.next' | i18n" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextStep()" />
+      <p-button
+        [label]="showExpertMode() ? ('studio.hideExpertMode' | i18n) : ('studio.showExpertMode' | i18n)"
+        icon="pi pi-code"
+        variant="outlined"
+        [severity]="showExpertMode() ? 'info' : 'secondary'"
+        (onClick)="showExpertMode.set(!showExpertMode())"
+        [pTooltip]="'studio.expertModeTooltip' | i18n" />
     </div>
 
     <div class="studio-mapping-layout">
@@ -906,6 +913,15 @@
                   <p-tag [severity]="ruleStatus(rule).severity" [value]="ruleStatus(rule).label" />
                 </td>
                 <td (click)="$event.stopPropagation()">
+                  @if (isObjectOrArrayRule(rule)) {
+                    <p-button
+                      icon="pi pi-sitemap"
+                      variant="text"
+                      severity="info"
+                      size="small"
+                      (onClick)="openNestedMapping(rule)"
+                      [pTooltip]="'studio.nestedMappingTooltip' | i18n" />
+                  }
                   <p-button
                     icon="pi pi-trash"
                     variant="text"
@@ -1574,6 +1590,19 @@
       </div>
     </p-fieldset>
   </p-card>
+
+  @if (showExpertMode()) {
+    <app-jsonata-preview-panel
+      class="mt-4 d-block"
+      [rules]="rules()"
+      [targetFields]="targetFields()" />
+  }
+
+  <app-nested-mapping-dialog
+    [(visible)]="nestedMappingVisible"
+    [parentFieldName]="nestedMappingParentRule()?.targetKey ?? ''"
+    [parentRule]="nestedMappingParentRule()"
+    (save)="onNestedMappingSave($event)" />
 }
 
 @if (activeStep() === 3) {

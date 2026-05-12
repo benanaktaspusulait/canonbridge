@@ -2,6 +2,7 @@ import { Component, Input, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { TooltipModule } from 'primeng/tooltip';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
+import { ThemeService } from '../../core/theme/theme.service';
 
 interface NavEntry {
   route: string;
@@ -45,7 +46,8 @@ const SECONDARY_NAV: NavEntry[] = [
 })
 export class SidebarComponent {
   private readonly router = inject(Router);
-  
+  readonly theme = inject(ThemeService);
+
   @Input() collapsed = false;
 
   readonly navGroups: NavGroup[] = [

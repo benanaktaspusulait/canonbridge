@@ -87,6 +87,11 @@ public class PayFlexController {
                             "error", "Internal server error",
                             "message", "An unexpected error occurred"
                     ));
+            case "bad-gateway" -> ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                    .body(Map.of(
+                            "error", "Bad gateway",
+                            "message", "The upstream payment processor returned an invalid response"
+                    ));
             case "rate-limit" -> ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(Map.of(
                             "error", "Rate limit exceeded",
@@ -95,13 +100,31 @@ public class PayFlexController {
                     ));
             case "timeout" -> {
                 try {
-                    Thread.sleep(12000); // Simulate timeout
+                    Thread.sleep(12000);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
                 yield ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT)
                         .body(Map.of("error", "Request timeout"));
             }
+            case "slow-2s" -> {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                yield ResponseEntity.ok(payFlexService.getLatestPaymentDetailed());
+            }
+            case "slow-5s" -> {
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                yield ResponseEntity.ok(payFlexService.getLatestPaymentDetailed());
+            }
+            case "large-payload" -> ResponseEntity.ok(payFlexService.getLargePayload());
+            case "deep-nested" -> ResponseEntity.ok(payFlexService.getDeepNestedPayload());
             default -> ResponseEntity.ok(payFlexService.getLatestPaymentDetailed());
         };
     }

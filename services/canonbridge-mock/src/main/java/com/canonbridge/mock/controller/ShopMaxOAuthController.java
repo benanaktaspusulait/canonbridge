@@ -23,9 +23,10 @@ public class ShopMaxOAuthController {
     public ResponseEntity<?> getToken(
             @RequestParam(name = "grant_type") String grantType,
             @RequestParam(name = "client_id") String clientId,
-            @RequestParam(name = "client_secret") String clientSecret) {
+            @RequestParam(name = "client_secret") String clientSecret,
+            @RequestParam(name = "scenario", required = false) String scenario) {
 
-        log.info("POST /oauth/token - grant_type: {}, client_id: {}", grantType, clientId);
+        log.info("POST /oauth/token - grant_type: {}, client_id: {}, scenario: {}", grantType, clientId, scenario);
 
         // Validate grant type
         if (!"client_credentials".equals(grantType)) {
@@ -46,7 +47,16 @@ public class ShopMaxOAuthController {
                     ));
         }
 
-        // Generate token
+        if ("expired-token".equals(scenario)) {
+            var expiredToken = new TokenResponse(
+                    "Bearer",
+                    "expired_" + UUID.randomUUID().toString().replace("-", ""),
+                    -1,
+                    "read:orders write:orders"
+            );
+            return ResponseEntity.ok(expiredToken);
+        }
+
         var token = new TokenResponse(
                 "Bearer",
                 UUID.randomUUID().toString().replace("-", ""),
