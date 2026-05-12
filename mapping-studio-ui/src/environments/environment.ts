@@ -11,7 +11,7 @@ export const environment = {
   
   // API Configuration
   api: {
-    baseUrl: 'http://localhost:3000/api',
+    baseUrl: 'http://localhost:8082/api',
     timeout: 30000, // 30 seconds
     retryAttempts: 3,
   },
@@ -60,7 +60,7 @@ export const environment = {
   // Mapping Configuration
   mapping: {
     /** Base URL for @canonbridge/transformer HTTP API (same host as transformer /health). When set, advanced JSONata rules are validated on the server against the demo payloads. */
-    transformerApiUrl: 'http://localhost:8080',
+    transformerApiUrl: 'http://localhost:8083',
     maxFieldDepth: 10,
     previewSampleSize: 5,
     autoSaveInterval: 30000, // 30 seconds

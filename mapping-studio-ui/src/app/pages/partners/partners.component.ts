@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
@@ -16,6 +16,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { PartnerService } from '../../core/services/partner.service';
 
 export interface Partner {
   id: string;
@@ -68,22 +69,48 @@ const EMPTY_FORM: PartnerForm = {
   templateUrl: './partners.component.html',
   styleUrl: './partners.component.scss'
 })
-export class PartnersComponent {
+export class PartnersComponent implements OnInit {
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
   private readonly i18n = inject(I18nService);
+  private readonly partnerService = inject(PartnerService);
 
-  private readonly _partners = signal<Partner[]>([
-    { id: 'p1', name: 'ACME Marketplace', slug: 'acme-marketplace', status: 'active', eventTypes: 4, activeMappings: 4, dlqCount: 2, throughput: '~3,200/hr', lastSeen: '1 min ago', contactEmail: 'integration@acme.com', description: 'Primary marketplace partner' },
-    { id: 'p2', name: 'Logistics Xpress', slug: 'logistics-xpress', status: 'active', eventTypes: 3, activeMappings: 2, dlqCount: 0, throughput: '~1,800/hr', lastSeen: '3 min ago', contactEmail: 'api@logisticsxpress.io', description: 'Shipping and tracking events' },
-    { id: 'p3', name: 'Payment Gateway', slug: 'payment-gateway', status: 'degraded', eventTypes: 2, activeMappings: 1, dlqCount: 10, throughput: '~900/hr', lastSeen: '12 min ago', contactEmail: 'ops@paymentgw.com', description: 'Payment authorization events' },
-    { id: 'p4', name: 'CRM Connect', slug: 'crm-connect', status: 'inactive', eventTypes: 1, activeMappings: 0, dlqCount: 0, throughput: '—', lastSeen: '2 days ago', contactEmail: '', description: 'Customer data sync' },
-    { id: 'p5', name: 'Inventory Hub', slug: 'inventory-hub', status: 'active', eventTypes: 5, activeMappings: 5, dlqCount: 0, throughput: '~600/hr', lastSeen: '5 min ago', contactEmail: 'tech@inventoryhub.net', description: 'Stock level and warehouse events' }
-  ]);
-
+  private readonly _partners = signal<Partner[]>([]);
   readonly partners = this._partners.asReadonly();
   readonly activeCount = computed(() => this._partners().filter(p => p.status === 'active').length);
   readonly totalMappings = computed(() => this._partners().reduce((sum, p) => sum + p.activeMappings, 0));
+
+  async ngOnInit() {
+    await this.loadPartners();
+  }
+
+  private async loadPartners() {
+    try {
+      const apiPartners = await this.partnerService.getAll();
+      // Transform API partners to UI format
+      const uiPartners: Partner[] = apiPartners.map(p => ({
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        status: p.status as 'active' | 'inactive' | 'degraded',
+        eventTypes: 0, // TODO: Get from API
+        activeMappings: 0, // TODO: Get from API
+        dlqCount: 0, // TODO: Get from API
+        throughput: p.status === 'active' ? '~0/hr' : '—',
+        lastSeen: 'just now',
+        contactEmail: p.contactEmail || '',
+        description: p.description || ''
+      }));
+      this._partners.set(uiPartners);
+    } catch (error) {
+      console.error('Failed to load partners:', error);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to load partners'
+      });
+    }
+  }
 
   readonly statusOptions = [
     { label: 'Active', value: 'active' },
@@ -114,7 +141,7 @@ export class PartnersComponent {
     }
   }
 
-  save(): void {
+  async save(): Promise<void> {
     if (!this.formValid) {
       this.messageService.add({
         severity: 'warn',
@@ -135,40 +162,37 @@ export class PartnersComponent {
       return;
     }
 
-    if (this.isEdit && this.form.id) {
-      this._partners.update(list =>
-        list.map(p => p.id === this.form.id ? {
-          ...p,
+    try {
+      if (this.isEdit && this.form.id) {
+        await this.partnerService.update(this.form.id, {
           name: this.form.name.trim(),
           slug,
           status: this.form.status,
-          eventTypes: this.form.eventTypes,
-          activeMappings: this.form.activeMappings,
-          dlqCount: this.form.dlqCount,
           contactEmail: this.form.contactEmail.trim(),
           description: this.form.description.trim()
-        } : p)
-      );
-      this.messageService.add({ severity: 'success', summary: this.t('partners.toast.updated'), detail: this.form.name });
-    } else {
-      const newPartner: Partner = {
-        id: `p${Date.now()}`,
-        name: this.form.name.trim(),
-        slug,
-        status: this.form.status,
-        eventTypes: this.form.eventTypes,
-        activeMappings: this.form.activeMappings,
-        dlqCount: this.form.dlqCount,
-        throughput: this.form.status === 'inactive' ? '—' : '~0/hr',
-        lastSeen: 'just now',
-        contactEmail: this.form.contactEmail.trim(),
-        description: this.form.description.trim()
-      };
-      this._partners.update(list => [newPartner, ...list]);
-      this.messageService.add({ severity: 'success', summary: this.t('partners.toast.onboarded'), detail: newPartner.name });
+        });
+        this.messageService.add({ severity: 'success', summary: this.t('partners.toast.updated'), detail: this.form.name });
+      } else {
+        await this.partnerService.create({
+          name: this.form.name.trim(),
+          slug,
+          status: this.form.status,
+          contactEmail: this.form.contactEmail.trim(),
+          description: this.form.description.trim()
+        });
+        this.messageService.add({ severity: 'success', summary: this.t('partners.toast.onboarded'), detail: this.form.name });
+      }
+      
+      await this.loadPartners();
+      this.dialogVisible = false;
+    } catch (error) {
+      console.error('Failed to save partner:', error);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to save partner'
+      });
     }
-
-    this.dialogVisible = false;
   }
 
   confirmDelete(partner: Partner, event: Event): void {
@@ -179,9 +203,19 @@ export class PartnersComponent {
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: this.t('partners.delete'),
       rejectLabel: this.t('partners.cancel'),
-      accept: () => {
-        this._partners.update(list => list.filter(p => p.id !== partner.id));
-        this.messageService.add({ severity: 'warn', summary: this.t('partners.toast.deleted'), detail: partner.name });
+      accept: async () => {
+        try {
+          await this.partnerService.delete(partner.id);
+          await this.loadPartners();
+          this.messageService.add({ severity: 'warn', summary: this.t('partners.toast.deleted'), detail: partner.name });
+        } catch (error) {
+          console.error('Failed to delete partner:', error);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to delete partner'
+          });
+        }
       }
     });
   }

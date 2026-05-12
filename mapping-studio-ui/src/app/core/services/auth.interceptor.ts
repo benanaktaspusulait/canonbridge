@@ -12,13 +12,20 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   const auth = inject(AuthService);
   const user = auth.currentUser();
+  const token = auth.getToken();
 
-  if (!user) {
+  // Skip auth for login endpoint
+  if (req.url.includes('/auth/login')) {
+    return next(req);
+  }
+
+  if (!user || !token) {
     return next(req);
   }
 
   const cloned = req.clone({
     setHeaders: {
+      'Authorization': `Bearer ${token}`,
       'X-Tenant-Id': user.tenantId,
       'X-User-Id': user.id
     }

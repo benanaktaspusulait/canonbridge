@@ -1,76 +1,78 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { User, LoginCredentials } from '../models/user.model';
+import { environment } from '../../../environments/environment';
 
-// Demo users — replace with real API calls later
-const DEMO_USERS: (User & { password: string })[] = [
-  {
-    id: 'usr-001',
-    name: 'Admin User',
-    email: 'admin@canonbridge.io',
-    password: 'admin123',
-    role: 'admin',
-    tenantId: 'tenant-acme',
-    tenantName: 'Acme Corp',
-    avatarInitials: 'AU'
-  },
-  {
-    id: 'usr-002',
-    name: 'Integration Engineer',
-    email: 'engineer@canonbridge.io',
-    password: 'demo123',
-    role: 'integration_author',
-    tenantId: 'tenant-acme',
-    tenantName: 'Acme Corp',
-    avatarInitials: 'IE'
-  },
-  {
-    id: 'usr-003',
-    name: 'Platform Operator',
-    email: 'operator@canonbridge.io',
-    password: 'demo123',
-    role: 'operator',
-    tenantId: 'tenant-acme',
-    tenantName: 'Acme Corp',
-    avatarInitials: 'PO'
-  }
-];
+interface LoginResponse {
+  token: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    tenantId: string;
+  };
+}
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
+  
   private readonly STORAGE_KEY = 'cb_user';
+  private readonly TOKEN_KEY = 'cb_token';
+  private readonly API_KEY = 'dev-api-key'; // From .env CANONBRIDGE_API_KEYS
 
   private _currentUser = signal<User | null>(this.loadFromStorage());
+  private _token = signal<string | null>(this.loadTokenFromStorage());
 
   readonly currentUser = this._currentUser.asReadonly();
   readonly isAuthenticated = computed(() => this._currentUser() !== null);
   readonly userRole = computed(() => this._currentUser()?.role ?? null);
+  readonly apiKey = this.API_KEY;
 
-  constructor(private router: Router) {}
+  async login(credentials: LoginCredentials): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await firstValueFrom(
+        this.http.post<LoginResponse>(`${environment.api.baseUrl}/auth/login`, credentials)
+      );
 
-  login(credentials: LoginCredentials): Promise<{ success: boolean; error?: string }> {
-    // Simulate async API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const match = DEMO_USERS.find(
-          u => u.email === credentials.email && u.password === credentials.password
-        );
-        if (match) {
-          const { password: _, ...user } = match;
-          this._currentUser.set(user);
-          sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
-          resolve({ success: true });
-        } else {
-          resolve({ success: false, error: 'auth.invalidCredentials' });
-        }
-      }, 600); // simulate network delay
-    });
+      // Store token
+      this._token.set(response.token);
+      sessionStorage.setItem(this.TOKEN_KEY, response.token);
+
+      // Create user object with avatar initials
+      const user: User = {
+        ...response.user,
+        tenantName: 'Acme Corp', // TODO: Get from API
+        avatarInitials: this.getInitials(response.user.name)
+      };
+
+      this._currentUser.set(user);
+      sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Login error:', error);
+      return { 
+        success: false, 
+        error: error?.error?.message || 'auth.invalidCredentials' 
+      };
+    }
   }
 
   logout(): void {
     this._currentUser.set(null);
+    this._token.set(null);
     sessionStorage.removeItem(this.STORAGE_KEY);
+    sessionStorage.removeItem(this.TOKEN_KEY);
     this.router.navigate(['/login']);
+  }
+
+  getToken(): string | null {
+    return this._token();
   }
 
   private loadFromStorage(): User | null {
@@ -80,5 +82,17 @@ export class AuthService {
     } catch {
       return null;
     }
+  }
+
+  private loadTokenFromStorage(): string | null {
+    try {
+      return sessionStorage.getItem(this.TOKEN_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  private getInitials(name: string): string {
+    return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   }
 }
