@@ -10,7 +10,7 @@
 > - **Infrastructure**: Docker Compose, Kubernetes manifests, CI/CD pipelines ready
 > - **Production Ready**: 2-3 weeks (pending auth integration, outbox consumer, and integration tests)
 >
-> See [PROGRESS_REPORT.md](./PROGRESS_REPORT.md) for detailed status and [FINAL_PROGRESS_REPORT.md](./FINAL_PROGRESS_REPORT.md) for latest updates.
+> See [PROGRESS_REPORT.md](eksikler/PROGRESS_REPORT.md) for detailed status and [FINAL_PROGRESS_REPORT.md](eksikler/FINAL_PROGRESS_REPORT.md) for latest updates.
 
 CanonBridge eliminates the engineering bottleneck of multi-partner integrations. Instead of writing custom adapter code for every new partner, business users define field mappings visually and publish in minutes. The platform handles transformation, validation, ordering, retry, and observability automatically.
 
@@ -245,7 +245,7 @@ Full rationale with tradeoffs: [docs/adr/](./docs/adr/)
 **Code Status**: Core services implemented and tested<br>
 **Documentation**: Comprehensive architecture and implementation docs
 
-> 📋 **See [PROGRESS_REPORT.md](./PROGRESS_REPORT.md) and [FINAL_PROGRESS_REPORT.md](./FINAL_PROGRESS_REPORT.md) for detailed status**
+> 📋 **See [PROGRESS_REPORT.md](eksikler/PROGRESS_REPORT.md) and [FINAL_PROGRESS_REPORT.md](eksikler/FINAL_PROGRESS_REPORT.md) for detailed status**
 
 | Component | Status | Notes |
 |-----------|--------|-------|
@@ -269,7 +269,7 @@ Full rationale with tradeoffs: [docs/adr/](./docs/adr/)
 4. ⏳ Add integration tests with Testcontainers
 5. ⏳ Security hardening (move secrets to .env, add interceptors)
 
-See [canonbridge-analiz-raporu.md](./canonbridge-analiz-raporu.md) for detailed technical analysis.
+See [canonbridge-analiz-raporu.md](eksikler/canonbridge-analiz-raporu.md) for detailed technical analysis.
 
 ---
 

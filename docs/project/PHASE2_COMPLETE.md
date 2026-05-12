@@ -5,8 +5,8 @@
 > **Current Status**: The project has evolved significantly since Phase 2. Most infrastructure components described here have been implemented and are now in active use.
 > 
 > **For Current Information**:
-> - See [FINAL_PROGRESS_REPORT.md](../../FINAL_PROGRESS_REPORT.md) for latest progress
-> - See [deepseek_markdown.md](../../deepseek_markdown.md) for task tracking
+> - See [FINAL_PROGRESS_REPORT.md](../../eksikler/FINAL_PROGRESS_REPORT.md) for latest progress
+> - See [deepseek_markdown.md](../../eksikler/deepseek_markdown.md) for task tracking
 > - See [docker-compose.yml](../../docker-compose.yml) for current infrastructure
 > - See [services/](../../services/) for implemented services
 > 
