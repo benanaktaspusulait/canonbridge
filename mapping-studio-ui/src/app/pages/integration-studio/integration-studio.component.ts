@@ -1808,28 +1808,21 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   }
 
   undoRules(): void {
-    const previous = this.ruleHistoryPast.pop();
+    const previous = this.undoRedoSvc.undo();
     if (!previous) return;
-    this.ruleHistoryFuture.push(this.snapshotRules());
     this.rules.set(previous);
     this.reselectRuleAfterHistory();
-    this.updateRuleHistorySignals();
   }
 
   redoRules(): void {
-    const next = this.ruleHistoryFuture.pop();
+    const next = this.undoRedoSvc.redo();
     if (!next) return;
-    this.ruleHistoryPast.push(this.snapshotRules());
     this.rules.set(next);
     this.reselectRuleAfterHistory();
-    this.updateRuleHistorySignals();
   }
 
   private pushRuleHistory(): void {
-    this.ruleHistoryPast.push(this.snapshotRules());
-    if (this.ruleHistoryPast.length > this.ruleHistoryLimit) this.ruleHistoryPast.shift();
-    this.ruleHistoryFuture = [];
-    this.updateRuleHistorySignals();
+    this.undoRedoSvc.pushState(this.snapshotRules());
   }
 
   private snapshotRules(): MappingRule[] {
@@ -1844,9 +1837,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   }
 
   private resetRuleHistory(): void {
-    this.ruleHistoryPast = [];
-    this.ruleHistoryFuture = [];
-    this.updateRuleHistorySignals();
+    this.undoRedoSvc.clear();
   }
 
   openNestedMapping(rule: MappingRule): void {
@@ -1865,11 +1856,6 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   isObjectOrArrayRule(rule: MappingRule): boolean {
     const field = this.targetFields().find(f => f.key === rule.targetKey);
     return field?.type === 'object' || field?.type === 'array';
-  }
-
-  private updateRuleHistorySignals(): void {
-    this.canUndoRules.set(this.ruleHistoryPast.length > 0);
-    this.canRedoRules.set(this.ruleHistoryFuture.length > 0);
   }
 
   patchTargetAt(index: number, patch: Partial<TargetField>): void {
