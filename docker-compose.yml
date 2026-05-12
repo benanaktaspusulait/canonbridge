@@ -185,6 +185,8 @@ services:
         condition: service_healthy
       kafka-init:
         condition: service_completed_successfully
+      mapping-studio-api:
+        condition: service_healthy
     ports:
       - "8084:8082"
     environment:
