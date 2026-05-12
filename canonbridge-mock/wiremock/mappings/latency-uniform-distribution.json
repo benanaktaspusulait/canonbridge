@@ -1,0 +1,32 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/orders/random-latency"
+  },
+  "response": {
+    "status": 200,
+    "delayDistribution": {
+      "type": "uniform",
+      "lower": 100,
+      "upper": 1000
+    },
+    "headers": {
+      "Content-Type": "application/json",
+      "X-Simulated-Latency": "uniform-100-1000ms"
+    },
+    "jsonBody": {
+      "orders": [
+        {
+          "id": "ORD-5524",
+          "customer": {
+            "name": "Ali Yıldız",
+            "status": "ACTIVE"
+          },
+          "placedAt": "2026-05-10T12:00:00Z",
+          "quantity": 3
+        }
+      ],
+      "simulatedLatency": "uniform distribution 100-1000ms"
+    }
+  }
+}

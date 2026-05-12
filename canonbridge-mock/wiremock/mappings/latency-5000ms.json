@@ -1,0 +1,34 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/orders/slow-5s"
+  },
+  "response": {
+    "status": 200,
+    "fixedDelayMilliseconds": 5000,
+    "headers": {
+      "Content-Type": "application/json",
+      "X-Simulated-Latency": "5000ms"
+    },
+    "jsonBody": {
+      "orders": [
+        {
+          "id": "ORD-5523",
+          "customer": {
+            "name": "Fatma Kaya",
+            "status": "ACTIVE"
+          },
+          "placedAt": "2026-05-10T11:30:00Z",
+          "quantity": 10,
+          "shippingQuote": {
+            "serviceLevel": "ECONOMY",
+            "etaDays": 7,
+            "price": 3.50
+          }
+        }
+      ],
+      "nextUpdatedSince": "2026-05-10T11:31:00Z",
+      "simulatedLatency": "5000ms"
+    }
+  }
+}

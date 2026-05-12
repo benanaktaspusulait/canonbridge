@@ -15,6 +15,10 @@ public interface RateLimitConfig {
     @WithDefault("ratelimit:")
     String redisKeyPrefix();
 
+    @WithName("storage")
+    @WithDefault("redis")
+    String storage();
+
     AuthenticatedConfig authenticated();
 
     UnauthenticatedConfig unauthenticated();
