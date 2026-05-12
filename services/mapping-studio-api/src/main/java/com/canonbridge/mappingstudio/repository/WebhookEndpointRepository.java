@@ -72,7 +72,7 @@ public class WebhookEndpointRepository {
         Tuple tuple = Tuple.tuple()
             .addUUID(id)
             .addString(endpoint.getTenantId())
-            .addUUID(endpoint.getPartnerId())
+            .addValue(endpoint.getPartnerId())
             .addString(endpoint.getName())
             .addString(path)
             .addString(endpoint.getSecretHash())

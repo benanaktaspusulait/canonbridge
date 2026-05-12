@@ -146,7 +146,7 @@ describe('TransformEngine', () => {
     const badMapping = `{ "id": orderId }`;
 
     await writeFile(path.join(testDir, 'partners/test-partner', 'mapping.jsonata'), badMapping);
-    engine.evict('test-partner', 'order-created'); // Clear cache
+    await engine.evict('test-partner', 'order-created'); // Clear cache
 
     const envelope = {
       partnerId: 'test-partner',

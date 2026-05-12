@@ -28,7 +28,10 @@ export interface CacheEntry {
 export interface TransformCache {
   /** Get compiled entry by key */
   get(key: string): Promise<Compiled | undefined>;
-  
+
+  /** Get raw (serializable) cache entry — used by Redis backend to recompile on local miss */
+  getRaw?(key: string): Promise<CacheEntry | undefined>;
+
   /** Set compiled entry with raw artifacts */
   set(key: string, compiled: Compiled, entry: CacheEntry): Promise<void>;
   

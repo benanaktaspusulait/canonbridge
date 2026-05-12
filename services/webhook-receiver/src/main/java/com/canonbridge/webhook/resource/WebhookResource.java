@@ -2,7 +2,6 @@ package com.canonbridge.webhook.resource;
 
 import com.canonbridge.webhook.service.WebhookService;
 import io.smallrye.mutiny.Uni;
-import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
@@ -43,7 +42,7 @@ public class WebhookResource {
             .map(eventId -> Response.accepted()
                 .entity(new WebhookResponse(eventId, "Webhook received and queued"))
                 .build())
-            .onFailure(UnauthorizedException.class)
+            .onFailure(NotAuthorizedException.class)
             .recoverWithItem(Response.status(Response.Status.UNAUTHORIZED)
                 .entity(new ErrorResponse("Invalid webhook key"))
                 .build())

@@ -93,14 +93,12 @@ public class FastCargoSoapController {
     }
 
     private String extractTrackingNumber(String soapRequest) {
-        // Simple XML parsing for demo purposes
-        int start = soapRequest.indexOf("<trackingNumber>");
-        int end = soapRequest.indexOf("</trackingNumber>");
-        
-        if (start != -1 && end != -1) {
-            return soapRequest.substring(start + 16, end).trim();
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "<(?:[a-zA-Z0-9_]+:)?trackingNumber[^>]*>([^<]+)</(?:[a-zA-Z0-9_]+:)?trackingNumber>");
+        java.util.regex.Matcher matcher = pattern.matcher(soapRequest);
+        if (matcher.find()) {
+            return matcher.group(1).trim();
         }
-        
         return null;
     }
 

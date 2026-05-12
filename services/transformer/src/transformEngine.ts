@@ -116,15 +116,26 @@ export class TransformEngine {
     const cached = await this.cache.get(key);
     if (cached) return cached;
 
-    const inputSchemaPath = path.join(this.mappingsRoot, config.inputSchema);
-    const canonicalSchemaPath = path.join(this.mappingsRoot, config.canonicalSchema);
-    const mappingPath = path.join(this.mappingsRoot, config.mapping);
+    let inputSchema: unknown;
+    let canonicalSchema: unknown;
+    let mappingText: string;
 
-    const [inputSchema, canonicalSchema, mappingText] = await Promise.all([
-      readFile(inputSchemaPath, 'utf8').then(JSON.parse),
-      readFile(canonicalSchemaPath, 'utf8').then(JSON.parse),
-      readFile(mappingPath, 'utf8'),
-    ]);
+    const rawEntry = this.cache.getRaw ? await this.cache.getRaw(key) : undefined;
+    if (rawEntry) {
+      inputSchema = rawEntry.inputSchema;
+      canonicalSchema = rawEntry.canonicalSchema;
+      mappingText = rawEntry.mappingText;
+    } else {
+      const inputSchemaPath = path.join(this.mappingsRoot, config.inputSchema);
+      const canonicalSchemaPath = path.join(this.mappingsRoot, config.canonicalSchema);
+      const mappingPath = path.join(this.mappingsRoot, config.mapping);
+
+      [inputSchema, canonicalSchema, mappingText] = await Promise.all([
+        readFile(inputSchemaPath, 'utf8').then(JSON.parse),
+        readFile(canonicalSchemaPath, 'utf8').then(JSON.parse),
+        readFile(mappingPath, 'utf8'),
+      ]);
+    }
 
     const ajv = new Ajv2020({ allErrors: true, strict: false });
     (addFormats as unknown as (instance: import('ajv').Ajv) => void)(ajv);

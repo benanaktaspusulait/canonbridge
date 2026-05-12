@@ -67,10 +67,10 @@ PAYMENT_PAYLOAD=$(cat <<EOF
 EOF
 )
 
-echo "📤 Sending webhook to: $MOCK_URL/webhook/payflex/payment"
+echo "📤 Sending webhook to: $MOCK_URL/webhook/payment"
 echo "$PAYMENT_PAYLOAD" | jq .
 
-RESPONSE=$(curl -s -X POST "$MOCK_URL/webhook/payflex/payment" \
+RESPONSE=$(curl -s -X POST "$MOCK_URL/webhook/payment" \
   -H "Content-Type: application/json" \
   -H "X-Webhook-Key: payflex-secret-key" \
   -d "$PAYMENT_PAYLOAD")
@@ -172,9 +172,9 @@ echo "   Endpoint: /api/payflex/transactions/{id}"
 echo ""
 
 TRANSACTION_ID="TXN-12345"
-echo "📤 Querying: $MOCK_URL/api/payflex/transactions/$TRANSACTION_ID"
+echo "📤 Querying: $MOCK_URL/api/payments/latest"
 
-REST_RESPONSE=$(curl -s -X GET "$MOCK_URL/api/payflex/transactions/$TRANSACTION_ID" \
+REST_RESPONSE=$(curl -s -X GET "$MOCK_URL/api/payments/latest" \
   -H "X-API-Key: demo-api-key-12345")
 
 echo ""
@@ -224,7 +224,7 @@ echo "   4. ✅ PayFlex REST API queried successfully"
 echo "   5. ✅ All events verified in Kafka topics"
 echo ""
 echo "🔍 Next steps:"
-echo "   • View webhook history: curl $MOCK_URL/admin/webhooks"
+echo "   • View webhook history: curl $MOCK_URL/webhooks"
 echo "   • Consume Kafka events: ./scripts/consume-events.sh"
 echo "   • Check health: curl $MOCK_URL/actuator/health"
 echo ""

@@ -31,6 +31,7 @@ public class MockConfiguration {
     public static class FastCargoConfig {
         private String username = "fastcargo-demo";
         private String password = "fastcargo-secret";
+        private String serviceUrl = "http://localhost:8080";
     }
 
     @Data

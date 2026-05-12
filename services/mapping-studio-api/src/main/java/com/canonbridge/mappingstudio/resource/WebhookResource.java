@@ -12,6 +12,8 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.HexFormat;
@@ -181,8 +183,10 @@ public class WebhookResource {
     private boolean verifySignature(String body, String signature, String secretHash) {
         if (signature == null) return false;
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(body.getBytes(StandardCharsets.UTF_8));
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec keySpec = new SecretKeySpec(secretHash.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            mac.init(keySpec);
+            byte[] hash = mac.doFinal(body.getBytes(StandardCharsets.UTF_8));
             String computed = "sha256=" + HexFormat.of().formatHex(hash);
             return MessageDigest.isEqual(
                 computed.getBytes(StandardCharsets.UTF_8),

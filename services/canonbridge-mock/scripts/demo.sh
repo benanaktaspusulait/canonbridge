@@ -133,7 +133,7 @@ echo ""
 
 # List received webhooks
 echo "Listing received webhooks..."
-WEBHOOKS=$(curl -s -X GET "${BASE_URL}/webhook/webhooks?limit=5")
+WEBHOOKS=$(curl -s -X GET "${BASE_URL}/webhooks?limit=5")
 echo "${WEBHOOKS}" | jq '.'
 echo ""
 echo "✅ Webhook received and stored"

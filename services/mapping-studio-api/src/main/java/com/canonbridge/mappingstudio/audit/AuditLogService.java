@@ -38,7 +38,7 @@ public class AuditLogService {
         entry.setCorrelationId(correlationId);
         entry.setCreatedAt(Instant.now());
 
-        return auditLogRepository.save(entry)
+        return auditLogRepository.create(entry)
             .onFailure().invoke(throwable ->
                 LOG.errorf(throwable, "Failed to persist audit log entry: action=%s resourceId=%s", action, resourceId)
             )
