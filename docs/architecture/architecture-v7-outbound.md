@@ -363,6 +363,8 @@ Two supported implementations:
 
 ### 5.3 Database table specification
 
+The product-level PostgreSQL model, including draft source configs, outbound connections, webhook endpoints, call history, and audit tables, is maintained in [Mapping Studio API and Data Model](../product/03-mapping-studio-api-data-model.md). This architecture section shows the minimum credential-store table shape required by `outbound-call-manager`.
+
 ```sql
 create table credential_records (
   credential_id          varchar(120) primary key,

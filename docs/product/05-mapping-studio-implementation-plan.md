@@ -7,17 +7,17 @@ Deliver a management workflow that can produce a valid, reviewed, versioned tran
 ## Architecture Placement
 
 ```text
-React Management Shell
+Management Shell (current implementation: Angular Mapping Studio UI)
     -> Mapping Studio route
-    -> Angular/Forms or React form modules
+    -> Angular standalone pages and form modules
     -> Management API
-    -> Mapping Studio storage
+    -> PostgreSQL Mapping Studio storage
     -> Artifact exporter
     -> Published mapping package
     -> Transformer service consumes published artifacts
 ```
 
-The UI can be implemented in React only, Angular forms only, or a React shell with embedded form modules. The product behavior should stay the same regardless of frontend framework.
+The active UI is the Angular application in `mapping-studio-ui/`. Older React shell references are historical; the product behavior and API contracts should stay framework-independent.
 
 ## Recommended Modules
 
@@ -141,11 +141,15 @@ Exit criteria:
 
 Recommended storage:
 
-- PostgreSQL for drafts, rules, validation summaries, reviews, and audit.
-- Object storage for raw sample payloads and exported artifact packages.
+- PostgreSQL as the Mapping Studio system of record: drafts, source configs, source samples, inferred fields, source validation rules, schema drafts, target fields, mapping rules, generated JSONata, fixtures, validation summaries, reviews, credentials metadata, outbound connection config, call history, webhook metadata, published artifacts, and audit.
+- PostgreSQL `jsonb` for sample payloads, fixture payloads, schema documents, rule params, source/outbound config, validation summaries, diffs, and safe request/response previews.
+- PostgreSQL encrypted blobs for credential secrets, with secret encryption handled by the application/KMS layer. API responses expose metadata only.
+- Object storage is optional after MVP for large payload archival and downloadable artifact bundles; it must not be required for draft recovery.
 - Redis only for short-lived preview/cache data.
 
-Do not store raw sample JSON only in browser state. Draft work must survive browser refresh and user session expiry.
+Do not store raw sample JSON only in browser state. Draft work must survive browser refresh and user session expiry. Browser local storage may be used only as a convenience cache/export format, never as the source of truth.
+
+The PostgreSQL table inventory and DDL sketch live in [Mapping Studio API and Data Model](./03-mapping-studio-api-data-model.md).
 
 ## Generated Artifact Contract
 
@@ -226,4 +230,3 @@ Mapping Studio should not depend on:
 - Published artifacts run successfully in transformer tests.
 - Audit events cover every state-changing action.
 - Documentation index links users to Mapping Studio docs.
-

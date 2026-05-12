@@ -753,16 +753,19 @@ Colors must work in light and dark mode and must not rely on color alone. Use la
 
 ## 10. Data Model Additions
 
+The canonical persistence model is now PostgreSQL-first and is detailed in [Mapping Studio API and Data Model](./03-mapping-studio-api-data-model.md). This section keeps the V2 UI-specific payload shapes; persisted enum values should be normalized to the lower-case values used by the PostgreSQL model.
+
 ### 10.1 Source configuration on draft
 
 ```json
 {
   "draftId": "draft-001",
-  "sourceType": "EXTERNAL_API_POLL",
+  "sourceType": "external_api_poll",
   "sourceConfig": {
     "method": "GET",
     "url": "https://api.carrier-a.example/v1/orders",
     "schedule": "*/5 * * * *",
+    "selectedCredentialId": "cred_carrier_a_api_key_prod",
     "checkpointMode": "watermark"
   }
 }
@@ -775,7 +778,7 @@ Colors must work in light and dark mode and must not rely on color alone. Use la
   "credentialId": "cred_carrier_a_api_key_prod",
   "tenantId": "tenant-001",
   "displayName": "Carrier A Production API Key",
-  "authType": "API_KEY",
+  "authType": "api_key",
   "environment": "production",
   "status": "active",
   "rotationDueAt": "2026-08-11T00:00:00Z",
@@ -795,10 +798,10 @@ Secret values are submitted only on create/update and are never returned by API.
   "draftId": "draft-001",
   "name": "Carrier A Orders",
   "purpose": "source_payload",
-  "protocol": "REST",
+  "protocol": "rest",
   "method": "GET",
   "url": "https://api.carrier-a.example/v1/orders",
-  "authRef": "cred_carrier_a_oauth_prod",
+  "credentialId": "cred_carrier_a_oauth_prod",
   "headers": {
     "Accept": "application/json"
   },
@@ -839,6 +842,24 @@ Secret values are submitted only on create/update and are never returned by API.
   "safeErrorMessage": null
 }
 ```
+
+### 10.5 PostgreSQL table mapping
+
+| UI concept | PostgreSQL table |
+|---|---|
+| Draft source type and selected sample | `etl.draft_source_configs` |
+| Captured/uploaded source sample | `etl.sample_payloads` |
+| Source tree fields and sample values | `etl.source_field_inventory` |
+| Source guard rules | `etl.source_validation_rules` |
+| Canonical schema upload/manual target fields | `etl.schema_drafts`, `etl.canonical_target_fields` |
+| Visual/advanced mapping rule | `etl.mapping_rules` |
+| Generated JSONata preview/export | `etl.mapping_draft_artifacts` |
+| Fixture manager rows and diffs | `etl.fixtures` |
+| Run test / full validation result | `etl.validation_runs`, `etl.validation_run_issues` |
+| Credential drawer metadata and encrypted secret blob | `etl.credential_records` |
+| External API / SOAP / scheduled poll config | `etl.outbound_connections` |
+| External Systems health and call detail | `etl.outbound_call_history` |
+| Webhook URL, rotation, captures | `etl.webhook_endpoints`, `etl.webhook_deliveries` |
 
 ---
 
