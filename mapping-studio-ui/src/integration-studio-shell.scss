@@ -691,6 +691,18 @@
     white-space: nowrap;
   }
 
+  @media (max-width: 720px) {
+    .studio-col-drag,
+    .studio-col-status {
+      display: none;
+    }
+
+    .toolbar-row {
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+  }
+
   /* ── Rule inspector: segmented underline tabs ── */
   .studio-inspector-tabs-wrap {
     width: 100%;

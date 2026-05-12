@@ -2,7 +2,7 @@
 
 > **Tarih:** 13 Mayıs 2026  
 > **Repo:** `mapping-studio-ui`  
-> **Genel Durum:** %90 tamamlandı (Wizard, özel dönüşüm UI’ları, canlı önizleme, kaynak tipleri eklendi)
+> **Genel Durum:** %95 tamamlandı
 
 ---
 
@@ -12,11 +12,11 @@
 - 5 adımlı Wizard (veri alımı, hedef şema, mapping, doğrulama, yayınlama)
 - Step indicator (ilerleme çubuğu)
 - Kaynak tipi seçimi (Kafka, Webhook, External API, Manuel) ve yapılandırma alanları
-- Görsel kaynak alan seçici (JSON ağaç dropdown’ı)
-- Görsel hedef alan seçici (canonical schema dropdown’ı, zorunlu alan rozetli)
+- Görsel kaynak alan seçici (JSON ağaç dropdown'ı)
+- Görsel hedef alan seçici (canonical schema dropdown'ı, zorunlu alan rozetli)
 - 24 dönüşüm tipini destekleyen JSONata jeneratörü (`rule-to-jsonata.ts`)
 - Dinamik parametre etiketleri (dönüşüm tipine göre label değişimi)
-- **Özel dönüşüm UI’ları:**
+- **Özel dönüşüm UI'ları:**
   - Enum Mapping için anahtar-değer tablosu
   - Conditional Value için IF/ELSE IF/ELSE blok arayüzü
   - Template String için değişken seçici metin editörü
@@ -36,77 +36,60 @@
 
 ---
 
-## 🔴 Kritik Eksikler (Hemen yapılması gerekenler)
+## ✅ Kritik Eksikler — TAMAMLANDI
 
-1. **`demo.sh` demo script'i henüz UI reposuna bağlanmadı**
-   - Mock servisindeki `demo.sh`, UI üzerinde butonla tetiklenebilir olmalı
-   - “5 dakikada satış demosu” için UI’da bir “Demo Modu” sayfası ya da butonu yok
+1. ✅ **`demo.sh` demo script'i UI'a bağlandı**
+   - `pages/demo/demo.component.ts` oluşturuldu — 5 adımlı animasyonlu demo akışı
+   - `/demo` rotası ve sidebar linki (`pi pi-play-circle`) eklendi
+   - `en.json` / `tr.json`'a `nav.demo` çevirisi eklendi
 
-2. **Backend ile canlı bağlantı eksik**
-   - Şu an `jsonata` client-side çalışıyor, ancak CRUD endpoint’leri (`/api/mappings`, vs.) UI’dan çağrılmıyor
-   - `HttpClient` servisi oluşturulmuş olabilir ama tüm sayfalarda aktif değil
-
----
-
-## 🟡 Yüksek Öncelikli Eksikler
-
-3. **İç içe nesne/dizi (nested/array) eşleştirme arayüzü**
-   - Hedef alan `object` veya `array` tipinde ise alt alanları eşleştirecek minyatür bir Wizard/modal yok
-   - `MappingRule` modeli hâlâ düz liste; hiyerarşik yapıya uygun değil
-
-4. **Otomatik kaydetme (auto-save)**
-   - Wizard’da değişiklikler `localStorage`’a veya backend’e periyodik kaydedilmiyor
-   - Tarayıcı çökmesi durumunda tüm ilerleme kaybolur
-
-5. **DLQ Redrive butonu**
-   - DLQ sayfasında mesaj detayı görüntülenebiliyor ancak "Tekrar İşle" (Redrive) butonu yok
-
-6. **Credential Store UI’ı**
-   - `External Systems` sayfasında kimlik bilgileri (API Key, OAuth2) düz metin olarak giriliyor
-   - Hassas bilgiler maskelenmiş (`****`) olarak gösterilmiyor, ayrı bir güvenli yönetim modal’ı yok
+2. ✅ **Backend ile canlı bağlantı kuruldu**
+   - `core/services/mapping.service.ts` oluşturuldu (`list`, `create`, `update`, `delete`)
+   - `mappings.component.ts` → `ngOnInit`'te `GET /api/mapping-drafts` çağrıyor, delete API'ye bağlı
+   - `integration-studio` → `autosaveDraft()` artık backend'e `create`/`update` yapıyor, `backendDraftId` sinyali ile takip ediyor
 
 ---
 
-## 🟢 Orta Öncelikli Eksikler
+## ✅ Yüksek Öncelikli Eksikler — TAMAMLANDI
 
-7. **Uzman Modu (JSONata önizleme)**
-   - Wizard’da isteğe bağlı olarak üretilen JSONata ifadesini gösteren bir panel yok (ileri seviye kullanıcılar için debug aracı)
+3. ✅ **İç içe nesne/dizi eşleştirme arayüzü** — `nested-mapping-dialog.component.ts` mevcut ve studio'ya entegre
 
-8. **Undo/Redo mekanizması**
-   - Mapping kuralı ekleme/silme/düzenleme işlemlerini geri almak için yığın (stack) yok
+4. ✅ **Otomatik kaydetme (auto-save)** — `auto-save.service.ts` mevcut; artık localStorage + backend'e periyodik kayıt yapıyor
 
-9. **Boş durum (empty state) ekranları**
-   - Mapping listesi boşken, DLQ boşken ya da hiç partner yokken "Henüz bir kayıt yok" mesajı ve illüstrasyon eksik
+5. ✅ **DLQ Redrive butonu** — `dlq.component.html` satır bazında ve drawer'da Redrive butonu mevcut; `dlq.service.ts` ile `POST /api/dlq/:id/redrive` çağırıyor
 
-10. **CSS değişken hatası**
-    - `styles.scss` içinde `$primaryColor` ile `var(--primary-color)` karışıklığı derleme hatasına yol açabilir
+6. ✅ **Credential Store UI'ı** — `external-systems.component.ts` credential dialog'u mevcut, `secretValue` alanı `type="password"` ile maskeleniyor
 
-11. **Test kapsamı**
-    - Bazı birim testler mevcut ancak Wizard’ın tüm adımlarını ve dönüşüm tiplerini kapsayan kapsamlı entegrasyon testleri yok
+---
+
+## ✅ Orta Öncelikli Eksikler — TAMAMLANDI
+
+7. ✅ **Uzman Modu (JSONata önizleme)** — `jsonata-preview-panel.component.ts` mevcut ve Wizard Step 2'ye entegre
+
+8. ✅ **Undo/Redo mekanizması** — `undo-redo.service.ts` mevcut
+
+9. ✅ **Boş durum (empty state) ekranları** — `empty-state.component.ts` mevcut
+
+10. ✅ **CSS değişken hatası** — `styles.scss` yalnızca `var(--...)` kullanıyor, `$primaryColor` karışıklığı yok
+
+11. ❌ **Test kapsamı** — Bazı birim testler mevcut ancak Wizard'ın tüm adımlarını ve 24 dönüşüm tipini kapsayan kapsamlı entegrasyon testleri eksik
 
 ---
 
 ## ⚪ Düşük Öncelikli / İyileştirme Alanları
 
-12. **Klavye kısayolları**
-    - `Ctrl+S` (kaydet), `Ctrl+Enter` (test et), `Ctrl+Z/Y` (undo/redo) gibi kısayollar tanımlanmamış
+12. ✅ **Klavye kısayolları** — `keyboard-shortcuts.service.ts` ve `keyboard-shortcuts-config.ts` mevcut
 
-13. **Responsive tasarım**
-    - Wizard’ın 3 sütunlu yapısı mobil ve tablette bozulabilir; özel responsive davranış eklenmemiş
+13. ❌ **Responsive tasarım** — Wizard'ın 3 sütunlu yapısı mobil ve tablette bozulabilir; özel responsive davranış eklenmemiş
 
-14. **Erişilebilirlik (a11y)**
-    - ARIA etiketleri, klavye navigasyonu ve ekran okuyucu testleri eksik
+14. ✅ **Erişilebilirlik (a11y)** — `accessibility.service.ts`, ARIA etiketleri ve skip-links mevcut (`ACCESSIBILITY.md`)
 
-15. **Performans optimizasyonu**
-    - Büyük JSON (10.000+ satır) yüklendiğinde ağaç görünümü ve önizleme performansı ölçülmemiş
+15. ❌ **Performans optimizasyonu** — Büyük JSON (10.000+ satır) yüklendiğinde ağaç görünümü ve önizleme performansı ölçülmemiş
 
 ---
 
-## 🎯 Sonraki Sprint İçin Önerilen Görevler (2 hafta)
+## 🎯 Kalan Görevler
 
-1. **Backend bağlantısını aktif et** – CRUD endpoint’lerini UI’a bağla (Kritik)
-2. **İç içe nesne/dizi eşleştirme arayüzünü yap** (Yüksek)
-3. **Otomatik kaydetme ekle** (Yüksek)
-4. **DLQ Redrive ve Credential Store UI’ı ekle** (Yüksek)
-
-Bu görevler tamamlandığında UI %95 seviyesine ulaşır ve backend + mock ile birlikte ilk demo ve pilot müşteri için eksiksiz hale gelir.
+- **Test kapsamını genişlet** — Wizard adımları + 24 dönüşüm tipi için entegrasyon testleri
+- **Responsive düzeltme** — Wizard 3 sütunlu yapısı için mobil breakpoint
+- **Performans ölçümü** — Büyük JSON yüklemeleri için virtual scrolling veya lazy tree

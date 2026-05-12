@@ -649,6 +649,8 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   private readonly shortcuts = inject(KeyboardShortcutsService);
   private readonly a11y = inject(AccessibilityService);
   private readonly mappingService = inject(MappingService);
+  private readonly autoSaveSvc = inject(AutoSaveService);
+  private readonly undoRedoSvc: UndoRedoService<MappingRule[]> = inject(UndoRedoService);
   private readonly ajv = createStudioAjv();
   private readonly sanitizer = inject(DomSanitizer);
   private readonly toast = inject(MessageService);
@@ -732,16 +734,12 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
 
   selectedRule = signal<MappingRule | null>(null);
   ruleInspectorTab = signal<string>('visual');
-  readonly canUndoRules = signal(false);
-  readonly canRedoRules = signal(false);
+  readonly canUndoRules = computed(() => this.undoRedoSvc.canUndo());
+  readonly canRedoRules = computed(() => this.undoRedoSvc.canRedo());
   readonly showExpertMode = signal(false);
 
   nestedMappingVisible = false;
   readonly nestedMappingParentRule = signal<MappingRule | null>(null);
-
-  private readonly ruleHistoryLimit = 40;
-  private ruleHistoryPast: MappingRule[][] = [];
-  private ruleHistoryFuture: MappingRule[][] = [];
 
   testOutput = signal<Record<string, unknown> | null>(null);
   altFixtureJson = signal('');
@@ -1041,6 +1039,15 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     this.analyzePayload();
     this.selectedRule.set(this.rules()[0] ?? null);
     this.autosaveTimer = setInterval(() => this.autosaveDraft(), 2500);
+
+    if (this.autoSaveSvc.hasAutoSave('studio-wizard')) {
+      this.toast.add({
+        severity: 'info',
+        summary: this.i18n.translate('studio.autosave.restore'),
+        detail: `${this.autoSaveSvc.formatAutoSaveAge('studio-wizard')}`,
+        life: 6000
+      });
+    }
     
     // Register keyboard shortcuts
     this.shortcuts.register({
@@ -2488,6 +2495,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
       next: (saved) => {
         this.backendDraftId.set(saved.id ?? null);
         this.published.set(true);
+        this.autoSaveSvc.clearAutoSave('studio-wizard');
         this.toast.add({
           severity: 'success',
           summary: this.i18n.translate('studio.publishSuccess'),
@@ -2597,6 +2605,8 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     } catch {
       /* Local storage may be unavailable in hardened browser modes. */
     }
+
+    this.autoSaveSvc.registerAutoSave('studio-wizard', this.rules());
 
     const draftPayload = {
       name: snapshot.sourceFileMeta?.name ?? 'Untitled Draft',
