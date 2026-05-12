@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -13,6 +13,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { DlqService, DlqMessage as ApiDlqMessage } from '../../core/services/dlq.service';
 
 interface DlqMessage {
   id: string;
@@ -42,53 +43,18 @@ interface DlqMessage {
   templateUrl: './dlq.component.html',
   styleUrl: './dlq.component.scss'
 })
-export class DlqComponent {
+export class DlqComponent implements OnInit {
   private readonly confirmation = inject(ConfirmationService);
   private readonly toast = inject(MessageService);
   private readonly i18n = inject(I18nService);
+  private readonly dlqService = inject(DlqService);
 
   selected: DlqMessage[] = [];
   inspectorVisible = false;
   readonly inspected = signal<DlqMessage | null>(null);
+  readonly loading = signal(false);
 
-  private readonly _messages = signal<DlqMessage[]>([
-    {
-      id: 'dlq-001', partner: 'payment-gateway',  eventType: 'payment.captured',
-      errorType: 'SCHEMA_VALIDATION',
-      errorMessage: 'Required field "amount" is missing from payload',
-      attempts: 3, firstFailed: '2026-05-10 13:45', lastFailed: '2026-05-10 14:15',
-      payload: '{"transactionId":"txn-999","currency":"USD"}',
-      traceId: 'trc-pay-13f45',
-      stackTrace: 'SchemaValidationError: required property amount\n  at validateCanonicalPayment (mapping-runtime.js:88)\n  at transformPaymentCaptured (payment.captured.v2.js:42)\n  at DlqWriter.captureFailure (dlq-writer.js:19)'
-    },
-    {
-      id: 'dlq-002', partner: 'payment-gateway',  eventType: 'payment.captured',
-      errorType: 'TRANSFORMATION_ERROR',
-      errorMessage: 'Mapping rule evaluation failed — missing field reference',
-      attempts: 3, firstFailed: '2026-05-10 12:30', lastFailed: '2026-05-10 13:00',
-      payload: '{"transactionId":"txn-888","amount":null}',
-      traceId: 'trc-pay-12a30',
-      stackTrace: 'TransformationError: source path $.amount.value resolved to undefined\n  at evaluateJsonataRule (rule-engine.js:131)\n  at executeMappingRules (rule-engine.js:62)\n  at DlqWriter.captureFailure (dlq-writer.js:19)'
-    },
-    {
-      id: 'dlq-003', partner: 'acme-marketplace', eventType: 'order.created',
-      errorType: 'SCHEMA_VALIDATION',
-      errorMessage: 'Field "customer.email" does not match format "email"',
-      attempts: 1, firstFailed: '2026-05-10 11:00', lastFailed: '2026-05-10 11:00',
-      payload: '{"orderId":"ORD-777","customer":{"email":"not-an-email"}}',
-      traceId: 'trc-acme-1100',
-      stackTrace: 'SchemaValidationError: customer.email failed email format\n  at validateOrderCreated (schema-validator.js:74)\n  at executeMappingRules (rule-engine.js:58)\n  at DlqWriter.captureFailure (dlq-writer.js:19)'
-    },
-    {
-      id: 'dlq-004', partner: 'acme-marketplace', eventType: 'order.created',
-      errorType: 'DOWNSTREAM_ERROR',
-      errorMessage: 'Business service returned 503 after 3 retries',
-      attempts: 3, firstFailed: '2026-05-10 09:15', lastFailed: '2026-05-10 09:45',
-      payload: '{"orderId":"ORD-666","status":"A"}',
-      traceId: 'trc-acme-0945',
-      stackTrace: 'DownstreamError: HTTP 503 from order-business-service\n  at postCanonicalOrder (publisher.js:52)\n  at retryWithBackoff (retry.js:37)\n  at DlqWriter.captureFailure (dlq-writer.js:19)'
-    }
-  ]);
+  private readonly _messages = signal<DlqMessage[]>([]);
 
   readonly messages = this._messages.asReadonly();
   readonly searchText = signal('');
@@ -125,6 +91,68 @@ export class DlqComponent {
     });
   });
 
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+  ngOnInit(): void {
+    this.loadMessages();
+  }
+
+  loadMessages(): void {
+    this.loading.set(true);
+    this.dlqService.listMessages(100, 0).subscribe({
+      next: (apiMessages) => {
+        // Map API messages to UI format
+        const uiMessages: DlqMessage[] = apiMessages.map(msg => ({
+          id: msg.id,
+          partner: this.extractPartnerFromTopic(msg.originalTopic),
+          eventType: this.extractEventTypeFromPayload(msg.payload),
+          errorType: this.categorizeError(msg.errorMessage || ''),
+          errorMessage: msg.errorMessage || 'Unknown error',
+          attempts: msg.retryCount,
+          firstFailed: msg.failedAt,
+          lastFailed: msg.redriveAttemptedAt || msg.failedAt,
+          payload: msg.payload,
+          traceId: msg.key || msg.id,
+          stackTrace: msg.errorStackTrace || ''
+        }));
+        this._messages.set(uiMessages);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load DLQ messages:', err);
+        this.toast.add({ 
+          severity: 'error', 
+          summary: 'Error', 
+          detail: 'Failed to load DLQ messages' 
+        });
+        this.loading.set(false);
+      }
+    });
+  }
+
+  private extractPartnerFromTopic(topic: string): string {
+    // Extract partner from topic like "partner.shopmax.raw"
+    const parts = topic.split('.');
+    return parts.length > 1 ? parts[1] : 'unknown';
+  }
+
+  private extractEventTypeFromPayload(payload: string): string {
+    try {
+      const parsed = JSON.parse(payload);
+      return parsed.eventType || parsed.type || 'unknown';
+    } catch {
+      return 'unknown';
+    }
+  }
+
+  private categorizeError(errorMessage: string): string {
+    const msg = errorMessage.toLowerCase();
+    if (msg.includes('schema') || msg.includes('validation')) return 'SCHEMA_VALIDATION';
+    if (msg.includes('transformation') || msg.includes('mapping')) return 'TRANSFORMATION_ERROR';
+    if (msg.includes('downstream') || msg.includes('503') || msg.includes('timeout')) return 'DOWNSTREAM_ERROR';
+    return 'UNKNOWN_ERROR';
+  }
+
   // ── Inspect ───────────────────────────────────────────────────────────────
 
   inspect(msg: DlqMessage): void {
@@ -139,8 +167,24 @@ export class DlqComponent {
       this.toast.add({ severity: 'error', summary: this.t('dlq.toast.redriveFailed'), detail: msg.id });
       return;
     }
-    this.removeMessages([msg.id]);
-    this.toast.add({ severity: 'success', summary: this.t('dlq.toast.redriven'), detail: msg.id });
+    
+    this.loading.set(true);
+    this.dlqService.redriveMessage(msg.id).subscribe({
+      next: () => {
+        this.removeMessages([msg.id]);
+        this.toast.add({ severity: 'success', summary: this.t('dlq.toast.redriven'), detail: msg.id });
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to redrive message:', err);
+        this.toast.add({ 
+          severity: 'error', 
+          summary: 'Redrive Failed', 
+          detail: `Failed to redrive message ${msg.id}` 
+        });
+        this.loading.set(false);
+      }
+    });
   }
 
   redriveSelected(): void {
