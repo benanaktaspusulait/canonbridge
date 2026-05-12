@@ -104,8 +104,7 @@ export class MappingsComponent implements OnInit {
 
   loadMappings(): void {
     this.loading.set(true);
-    const tenantId = 'default';
-    this.mappingService.list(tenantId).subscribe({
+    this.mappingService.list().subscribe({
       next: (drafts) => {
         const mapped = drafts.map(d => this.draftToViewModel(d));
         this._mappings.set(mapped);
@@ -180,7 +179,7 @@ export class MappingsComponent implements OnInit {
       acceptLabel: this.t('mappings.delete'),
       rejectLabel: this.t('mappings.cancel'),
       accept: () => {
-        this.mappingService.delete('default', mapping.id).subscribe({
+        this.mappingService.delete(mapping.id).subscribe({
           next: () => {
             this._mappings.update(list => list.filter(m => m.id !== mapping.id));
             this.toast.add({ severity: 'success', summary: this.t('mappings.toast.deleted'), detail: mapping.version });

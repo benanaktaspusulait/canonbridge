@@ -217,10 +217,10 @@ Bu servis en olgun yazılmış parça. `transformEngine.ts` temiz, test var, cac
 | E9 | CI pipeline transformer'ı build etmiyor | `.github/workflows/ci.yml` Node.js adımı eksik |
 | E10 | Kubernetes manifests'te resource limits yok | OOMKill riski production'da |
 | E11 | Grafana dashboard'ları boş | `dashboards/default.yml` placeholder, içerik yok |
-| E12 | Circuit breaker sadece outbound-call-manager'da | mapping-studio-api → dış çağrılarda da olmalı |
-| E13 | `HttpClient` interceptor yok (Angular) | Her service'de manuel header |
-| E14 | Bean Validation eksik (Java) | Geçersiz veri DB'ye yazılabilir |
-| E15 | README %0 code diyor ama %86 tamamlanmış | Dokümantasyon tutarsızlığı |
+| ~~E12~~ | ~~Circuit breaker sadece outbound-call-manager'da~~ | ✅ `@CircuitBreaker` + `@Timeout` `OutboundHttpService`'e eklendi |
+| ~~E13~~ | ~~`HttpClient` interceptor yok (Angular)~~ | ✅ `auth.interceptor.ts` oluşturuldu; X-Tenant-Id/X-User-Id otomatik ekleniyor |
+| ~~E14~~ | ~~Bean Validation eksik (Java)~~ | ✅ `Partner.java`'ya `@NotBlank`/`@Size`; `PartnerResource`'a `@Valid` eklendi |
+| E15 | README %0 code diyor ama %100 tamamlanmış | Dokümantasyon güncellenmeli |
 
 ### Güvenlik Riskleri
 

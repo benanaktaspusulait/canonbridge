@@ -2474,8 +2474,8 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
 
     const existingId = this.backendDraftId();
     const save$ = existingId
-      ? this.mappingService.update(this.tenantId, existingId, draft)
-      : this.mappingService.create(this.tenantId, draft);
+      ? this.mappingService.update(existingId, draft)
+      : this.mappingService.create(draft);
 
     save$.subscribe({
       next: (saved) => {
@@ -2607,11 +2607,11 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
 
     const existingId = this.backendDraftId();
     if (existingId) {
-      this.mappingService.update(this.tenantId, existingId, draftPayload).subscribe({
+      this.mappingService.update(existingId, draftPayload).subscribe({
         error: (err) => console.warn('Backend autosave update failed', err)
       });
     } else {
-      this.mappingService.create(this.tenantId, draftPayload).subscribe({
+      this.mappingService.create(draftPayload).subscribe({
         next: (created) => {
           if (created.id) this.backendDraftId.set(created.id);
         },

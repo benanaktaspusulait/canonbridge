@@ -4,6 +4,7 @@ import com.canonbridge.mappingstudio.domain.Partner;
 import com.canonbridge.mappingstudio.repository.PartnerRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -72,7 +73,7 @@ public class PartnerResource {
     public Uni<Response> create(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @HeaderParam("X-User-Id") String userId,
-            Partner partner) {
+            @Valid Partner partner) {
         if (tenantId == null || tenantId.isBlank()) {
             throw new BadRequestException("X-Tenant-Id header is required");
         }
@@ -92,7 +93,7 @@ public class PartnerResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @HeaderParam("X-User-Id") String userId,
             @PathParam("id") UUID id,
-            Partner partner) {
+            @Valid Partner partner) {
         if (tenantId == null || tenantId.isBlank()) {
             throw new BadRequestException("X-Tenant-Id header is required");
         }

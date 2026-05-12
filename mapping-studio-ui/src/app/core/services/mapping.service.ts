@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -33,45 +33,27 @@ export class MappingService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.api.baseUrl}/mapping-drafts`;
 
-  private headers(tenantId: string, userId?: string): HttpHeaders {
-    let h = new HttpHeaders({ 'X-Tenant-Id': tenantId });
-    if (userId) h = h.set('X-User-Id', userId);
-    return h;
+  list(): Observable<MappingDraft[]> {
+    return this.http.get<MappingDraft[]>(this.baseUrl);
   }
 
-  list(tenantId: string): Observable<MappingDraft[]> {
-    return this.http.get<MappingDraft[]>(this.baseUrl, {
-      headers: this.headers(tenantId)
-    });
+  getById(id: string): Observable<MappingDraft> {
+    return this.http.get<MappingDraft>(`${this.baseUrl}/${id}`);
   }
 
-  getById(tenantId: string, id: string): Observable<MappingDraft> {
-    return this.http.get<MappingDraft>(`${this.baseUrl}/${id}`, {
-      headers: this.headers(tenantId)
-    });
+  listByPartner(partnerId: string): Observable<MappingDraft[]> {
+    return this.http.get<MappingDraft[]>(`${this.baseUrl}/partner/${partnerId}`);
   }
 
-  listByPartner(tenantId: string, partnerId: string): Observable<MappingDraft[]> {
-    return this.http.get<MappingDraft[]>(`${this.baseUrl}/partner/${partnerId}`, {
-      headers: this.headers(tenantId)
-    });
+  create(draft: MappingDraft): Observable<MappingDraft> {
+    return this.http.post<MappingDraft>(this.baseUrl, draft);
   }
 
-  create(tenantId: string, draft: MappingDraft, userId?: string): Observable<MappingDraft> {
-    return this.http.post<MappingDraft>(this.baseUrl, draft, {
-      headers: this.headers(tenantId, userId)
-    });
+  update(id: string, draft: MappingDraft): Observable<MappingDraft> {
+    return this.http.put<MappingDraft>(`${this.baseUrl}/${id}`, draft);
   }
 
-  update(tenantId: string, id: string, draft: MappingDraft, userId?: string): Observable<MappingDraft> {
-    return this.http.put<MappingDraft>(`${this.baseUrl}/${id}`, draft, {
-      headers: this.headers(tenantId, userId)
-    });
-  }
-
-  delete(tenantId: string, id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`, {
-      headers: this.headers(tenantId)
-    });
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 }
