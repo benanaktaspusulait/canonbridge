@@ -109,6 +109,38 @@ services:
     volumes:
       - redis-data:/data
 
+  mapping-studio-api:
+    build:
+      context: ./services/mapping-studio-api
+      dockerfile: Dockerfile
+    container_name: canonbridge-mapping-studio-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8082:8080"
+    environment:
+      DB_USERNAME: canonbridge_user
+      DB_PASSWORD: canonbridge_password
+      DB_URL: postgresql://postgres:5432/canonbridge_db
+      JDBC_DB_URL: jdbc:postgresql://postgres:5432/canonbridge_db
+      REDIS_URL: redis://redis:6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      CANONBRIDGE_AUTH_ENABLED: "true"
+      CANONBRIDGE_API_KEYS: "dev-api-key,prod-api-key"
+      CANONBRIDGE_CREDENTIAL_ENCRYPTION_KEY: "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+      RATELIMIT_ENABLED: "true"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   prometheus:
     image: prom/prometheus:v2.52.0
     container_name: canonbridge-prometheus
