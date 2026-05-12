@@ -59,8 +59,15 @@ public class ApiAuthenticationFilter implements ContainerRequestFilter {
             return true;
         }
 
-        String path = requestContext.getUriInfo().getPath(false);
-        return !path.equals("api") && !path.startsWith("api/");
+        String path = requestContext.getUriInfo().getPath();
+        
+        // Bypass health, metrics, swagger, and auth endpoints
+        return path.startsWith("health") || 
+               path.startsWith("metrics") || 
+               path.startsWith("swagger-ui") || 
+               path.startsWith("openapi") ||
+               path.startsWith("api/auth/login") ||
+               (!path.startsWith("api/"));
     }
 
     private void abort(ContainerRequestContext requestContext, ApiKeyAuthenticator.AuthenticationResult result) {

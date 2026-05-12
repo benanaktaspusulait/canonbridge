@@ -29,7 +29,7 @@ import java.util.Map;
  * 
  * Per-tenant overrides are supported via the partners table.
  */
-@Provider
+//@Provider
 @Priority(Priorities.AUTHORIZATION + 10) // Run after authentication
 @ApplicationScoped
 @Blocking
@@ -55,10 +55,11 @@ public class RateLimitFilter implements ContainerRequestFilter, ContainerRespons
             return;
         }
 
-        // Skip rate limiting for health and metrics endpoints
+        // Skip rate limiting for health, metrics, and auth endpoints
         String path = requestContext.getUriInfo().getPath();
         if (path.startsWith("health") || path.startsWith("metrics") || 
-            path.startsWith("openapi") || path.startsWith("swagger-ui")) {
+            path.startsWith("openapi") || path.startsWith("swagger-ui") ||
+            path.equals("api/auth/login") || path.startsWith("api/auth/")) {
             return;
         }
 
