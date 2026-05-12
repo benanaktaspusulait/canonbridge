@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/orders/timeout-10s"
+  },
+  "response": {
+    "status": 200,
+    "fixedDelayMilliseconds": 10000,
+    "headers": {
+      "Content-Type": "application/json",
+      "X-Simulated-Latency": "10000ms"
+    },
+    "jsonBody": {
+      "orders": [],
+      "message": "This response took 10 seconds - typical client timeout threshold",
+      "simulatedLatency": "10000ms"
+    }
+  }
+}

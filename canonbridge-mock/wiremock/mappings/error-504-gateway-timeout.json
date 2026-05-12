@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/orders/error-504"
+  },
+  "response": {
+    "status": 504,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "error": "gateway_timeout",
+      "message": "The upstream service did not respond in time",
+      "timestamp": "2026-05-10T14:15:00Z",
+      "path": "/api/orders/error-504"
+    }
+  }
+}

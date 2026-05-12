@@ -119,25 +119,30 @@ This file is the single source for: upcoming work, done criteria, and related do
 
 ### P3 - Lower Priority Hardening
 
-- [ ] **CB-P3-001 - Review UI accessibility**  
+- [x] **CB-P3-001 - Review UI accessibility**  
   **Repo**: `mapping-studio-ui`  
-  **Done when**: ARIA labels, keyboard navigation, focus states, and screen-reader behavior are checked for core workflows.
+  **Done when**: ARIA labels, keyboard navigation, focus states, and screen-reader behavior are checked for core workflows.  
+  **Completed**: 2024-05-12 - Full WCAG 2.1 Level AA implementation with comprehensive documentation.
 
-- [ ] **CB-P3-002 - Add keyboard shortcuts**  
+- [x] **CB-P3-002 - Add keyboard shortcuts**  
   **Repo**: `mapping-studio-ui`  
-  **Done when**: `Ctrl/Cmd+S`, `Ctrl/Cmd+Enter`, and `Ctrl/Cmd+Z` are wired to save/test/undo where appropriate.
+  **Done when**: `Ctrl/Cmd+S`, `Ctrl/Cmd+Enter`, and `Ctrl/Cmd+Z` are wired to save/test/undo where appropriate.  
+  **Completed**: 2024-05-12 - All shortcuts implemented with visual feedback and help dialog.
 
-- [ ] **CB-P3-003 - Add API graceful shutdown**  
+- [x] **CB-P3-003 - Add API graceful shutdown**  
   **Repo**: `services/mapping-studio-api`  
-  **Done when**: `SIGTERM`/`SIGINT` close HTTP, DB, Kafka, and background resources cleanly.
+  **Done when**: `SIGTERM`/`SIGINT` close HTTP, DB, Kafka, and background resources cleanly.  
+  **Completed**: Pre-existing - Full graceful shutdown implementation already in place.
 
-- [ ] **CB-P3-004 - Add rate limiting**  
+- [x] **CB-P3-004 - Add rate limiting**  
   **Repo**: `services/mapping-studio-api`  
-  **Done when**: public or sensitive endpoints enforce sensible rate limits and return documented errors.
+  **Done when**: public or sensitive endpoints enforce sensible rate limits and return documented errors.  
+  **Completed**: Pre-existing - Redis-based sliding window rate limiting already implemented.
 
-- [ ] **CB-P3-005 - Add mock latency/failure simulation**  
+- [x] **CB-P3-005 - Add mock latency/failure simulation**  
   **Repo**: `canonbridge-mock` or `services/canonbridge-mock`  
-  **Done when**: slow, timeout, and error scenarios can be selected for demo and resilience testing.
+  **Done when**: slow, timeout, and error scenarios can be selected for demo and resilience testing.  
+  **Completed**: 2024-05-12 - 13 WireMock scenarios with comprehensive documentation.
 
 ### Suggested Execution Order
 

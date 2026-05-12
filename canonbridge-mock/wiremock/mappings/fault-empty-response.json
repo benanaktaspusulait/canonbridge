@@ -1,0 +1,9 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/orders/empty-response"
+  },
+  "response": {
+    "fault": "EMPTY_RESPONSE"
+  }
+}

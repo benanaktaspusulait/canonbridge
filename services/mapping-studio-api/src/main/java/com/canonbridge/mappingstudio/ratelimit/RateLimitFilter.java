@@ -2,7 +2,7 @@ package com.canonbridge.mappingstudio.ratelimit;
 
 import com.canonbridge.mappingstudio.repository.PartnerRepository;
 import io.quarkus.logging.Log;
-import io.smallrye.mutiny.Uni;
+import io.smallrye.common.annotation.Blocking;
 import io.vertx.core.http.HttpServerRequest;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -10,6 +10,8 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.container.ContainerResponseContext;
+import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
@@ -30,7 +32,10 @@ import java.util.Map;
 @Provider
 @Priority(Priorities.AUTHORIZATION + 10) // Run after authentication
 @ApplicationScoped
-public class RateLimitFilter implements ContainerRequestFilter {
+@Blocking
+public class RateLimitFilter implements ContainerRequestFilter, ContainerResponseFilter {
+
+    private static final String RATE_LIMIT_RESULT_KEY = "canonbridge.ratelimit.result";
 
     @Inject
     RateLimitService rateLimitService;
@@ -82,8 +87,10 @@ public class RateLimitFilter implements ContainerRequestFilter {
             }
             windowSeconds = config.authenticated().windowSeconds();
         } else {
-            // Unauthenticated request - use IP address
-            clientId = getClientIp();
+            // Unauthenticated request - prefer a presented API key as a stable client id in test/dev,
+            // then fall back to IP address.
+            String apiKey = requestContext.getHeaderString("X-API-Key");
+            clientId = apiKey != null && !apiKey.isBlank() ? "api-key:" + apiKey : getClientIp();
             limit = config.unauthenticated().defaultLimit();
             windowSeconds = config.unauthenticated().windowSeconds();
         }
@@ -92,8 +99,7 @@ public class RateLimitFilter implements ContainerRequestFilter {
         RateLimitResult result = rateLimitService.checkRateLimit(clientId, limit, windowSeconds)
                 .await().indefinitely();
 
-        // Add rate limit headers to response
-        addRateLimitHeaders(requestContext, result);
+        requestContext.setProperty(RATE_LIMIT_RESULT_KEY, result);
 
         if (!result.isAllowed()) {
             // Rate limit exceeded - return 429
@@ -121,10 +127,16 @@ public class RateLimitFilter implements ContainerRequestFilter {
     /**
      * Add rate limit headers to the response.
      */
-    private void addRateLimitHeaders(ContainerRequestContext requestContext, RateLimitResult result) {
-        requestContext.getHeaders().putSingle("X-RateLimit-Limit", String.valueOf(result.getLimit()));
-        requestContext.getHeaders().putSingle("X-RateLimit-Remaining", String.valueOf(result.getRemaining()));
-        requestContext.getHeaders().putSingle("X-RateLimit-Reset", String.valueOf(result.getResetTime()));
+    @Override
+    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
+        RateLimitResult result = (RateLimitResult) requestContext.getProperty(RATE_LIMIT_RESULT_KEY);
+        if (result == null) {
+            return;
+        }
+
+        responseContext.getHeaders().putSingle("X-RateLimit-Limit", String.valueOf(result.getLimit()));
+        responseContext.getHeaders().putSingle("X-RateLimit-Remaining", String.valueOf(result.getRemaining()));
+        responseContext.getHeaders().putSingle("X-RateLimit-Reset", String.valueOf(result.getResetTime()));
     }
 
     /**

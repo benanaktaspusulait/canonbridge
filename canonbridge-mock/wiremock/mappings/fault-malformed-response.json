@@ -1,0 +1,9 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/orders/malformed-response"
+  },
+  "response": {
+    "fault": "MALFORMED_RESPONSE_CHUNK"
+  }
+}

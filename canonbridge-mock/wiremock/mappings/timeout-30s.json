@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/orders/timeout-30s"
+  },
+  "response": {
+    "status": 200,
+    "fixedDelayMilliseconds": 30000,
+    "headers": {
+      "Content-Type": "application/json",
+      "X-Simulated-Latency": "30000ms"
+    },
+    "jsonBody": {
+      "orders": [],
+      "message": "This response took 30 seconds - extended timeout threshold",
+      "simulatedLatency": "30000ms"
+    }
+  }
+}

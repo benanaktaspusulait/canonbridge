@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/orders/error-502"
+  },
+  "response": {
+    "status": 502,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "error": "bad_gateway",
+      "message": "The upstream service returned an invalid response",
+      "timestamp": "2026-05-10T14:05:00Z",
+      "path": "/api/orders/error-502"
+    }
+  }
+}

@@ -21,15 +21,17 @@ import static org.junit.jupiter.api.Assertions.*;
 @QuarkusTest
 class RateLimitFilterTest {
 
+    private static final String PROBE_PATH = "/api/rate-limit-probe";
+
     @Test
     void testRateLimitHeadersArePresentInSuccessfulResponse() {
         // When: Making a request to any API endpoint
         Response response = given()
                 .header("X-Tenant-Id", "test-tenant")
                 .when()
-                .get("/api/partners")
+                .get(PROBE_PATH)
                 .then()
-                .statusCode(anyOf(is(200), is(401))) // May be 401 if auth is enabled
+                .statusCode(200)
                 .extract()
                 .response();
 
@@ -57,7 +59,7 @@ class RateLimitFilterTest {
                     .header("X-API-Key", testApiKey)
                     .header("X-Tenant-Id", "test-tenant")
                     .when()
-                    .get("/api/partners")
+                    .get(PROBE_PATH)
                     .then()
                     .extract()
                     .response();
@@ -93,7 +95,7 @@ class RateLimitFilterTest {
         for (int i = 0; i < 20; i++) {
             given()
                     .when()
-                    .get("/health")
+                    .get("/health/live")
                     .then()
                     .statusCode(200);
         }
@@ -127,7 +129,7 @@ class RateLimitFilterTest {
                 .header("X-API-Key", testApiKey)
                 .header("X-Tenant-Id", "test-tenant")
                 .when()
-                .get("/api/partners")
+                .get(PROBE_PATH)
                 .then()
                 .extract()
                 .response();
@@ -139,7 +141,7 @@ class RateLimitFilterTest {
                 .header("X-API-Key", testApiKey)
                 .header("X-Tenant-Id", "test-tenant")
                 .when()
-                .get("/api/partners")
+                .get(PROBE_PATH)
                 .then()
                 .extract()
                 .response();
@@ -157,7 +159,7 @@ class RateLimitFilterTest {
         Response response = given()
                 .header("X-Tenant-Id", "test-tenant")
                 .when()
-                .get("/api/partners")
+                .get(PROBE_PATH)
                 .then()
                 .extract()
                 .response();

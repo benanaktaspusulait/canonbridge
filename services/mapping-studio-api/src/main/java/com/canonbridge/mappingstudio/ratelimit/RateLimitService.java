@@ -11,6 +11,11 @@ import jakarta.inject.Inject;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.UUID;
 
 /**
@@ -34,6 +39,7 @@ public class RateLimitService {
     RedisDataSource redisDataSource;
 
     private SortedSetCommands<String, String> sortedSetCommands;
+    private final Map<String, Deque<Long>> inMemoryWindows = new ConcurrentHashMap<>();
 
     public void init() {
         this.sortedSetCommands = redisDataSource.sortedSet(String.class);
@@ -53,13 +59,17 @@ public class RateLimitService {
             return Uni.createFrom().item(new RateLimitResult(true, limit, limit, 0, 0));
         }
 
-        if (sortedSetCommands == null) {
-            init();
-        }
-
         String key = config.redisKeyPrefix() + clientId;
         long now = Instant.now().toEpochMilli();
         long windowStart = now - (windowSeconds * 1000L);
+
+        if (usesInMemoryStorage()) {
+            return Uni.createFrom().item(() -> checkInMemoryRateLimit(key, limit, windowSeconds, now, windowStart));
+        }
+
+        if (sortedSetCommands == null) {
+            init();
+        }
 
         return Uni.createFrom().item(() -> {
             try {
@@ -98,6 +108,45 @@ public class RateLimitService {
                 return new RateLimitResult(true, limit, limit, 0, 0);
             }
         });
+    }
+
+    private boolean usesInMemoryStorage() {
+        return "memory".equals(config.storage().toLowerCase(Locale.ROOT));
+    }
+
+    private RateLimitResult checkInMemoryRateLimit(
+            String key,
+            int limit,
+            int windowSeconds,
+            long now,
+            long windowStart) {
+        Deque<Long> window = inMemoryWindows.computeIfAbsent(key, ignored -> new ArrayDeque<>());
+        synchronized (window) {
+            while (!window.isEmpty() && window.peekFirst() <= windowStart) {
+                window.removeFirst();
+            }
+
+            long resetTime = now + (windowSeconds * 1000L);
+            if (window.size() >= limit) {
+                long retryAfter = calculateInMemoryRetryAfter(window, windowSeconds, now);
+                return new RateLimitResult(false, limit, 0, resetTime, retryAfter);
+            }
+
+            window.addLast(now);
+            int remaining = limit - window.size();
+            return new RateLimitResult(true, limit, remaining, resetTime, 0);
+        }
+    }
+
+    private long calculateInMemoryRetryAfter(Deque<Long> window, int windowSeconds, long now) {
+        Long oldestTimestamp = window.peekFirst();
+        if (oldestTimestamp == null) {
+            return windowSeconds;
+        }
+
+        long windowEnd = oldestTimestamp + (windowSeconds * 1000L);
+        long retryAfterMs = windowEnd - now;
+        return Math.max(1, (retryAfterMs + 999) / 1000);
     }
 
     /**

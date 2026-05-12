@@ -1,0 +1,20 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/orders/error-503"
+  },
+  "response": {
+    "status": 503,
+    "headers": {
+      "Content-Type": "application/json",
+      "Retry-After": "60"
+    },
+    "jsonBody": {
+      "error": "service_unavailable",
+      "message": "The service is temporarily unavailable. Please try again later.",
+      "timestamp": "2026-05-10T14:10:00Z",
+      "path": "/api/orders/error-503",
+      "retryAfter": 60
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/orders/realistic-latency"
+  },
+  "response": {
+    "status": 200,
+    "delayDistribution": {
+      "type": "lognormal",
+      "median": 200,
+      "sigma": 0.4
+    },
+    "headers": {
+      "Content-Type": "application/json",
+      "X-Simulated-Latency": "lognormal-median-200ms"
+    },
+    "jsonBody": {
+      "orders": [
+        {
+          "id": "ORD-5525",
+          "customer": {
+            "name": "Zeynep Arslan",
+            "status": "ACTIVE"
+          },
+          "placedAt": "2026-05-10T13:00:00Z",
+          "quantity": 7
+        }
+      ],
+      "simulatedLatency": "lognormal distribution median 200ms"
+    }
+  }
+}
