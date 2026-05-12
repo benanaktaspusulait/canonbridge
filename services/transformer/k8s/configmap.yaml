@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: transformer-config
+  namespace: canonbridge
+  labels:
+    app: transformer
+data:
+  # HTTP Server
+  PORT: "8080"
+  LOG_LEVEL: "info"
+  
+  # CORS (comma-separated origins, empty = allow all)
+  CORS_ORIGINS: ""
+  
+  # Kafka
+  KAFKA_ENABLED: "true"
+  KAFKA_BROKERS: "kafka-service.canonbridge.svc.cluster.local:9092"
+  KAFKA_GROUP_ID: "canonbridge-transformer"
+  KAFKA_FALLBACK_DLQ_TOPIC: "canonbridge.dlq"
+  KAFKA_CONNECT_RETRIES: "10"
+  KAFKA_CONNECT_RETRY_DELAY_MS: "3000"
+  
+  # Kafka SSL/SASL (set to "true" for production)
+  KAFKA_SSL_ENABLED: "false"
+  # KAFKA_SASL_MECHANISM: "scram-sha-512"
+  
+  # Mappings
+  MAPPINGS_ROOT: "/mappings"

@@ -28,6 +28,19 @@ export type TransformResult =
       durationMs: number;
     };
 
+/**
+ * Optional metadata for envelope resolution.
+ * Used when partnerId/eventType are not in the envelope root.
+ */
+export interface EnvelopeContext {
+  /** Kafka topic name (for topic-based resolution) */
+  topic?: string;
+  /** Kafka partition (for logging) */
+  partition?: number;
+  /** Kafka offset (for logging) */
+  offset?: string;
+}
+
 type Compiled = {
   validateInput: ValidateFunction;
   validateOutput: ValidateFunction;
@@ -55,6 +68,46 @@ export class TransformEngine {
   /** Invalidate all compiled entries. */
   evictAll(): void {
     this.cache.clear();
+  }
+
+  /**
+   * Parse partnerId and eventType from Kafka topic name.
+   * Expected format: tenant-{id}.raw.{partnerId}.{eventType}
+   * Example: tenant-001.raw.acme-marketplace.order-created
+   * Returns: { partnerId: 'acme-marketplace', eventType: 'order-created' }
+   */
+  private parseTopicName(topic: string): { partnerId: string; eventType: string } | undefined {
+    const parts = topic.split('.');
+    if (parts.length < 4) return undefined;
+    // Skip tenant prefix and 'raw' segment
+    const partnerId = parts[2];
+    const eventType = parts.slice(3).join('.'); // Support multi-segment event types
+    if (!partnerId || !eventType) return undefined;
+    return { partnerId, eventType };
+  }
+
+  /**
+   * Resolve partnerId and eventType from envelope or context.
+   * Strategy 1: Check envelope root for partnerId/eventType fields
+   * Strategy 2: Parse from topic name if provided in context
+   */
+  private resolvePartnerKeys(
+    envelope: Record<string, unknown>,
+    context?: EnvelopeContext,
+  ): { partnerId: string; eventType: string } | undefined {
+    // Strategy 1: Root-level fields (backward compatible)
+    const partnerId = envelope.partnerId;
+    const eventType = envelope.eventType;
+    if (typeof partnerId === 'string' && typeof eventType === 'string') {
+      return { partnerId, eventType };
+    }
+
+    // Strategy 2: Topic-based resolution
+    if (context?.topic) {
+      return this.parseTopicName(context.topic);
+    }
+
+    return undefined;
   }
 
   private async compile(key: string, config: PartnerMappingConfig): Promise<Compiled> {
@@ -86,7 +139,7 @@ export class TransformEngine {
     return compiled;
   }
 
-  async transformEnvelope(raw: unknown): Promise<TransformResult> {
+  async transformEnvelope(raw: unknown, topicHint?: string): Promise<TransformResult> {
     const start = Date.now();
     const elapsed = () => Date.now() - start;
 
@@ -94,10 +147,30 @@ export class TransformEngine {
       return { ok: false, stage: 'resolve', message: 'Body must be a JSON object', durationMs: elapsed() };
     }
     const envelope = raw as Record<string, unknown>;
-    const partnerId = envelope.partnerId;
-    const eventType = envelope.eventType;
+    
+    // G-10: Try envelope first, then fall back to topic-based resolution
+    let partnerId = envelope.partnerId;
+    let eventType = envelope.eventType;
+    
     if (typeof partnerId !== 'string' || typeof eventType !== 'string') {
-      return { ok: false, stage: 'resolve', message: 'partnerId and eventType must be strings', durationMs: elapsed() };
+      // Try to extract from topic name if provided
+      if (topicHint) {
+        const extracted = this.extractFromTopic(topicHint);
+        if (extracted) {
+          partnerId = extracted.partnerId;
+          eventType = extracted.eventType;
+        }
+      }
+      
+      // If still not resolved, return error
+      if (typeof partnerId !== 'string' || typeof eventType !== 'string') {
+        return { 
+          ok: false, 
+          stage: 'resolve', 
+          message: 'partnerId and eventType must be strings in envelope or resolvable from topic', 
+          durationMs: elapsed() 
+        };
+      }
     }
 
     const config = this.registry.resolve(partnerId, eventType);

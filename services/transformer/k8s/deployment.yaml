@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transformer
+  namespace: canonbridge
+  labels:
+    app: transformer
+    version: v1
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: transformer
+  template:
+    metadata:
+      labels:
+        app: transformer
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      # Anti-affinity to spread pods across nodes
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - transformer
+                topologyKey: kubernetes.io/hostname
+      
+      containers:
+        - name: transformer
+          image: canonbridge/transformer:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          
+          envFrom:
+            - configMapRef:
+                name: transformer-config
+          
+          env:
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: transformer-secret
+                  key: API_KEY
+                  optional: true
+            - name: KAFKA_SASL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: transformer-secret
+                  key: KAFKA_SASL_USERNAME
+                  optional: true
+            - name: KAFKA_SASL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: transformer-secret
+                  key: KAFKA_SASL_PASSWORD
+                  optional: true
+          
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          
+          volumeMounts:
+            - name: mappings
+              mountPath: /mappings
+              readOnly: true
+      
+      volumes:
+        - name: mappings
+          configMap:
+            name: mappings-config
+            optional: true
+      
+      # Graceful shutdown
+      terminationGracePeriodSeconds: 60

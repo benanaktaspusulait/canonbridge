@@ -1,9 +1,9 @@
 # Infrastructure Assets
 
 **Status**: Prepared for future use  
-**Last Updated**: May 10, 2026
+**Last Updated**: May 12, 2026
 
-> ⚠️ **Note**: These files are prepared infrastructure assets for future implementation phases. They are not currently active or deployed.
+> ⚠️ **Note**: These files are prepared infrastructure assets for future implementation phases. Some services (like transformer) have their own k8s manifests in their service directories.
 
 ---
 
@@ -23,6 +23,9 @@ Kubernetes manifests for production deployment:
 - Deployments and StatefulSets
 - ConfigMaps and Secrets
 - Ingress and networking
+
+**Note**: Individual services may have their own k8s manifests:
+- `services/transformer/k8s/` - Transformer service manifests (production-ready)
 
 ### `/scripts`
 Utility scripts for:
