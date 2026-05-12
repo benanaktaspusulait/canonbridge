@@ -51,6 +51,30 @@ This service is fully reactive using:
 - `GET /api/mapping-versions/active/{partnerId}/{eventType}` - Get active version
 - `POST /api/mapping-versions/{id}/deprecate` - Deprecate version
 
+### Schemas
+- `GET /api/schemas` - List all schemas
+- `GET /api/schemas/type/{schemaType}` - List by schema type
+- `GET /api/schemas/subject/{subject}` - List versions by subject
+- `GET /api/schemas/subject/{subject}/latest` - Get latest active schema
+- `GET /api/schemas/{id}` - Get schema by ID
+- `POST /api/schemas` - Create schema
+- `PUT /api/schemas/{id}` - Update schema
+- `DELETE /api/schemas/{id}` - Delete schema
+
+### External Systems
+- `GET /api/external-systems` - List all external system connections
+- `GET /api/external-systems/draft/{draftId}` - List connections by mapping draft
+- `GET /api/external-systems/{connectionId}` - Get connection by ID
+- `POST /api/external-systems` - Create connection
+- `PUT /api/external-systems/{connectionId}` - Update connection
+- `DELETE /api/external-systems/{connectionId}` - Delete connection
+
+### Credentials
+- `GET /api/credentials` - List credential metadata
+- `GET /api/credentials/{credentialId}` - Get credential metadata by ID
+- `POST /api/credentials` - Create credential with write-only secret
+- `POST /api/credentials/{credentialId}/disable` - Disable credential
+
 ### Health & Observability
 - `GET /health/live` - Liveness probe
 - `GET /health/ready` - Readiness probe
@@ -64,6 +88,7 @@ Required environment variables:
 
 ```bash
 DB_URL=postgresql://localhost:5432/canonbridge
+JDBC_DB_URL=jdbc:postgresql://localhost:5432/canonbridge
 DB_USERNAME=postgres
 DB_PASSWORD=postgres
 CANONBRIDGE_API_KEYS=replace-with-a-strong-api-key
@@ -93,6 +118,7 @@ java -jar target/quarkus-app/quarkus-run.jar
 docker build -t mapping-studio-api .
 docker run -p 8080:8080 \
   -e DB_URL=postgresql://host.docker.internal:5432/canonbridge \
+  -e JDBC_DB_URL=jdbc:postgresql://host.docker.internal:5432/canonbridge \
   -e DB_USERNAME=postgres \
   -e DB_PASSWORD=postgres \
   -e CANONBRIDGE_API_KEYS=replace-with-a-strong-api-key \

@@ -3,12 +3,13 @@ import { RouterOutlet } from '@angular/router';
 import { MessageModule } from 'primeng/message';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { TopbarComponent } from './topbar/topbar.component';
+import { SkipLinksComponent } from './skip-links/skip-links.component';
 import { I18nService } from '../core/i18n/i18n.service';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, TopbarComponent, MessageModule],
+  imports: [RouterOutlet, SidebarComponent, TopbarComponent, SkipLinksComponent, MessageModule],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss'
 })

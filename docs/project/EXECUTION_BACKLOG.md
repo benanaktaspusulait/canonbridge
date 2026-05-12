@@ -16,9 +16,10 @@ This file is the single source for: upcoming work, done criteria, and related do
   **Done when**: protected endpoints require JWT or API key auth, auth failures return consistent errors, and at least one automated test covers unauthorized access.  
   **Completed**: 2026-05-12 - `/api/*` now requires `X-API-Key` or `Authorization: Bearer <key>`; health/metrics/OpenAPI routes remain public.
 
-- [ ] **CB-P0-002 - Add API CRUD endpoints and database persistence**  
+- [x] **CB-P0-002 - Add API CRUD endpoints and database persistence**  
   **Repo**: `services/mapping-studio-api`  
-  **Done when**: mappings, partners, schemas, and external system connections can be created, listed, updated, and deleted against PostgreSQL-backed storage.
+  **Done when**: mappings, partners, schemas, and external system connections can be created, listed, updated, and deleted against PostgreSQL-backed storage.  
+  **Completed**: 2026-05-12 - partner/mapping CRUD existed; added schema and external-system CRUD, fixed Flyway migration ordering, and verified Quarkus package build.
 
 - [ ] **CB-P0-003 - Add outbound HTTP client and credential store service**  
   **Repo**: `services/mapping-studio-api`, `services/outbound-call-manager`, `services/credential-store` if split later  

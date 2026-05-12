@@ -1,3 +1,4 @@
+<app-skip-links />
 <div class="layout-wrapper" [class.layout-sidebar-collapsed]="sidebarCollapsed()">
   <app-sidebar [collapsed]="sidebarCollapsed()" />
   <div class="layout-main">
@@ -6,8 +7,10 @@
       severity="warn"
       [text]="demoBannerText()"
       [closable]="false"
-      styleClass="layout-demo-alert" />
-    <main class="layout-content">
+      styleClass="layout-demo-alert"
+      role="alert"
+      aria-live="polite" />
+    <main id="main-content" class="layout-content" role="main" tabindex="-1">
       <router-outlet />
     </main>
   </div>

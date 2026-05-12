@@ -1,5 +1,5 @@
-import { Component, Input } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Component, Input, inject } from '@angular/core';
+import { Router, RouterModule } from '@angular/router';
 import { TooltipModule } from 'primeng/tooltip';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 
@@ -44,6 +44,8 @@ const SECONDARY_NAV: NavEntry[] = [
   styleUrl: './sidebar.component.scss'
 })
 export class SidebarComponent {
+  private readonly router = inject(Router);
+  
   @Input() collapsed = false;
 
   readonly navGroups: NavGroup[] = [
@@ -57,4 +59,8 @@ export class SidebarComponent {
     }
   ];
   readonly iconNavItems: NavEntry[] = [...PRIMARY_NAV, ...SECONDARY_NAV];
+  
+  isActive(route: string): boolean {
+    return this.router.url === route;
+  }
 }

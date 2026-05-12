@@ -1,8 +1,8 @@
-<aside class="layout-sidebar" [class.layout-sidebar-collapsed]="collapsed">
+<aside class="layout-sidebar" [class.layout-sidebar-collapsed]="collapsed" role="complementary" aria-label="Sidebar navigation">
   <div class="layout-sidebar-frame">
     <div class="layout-sidebar-header">
-      <a class="layout-sidebar-brand" routerLink="/studio" aria-label="CanonBridge Mapping Studio">
-        <span class="layout-sidebar-logo">
+      <a class="layout-sidebar-brand" routerLink="/studio" aria-label="CanonBridge Mapping Studio - Go to home">
+        <span class="layout-sidebar-logo" aria-hidden="true">
           <i class="pi pi-sitemap" aria-hidden="true"></i>
         </span>
         @if (!collapsed) {
@@ -15,27 +15,30 @@
     </div>
 
     @if (!collapsed) {
-      <nav class="layout-sidebar-nav" aria-label="Primary navigation">
+      <nav id="primary-navigation" class="layout-sidebar-nav" role="navigation" aria-label="Primary navigation">
         @for (group of navGroups; track group.labelKey) {
-          <section class="layout-nav-section">
+          <section class="layout-nav-section" role="group" [attr.aria-label]="group.labelKey | i18n">
             <div class="layout-nav-section-title">
               <i class="pi pi-chevron-down" aria-hidden="true"></i>
               <span>{{ group.labelKey | i18n }}</span>
             </div>
 
-            <div class="layout-nav-list">
+            <div class="layout-nav-list" role="list">
               @for (item of group.items; track item.route) {
                 <a
                   class="layout-nav-item"
+                  role="listitem"
                   [routerLink]="item.route"
                   routerLinkActive="layout-nav-item--active"
-                  [routerLinkActiveOptions]="{ exact: true }">
-                  <span class="layout-nav-item__icon">
+                  [routerLinkActiveOptions]="{ exact: true }"
+                  [attr.aria-label]="item.labelKey | i18n"
+                  [attr.aria-current]="isActive(item.route) ? 'page' : null">
+                  <span class="layout-nav-item__icon" aria-hidden="true">
                     <i [class]="item.icon" aria-hidden="true"></i>
                   </span>
                   <span class="layout-nav-item__label">{{ item.labelKey | i18n }}</span>
                   @if (item.badge) {
-                    <span class="layout-nav-item__badge">{{ item.badge }}</span>
+                    <span class="layout-nav-item__badge" [attr.aria-label]="item.badge + ' notifications'">{{ item.badge }}</span>
                   }
                 </a>
               }
@@ -44,7 +47,7 @@
         }
       </nav>
 
-      <div class="layout-sidebar-footer">
+      <div class="layout-sidebar-footer" role="contentinfo">
         <span class="layout-sidebar-status-dot" aria-hidden="true"></span>
         <span class="layout-sidebar-footer-copy">
           <strong>{{ 'topbar.demo' | i18n }}</strong>
@@ -52,7 +55,7 @@
         </span>
       </div>
     } @else {
-      <nav class="layout-sidebar-rail" aria-label="Primary navigation">
+      <nav id="primary-navigation" class="layout-sidebar-rail" role="navigation" aria-label="Primary navigation">
         @for (item of iconNavItems; track item.route) {
           <a
             class="layout-rail-item"
@@ -60,10 +63,12 @@
             routerLinkActive="layout-rail-item--active"
             [routerLinkActiveOptions]="{ exact: true }"
             [pTooltip]="item.labelKey | i18n"
-            tooltipPosition="right">
+            tooltipPosition="right"
+            [attr.aria-label]="item.labelKey | i18n"
+            [attr.aria-current]="isActive(item.route) ? 'page' : null">
             <i [class]="item.icon" aria-hidden="true"></i>
             @if (item.badge) {
-              <span class="layout-rail-item__badge">{{ item.badge }}</span>
+              <span class="layout-rail-item__badge" [attr.aria-label]="item.badge + ' notifications'">{{ item.badge }}</span>
             }
           </a>
         }
