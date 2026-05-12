@@ -28,16 +28,18 @@ public class AuthResource {
         return authService.login(request.getEmail(), request.getPassword())
             .map(authResponse -> Response.ok(authResponse).build())
             .onFailure(AuthService.AuthException.class)
-            .recoverWithItem(error -> 
-                Response.status(Response.Status.UNAUTHORIZED)
+            .recoverWithItem(error -> {
+                error.printStackTrace(); // Log the error
+                return Response.status(Response.Status.UNAUTHORIZED)
                     .entity(new ErrorResponse(error.getMessage()))
-                    .build()
-            )
-            .onFailure().recoverWithItem(error ->
-                Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(new ErrorResponse("Authentication failed"))
-                    .build()
-            );
+                    .build();
+            })
+            .onFailure().recoverWithItem(error -> {
+                error.printStackTrace(); // Log the error
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(new ErrorResponse("Authentication failed: " + error.getMessage()))
+                    .build();
+            });
     }
 
     @GET

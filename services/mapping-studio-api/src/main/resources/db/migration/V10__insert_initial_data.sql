@@ -12,18 +12,18 @@ VALUES
 ON CONFLICT (tenant_id, external_id) DO NOTHING;
 
 -- Insert demo schemas for canonical events
-INSERT INTO schemas (id, tenant_id, schema_type, schema_name, schema_version, schema_definition, description, status, created_by, updated_by, created_at, updated_at)
+INSERT INTO schemas (id, tenant_id, schema_type, name, subject, version, schema_json, description, status, created_by, updated_by, created_at, updated_at)
 VALUES
-    (gen_random_uuid(), 'tenant-acme', 'CANONICAL', 'OrderCreated', 'v1', 
-     '{"$schema":"http://json-schema.org/draft-07/schema#","type":"object","required":["orderId","customerName","totalAmount","status"],"properties":{"orderId":{"type":"string"},"customerName":{"type":"string"},"customerEmail":{"type":"string","format":"email"},"status":{"type":"string","enum":["PENDING","ACTIVE","CANCELLED"]},"totalAmount":{"type":"number","minimum":0},"currency":{"type":"string","default":"USD"},"items":{"type":"array","items":{"type":"object","required":["productId","quantity","unitPrice"],"properties":{"productId":{"type":"string"},"productName":{"type":"string"},"quantity":{"type":"integer","minimum":1},"unitPrice":{"type":"number","minimum":0}}}}}}',
+    (gen_random_uuid(), 'tenant-acme', 'CANONICAL', 'OrderCreated', 'canonical.OrderCreated', 1, 
+     '{"$schema":"http://json-schema.org/draft-07/schema#","type":"object","required":["orderId","customerName","totalAmount","status"],"properties":{"orderId":{"type":"string"},"customerName":{"type":"string"},"customerEmail":{"type":"string","format":"email"},"status":{"type":"string","enum":["PENDING","ACTIVE","CANCELLED"]},"totalAmount":{"type":"number","minimum":0},"currency":{"type":"string","default":"USD"},"items":{"type":"array","items":{"type":"object","required":["productId","quantity","unitPrice"],"properties":{"productId":{"type":"string"},"productName":{"type":"string"},"quantity":{"type":"integer","minimum":1},"unitPrice":{"type":"number","minimum":0}}}}}}'::jsonb,
      'Canonical schema for order created events', 'ACTIVE', 'system', 'system', NOW(), NOW()),
-    (gen_random_uuid(), 'tenant-acme', 'CANONICAL', 'ShipmentCreated', 'v1',
-     '{"$schema":"http://json-schema.org/draft-07/schema#","type":"object","required":["shipmentId","orderId","carrier","trackingNumber"],"properties":{"shipmentId":{"type":"string"},"orderId":{"type":"string"},"carrier":{"type":"string"},"trackingNumber":{"type":"string"},"estimatedDelivery":{"type":"string","format":"date-time"},"status":{"type":"string","enum":["PENDING","IN_TRANSIT","DELIVERED","FAILED"]}}}',
+    (gen_random_uuid(), 'tenant-acme', 'CANONICAL', 'ShipmentCreated', 'canonical.ShipmentCreated', 1,
+     '{"$schema":"http://json-schema.org/draft-07/schema#","type":"object","required":["shipmentId","orderId","carrier","trackingNumber"],"properties":{"shipmentId":{"type":"string"},"orderId":{"type":"string"},"carrier":{"type":"string"},"trackingNumber":{"type":"string"},"estimatedDelivery":{"type":"string","format":"date-time"},"status":{"type":"string","enum":["PENDING","IN_TRANSIT","DELIVERED","FAILED"]}}}'::jsonb,
      'Canonical schema for shipment created events', 'ACTIVE', 'system', 'system', NOW(), NOW()),
-    (gen_random_uuid(), 'tenant-acme', 'CANONICAL', 'PaymentProcessed', 'v1',
-     '{"$schema":"http://json-schema.org/draft-07/schema#","type":"object","required":["paymentId","orderId","amount","status"],"properties":{"paymentId":{"type":"string"},"orderId":{"type":"string"},"amount":{"type":"number","minimum":0},"currency":{"type":"string","default":"USD"},"status":{"type":"string","enum":["PENDING","AUTHORIZED","CAPTURED","FAILED","REFUNDED"]},"paymentMethod":{"type":"string"},"transactionId":{"type":"string"}}}',
+    (gen_random_uuid(), 'tenant-acme', 'CANONICAL', 'PaymentProcessed', 'canonical.PaymentProcessed', 1,
+     '{"$schema":"http://json-schema.org/draft-07/schema#","type":"object","required":["paymentId","orderId","amount","status"],"properties":{"paymentId":{"type":"string"},"orderId":{"type":"string"},"amount":{"type":"number","minimum":0},"currency":{"type":"string","default":"USD"},"status":{"type":"string","enum":["PENDING","AUTHORIZED","CAPTURED","FAILED","REFUNDED"]},"paymentMethod":{"type":"string"},"transactionId":{"type":"string"}}}'::jsonb,
      'Canonical schema for payment processed events', 'ACTIVE', 'system', 'system', NOW(), NOW())
-ON CONFLICT (tenant_id, schema_type, schema_name, schema_version) DO NOTHING;
+ON CONFLICT (tenant_id, subject, version) DO NOTHING;
 
 -- Insert demo mapping drafts
 DO $$
@@ -41,9 +41,9 @@ BEGIN
     SELECT id INTO partner_payment_id FROM partners WHERE tenant_id = 'tenant-acme' AND external_id = 'payment-gateway' LIMIT 1;
     
     -- Get schema IDs
-    SELECT id INTO schema_order_id FROM schemas WHERE tenant_id = 'tenant-acme' AND schema_name = 'OrderCreated' AND schema_version = 'v1' LIMIT 1;
-    SELECT id INTO schema_shipment_id FROM schemas WHERE tenant_id = 'tenant-acme' AND schema_name = 'ShipmentCreated' AND schema_version = 'v1' LIMIT 1;
-    SELECT id INTO schema_payment_id FROM schemas WHERE tenant_id = 'tenant-acme' AND schema_name = 'PaymentProcessed' AND schema_version = 'v1' LIMIT 1;
+    SELECT id INTO schema_order_id FROM schemas WHERE tenant_id = 'tenant-acme' AND name = 'OrderCreated' AND version = 1 LIMIT 1;
+    SELECT id INTO schema_shipment_id FROM schemas WHERE tenant_id = 'tenant-acme' AND name = 'ShipmentCreated' AND version = 1 LIMIT 1;
+    SELECT id INTO schema_payment_id FROM schemas WHERE tenant_id = 'tenant-acme' AND name = 'PaymentProcessed' AND version = 1 LIMIT 1;
     
     -- Insert mapping drafts if partners and schemas exist
     IF partner_acme_id IS NOT NULL AND schema_order_id IS NOT NULL THEN
@@ -67,14 +67,6 @@ BEGIN
         ON CONFLICT DO NOTHING;
     END IF;
 END $$;
-
--- Insert demo external systems (for outbound connections)
-INSERT INTO external_systems (id, tenant_id, name, description, protocol, base_url, status, created_by, updated_by, created_at, updated_at)
-VALUES
-    (gen_random_uuid(), 'tenant-acme', 'ERP System', 'Internal ERP for order processing', 'REST', 'https://erp.acme.internal/api', 'ACTIVE', 'system', 'system', NOW(), NOW()),
-    (gen_random_uuid(), 'tenant-acme', 'Warehouse Management', 'WMS for inventory updates', 'REST', 'https://wms.acme.internal/api', 'ACTIVE', 'system', 'system', NOW(), NOW()),
-    (gen_random_uuid(), 'tenant-acme', 'Customer Portal', 'Customer-facing portal API', 'REST', 'https://portal.acme.com/api', 'ACTIVE', 'system', 'system', NOW(), NOW())
-ON CONFLICT (tenant_id, name) DO NOTHING;
 
 -- Log completion
 DO $$
