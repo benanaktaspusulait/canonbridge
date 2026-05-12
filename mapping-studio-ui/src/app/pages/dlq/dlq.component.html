@@ -26,14 +26,44 @@
       icon="pi pi-refresh"
       severity="danger"
       variant="outlined"
-      [disabled]="messages().length === 0"
+      [disabled]="filteredMessages().length === 0"
       (onClick)="redriveAll()" />
   </div>
 </div>
 
 <p-card>
+  <div class="dlq-filter-bar">
+    <span class="p-input-icon-left dlq-search">
+      <i class="pi pi-search"></i>
+      <input
+        pInputText
+        [ngModel]="searchText()"
+        (ngModelChange)="searchText.set($event)"
+        [placeholder]="'dlq.searchPlaceholder' | i18n" />
+    </span>
+    <p-select
+      [options]="partnerOptions()"
+      [ngModel]="partnerFilter()"
+      (ngModelChange)="partnerFilter.set($event)"
+      appendTo="body"
+      [placeholder]="'dlq.filterPartner' | i18n" />
+    <p-select
+      [options]="errorOptions()"
+      [ngModel]="errorFilter()"
+      (ngModelChange)="errorFilter.set($event)"
+      appendTo="body"
+      [placeholder]="'dlq.filterError' | i18n" />
+    <p-select
+      [options]="dateOptions()"
+      [ngModel]="dateFilter()"
+      (ngModelChange)="dateFilter.set($event)"
+      appendTo="body"
+      [placeholder]="'dlq.filterDate' | i18n" />
+    <span class="filter-count">{{ filteredMessages().length }} {{ 'dlq.results' | i18n }}</span>
+  </div>
+
   <p-table
-    [value]="messages()"
+    [value]="filteredMessages()"
     [(selection)]="selected"
     dataKey="id"
     styleClass="p-datatable-sm"
@@ -133,6 +163,10 @@
         <span>{{ 'dlq.colLastFailed' | i18n }}</span>
         <strong>{{ msg.lastFailed }}</strong>
       </article>
+      <article>
+        <span>{{ 'dlq.traceId' | i18n }}</span>
+        <strong>{{ msg.traceId }}</strong>
+      </article>
     </div>
 
     <section class="inspector-section">
@@ -143,6 +177,11 @@
     <section class="inspector-section">
       <h3>{{ 'dlq.payload' | i18n }}</h3>
       <pre>{{ prettyPayload(msg.payload) }}</pre>
+    </section>
+
+    <section class="inspector-section">
+      <h3>{{ 'dlq.stackTrace' | i18n }}</h3>
+      <pre>{{ msg.stackTrace }}</pre>
     </section>
 
     <div class="drawer-actions">

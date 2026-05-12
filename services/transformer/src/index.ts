@@ -14,7 +14,27 @@ async function main(): Promise<void> {
   
   // G-09: Create cache (Redis or in-memory based on REDIS_URL)
   const cache = createCache(env.redisUrl, env.redisCacheTtlSeconds);
-  const engine = new TransformEngine(env.mappingsRoot, registry, cache);
+  
+  // G-16: Create worker pool for CPU-intensive JSONata evaluations
+  let workerPool: WorkerPool | undefined;
+  if (env.workerPoolEnabled) {
+    workerPool = new WorkerPool(env.workerPoolSize || undefined);
+    await workerPool.start();
+  }
+  
+  const engine = new TransformEngine(env.mappingsRoot, registry, cache, workerPool);
+  
+  // G-18: Initialize outbox pattern if enabled
+  let outboxRepo: OutboxRepository | undefined;
+  let outboxRelay: OutboxRelay | undefined;
+  if (env.outboxEnabled && !env.outboxDatabaseUrl) {
+    throw new Error('OUTBOX_DATABASE_URL is required when OUTBOX_ENABLED=true');
+  }
+  if (env.outboxEnabled && env.outboxDatabaseUrl) {
+    outboxRepo = new OutboxRepository(env.outboxDatabaseUrl);
+    await outboxRepo.initialize();
+    // Outbox relay will be started after Kafka producer is available
+  }
   
   const app = await buildServer(env, registry, engine);
 
@@ -22,8 +42,20 @@ async function main(): Promise<void> {
   if (env.kafkaEnabled) {
     // G-03: startKafkaConsumer now retries internally — if it throws, we let it bubble
     // so the process exits and the orchestrator (k8s/compose) restarts it.
-    const kafka = await startKafkaConsumer(env, registry, engine, app.log);
+    const kafka = await startKafkaConsumer(env, registry, engine, app.log, outboxRepo);
     kafkaShutdown = kafka.shutdown;
+    
+    // G-18: Start outbox relay if enabled
+    if (outboxRepo && kafka.producer) {
+      outboxRelay = new OutboxRelay(
+        outboxRepo,
+        kafka.producer,
+        env.outboxPollIntervalMs,
+        env.outboxBatchSize,
+      );
+      await outboxRelay.start();
+    }
+    
     app.log.info({ topics: registry.allRawTopics() }, 'kafka consumer started');
   }
 
@@ -36,6 +68,9 @@ async function main(): Promise<void> {
       authEnabled: env.apiKey !== undefined,
       kafkaEnabled: env.kafkaEnabled,
       cacheType: env.redisUrl ? 'redis' : 'in-memory',
+      workerPoolEnabled: env.workerPoolEnabled,
+      workerPoolSize: workerPool?.size,
+      outboxEnabled: env.outboxEnabled,
     },
     'server listening',
   );
@@ -43,8 +78,11 @@ async function main(): Promise<void> {
   const stop = async () => {
     app.log.info('shutdown signal received');
     await app.close();
+    if (outboxRelay) await outboxRelay.stop();
     if (kafkaShutdown) await kafkaShutdown();
+    if (workerPool) await workerPool.shutdown();
     await cache.close(); // G-09: Close Redis connection
+    if (outboxRepo) await outboxRepo.close();
     app.log.info('shutdown complete');
   };
 

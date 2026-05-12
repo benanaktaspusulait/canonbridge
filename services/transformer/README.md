@@ -2,7 +2,7 @@
 
 Node.js service: **Ajv** input/output validation + **JSONata** mapping, same rules as `mappings/scripts/validate-mapping-fixtures.mjs`.
 
-- **HTTP**: `GET /health`, `POST /v1/transform` (body = raw envelope JSON), `GET /metrics` (Prometheus), `POST /v1/admin/reload`, `POST /v1/jsonata/check-batch`
+- **HTTP**: `GET /health`, `POST /v1/transform` (body = raw envelope JSON), `GET /metrics` (Prometheus), `POST /v1/admin/reload`, `POST /v1/jsonata/check-batch`, `GET /docs` (Swagger UI)
 - **Kafka** (optional): set `KAFKA_ENABLED=true` — consumes all `topics.raw` from loaded configs, produces canonical or DLQ payloads
 - **Tests**: `npm test` — 40 unit + integration tests with Vitest
 
@@ -61,6 +61,14 @@ Expect `200` and a JSON body `{ "canonical": { ... } }`.
 | **Cache** | | |
 | `REDIS_URL` | (unset) | Redis connection URL (e.g., `redis://localhost:6379`). If unset, uses in-memory cache |
 | `REDIS_CACHE_TTL_SECONDS` | `3600` | TTL for cached compiled mappings in Redis |
+| **Worker Pool** | | |
+| `WORKER_POOL_ENABLED` | `false` | Enable worker thread pool for CPU-intensive JSONata evaluations |
+| `WORKER_POOL_SIZE` | `0` | Worker pool size (0 = auto: CPU count - 1) |
+| **Outbox Pattern** | | |
+| `OUTBOX_ENABLED` | `false` | Enable outbox pattern for exactly-once delivery |
+| `OUTBOX_DATABASE_URL` | (unset) | PostgreSQL connection string |
+| `OUTBOX_POLL_INTERVAL_MS` | `1000` | Outbox relay poll interval |
+| `OUTBOX_BATCH_SIZE` | `100` | Messages per batch in outbox relay |
 
 ## Production Features
 

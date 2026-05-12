@@ -136,6 +136,7 @@ export class TransformEngine {
       validateInput,
       validateOutput,
       evaluate: (input: unknown) => expression.evaluate(input) as Promise<unknown>,
+      mappingText, // G-16: Store for worker pool evaluation
     };
     
     const entry: CacheEntry = {
@@ -211,10 +212,10 @@ export class TransformEngine {
     let transformed: unknown;
     try {
       // G-16: Use worker pool for CPU-intensive JSONata evaluation if available
-      if (this.workerPool) {
-        const mappingPath = path.join(this.mappingsRoot, config.mapping);
-        const mappingText = await readFile(mappingPath, 'utf8');
-        const result = await this.workerPool.evaluate(mappingText, envelope);
+      // Note: Worker pool is disabled by default (WORKER_POOL_ENABLED=false)
+      // For most workloads, main thread evaluation is sufficient
+      if (this.workerPool && compiled.mappingText) {
+        const result = await this.workerPool.evaluate(compiled.mappingText, envelope);
         if (!result.ok) {
           return {
             ok: false,
@@ -225,7 +226,7 @@ export class TransformEngine {
         }
         transformed = result.result;
       } else {
-        // Fallback to main thread evaluation
+        // Fallback to main thread evaluation (default)
         transformed = await compiled.evaluate(envelope);
       }
     } catch (err) {

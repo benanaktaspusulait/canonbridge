@@ -1,3 +1,31 @@
+.dlq-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.dlq-search {
+  flex: 1 1 18rem;
+  min-width: 14rem;
+}
+
+.dlq-search input {
+  width: 100%;
+}
+
+:host ::ng-deep .dlq-filter-bar .p-select {
+  min-width: 11rem;
+}
+
+.filter-count {
+  margin-left: auto;
+  color: var(--text-color-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .error-msg {
   max-width: 280px;
   overflow: hidden;
@@ -106,6 +134,7 @@
   color: var(--text-color);
   padding: 1rem;
   font-size: 0.82rem;
+  white-space: pre-wrap;
 }
 
 .drawer-actions {

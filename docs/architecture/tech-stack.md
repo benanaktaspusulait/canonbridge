@@ -2,83 +2,44 @@
 
 ## 🎯 Confirmed Technology Stack
 
-### **Frontend Layer**
-```
-┌─────────────────────────────────────────┐
-│         Frontend (Node.js + React)      │
-├─────────────────────────────────────────┤
-│                                         │
-│  ┌──────────────┐  ┌──────────────┐   │
-│  │   React 18   │  │   Vite 4     │   │
-│  │   TypeScript │  │   Build Tool │   │
-│  └──────────────┘  └──────────────┘   │
-│                                         │
-│  ┌──────────────┐  ┌──────────────┐   │
-│  │   Redux      │  │   Material   │   │
-│  │   Toolkit    │  │   UI         │   │
-│  └──────────────┘  └──────────────┘   │
-│                                         │
-└─────────────────────────────────────────┘
-```
-
-**Stack:**
-- Language: TypeScript 5.x
-- Framework: React 18.x
-- Build: Vite 4.x
-- State: Redux Toolkit 1.x
-- UI: Material-UI 5.x
-- HTTP: Axios 1.x
-- Testing: Vitest + Cypress
-
-**Purpose:**
-- Dashboard and monitoring
-- Partner management
-- Mapping visualization
-- Configuration UI
-- Real-time metrics
-
----
-
-### **Mapping Studio UI (Angular)**
+### **Client Layer**
 ```
 ┌─────────────────────────────────────────┐
 │    Mapping Studio UI (Angular)          │
 ├─────────────────────────────────────────┤
 │                                         │
 │  ┌──────────────┐  ┌──────────────┐   │
-│  │  Angular 17  │  │  TypeScript  │   │
-│  │  Framework   │  │  5.x         │   │
+│  │ Angular 21   │  │ TypeScript   │   │
+│  │ Framework    │  │ 5.9          │   │
 │  └──────────────┘  └──────────────┘   │
 │                                         │
 │  ┌──────────────┐  ┌──────────────┐   │
-│  │  Reactive    │  │  Angular     │   │
-│  │  Forms       │  │  Material    │   │
-│  └──────────────┘  └──────────────┘   │
-│                                         │
-│  ┌──────────────┐  ┌──────────────┐   │
-│  │  RxJS        │  │  Validators  │   │
-│  │  Observables │  │  & Guards    │   │
+│  │ PrimeNG 21   │  │ Angular CDK  │   │
+│  │ Components   │  │ Drag/Drop    │   │
 │  └──────────────┘  └──────────────┘   │
 │                                         │
 └─────────────────────────────────────────┘
 ```
 
 **Stack:**
-- Framework: Angular 17.x
-- Language: TypeScript 5.x
-- Forms: Reactive Forms
-- UI: Angular Material
-- State: NgRx (optional)
-- HTTP: HttpClient
-- Testing: Jasmine + Karma
+- Framework: Angular 21.x
+- Language: TypeScript 5.9.x
+- UI: PrimeNG 21.x + PrimeFlex + PrimeIcons
+- Interaction: Angular CDK drag-and-drop
+- Forms: Angular Reactive Forms
+- Client validation: Ajv + ajv-formats
+- Expression preview: JSONata 2.x and highlight.js
+- Testing: Vitest
 
 **Purpose:**
+- Single production UI direction for Mapping Studio and admin/demo screens
 - **No-code visual mapping** - Users don't need to know JSONata
 - Sample JSON upload and structure exploration
 - Visual field mapping with drag-and-drop
 - Automatic JSONata generation from visual mappings
 - Live transformation preview
 - Partner onboarding forms
+- External Systems, DLQ, Monitoring, and Settings screens
 - Schema management
 - Fixture creation and validation testing
 - Mapping version publish workflow
@@ -93,7 +54,7 @@
 │                                         │
 │  ┌──────────────┐  ┌──────────────┐   │
 │  │   Node.js    │  │   Fastify    │   │
-│  │   18+        │  │   4.x        │   │
+│  │   20+        │  │   5.x        │   │
 │  └──────────────┘  └──────────────┘   │
 │                                         │
 │  ┌──────────────┐  ┌──────────────┐   │
@@ -111,13 +72,14 @@
 
 **Stack:**
 - Language: TypeScript 5.x
-- Runtime: Node.js 18+
-- Framework: Fastify 4.x
+- Runtime: Node.js 20+
+- Framework: Fastify 5.x
 - Transformation: JSONata 2.x
 - Validation: Ajv 8.x
 - Messaging: KafkaJS 2.x
-- Logging: Pino 8.x
-- Testing: Jest 29.x
+- Cache/DB clients: ioredis, pg
+- Logging: Pino 9.x
+- Testing: Vitest
 
 **Purpose:**
 - Partner event consumption
@@ -125,13 +87,14 @@
 - Schema validation
 - Kafka producer/consumer
 - Error handling & DLQ
+- Internal dry-run transform API
 
 ---
 
-### **Business Services Layer**
+### **Backend Management and Runtime Services**
 ```
 ┌─────────────────────────────────────────┐
-│   Business Services (Java 21 + Quarkus) │
+│ Backend Services (Java 21 + Quarkus)    │
 ├─────────────────────────────────────────┤
 │                                         │
 │  ┌──────────────┐  ┌──────────────┐   │
@@ -140,13 +103,13 @@
 │  └──────────────┘  └──────────────┘   │
 │                                         │
 │  ┌──────────────┐  ┌──────────────┐   │
-│  │   Spring     │  │   Hibernate  │   │
-│  │   Boot 3.x   │  │   ORM        │   │
+│  │ Hibernate    │  │ RESTEasy /   │   │
+│  │ ORM/Panache  │  │ Jackson      │   │
 │  └──────────────┘  └──────────────┘   │
 │                                         │
 │  ┌──────────────┐  ┌──────────────┐   │
-│  │   Kafka      │  │   PostgreSQL │   │
-│  │   Streams    │  │   Driver     │   │
+│  │ SmallRye     │  │ PostgreSQL   │   │
+│  │ Messaging    │  │ Driver       │   │
 │  └──────────────┘  └──────────────┘   │
 │                                         │
 └─────────────────────────────────────────┘
@@ -155,14 +118,17 @@
 **Stack:**
 - Language: Java 21 (LTS)
 - Framework: Quarkus 3.x
-- Spring: Spring Boot 3.x
-- ORM: Hibernate 6.x
-- Messaging: Kafka Streams
+- ORM: Hibernate ORM / Panache
+- Messaging: SmallRye Reactive Messaging or Kafka client
 - Database: PostgreSQL JDBC
 - Validation: Jakarta Bean Validation
 - Testing: JUnit 5 + Testcontainers
 
 **Purpose:**
+- Mapping Studio API for drafts, schemas, mappings, fixtures, publish gates, and audit
+- Outbound call manager for REST/SOAP calls, credential use, retry, masking, and call history
+- Webhook receiver and scheduled poller for non-Kafka source triggers
+- Credential Store metadata and encrypted secret persistence
 - Canonical event consumption
 - Business logic processing
 - Idempotency management
@@ -247,23 +213,20 @@
 
 | Layer | Technology | Version | Purpose |
 |-------|-----------|---------|---------|
-| **Frontend** | React | 18.x | Dashboard, monitoring |
-| **Frontend** | TypeScript | 5.x | Type safety |
-| **Frontend** | Vite | 4.x | Build tool |
-| **Frontend** | Material-UI | 5.x | UI components |
-| **Mapping Studio** | Angular | 17.x | No-code visual mapping |
-| **Mapping Studio** | Reactive Forms | Latest | Form handling |
-| **Mapping Studio** | Angular Material | Latest | UI components |
-| **Transformation** | Node.js | 18+ | Runtime |
-| **Transformation** | Fastify | 4.x | HTTP framework |
+| **Client** | Angular | 21.x | Mapping Studio and admin UI |
+| **Client** | TypeScript | 5.9.x | Type safety |
+| **Client** | PrimeNG | 21.x | UI components |
+| **Client** | Angular CDK | 21.x | Drag/drop and interaction utilities |
+| **Client** | Ajv | 8.x | Client-side schema validation preview |
+| **Transformation** | Node.js | 20+ | Runtime |
+| **Transformation** | Fastify | 5.x | HTTP framework |
 | **Transformation** | JSONata | 2.x | Data transformation |
 | **Transformation** | Ajv | 8.x | Schema validation |
 | **Transformation** | KafkaJS | 2.x | Kafka client |
 | **Services** | Java | 21 LTS | Language |
 | **Services** | Quarkus | 3.x | Framework |
-| **Services** | Spring Boot | 3.x | Spring integration |
 | **Services** | Hibernate | 6.x | ORM |
-| **Services** | Kafka Streams | Latest | Stream processing |
+| **Services** | SmallRye Messaging / Kafka client | Latest | Kafka integration |
 | **Data** | PostgreSQL | 14+ | Database |
 | **Data** | Kafka | 3.x | Message queue |
 | **Data** | Redis | 7.x | Cache |
@@ -285,10 +248,10 @@
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌──────────────────────┐  ┌──────────────────────┐        │
-│  │  React Dashboard     │  │  Mapping Studio UI   │        │
-│  │  (Node.js + React)   │  │  (Angular 17)        │        │
-│  │  - Monitoring        │  │  - No-code mapping   │        │
-│  │  - Partner mgmt      │  │  - Visual builder    │        │
+│  │  Mapping Studio UI   │  │  Admin Screens       │        │
+│  │  (Angular 21)        │  │  (Angular 21)        │        │
+│  │  - No-code mapping   │  │  - Partners/DLQ      │        │
+│  │  - Visual builder    │  │  - External systems  │        │
 │  └──────────────────────┘  └──────────────────────┘        │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
@@ -304,11 +267,19 @@
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌──────────────────────┐  ┌──────────────────────┐        │
-│  │  Transformer Service │  │  Business Service    │        │
+│  │  Transformer Service │  │  Mapping Studio API  │        │
 │  │  (Node.js + Fastify) │  │  (Java 21 + Quarkus) │        │
-│  │  - JSONata           │  │  - Business Logic    │        │
-│  │  - Ajv Validation    │  │  - Idempotency       │        │
-│  │  - Kafka Consumer    │  │  - Outbox Pattern    │        │
+│  │  - JSONata / Ajv     │  │  - Drafts / publish  │        │
+│  │  - Kafka / dry-run   │  │  - Credentials meta  │        │
+│  │  - Retry / DLQ       │  │  - Audit             │        │
+│  └──────────────────────┘  └──────────────────────┘        │
+│                                                             │
+│  ┌──────────────────────┐  ┌──────────────────────┐        │
+│  │ Outbound Manager     │  │ Business / Outbox    │        │
+│  │ (Java 21 + Quarkus)  │  │ (Java 21 + Quarkus)  │        │
+│  │ - REST/SOAP calls    │  │ - Business logic     │        │
+│  │ - Credential use     │  │ - Idempotency        │        │
+│  │ - Call history       │  │ - Outbox pattern     │        │
 │  └──────────────────────┘  └──────────────────────┘        │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
@@ -341,23 +312,11 @@
 
 ## 📋 Implementation Checklist
 
-### Frontend (React + Node.js)
-- [ ] React 18 project setup
-- [ ] TypeScript configuration
-- [ ] Vite build configuration
-- [ ] Redux Toolkit setup
-- [ ] Material-UI integration
-- [ ] API client (Axios)
-- [ ] Authentication integration
-- [ ] Dashboard components
-- [ ] Real-time metrics display
-- [ ] Partner management UI
-
 ### Mapping Studio UI (Angular)
-- [ ] Angular 17 project setup
+- [x] Angular 21 project setup
 - [ ] TypeScript configuration
 - [ ] Reactive Forms setup
-- [ ] Angular Material integration
+- [x] PrimeNG integration
 - [ ] Sample JSON upload/paste form
 - [ ] JSON structure explorer
 - [ ] Visual field mapping (drag-and-drop)
@@ -371,8 +330,8 @@
 - [ ] Error handling
 
 ### Transformation (Node.js + Fastify)
-- [ ] Node.js 18+ setup
-- [ ] Fastify framework setup
+- [x] Node.js 20+ setup
+- [x] Fastify framework setup
 - [ ] TypeScript configuration
 - [ ] JSONata integration
 - [ ] Ajv schema validation
@@ -382,13 +341,17 @@
 - [ ] Logging (Pino)
 - [ ] Health checks
 
-### Business Services (Java 21 + Quarkus)
+### Mapping Studio API and Runtime Services (Java 21 + Quarkus)
 - [ ] Java 21 setup
 - [ ] Quarkus project creation
-- [ ] Spring Boot integration
+- [ ] Mapping Studio API endpoints
+- [ ] Credential metadata and encrypted secret persistence
+- [ ] Outbound call manager REST/SOAP execution
+- [ ] Webhook receiver
+- [ ] Scheduled poller
 - [ ] Hibernate ORM setup
 - [ ] PostgreSQL driver
-- [ ] Kafka Streams setup
+- [ ] Kafka integration
 - [ ] Transaction management
 - [ ] Idempotency logic
 - [ ] Outbox pattern

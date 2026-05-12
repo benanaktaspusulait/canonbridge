@@ -77,7 +77,7 @@ export function loadEnv(): Env {
     redisUrl: process.env.REDIS_URL || undefined,
     redisCacheTtlSeconds: Number.parseInt(process.env.REDIS_CACHE_TTL_SECONDS ?? '3600', 10),
     // G-16: Worker pool for CPU-intensive JSONata evaluations
-    workerPoolEnabled: process.env.WORKER_POOL_ENABLED !== 'false', // enabled by default
+    workerPoolEnabled: process.env.WORKER_POOL_ENABLED === 'true',
     workerPoolSize: Number.parseInt(process.env.WORKER_POOL_SIZE ?? '0', 10), // 0 = auto (CPU count - 1)
     // G-18: Outbox pattern for exactly-once delivery
     outboxEnabled: process.env.OUTBOX_ENABLED === 'true',

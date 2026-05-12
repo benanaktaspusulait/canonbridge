@@ -11,6 +11,7 @@ import { Worker } from 'node:worker_threads';
 import { cpus } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { existsSync } from 'node:fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,10 +42,15 @@ export class WorkerPool {
   constructor(private readonly poolSize: number = Math.max(1, cpus().length - 1)) {}
 
   async start(): Promise<void> {
-    const workerScript = path.join(__dirname, 'jsonataWorker.js');
+    if (this.workers.length > 0) return;
+
+    const compiledWorkerScript = path.join(__dirname, 'jsonataWorker.js');
+    const sourceWorkerScript = path.join(__dirname, 'jsonataWorker.ts');
+    const workerScript = existsSync(compiledWorkerScript) ? compiledWorkerScript : sourceWorkerScript;
+    const workerOptions = workerScript.endsWith('.ts') ? { execArgv: ['--import', 'tsx'] } : undefined;
     
     for (let i = 0; i < this.poolSize; i++) {
-      const worker = new Worker(workerScript);
+      const worker = new Worker(workerScript, workerOptions);
       
       worker.on('error', (err) => {
         console.error(`Worker ${i} error:`, err);
@@ -53,6 +59,8 @@ export class WorkerPool {
       });
 
       worker.on('exit', (code) => {
+        this.workers = this.workers.filter(w => w !== worker);
+        this.availableWorkers = this.availableWorkers.filter(w => w !== worker);
         if (code !== 0 && !this.shuttingDown) {
           console.error(`Worker ${i} exited with code ${code}`);
         }
@@ -90,13 +98,12 @@ export class WorkerPool {
       worker.off('message', messageHandler);
       worker.off('error', errorHandler);
       
-      // Return worker to pool
-      this.availableWorkers.push(worker);
-      
       // Process next queued task if any
       const nextTask = this.taskQueue.shift();
       if (nextTask) {
         this.executeTask(worker, nextTask);
+      } else if (!this.shuttingDown) {
+        this.availableWorkers.push(worker);
       }
       
       pending.resolve(result);

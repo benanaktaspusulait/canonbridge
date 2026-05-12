@@ -4,6 +4,13 @@ import type { PartnerRegistry } from './partnerRegistry.js';
 import type { Env } from './env.js';
 import type { FastifyBaseLogger } from 'fastify';
 import { recordKafkaMessage, recordTransform } from './metrics.js';
+import type { OutboxRepository } from './outbox.js';
+
+type PublishMessage = {
+  key?: string | null;
+  value: string;
+  headers?: Record<string, string>;
+};
 
 function parseJson(value: string): unknown {
   try {
@@ -73,7 +80,8 @@ export async function startKafkaConsumer(
   registry: PartnerRegistry,
   engine: TransformEngine,
   logger: FastifyBaseLogger,
-): Promise<{ shutdown: () => Promise<void> }> {
+  outboxRepo?: OutboxRepository,
+): Promise<{ shutdown: () => Promise<void>; producer: any }> {
   // G-07: Kafka SSL/SASL config
   const kafkaConfig: import('kafkajs').KafkaConfig = {
     clientId: 'canonbridge-transformer',
@@ -122,6 +130,32 @@ export async function startKafkaConsumer(
   // G-08: use explicit fallback DLQ from env, not first-loaded config
   const fallbackDlq = env.kafkaFallbackDlqTopic;
 
+  const publish = async (topic: string, messages: PublishMessage[]): Promise<void> => {
+    if (!outboxRepo) {
+      await producer.send({ topic, messages });
+      return;
+    }
+
+    const client = await outboxRepo.getClient();
+    try {
+      await client.query('BEGIN');
+      for (const message of messages) {
+        await outboxRepo.insert(client, {
+          topic,
+          key: message.key ?? null,
+          value: message.value,
+          headers: message.headers,
+        });
+      }
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  };
+
   const run = consumer.run({
     // G-01: disable autoCommit — commit only after successful processing or DLQ write
     autoCommit: false,
@@ -141,18 +175,15 @@ export async function startKafkaConsumer(
       if (parsed === undefined) {
         logger.warn({ topic, partition, offset, partnerId: undefined, eventType: undefined }, 'invalid json — routing to fallback DLQ');
         recordKafkaMessage('dlq'); // G-05: metric
-        await producer.send({
-          topic: fallbackDlq,
-          messages: [
-            {
-              value: JSON.stringify({
-                error: { stage: 'resolve', message: 'invalid_json' },
-                raw: rawStr.slice(0, 2048), // cap raw in DLQ payload
-                meta: { topic, partition, offset },
-              }),
-            },
-          ],
-        });
+        await publish(fallbackDlq, [
+          {
+            value: JSON.stringify({
+              error: { stage: 'resolve', message: 'invalid_json' },
+              raw: rawStr.slice(0, 2048), // cap raw in DLQ payload
+              meta: { topic, partition, offset },
+            }),
+          },
+        ]);
         // G-01: commit after DLQ write so we don't reprocess
         await consumer.commitOffsets([{ topic, partition, offset: nextOffset(offset) }]);
         return;
@@ -184,18 +215,15 @@ export async function startKafkaConsumer(
         // G-05: record failed transform metric
         recordTransform('error', result.stage, keys?.partnerId ?? '', keys?.eventType ?? '', transformDurationMs);
         recordKafkaMessage('dlq');
-        await producer.send({
-          topic: dlqTopic,
-          messages: [
-            {
-              value: JSON.stringify({
-                original: parsed,
-                error: { stage: result.stage, message: result.message, details: result.details },
-                meta: { topic, partition, offset },
-              }),
-            },
-          ],
-        });
+        await publish(dlqTopic, [
+          {
+            value: JSON.stringify({
+              original: parsed,
+              error: { stage: result.stage, message: result.message, details: result.details },
+              meta: { topic, partition, offset },
+            }),
+          },
+        ]);
         // G-01: commit after DLQ write
         await consumer.commitOffsets([{ topic, partition, offset: nextOffset(offset) }]);
         return;
@@ -205,26 +233,20 @@ export async function startKafkaConsumer(
         // Should not happen (transform ok implies config was found), but guard anyway
         logger.error({ topic, partition, offset, partnerId: keys?.partnerId, eventType: keys?.eventType }, 'transform ok but partner config missing — routing to fallback DLQ');
         recordKafkaMessage('dlq'); // G-05: metric
-        await producer.send({
-          topic: fallbackDlq,
-          messages: [
-            {
-              value: JSON.stringify({
-                original: parsed,
-                error: { stage: 'resolve', message: 'partner_config_missing_post_transform' },
-                meta: { topic, partition, offset },
-              }),
-            },
-          ],
-        });
+        await publish(fallbackDlq, [
+          {
+            value: JSON.stringify({
+              original: parsed,
+              error: { stage: 'resolve', message: 'partner_config_missing_post_transform' },
+              meta: { topic, partition, offset },
+            }),
+          },
+        ]);
         await consumer.commitOffsets([{ topic, partition, offset: nextOffset(offset) }]);
         return;
       }
 
-      await producer.send({
-        topic: cfg.topics.canonical,
-        messages: [{ value: JSON.stringify(result.canonical) }],
-      });
+      await publish(cfg.topics.canonical, [{ value: JSON.stringify(result.canonical) }]);
 
       // G-05: record successful transform metric
       recordTransform('ok', 'output_validation', cfg.partnerId, cfg.eventType, result.durationMs);
@@ -253,6 +275,7 @@ export async function startKafkaConsumer(
         await producer.disconnect();
       }
     },
+    producer, // G-18: Expose producer for outbox relay
   };
 }
 

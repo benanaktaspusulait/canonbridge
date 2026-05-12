@@ -8,6 +8,7 @@ export type Compiled = {
   validateInput: ValidateFunction;
   validateOutput: ValidateFunction;
   evaluate: (input: unknown) => Promise<unknown>;
+  mappingText?: string; // G-16: For worker pool evaluation
 };
 
 /**

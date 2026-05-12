@@ -97,9 +97,9 @@ export async function buildServer(
           type: 'object',
           required: ['partnerId', 'eventType'],
           properties: {
-            partnerId: { type: 'string', description: 'Partner identifier', example: 'acme-marketplace' },
-            eventType: { type: 'string', description: 'Event type', example: 'order-created' },
-            version: { type: 'string', description: 'Schema version (optional)', example: 'v1' },
+            partnerId: { type: 'string', description: 'Partner identifier' },
+            eventType: { type: 'string', description: 'Event type' },
+            version: { type: 'string', description: 'Schema version (optional)' },
           },
           additionalProperties: true,
         },
@@ -107,7 +107,11 @@ export async function buildServer(
           200: {
             type: 'object',
             properties: {
-              canonical: { type: 'object', description: 'Transformed canonical data' },
+              canonical: { 
+                type: 'object', 
+                description: 'Transformed canonical data',
+                additionalProperties: true,
+              },
             },
           },
           400: {
@@ -213,6 +217,17 @@ export async function buildServer(
                     stage: { type: 'string', description: 'Error stage (if ok=false)' },
                     message: { type: 'string', description: 'Error message (if ok=false)' },
                   },
+                },
+              },
+            },
+          },
+          400: {
+            type: 'object',
+            properties: {
+              error: {
+                type: 'object',
+                properties: {
+                  message: { type: 'string' },
                 },
               },
             },
