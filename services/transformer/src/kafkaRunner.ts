@@ -5,6 +5,7 @@ import type { Env } from './env.js';
 import type { FastifyBaseLogger } from 'fastify';
 import { recordKafkaMessage, recordTransform } from './metrics.js';
 import type { OutboxRepository } from './outbox.js';
+import type { DlqRepository } from './dlq.js';
 
 type PublishMessage = {
   key?: string | null;
@@ -81,6 +82,7 @@ export async function startKafkaConsumer(
   engine: TransformEngine,
   logger: FastifyBaseLogger,
   outboxRepo?: OutboxRepository,
+  dlqRepo?: DlqRepository,
 ): Promise<{ shutdown: () => Promise<void>; producer: any }> {
   // G-07: Kafka SSL/SASL config
   const kafkaConfig: import('kafkajs').KafkaConfig = {
@@ -156,6 +158,33 @@ export async function startKafkaConsumer(
     }
   };
 
+  const writeDlqRecord = async (params: {
+    sourceTopic: string;
+    sourcePartition: number;
+    sourceOffset: string;
+    originalPayload?: unknown;
+    rawPayload?: string;
+    errorStage: string;
+    errorMessage: string;
+    errorDetails?: unknown;
+  }): Promise<void> => {
+    if (!dlqRepo) return;
+    try {
+      await dlqRepo.create({
+        sourceTopic: params.sourceTopic,
+        sourcePartition: params.sourcePartition,
+        sourceOffset: params.sourceOffset,
+        originalPayload: params.originalPayload,
+        rawPayload: params.rawPayload,
+        errorStage: params.errorStage,
+        errorMessage: params.errorMessage,
+        errorDetails: params.errorDetails,
+      });
+    } catch (err) {
+      logger.error({ err, topic: params.sourceTopic, offset: params.sourceOffset }, 'failed to persist DLQ record');
+    }
+  };
+
   const run = consumer.run({
     // G-01: disable autoCommit — commit only after successful processing or DLQ write
     autoCommit: false,
@@ -184,6 +213,15 @@ export async function startKafkaConsumer(
             }),
           },
         ]);
+        await writeDlqRecord({
+          sourceTopic: topic,
+          sourcePartition: partition,
+          sourceOffset: offset,
+          rawPayload: rawStr.slice(0, 2048),
+          errorStage: 'resolve',
+          errorMessage: 'invalid_json',
+          errorDetails: { topic, partition, offset },
+        });
         // G-01: commit after DLQ write so we don't reprocess
         await consumer.commitOffsets([{ topic, partition, offset: nextOffset(offset) }]);
         return;
@@ -224,6 +262,15 @@ export async function startKafkaConsumer(
             }),
           },
         ]);
+        await writeDlqRecord({
+          sourceTopic: topic,
+          sourcePartition: partition,
+          sourceOffset: offset,
+          originalPayload: parsed,
+          errorStage: result.stage,
+          errorMessage: result.message,
+          errorDetails: result.details,
+        });
         // G-01: commit after DLQ write
         await consumer.commitOffsets([{ topic, partition, offset: nextOffset(offset) }]);
         return;
@@ -242,6 +289,15 @@ export async function startKafkaConsumer(
             }),
           },
         ]);
+        await writeDlqRecord({
+          sourceTopic: topic,
+          sourcePartition: partition,
+          sourceOffset: offset,
+          originalPayload: parsed,
+          errorStage: 'resolve',
+          errorMessage: 'partner_config_missing_post_transform',
+          errorDetails: { topic, partition, offset },
+        });
         await consumer.commitOffsets([{ topic, partition, offset: nextOffset(offset) }]);
         return;
       }

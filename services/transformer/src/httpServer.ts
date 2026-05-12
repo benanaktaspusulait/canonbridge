@@ -7,6 +7,12 @@ import type { PartnerRegistry } from './partnerRegistry.js';
 import type { Env } from './env.js';
 import { checkJsonataBatch, JSONATA_BATCH_MAX_ITEMS, type JsonataBatchItem } from './jsonataCheck.js';
 import { renderMetrics, recordTransform, setGauge } from './metrics.js';
+import type { DlqRepository } from './dlq.js';
+
+type DlqManagementDeps = {
+  repository: DlqRepository;
+  redrivePublish: (topic: string, payload: unknown) => Promise<void>;
+};
 
 // G-06: API key auth hook
 async function apiKeyAuth(env: Env, request: FastifyRequest, reply: FastifyReply): Promise<void> {
@@ -21,6 +27,7 @@ export async function buildServer(
   env: Env,
   registry: PartnerRegistry,
   engine: TransformEngine,
+  dlqDeps?: DlqManagementDeps,
 ): Promise<FastifyInstance> {
   const app = Fastify({
     logger: { level: env.logLevel },
@@ -48,6 +55,7 @@ export async function buildServer(
         { name: 'transform', description: 'Data transformation endpoints' },
         { name: 'admin', description: 'Administrative operations' },
         { name: 'health', description: 'Health and monitoring' },
+        { name: 'dlq', description: 'Dead letter queue management' },
       ],
       components: {
         securitySchemes: {
@@ -337,6 +345,102 @@ export async function buildServer(
           error: { message: err instanceof Error ? err.message : String(err) },
         });
       }
+    },
+  );
+
+  app.get(
+    '/api/dlq',
+    {
+      schema: {
+        tags: ['dlq'],
+        description: 'List dead letter queue records',
+        security: env.apiKey ? [{ apiKey: [] }] : [],
+        querystring: {
+          type: 'object',
+          properties: {
+            limit: { type: 'number', minimum: 1, maximum: 100, default: 50 },
+            offset: { type: 'number', minimum: 0, default: 0 },
+          },
+        },
+      },
+      preHandler: async (request, reply) => apiKeyAuth(env, request, reply),
+    },
+    async (request, reply) => {
+      if (!dlqDeps) {
+        return reply.code(503).send({ error: { message: 'DLQ management is not configured' } });
+      }
+      const query = request.query as { limit?: number; offset?: number };
+      const limit = Math.min(100, Math.max(1, Number(query.limit ?? 50)));
+      const offset = Math.max(0, Number(query.offset ?? 0));
+      const items = await dlqDeps.repository.list(limit, offset);
+      return reply.send({ items, limit, offset });
+    },
+  );
+
+  app.get(
+    '/api/dlq/:id',
+    {
+      schema: {
+        tags: ['dlq'],
+        description: 'Get a dead letter queue record by ID',
+        security: env.apiKey ? [{ apiKey: [] }] : [],
+        params: {
+          type: 'object',
+          required: ['id'],
+          properties: {
+            id: { type: 'string' },
+          },
+        },
+      },
+      preHandler: async (request, reply) => apiKeyAuth(env, request, reply),
+    },
+    async (request, reply) => {
+      if (!dlqDeps) {
+        return reply.code(503).send({ error: { message: 'DLQ management is not configured' } });
+      }
+      const { id } = request.params as { id: string };
+      const item = await dlqDeps.repository.getById(id);
+      if (!item) {
+        return reply.code(404).send({ error: { message: 'DLQ record not found' } });
+      }
+      return reply.send(item);
+    },
+  );
+
+  app.post(
+    '/api/dlq/:id/redrive',
+    {
+      schema: {
+        tags: ['dlq'],
+        description: 'Redrive a dead letter queue record back to processing queue',
+        security: env.apiKey ? [{ apiKey: [] }] : [],
+        params: {
+          type: 'object',
+          required: ['id'],
+          properties: {
+            id: { type: 'string' },
+          },
+        },
+      },
+      preHandler: async (request, reply) => apiKeyAuth(env, request, reply),
+    },
+    async (request, reply) => {
+      if (!dlqDeps) {
+        return reply.code(503).send({ error: { message: 'DLQ management is not configured' } });
+      }
+      const { id } = request.params as { id: string };
+      const item = await dlqDeps.repository.getById(id);
+      if (!item) {
+        return reply.code(404).send({ error: { message: 'DLQ record not found' } });
+      }
+      if (item.originalPayload === null && item.rawPayload === null) {
+        return reply.code(422).send({ error: { message: 'DLQ record has no payload to redrive' } });
+      }
+
+      const redrivePayload = item.originalPayload ?? item.rawPayload;
+      await dlqDeps.redrivePublish(item.sourceTopic, redrivePayload);
+      await dlqDeps.repository.markRedriven(item.id);
+      return reply.send({ ok: true, id: item.id, redrivenToTopic: item.sourceTopic });
     },
   );
 

@@ -6,6 +6,7 @@ import { startKafkaConsumer } from './kafkaRunner.js';
 import { createCache } from './cache.js';
 import { WorkerPool } from './workerPool.js';
 import { OutboxRepository, OutboxRelay } from './outbox.js';
+import { DlqRepository } from './dlq.js';
 
 async function main(): Promise<void> {
   const env = loadEnv();
@@ -35,15 +36,49 @@ async function main(): Promise<void> {
     await outboxRepo.initialize();
     // Outbox relay will be started after Kafka producer is available
   }
-  
-  const app = await buildServer(env, registry, engine);
+
+  let dlqRepo: DlqRepository | undefined;
+  if (env.dlqDatabaseUrl) {
+    dlqRepo = new DlqRepository(env.dlqDatabaseUrl);
+    await dlqRepo.initialize();
+  }
+
+  let kafkaProducer:
+    | {
+        send: (params: {
+          topic: string;
+          messages: Array<{ key?: string | null; value: string; headers?: Record<string, string> }>;
+        }) => Promise<void>;
+      }
+    | undefined;
+
+  const app = await buildServer(
+    env,
+    registry,
+    engine,
+    dlqRepo
+      ? {
+          repository: dlqRepo,
+          redrivePublish: async (topic, payload) => {
+            if (!kafkaProducer) {
+              throw new Error('Kafka producer is not available for redrive');
+            }
+            await kafkaProducer.send({
+              topic,
+              messages: [{ value: JSON.stringify(payload) }],
+            });
+          },
+        }
+      : undefined,
+  );
 
   let kafkaShutdown: (() => Promise<void>) | undefined;
   if (env.kafkaEnabled) {
     // G-03: startKafkaConsumer now retries internally — if it throws, we let it bubble
     // so the process exits and the orchestrator (k8s/compose) restarts it.
-    const kafka = await startKafkaConsumer(env, registry, engine, app.log, outboxRepo);
+    const kafka = await startKafkaConsumer(env, registry, engine, app.log, outboxRepo, dlqRepo);
     kafkaShutdown = kafka.shutdown;
+    kafkaProducer = kafka.producer;
     
     // G-18: Start outbox relay if enabled
     if (outboxRepo && kafka.producer) {
@@ -83,6 +118,7 @@ async function main(): Promise<void> {
     if (workerPool) await workerPool.shutdown();
     await cache.close(); // G-09: Close Redis connection
     if (outboxRepo) await outboxRepo.close();
+    if (dlqRepo) await dlqRepo.close();
     app.log.info('shutdown complete');
   };
 

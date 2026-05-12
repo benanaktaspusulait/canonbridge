@@ -32,6 +32,8 @@ export interface Env {
   outboxDatabaseUrl: string | undefined;
   outboxPollIntervalMs: number;
   outboxBatchSize: number;
+  // DLQ persistence
+  dlqDatabaseUrl: string | undefined;
   // Logging
   logLevel: string;
 }
@@ -84,6 +86,7 @@ export function loadEnv(): Env {
     outboxDatabaseUrl: process.env.OUTBOX_DATABASE_URL || undefined,
     outboxPollIntervalMs: Number.parseInt(process.env.OUTBOX_POLL_INTERVAL_MS ?? '1000', 10),
     outboxBatchSize: Number.parseInt(process.env.OUTBOX_BATCH_SIZE ?? '100', 10),
+    dlqDatabaseUrl: process.env.DLQ_DATABASE_URL || process.env.OUTBOX_DATABASE_URL || undefined,
     logLevel: process.env.LOG_LEVEL ?? 'info',
   };
 }

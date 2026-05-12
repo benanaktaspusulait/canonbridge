@@ -93,6 +93,7 @@ describe('HTTP Server', () => {
       outboxDatabaseUrl: undefined,
       outboxPollIntervalMs: 1000,
       outboxBatchSize: 100,
+      dlqDatabaseUrl: undefined,
       logLevel: 'silent',
     };
 
@@ -286,6 +287,32 @@ describe('HTTP Server', () => {
     });
   });
 
+  describe('DLQ management endpoints', () => {
+    it('should return 503 for DLQ list when DLQ is not configured', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/dlq',
+      });
+      expect(response.statusCode).toBe(503);
+    });
+
+    it('should return 503 for DLQ detail when DLQ is not configured', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/dlq/test-id',
+      });
+      expect(response.statusCode).toBe(503);
+    });
+
+    it('should return 503 for DLQ redrive when DLQ is not configured', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/dlq/test-id/redrive',
+      });
+      expect(response.statusCode).toBe(503);
+    });
+  });
+
   describe('API Key Authentication', () => {
     it('should reject request without API key when auth enabled', async () => {
       const envWithAuth: Env = {
@@ -311,6 +338,7 @@ describe('HTTP Server', () => {
         outboxDatabaseUrl: undefined,
         outboxPollIntervalMs: 1000,
         outboxBatchSize: 100,
+        dlqDatabaseUrl: undefined,
         logLevel: 'silent',
       };
 
@@ -355,6 +383,7 @@ describe('HTTP Server', () => {
         outboxDatabaseUrl: undefined,
         outboxPollIntervalMs: 1000,
         outboxBatchSize: 100,
+        dlqDatabaseUrl: undefined,
         logLevel: 'silent',
       };
 
@@ -393,6 +422,7 @@ describe('HTTP Server', () => {
         outboxDatabaseUrl: undefined,
         outboxPollIntervalMs: 1000,
         outboxBatchSize: 100,
+        dlqDatabaseUrl: undefined,
         logLevel: 'silent',
       };
 
