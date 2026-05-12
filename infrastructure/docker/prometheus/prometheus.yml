@@ -22,26 +22,26 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  # Transformer Service (Node.js + Fastify)
+  # Transformer Service (Node.js + Fastify) — metrics at /metrics on HTTP port
   - job_name: 'transformer'
     static_configs:
-      - targets: ['transformer:9090']
+      - targets: ['transformer:8080']
     metrics_path: '/metrics'
     scrape_interval: 10s
 
-  # Business Service (Java + Quarkus)
-  - job_name: 'business-service'
+  # Mapping Studio API (Java + Quarkus) — Quarkus exposes metrics at /q/metrics
+  - job_name: 'mapping-studio-api'
     static_configs:
-      - targets: ['business-service:8080']
+      - targets: ['mapping-studio-api:8080']
     metrics_path: '/q/metrics'
     scrape_interval: 10s
 
-  # Frontend (React)
-  - job_name: 'frontend'
+  # Webhook Receiver (Java + Quarkus) — Quarkus exposes metrics at /q/metrics
+  - job_name: 'webhook-receiver'
     static_configs:
-      - targets: ['frontend:3000']
-    metrics_path: '/metrics'
-    scrape_interval: 30s
+      - targets: ['webhook-receiver:8082']
+    metrics_path: '/q/metrics'
+    scrape_interval: 10s
 
   # PostgreSQL Exporter
   - job_name: 'postgres'

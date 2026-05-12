@@ -9,8 +9,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production && \
+# Install dependencies (all deps needed for the build step)
+RUN npm ci && \
     npm cache clean --force
 
 # Copy source code
@@ -28,7 +28,7 @@ FROM nginx:alpine
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copy built application from builder stage
-COPY --from=builder /app/dist/mapping-studio-ui /usr/share/nginx/html
+COPY --from=builder /app/dist/mapping-studio-ui/browser /usr/share/nginx/html
 
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
