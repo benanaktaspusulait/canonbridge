@@ -124,10 +124,12 @@ Mapping Studio is the core management workflow: upload or paste sample JSON, ins
 - [Logging and Masking](./implementation/08-logging-masking.md)
 - [Metrics and Observability](./implementation/09-metrics-observability.md)
 - [Security](./implementation/10-security.md)
-- [Frontend React Guide](./implementation/FRONTEND_REACT_GUIDE.md)
-- [Forms Angular Guide](./implementation/FORMS_ANGULAR_GUIDE.md)
+- [Legacy Frontend React Guide](./implementation/FRONTEND_REACT_GUIDE.md)
+- [Legacy Forms Angular Guide](./implementation/FORMS_ANGULAR_GUIDE.md)
 - [Transformer Node.js Guide](./implementation/TRANSFORMER_NODEJS_GUIDE.md)
 - [Business Services Java/Quarkus Guide](./implementation/SERVICES_JAVA_QUARKUS_GUIDE.md)
+
+The active Studio UI direction is the Angular Mapping Studio demo. The legacy React and forms guides are retained for historical reference and should not be treated as a second production frontend requirement.
 
 ### Deployment
 
@@ -176,7 +178,7 @@ Mapping Studio is the core management workflow: upload or paste sample JSON, ins
 | Role | Path |
 |------|------|
 | Product Manager | [product/overview.md](./product/overview.md) -> [product/roadmap.md](./product/roadmap.md) -> [product/README.md](./product/README.md) |
-| Frontend Developer | [product/02-mapping-studio-ux-flow.md](./product/02-mapping-studio-ux-flow.md) -> [implementation/FRONTEND_REACT_GUIDE.md](./implementation/FRONTEND_REACT_GUIDE.md) -> [implementation/FORMS_ANGULAR_GUIDE.md](./implementation/FORMS_ANGULAR_GUIDE.md) |
+| Frontend Developer | [product/mapping-studio-ui-v2.md](./product/mapping-studio-ui-v2.md) -> [product/mapping-studio-design-system.md](./product/mapping-studio-design-system.md) -> [product/06-mapping-studio-visual-jsonata-design.md](./product/06-mapping-studio-visual-jsonata-design.md) |
 | Backend Developer | [implementation/11-backend-service-requirements.md](./implementation/11-backend-service-requirements.md) -> [architecture/architecture-v7-outbound.md](./architecture/architecture-v7-outbound.md) -> [product/03-mapping-studio-api-data-model.md](./product/03-mapping-studio-api-data-model.md) -> [implementation/TRANSFORMER_NODEJS_GUIDE.md](./implementation/TRANSFORMER_NODEJS_GUIDE.md) |
 | DevOps/SRE | [deployment/setup-guide.md](./deployment/setup-guide.md) -> [deployment/DOCKER_COMPOSE_LOCAL.md](./deployment/DOCKER_COMPOSE_LOCAL.md) -> [deployment/KUBERNETES_DEPLOYMENT_GUIDE.md](./deployment/KUBERNETES_DEPLOYMENT_GUIDE.md) -> [operations/08-runbook.md](./operations/08-runbook.md) |
 | QA | [testing/07-test-environment.md](./testing/07-test-environment.md) -> [testing/01-unit-tests.md](./testing/01-unit-tests.md) -> [testing/03-e2e-tests.md](./testing/03-e2e-tests.md) |

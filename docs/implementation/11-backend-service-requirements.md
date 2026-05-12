@@ -1,7 +1,7 @@
 # Backend Service Requirements
 
-**Last Updated**: May 12, 2026
-**Scope**: Backend runtime and management services required after the sales-demo UI phase.
+- **Last Updated**: May 12, 2026
+- **Scope**: Backend runtime and management services required after the sales-demo UI phase.
 
 This document is the backend implementation source of truth. It reconciles the original Kafka transformer architecture with the newer Mapping Studio, outbound API, credential store, webhook, and scheduled polling requirements.
 

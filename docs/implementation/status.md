@@ -2,9 +2,9 @@
 
 > See [MASTER_ROADMAP.md](../project/MASTER_ROADMAP.md) for the official product roadmap. This page tracks the practical implementation state as of the latest repository review.
 
-**Date**: May 12, 2026
-**Phase**: Demo UI + Backend Requirements Consolidation
-**Status**: In progress
+- **Date**: May 12, 2026
+- **Phase**: Demo UI + Backend Requirements Consolidation
+- **Status**: In progress
 
 ---
 
@@ -119,6 +119,6 @@ The following are explicitly not required for the next backend phase:
 
 ---
 
-**Current Status**: Demo UI exists, transformer scaffold exists, backend production requirements are now consolidated.
-**Next Milestone**: Implement `mapping-studio-api` and harden `transformer-service` for an end-to-end backend smoke test.
-**Last Updated**: May 12, 2026
+- **Current Status**: Demo UI exists, transformer scaffold exists, backend production requirements are now consolidated.
+- **Next Milestone**: Implement `mapping-studio-api` and harden `transformer-service` for an end-to-end backend smoke test.
+- **Last Updated**: May 12, 2026
