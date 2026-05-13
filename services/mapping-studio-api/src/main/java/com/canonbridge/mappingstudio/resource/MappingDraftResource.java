@@ -15,6 +15,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Path("/api/mapping-drafts")
@@ -77,20 +78,25 @@ public class MappingDraftResource {
     public Uni<Response> previewRequest(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("id") UUID id,
-            RequestPreviewRequest request) {
+            JsonObject request) {
         if (tenantId == null || tenantId.isBlank()) {
             throw new BadRequestException("X-Tenant-Id header is required");
         }
         return draftRepository.findById(tenantId, id)
-                .map(draft -> {
+                .chain(draft -> {
                     if (draft == null) {
-                        return Response.status(Response.Status.NOT_FOUND).build();
+                        return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND).build());
                     }
                     JsonObject sourceConfig = parseJsonObject(draft.getSourceConfig(), new JsonObject());
-                    JsonObject context = request != null && request.context() != null ? request.context() : new JsonObject();
-                    JsonObject body = requestTemplateService.renderFromSourceConfig(sourceConfig, context);
-                    JsonObject headers = requestTemplateService.renderHeadersFromSourceConfig(sourceConfig, context);
-                    return Response.ok(new RequestPreviewResponse(body, headers)).build();
+                    JsonObject context = request != null ? request.getJsonObject("context", new JsonObject()) : new JsonObject();
+                    return requestTemplateService.renderFromSourceConfig(sourceConfig, context)
+                            .map(body -> {
+                                JsonObject headers = requestTemplateService.renderHeadersFromSourceConfig(sourceConfig, context);
+                                return Response.ok(new RequestPreviewResponse(
+                                        body != null ? body.getMap() : Map.of(),
+                                        headers != null ? headers.getMap() : Map.of()
+                                )).build();
+                            });
                 });
     }
 
@@ -171,7 +177,5 @@ public class MappingDraftResource {
         }
     }
 
-    public record RequestPreviewRequest(JsonObject context) {}
-
-    public record RequestPreviewResponse(JsonObject payload, JsonObject headers) {}
+    public record RequestPreviewResponse(Map<String, Object> payload, Map<String, Object> headers) {}
 }

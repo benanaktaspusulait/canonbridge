@@ -5,7 +5,12 @@ import Fastify, { type FastifyInstance, type FastifyRequest, type FastifyReply }
 import type { TransformEngine } from './transformEngine.js';
 import type { PartnerRegistry } from './partnerRegistry.js';
 import type { Env } from './env.js';
-import { checkJsonataBatch, JSONATA_BATCH_MAX_ITEMS, type JsonataBatchItem } from './jsonataCheck.js';
+import {
+  checkJsonataBatch,
+  checkJsonataExpression,
+  JSONATA_BATCH_MAX_ITEMS,
+  type JsonataBatchItem,
+} from './jsonataCheck.js';
 import { renderMetrics, recordTransform, setGauge } from './metrics.js';
 import type { DlqRepository } from './dlq.js';
 
@@ -178,6 +183,69 @@ export async function buildServer(
       recordTransform('ok', 'output_validation', String(partnerId ?? ''), String(eventType ?? ''), durationMs);
       request.log.info({ partnerId, eventType, durationMs }, 'transform succeeded via HTTP');
       return reply.send({ canonical: result.canonical });
+    },
+  );
+
+  app.post(
+    '/v1/jsonata/evaluate',
+    {
+      schema: {
+        tags: ['transform'],
+        description: 'Evaluate a single JSONata expression against a payload',
+        security: env.apiKey ? [{ apiKey: [] }] : [],
+        body: {
+          type: 'object',
+          required: ['expression'],
+          properties: {
+            payload: { type: 'object', description: 'Evaluation payload' },
+            expression: { type: 'string', description: 'JSONata expression to evaluate' },
+            timeoutMs: { type: 'number', description: 'Evaluation timeout in milliseconds', minimum: 50, maximum: 5000, default: 500 },
+          },
+        },
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              ok: { type: 'boolean' },
+              result: { description: 'Evaluation result' },
+            },
+          },
+          400: {
+            type: 'object',
+            properties: {
+              ok: { type: 'boolean' },
+              stage: { type: 'string' },
+              message: { type: 'string' },
+            },
+          },
+          422: {
+            type: 'object',
+            properties: {
+              ok: { type: 'boolean' },
+              stage: { type: 'string' },
+              message: { type: 'string' },
+            },
+          },
+        },
+      },
+      preHandler: async (request, reply) => apiKeyAuth(env, request, reply),
+    },
+    async (request, reply) => {
+      const body = request.body as Record<string, unknown>;
+      const expression = body.expression;
+      if (typeof expression !== 'string') {
+        return reply.code(400).send({ ok: false, stage: 'compile', message: 'expression must be a string' });
+      }
+
+      let timeoutMs = Number(body.timeoutMs);
+      if (timeoutMs !== timeoutMs || timeoutMs <= 0) timeoutMs = 500;
+      timeoutMs = Math.min(5000, Math.max(50, timeoutMs));
+
+      const result = await checkJsonataExpression(expression, body.payload, timeoutMs);
+      if (!result.ok) {
+        return reply.code(422).send(result);
+      }
+      return reply.send(result);
     },
   );
 

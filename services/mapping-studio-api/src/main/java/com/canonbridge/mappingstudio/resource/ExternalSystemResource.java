@@ -133,17 +133,19 @@ public class ExternalSystemResource {
             return Uni.createFrom().item(request);
         }
         return draftRepository.findById(tenantId, connection.draftId())
-                .map(draft -> {
+                .chain(draft -> {
                     if (draft == null || draft.getSourceConfig() == null) {
-                        return request;
+                        return Uni.createFrom().item(request);
                     }
                     JsonObject sourceConfig = new JsonObject(draft.getSourceConfig());
                     JsonObject context = request != null ? request.safeContext() : new JsonObject();
-                    JsonObject payload = requestTemplateService.renderFromSourceConfig(sourceConfig, context);
-                    JsonObject templateHeaders = requestTemplateService.renderHeadersFromSourceConfig(sourceConfig, context);
-                    JsonObject headers = request != null ? request.safeHeaders().copy() : new JsonObject();
-                    headers.mergeIn(templateHeaders, false);
-                    return new OutboundHttpRequest(payload, headers, context);
+                    return requestTemplateService.renderFromSourceConfig(sourceConfig, context)
+                            .map(payload -> {
+                                JsonObject templateHeaders = requestTemplateService.renderHeadersFromSourceConfig(sourceConfig, context);
+                                JsonObject headers = request != null ? request.safeHeaders().copy() : new JsonObject();
+                                headers.mergeIn(templateHeaders, false);
+                                return new OutboundHttpRequest(payload, headers, context);
+                            });
                 });
     }
 

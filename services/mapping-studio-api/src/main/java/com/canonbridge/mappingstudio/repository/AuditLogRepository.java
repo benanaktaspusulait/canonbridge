@@ -10,6 +10,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -44,7 +46,7 @@ public class AuditLogRepository {
             .addString(log.getOutcome().name())
             .addString(log.getIpAddress())
             .addString(log.getCorrelationId())
-            .addValue(log.getCreatedAt());
+            .addValue(LocalDateTime.ofInstant(log.getCreatedAt(), ZoneOffset.UTC));
 
         return client.preparedQuery(sql)
             .execute(tuple)

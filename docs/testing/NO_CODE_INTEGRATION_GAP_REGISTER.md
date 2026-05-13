@@ -26,7 +26,7 @@ Bu kayıt, `ACCEPTANCE_SCENARIOS.md` içindeki no-code API integration iddiasın
 | GAP-008 | API enrichment runtime step'i metadata olarak var ama transformer flow'a bağlanmış değil. | Multi-step integration iddiası UI/config seviyesinde; runtime eksik. | `DONE` | Transformer mapping config `enrichmentSteps` destekliyor; transform öncesi HTTP enrichment çağrısı yapılıp response payload'a merge ediliyor. |
 | GAP-009 | DLQ -> fix draft import akışı dokümanda var, UI/API'da tam workflow olarak bağlanmalı. | Hata düzeltme döngüsü manuel kalabilir. | `DONE` | DLQ row/drawer aksiyonundan payload ve hata context'i Integration Studio'ya sample olarak taşınıyor. |
 | GAP-010 | Acceptance coverage raporu otomatik üretilmiyor. | Hangi integration tipinin `PROVEN/PARTIAL` olduğu manuel kalıyor. | `DONE` | `scripts/no-code-acceptance-coverage.mjs` register'dan JSON veya Markdown coverage matrix üretiyor ve açık gap kaldığında non-zero çıkıyor. |
-| GAP-011 | Request dönüşümü için Wizard'da ayrı bir sekme/adım yok. Kullanıcı dış API'ye gidecek request gövdesini görsel olarak tanımlayamıyor. | Kritik: outbound/API enrichment akışları response mapping yapabilse bile request body/header/query üretimi hâlâ manuel veya runtime'a gömülü kalır; bu da "tamamen kodsuz entegrasyon" iddiasını eksik bırakır. | `OPEN` | Mapping adımına `Response Dönüşümü` / `Request Dönüşümü` sekmeleri eklenmeli. Request tarafı hem template JSON + `{{ }}` placeholder hem de canonical -> external API request JSONata mapping modunu desteklemeli; preview/test çıktısı kaydedilebilir olmalı. |
+| GAP-011 | Request dönüşümü için Wizard'da ayrı bir sekme/adım yok. Kullanıcı dış API'ye gidecek request gövdesini görsel olarak tanımlayamıyor. | Kritik: outbound/API enrichment akışları response mapping yapabilse bile request body/header/query üretimi hâlâ manuel veya runtime'a gömülü kalır; bu da "tamamen kodsuz entegrasyon" iddiasını eksik bırakır. | `PARTIAL` | Mapping adımına `Response Dönüşümü` / `Request Dönüşümü` sekmeleri eklendi; template JSON + `{{ }}` placeholder preview/save/backend render tamamlandı. JSONata request modu UI preview/export/autosave içinde var; server-side JSONata execution runtime'a ayrıca bağlanmalı. |
 
 ## İlk Kapatılan Set
 
@@ -40,7 +40,7 @@ Bu turda GAP-001 ile GAP-005 ve GAP-009 kapatıldı. Bu set, no-code product sur
 
 ## Sıradaki Teknik Öncelik
 
-Sıradaki kritik ürün işi, request dönüşümünü Mapping Studio Wizard'a birinci sınıf no-code yüzey olarak eklemek. Bu kapandıktan sonra kalite işi, yeni runtime yüzeylerini e2e ortamında Kafka/topic assertion'larıyla kanıtlamak ve manual trigger endpoint'ini zamanlanmış poller job'a genişletmek.
+Sıradaki kritik ürün işi, request dönüşümünün JSONata modunu server-side runtime'a bağlamak. Bu kapandıktan sonra kalite işi, yeni runtime yüzeylerini e2e ortamında Kafka/topic assertion'larıyla kanıtlamak ve manual trigger endpoint'ini zamanlanmış poller job'a genişletmek.
 
 ## Doğrulama Notu
 

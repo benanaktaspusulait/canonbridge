@@ -29,7 +29,7 @@ class RequestTemplateServiceTest {
                         .put("customer", new JsonObject().put("email", "buyer@example.com")))
                 .put("source", new JsonObject().put("partnerId", "payflex"));
 
-        JsonObject rendered = service.renderFromSourceConfig(sourceConfig, context);
+        JsonObject rendered = service.renderFromSourceConfig(sourceConfig, context).await().indefinitely();
         JsonObject headers = service.renderHeadersFromSourceConfig(sourceConfig, context);
 
         assertEquals("ORD-123", rendered.getString("order_id"));

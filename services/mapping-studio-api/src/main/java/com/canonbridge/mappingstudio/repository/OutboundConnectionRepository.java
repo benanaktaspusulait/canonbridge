@@ -12,6 +12,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +50,7 @@ public class OutboundConnectionRepository {
 
     public Uni<OutboundConnection> create(OutboundConnection connection) {
         UUID connectionId = connection.connectionId() != null ? connection.connectionId() : UUID.randomUUID();
-        Instant now = Instant.now();
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         OutboundConnection.ConnectionPurpose purpose = connection.purpose() != null
                 ? connection.purpose()
                 : OutboundConnection.ConnectionPurpose.DESTINATION;
@@ -87,7 +88,7 @@ public class OutboundConnectionRepository {
                 connection.retryPolicy() != null ? connection.retryPolicy() : defaultRetryPolicy(),
                 connection.responseHandling() != null ? connection.responseHandling() : new JsonObject(),
                 status.name(),
-                connection.lastTestAt(),
+                toOffsetDateTime(connection.lastTestAt()),
                 connection.lastTestResult(),
                 now,
                 now
@@ -123,9 +124,9 @@ public class OutboundConnectionRepository {
                     coalesce(patch.retryPolicy(), existing.retryPolicy()),
                     coalesce(patch.responseHandling(), existing.responseHandling()),
                     coalesce(patch.status(), existing.status()).name(),
-                    coalesce(patch.lastTestAt(), existing.lastTestAt()),
+                    toOffsetDateTime(coalesce(patch.lastTestAt(), existing.lastTestAt())),
                     coalesce(patch.lastTestResult(), existing.lastTestResult()),
-                    Instant.now(),
+                    OffsetDateTime.now(ZoneOffset.UTC),
                     tenantId,
                     connectionId
             ))
@@ -152,7 +153,7 @@ public class OutboundConnectionRepository {
                 "SET status = $1, last_test_at = $2, last_test_result = $3, updated_at = $2 " +
                 "WHERE tenant_id = $4 AND connection_id = $5 RETURNING *"
         )
-        .execute(Tuples.of(status.name(), Instant.now(), result, tenantId, connectionId))
+        .execute(Tuples.of(status.name(), OffsetDateTime.now(ZoneOffset.UTC), result, tenantId, connectionId))
         .map(rows -> rows.iterator().hasNext() ? toConnection(rows.iterator().next()) : null);
     }
 
@@ -198,5 +199,9 @@ public class OutboundConnectionRepository {
 
     private static <T> T coalesce(T value, T fallback) {
         return value != null ? value : fallback;
+    }
+
+    private OffsetDateTime toOffsetDateTime(Instant instant) {
+        return instant == null ? null : OffsetDateTime.ofInstant(instant, ZoneOffset.UTC);
     }
 }
