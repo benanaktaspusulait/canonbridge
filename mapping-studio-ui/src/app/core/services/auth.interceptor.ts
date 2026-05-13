@@ -20,19 +20,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   if (!user || !token) {
-    const cloned = req.clone({
-      setHeaders: {
-        'X-API-Key': auth.apiKey,
-        'X-Tenant-Id': 'tenant-acme',
-        'X-User-Id': 'anonymous'
-      }
-    });
-    return next(cloned);
+    return next(req);
   }
 
   const cloned = req.clone({
     setHeaders: {
-      'X-API-Key': auth.apiKey,
       'Authorization': `Bearer ${token}`,
       'X-Tenant-Id': user.tenantId,
       'X-User-Id': user.id

@@ -30,6 +30,7 @@ export const environment = {
     redirectUri: 'https://studio.canonbridge.com/auth/callback',
     scope: 'openid profile email',
     tokenRefreshThreshold: 300, // 5 minutes before expiry
+    demoAccounts: [],
   },
   
   // Feature Flags
@@ -66,4 +67,3 @@ export const environment = {
     autoSaveInterval: 30000, // 30 seconds
   },
 };
-

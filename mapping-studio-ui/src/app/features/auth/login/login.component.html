@@ -35,44 +35,46 @@
         <p>{{ 'login.welcome' | i18n }}</p>
       </div>
 
-      <div class="demo-banner">
-        <i class="pi pi-info-circle"></i>
-        <span
-          ><strong>{{ 'login.demoMode' | i18n }}</strong> {{ 'login.demoModeHint' | i18n }}</span
-        >
-      </div>
+      @if (demoAccounts.length) {
+        <div class="demo-banner">
+          <i class="pi pi-info-circle"></i>
+          <span
+            ><strong>{{ 'login.demoMode' | i18n }}</strong> {{ 'login.demoModeHint' | i18n }}</span
+          >
+        </div>
 
-      <div class="field mb-4">
-        <label class="field-label">{{ 'login.quickFill' | i18n }}</label>
-        <p-select
-          [(ngModel)]="selectedDemo"
-          [options]="demoAccounts"
-          optionLabel="label"
-          [placeholder]="'login.selectAccount' | i18n"
-          styleClass="w-full"
-          (onChange)="onDemoSelect($event.value)">
-          <ng-template pTemplate="selectedItem" let-item>
-            <div class="flex align-items-center gap-2" *ngIf="item">
-              <i class="pi pi-user"></i>
-              <span>{{ item.label }}</span>
-              <span class="role-badge">{{ item.roleLabel }}</span>
-            </div>
-          </ng-template>
-          <ng-template pTemplate="item" let-item>
-            <div class="flex align-items-center gap-2">
-              <i class="pi pi-user"></i>
-              <div class="flex flex-column">
-                <span class="font-medium">{{ item.label }}</span>
-                <span class="text-sm text-color-secondary">{{ item.email }} · {{ item.roleLabel }}</span>
+        <div class="field mb-4">
+          <label class="field-label">{{ 'login.quickFill' | i18n }}</label>
+          <p-select
+            [(ngModel)]="selectedDemo"
+            [options]="demoAccounts"
+            optionLabel="label"
+            [placeholder]="'login.selectAccount' | i18n"
+            styleClass="w-full"
+            (onChange)="onDemoSelect($event.value)">
+            <ng-template pTemplate="selectedItem" let-item>
+              <div class="flex align-items-center gap-2" *ngIf="item">
+                <i class="pi pi-user"></i>
+                <span>{{ item.label }}</span>
+                <span class="role-badge">{{ item.roleLabel }}</span>
               </div>
-            </div>
-          </ng-template>
-        </p-select>
-      </div>
+            </ng-template>
+            <ng-template pTemplate="item" let-item>
+              <div class="flex align-items-center gap-2">
+                <i class="pi pi-user"></i>
+                <div class="flex flex-column">
+                  <span class="font-medium">{{ item.label }}</span>
+                  <span class="text-sm text-color-secondary">{{ item.email }} · {{ item.roleLabel }}</span>
+                </div>
+              </div>
+            </ng-template>
+          </p-select>
+        </div>
 
-      <p-divider align="center">
-        <span class="divider-text">{{ 'login.orManual' | i18n }}</span>
-      </p-divider>
+        <p-divider align="center">
+          <span class="divider-text">{{ 'login.orManual' | i18n }}</span>
+        </p-divider>
+      }
 
       <form (ngSubmit)="onSubmit()" #loginForm="ngForm" class="mt-4">
         <div class="field">

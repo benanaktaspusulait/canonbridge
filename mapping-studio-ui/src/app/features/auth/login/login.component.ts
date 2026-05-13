@@ -11,11 +11,12 @@ import { SelectModule } from 'primeng/select';
 import { CardModule } from 'primeng/card';
 import { AuthService } from '../../../core/services/auth.service';
 import { I18nPipe } from '../../../core/i18n/i18n.pipe';
+import { environment } from '../../../../environments/environment';
 
 interface DemoAccount {
   label: string;
   email: string;
-  password: string;
+  password?: string;
   roleLabel: string;
 }
 
@@ -43,11 +44,7 @@ export class LoginComponent {
   loading = signal(false);
   errorKey = signal<string | null>(null);
 
-  readonly demoAccounts: DemoAccount[] = [
-    { label: 'Admin User', email: 'admin@canonbridge.io', password: 'admin123', roleLabel: 'admin' },
-    { label: 'Integration Engineer', email: 'engineer@canonbridge.io', password: 'demo123', roleLabel: 'integration_author' },
-    { label: 'Platform Operator', email: 'operator@canonbridge.io', password: 'demo123', roleLabel: 'operator' }
-  ];
+  readonly demoAccounts: DemoAccount[] = environment.auth.demoAccounts;
 
   selectedDemo: DemoAccount | null = null;
 
@@ -56,7 +53,7 @@ export class LoginComponent {
   onDemoSelect(account: DemoAccount | null): void {
     if (!account) return;
     this.email = account.email;
-    this.password = account.password;
+    this.password = account.password ?? '';
     this.errorKey.set(null);
   }
 

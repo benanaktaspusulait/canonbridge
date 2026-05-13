@@ -13,6 +13,7 @@ interface LoginResponse {
     name: string;
     role: string;
     tenant_id: string;  // Backend uses snake_case
+    tenant_name?: string;
   };
 }
 
@@ -23,7 +24,6 @@ export class AuthService {
   
   private readonly STORAGE_KEY = 'cb_user';
   private readonly TOKEN_KEY = 'cb_token';
-  private readonly API_KEY = 'dev-api-key'; // From .env CANONBRIDGE_API_KEYS
 
   private _currentUser = signal<User | null>(this.loadFromStorage());
   private _token = signal<string | null>(this.loadTokenFromStorage());
@@ -31,7 +31,6 @@ export class AuthService {
   readonly currentUser = this._currentUser.asReadonly();
   readonly isAuthenticated = computed(() => this._currentUser() !== null);
   readonly userRole = computed(() => this._currentUser()?.role ?? null);
-  readonly apiKey = this.API_KEY;
 
   async login(credentials: LoginCredentials): Promise<{ success: boolean; error?: string }> {
     try {
@@ -50,7 +49,7 @@ export class AuthService {
         name: response.user.name,
         role: response.user.role as User['role'],
         tenantId: response.user.tenant_id,  // Map from snake_case to camelCase
-        tenantName: 'Acme Corp', // TODO: Get from API
+        tenantName: response.user.tenant_name ?? this.formatTenantName(response.user.tenant_id),
         avatarInitials: this.getInitials(response.user.name)
       };
 
@@ -98,5 +97,13 @@ export class AuthService {
 
   private getInitials(name: string): string {
     return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  }
+
+  private formatTenantName(tenantId: string): string {
+    return tenantId
+      .split(/[-_\s]+/)
+      .filter(Boolean)
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
   }
 }

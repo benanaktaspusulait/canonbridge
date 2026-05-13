@@ -11,7 +11,7 @@ export const environment = {
   
   // API Configuration
   api: {
-    baseUrl: 'http://localhost:8082/api',
+    baseUrl: '/api',
     timeout: 30000, // 30 seconds
     retryAttempts: 3,
   },
@@ -30,6 +30,11 @@ export const environment = {
     redirectUri: 'http://localhost:4200/auth/callback',
     scope: 'openid profile email',
     tokenRefreshThreshold: 300, // 5 minutes before expiry
+    demoAccounts: [
+      { label: 'Admin User', email: 'admin@canonbridge.io', roleLabel: 'admin' },
+      { label: 'Integration Engineer', email: 'engineer@canonbridge.io', roleLabel: 'integration_author' },
+      { label: 'Platform Operator', email: 'operator@canonbridge.io', roleLabel: 'operator' },
+    ],
   },
   
   // Feature Flags
@@ -66,4 +71,3 @@ export const environment = {
     autoSaveInterval: 30000, // 30 seconds
   },
 };
-

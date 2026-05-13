@@ -14,6 +14,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { AuthService } from '../../core/services/auth.service';
 
 interface ApiKey {
   id: string;
@@ -52,11 +53,12 @@ export class SettingsComponent implements OnInit {
   private readonly confirmation = inject(ConfirmationService);
   private readonly toast = inject(MessageService);
   private readonly i18n = inject(I18nService);
+  private readonly auth = inject(AuthService);
 
   // ── Tenant form ───────────────────────────────────────────────────────────
-  tenantName = 'Acme Corp';
-  tenantSlug = 'acme-corp';
-  webhookUrl = 'https://hooks.acme.com/canonbridge';
+  tenantName = '';
+  tenantSlug = '';
+  webhookUrl = '';
 
   // ── Notification toggles ──────────────────────────────────────────────────
   dlqAlerts   = true;
@@ -68,16 +70,21 @@ export class SettingsComponent implements OnInit {
   newKeyName = '';
   generatedKey = '';
 
-  readonly apiKeys = signal<ApiKey[]>([
-    { id: 'k1', name: 'Production Transformer', prefix: 'cb_live_xK9m…', createdAt: '2026-03-01', lastUsed: '2 min ago',   status: 'active'  },
-    { id: 'k2', name: 'CI/CD Pipeline',         prefix: 'cb_live_pQ3r…', createdAt: '2026-04-15', lastUsed: '1 day ago',   status: 'active'  },
-    { id: 'k3', name: 'Old Dev Key',             prefix: 'cb_live_aB7z…', createdAt: '2026-01-10', lastUsed: '45 days ago', status: 'revoked' }
-  ]);
+  readonly apiKeys = signal<ApiKey[]>([]);
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
+    this.applyUserDefaults();
     this.loadSettings();
+  }
+
+  private applyUserDefaults(): void {
+    const user = this.auth.currentUser();
+    if (!user) return;
+
+    this.tenantName = user.tenantName;
+    this.tenantSlug = user.tenantId;
   }
 
   private loadSettings(): void {
