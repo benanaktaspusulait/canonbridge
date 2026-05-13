@@ -101,7 +101,7 @@ const EMPTY_FORM: ConnectionForm = {
   partner: '',
   eventType: '',
   type: 'REST',
-  environment: 'Sandbox',
+  environment: 'SANDBOX',
   method: 'GET',
   url: 'https://api.example.com/orders',
   authType: 'None',
@@ -124,7 +124,7 @@ const EMPTY_FORM: ConnectionForm = {
 const EMPTY_CREDENTIAL_FORM: CredentialForm = {
   name: '',
   type: 'API Key',
-  environment: 'Sandbox',
+  environment: 'SANDBOX',
   owner: '',
   secretValue: ''
 };
@@ -353,12 +353,7 @@ export class ExternalSystemsComponent implements OnInit {
     { label: 'Idempotency only', value: 'idempotency_only' }
   ];
 
-  readonly credentials = signal<CredentialRecord[]>([
-    { id: 'cred-carrier-oauth', name: 'Carrier A Production OAuth2', type: 'OAuth2', environment: 'Production', lastUsed: '2 min ago', owner: 'Integration Team', status: 'active' },
-    { id: 'cred-shopify-webhook', name: 'Shopify inbound webhook key', type: 'API Key', environment: 'Production', lastUsed: '1 min ago', owner: 'Platform Team', status: 'active' },
-    { id: 'cred-logistics-basic', name: 'Logistics Xpress SOAP Basic', type: 'Basic Auth', environment: 'Sandbox', lastUsed: '16 min ago', owner: 'Support Team', status: 'rotationDue' },
-    { id: 'cred-payment-oauth', name: 'Payment Risk OAuth2', type: 'OAuth2', environment: 'Production', lastUsed: '48 min ago', owner: 'Risk Team', status: 'active' }
-  ]);
+  readonly credentials = signal<CredentialRecord[]>([]);
   readonly credentialNameOptions = computed(() => this.credentials().filter(c => c.status !== 'disabled').map(c => c.name));
 
   readonly partnerOptions = computed(() =>
@@ -376,9 +371,9 @@ export class ExternalSystemsComponent implements OnInit {
   readonly totals = computed(() => {
     const list = this.filteredConnections();
     return {
-      healthy:  list.filter(c => c.status === 'healthy').length,
-      degraded: list.filter(c => c.status === 'degraded').length,
-      down:     list.filter(c => c.status === 'down').length,
+      healthy:  list.filter(c => c.status === 'HEALTHY').length,
+      degraded: list.filter(c => c.status === 'DEGRADED').length,
+      down:     list.filter(c => c.status === 'FAILED').length,
       calls:    list.reduce((sum, c) => sum + c.calls24h, 0)
     };
   });
@@ -463,7 +458,7 @@ export class ExternalSystemsComponent implements OnInit {
     this.loading.set(true);
     
     // Map UI form to API format
-    const apiConnection: Partial<OutboundConnection> = {
+    const apiConnection: OutboundConnection = {
       name: this.form.name,
       purpose: this.form.purpose as any || 'MANUAL_TEST',
       protocol: this.form.type as any,
@@ -606,7 +601,6 @@ export class ExternalSystemsComponent implements OnInit {
     this.testingId.set(connection.id);
 
     this.externalSystemService.test(connection.id, {
-      method: connection.method,
       headers: {},
       body: connection.requestPreview ? JSON.parse(connection.requestPreview) : undefined
     }).subscribe({
@@ -652,7 +646,7 @@ export class ExternalSystemsComponent implements OnInit {
 
   statusSeverity(status: ExternalConnection['status']): 'success' | 'warn' | 'danger' | 'secondary' {
     const map: Record<ExternalConnection['status'], 'success' | 'warn' | 'danger' | 'secondary'> = {
-      healthy: 'success', degraded: 'warn', down: 'danger', notTested: 'secondary'
+      HEALTHY: 'success', DEGRADED: 'warn', FAILED: 'danger', NOT_TESTED: 'secondary', DISABLED: 'secondary'
     };
     return map[status];
   }
@@ -662,9 +656,9 @@ export class ExternalSystemsComponent implements OnInit {
   }
 
   healthExplanation(connection: ExternalConnection): string {
-    if (connection.status === 'healthy') return this.t('externalSystems.health.healthy');
-    if (connection.status === 'degraded') return this.t('externalSystems.health.degraded');
-    if (connection.status === 'down') return this.t('externalSystems.health.down');
+    if (connection.status === 'HEALTHY') return this.t('externalSystems.health.healthy');
+    if (connection.status === 'DEGRADED') return this.t('externalSystems.health.degraded');
+    if (connection.status === 'FAILED') return this.t('externalSystems.health.down');
     return this.t('externalSystems.health.notTested');
   }
 
@@ -724,7 +718,7 @@ export class ExternalSystemsComponent implements OnInit {
   }
 
   typeConfigHint(connection: ExternalConnection): string {
-    if (connection.type === 'Scheduled Poll') {
+    if (connection.pollSchedule) {
       const detail = [connection.pollSchedule || 'manual', connection.pollInterval, connection.firstRunAt]
         .filter(Boolean)
         .join(' · ');
@@ -732,9 +726,6 @@ export class ExternalSystemsComponent implements OnInit {
     }
     if (connection.type === 'SOAP') {
       return this.t('externalSystems.detail.wsdlHint', { wsdl: connection.wsdlFileName || connection.wsdlUrl || connection.url });
-    }
-    if (connection.type === 'Webhook') {
-      return this.t('externalSystems.detail.webhookHint');
     }
     return this.t('externalSystems.detail.restHint');
   }
@@ -745,8 +736,7 @@ export class ExternalSystemsComponent implements OnInit {
       !!this.form.partner.trim() &&
       !!this.form.eventType.trim() &&
       !!this.form.url.trim() &&
-      (this.form.type !== 'SOAP' || !!this.form.wsdlUrl.trim() || !!this.form.wsdlFileName.trim()) &&
-      (this.form.type !== 'Scheduled Poll' || (!!this.form.pollSchedule.trim() && !!this.form.pollInterval.trim()))
+      (this.form.type !== 'SOAP' || !!this.form.wsdlUrl.trim() || !!this.form.wsdlFileName.trim())
     );
   }
 
@@ -766,11 +756,6 @@ export class ExternalSystemsComponent implements OnInit {
       input.value = '';
     };
     reader.readAsText(file);
-  }
-
-  private latencyFor(connection: ExternalConnection): number {
-    const base = connection.type === 'SOAP' ? 720 : connection.type === 'Webhook' ? 44 : 210;
-    return base + Math.floor(Math.random() * 180);
   }
 
   private t(key: string, params?: Record<string, unknown>): string {
