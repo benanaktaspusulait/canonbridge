@@ -81,6 +81,7 @@ type StudioSourceType =
   | 'restApi'
   | 'externalApi'
   | 'soap'
+  | 'grpc'
   | 'fileBatch'
   | 'apiEnrichment'
   | 'manual';
@@ -90,6 +91,7 @@ type BackendSourceType =
   | 'REST_API'
   | 'SCHEDULED_API'
   | 'SOAP'
+  | 'GRPC'
   | 'FILE_BATCH'
   | 'API_ENRICHMENT'
   | 'MANUAL';
@@ -923,6 +925,13 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
       titleKey: 'studio.sourceType.soap',
       descKey: 'studio.sourceType.soapDesc',
       hintKey: 'studio.sourceType.soapHint'
+    },
+    {
+      id: 'grpc',
+      icon: 'pi pi-directions-alt',
+      titleKey: 'studio.sourceType.grpc',
+      descKey: 'studio.sourceType.grpcDesc',
+      hintKey: 'studio.sourceType.grpcHint'
     },
     {
       id: 'fileBatch',
@@ -2103,6 +2112,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     if (value === 'REST_API') return 'restApi';
     if (value === 'SCHEDULED_API') return 'externalApi';
     if (value === 'SOAP') return 'soap';
+    if (value === 'GRPC') return 'grpc';
     if (value === 'FILE_BATCH') return 'fileBatch';
     if (value === 'API_ENRICHMENT') return 'apiEnrichment';
     return 'manual';
@@ -2131,6 +2141,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
       sourceType === 'restApi' ||
       sourceType === 'externalApi' ||
       sourceType === 'soap' ||
+      sourceType === 'grpc' ||
       sourceType === 'fileBatch' ||
       sourceType === 'apiEnrichment' ||
       sourceType === 'manual'
@@ -3505,6 +3516,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     if (st === 'restApi') return 'REST_API';
     if (st === 'externalApi') return 'SCHEDULED_API';
     if (st === 'soap') return 'SOAP';
+    if (st === 'grpc') return 'GRPC';
     if (st === 'fileBatch') return 'FILE_BATCH';
     if (st === 'apiEnrichment') return 'API_ENRICHMENT';
     return 'MANUAL';
@@ -3550,6 +3562,14 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
         endpoint: this.soapEndpoint(),
         soapAction: this.soapAction(),
         operation: this.soapOperation()
+      };
+    }
+    if (this.sourceType() === 'grpc') {
+      return {
+        ...base,
+        endpoint: this.externalApiUrl(),
+        service: 'customer.ProfileService',
+        rpcMethod: 'GetCustomer'
       };
     }
     if (this.sourceType() === 'fileBatch') {

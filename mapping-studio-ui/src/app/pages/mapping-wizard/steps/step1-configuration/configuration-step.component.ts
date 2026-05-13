@@ -72,6 +72,10 @@ export class ConfigurationStepComponent implements OnInit {
   externalApiUrl = signal('');
   externalApiSchedule = signal('');
 
+  // gRPC config
+  grpcService = signal('');
+  grpcMethod = signal('');
+
   ngOnInit(): void {
     this.loadExternalSystems();
     this.loadInitialValues();
@@ -106,6 +110,12 @@ export class ConfigurationStepComponent implements OnInit {
     }
     if (config['schedule']) {
       this.externalApiSchedule.set(config['schedule'] as string);
+    }
+    if (config['service']) {
+      this.grpcService.set(config['service'] as string);
+    }
+    if (config['rpcMethod']) {
+      this.grpcMethod.set(config['rpcMethod'] as string);
     }
   }
 
@@ -170,6 +180,11 @@ export class ConfigurationStepComponent implements OnInit {
     const endpoint = this.availableEndpoints().find(e => e.path === path);
     if (endpoint) {
       this.restApiMethod.set(endpoint.method);
+      if (this.sourceType() === 'GRPC') {
+        const segments = endpoint.path.split('/').filter(Boolean);
+        this.grpcService.set(segments[1] ?? '');
+        this.grpcMethod.set(segments[2] ?? endpoint.description);
+      }
     }
   }
 
@@ -184,10 +199,11 @@ export class ConfigurationStepComponent implements OnInit {
       'KAFKA': [], // Kafka doesn't use external systems
       'WEBHOOK': [], // Webhook doesn't use external systems
       'REST_API': ['REST'],
-      'SCHEDULED_API': ['REST', 'GRAPHQL'],
+      'SCHEDULED_API': ['REST', 'GRAPHQL', 'GRPC'],
       'SOAP': ['SOAP'],
+      'GRPC': ['GRPC'],
       'FILE_BATCH': [],
-      'API_ENRICHMENT': ['REST', 'GRAPHQL', 'SOAP'],
+      'API_ENRICHMENT': ['REST', 'GRAPHQL', 'SOAP', 'GRPC'],
       'MANUAL': []
     };
 
@@ -203,7 +219,7 @@ export class ConfigurationStepComponent implements OnInit {
   needsExternalSystem(): boolean {
     const sourceType = this.sourceType();
     // Only these source types need external system selection
-    return ['REST_API', 'SCHEDULED_API', 'SOAP', 'API_ENRICHMENT'].includes(sourceType);
+    return ['REST_API', 'SCHEDULED_API', 'SOAP', 'GRPC', 'API_ENRICHMENT'].includes(sourceType);
   }
 
   getSourceTypeLabel(): string {
@@ -213,6 +229,7 @@ export class ConfigurationStepComponent implements OnInit {
       'REST_API': 'REST API',
       'SCHEDULED_API': 'External API',
       'SOAP': 'SOAP',
+      'GRPC': 'gRPC',
       'FILE_BATCH': 'File Batch',
       'API_ENRICHMENT': 'API Enrichment',
       'MANUAL': 'Manual Upload'
@@ -245,6 +262,10 @@ export class ConfigurationStepComponent implements OnInit {
       // SOAP requires external system selection
       return this.selectedSystemId() !== null;
     }
+
+    if (type === 'GRPC') {
+      return this.selectedSystemId() !== null && this.grpcService().trim() !== '' && this.grpcMethod().trim() !== '';
+    }
     
     if (type === 'API_ENRICHMENT') {
       // API_ENRICHMENT requires external system selection
@@ -276,6 +297,13 @@ export class ConfigurationStepComponent implements OnInit {
       config = {
         url: this.externalApiUrl(),
         schedule: this.externalApiSchedule()
+      };
+    } else if (type === 'GRPC') {
+      config = {
+        service: this.grpcService(),
+        rpcMethod: this.grpcMethod(),
+        path: this.restApiPath(),
+        method: 'POST'
       };
     }
 

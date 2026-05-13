@@ -4,6 +4,7 @@ export type SourceType =
   | 'REST_API'
   | 'SCHEDULED_API'
   | 'SOAP'
+  | 'GRPC'
   | 'FILE_BATCH'
   | 'API_ENRICHMENT'
   | 'MANUAL';

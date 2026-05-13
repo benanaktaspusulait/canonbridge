@@ -192,6 +192,31 @@
           </div>
         }
 
+        @case ('GRPC') {
+          <div class="form-field">
+            <label for="grpc-service">{{ 'wizard.configuration.grpcService' | i18n }} *</label>
+            <input
+              pInputText
+              id="grpc-service"
+              [ngModel]="grpcService()"
+              (ngModelChange)="grpcService.set($event)"
+              [placeholder]="'wizard.configuration.grpcServicePlaceholder' | i18n"
+              class="w-full" />
+          </div>
+
+          <div class="form-field">
+            <label for="grpc-method">{{ 'wizard.configuration.grpcMethod' | i18n }} *</label>
+            <input
+              pInputText
+              id="grpc-method"
+              [ngModel]="grpcMethod()"
+              (ngModelChange)="grpcMethod.set($event)"
+              [placeholder]="'wizard.configuration.grpcMethodPlaceholder' | i18n"
+              class="w-full" />
+            <small class="field-hint">{{ 'wizard.configuration.grpcHint' | i18n }}</small>
+          </div>
+        }
+
         @default {
           <p-message 
             severity="info" 

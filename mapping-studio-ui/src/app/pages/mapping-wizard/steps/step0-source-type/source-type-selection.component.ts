@@ -47,6 +47,12 @@ export class SourceTypeSelectionComponent {
       descriptionKey: 'wizard.sourceType.soapDesc'
     },
     {
+      id: 'GRPC',
+      icon: 'pi pi-directions-alt',
+      titleKey: 'wizard.sourceType.grpc',
+      descriptionKey: 'wizard.sourceType.grpcDesc'
+    },
+    {
       id: 'FILE_BATCH',
       icon: 'pi pi-file-import',
       titleKey: 'wizard.sourceType.fileBatch',

@@ -9,7 +9,7 @@ export interface OutboundConnection {
   draft_id?: string;
   name: string;
   purpose?: 'SOURCE_PAYLOAD' | 'ENRICHMENT' | 'DESTINATION' | 'MANUAL_TEST';
-  protocol: 'REST' | 'SOAP' | 'GRAPHQL';
+  protocol: 'REST' | 'SOAP' | 'GRAPHQL' | 'GRPC';
   method: string;
   url: string;
   credential_id?: string;

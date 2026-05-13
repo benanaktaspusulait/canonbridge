@@ -90,7 +90,8 @@ public record OutboundConnection(
     public enum Protocol {
         REST,
         SOAP,
-        GRAPHQL
+        GRAPHQL,
+        GRPC
     }
 
     public enum ConnectionStatus {

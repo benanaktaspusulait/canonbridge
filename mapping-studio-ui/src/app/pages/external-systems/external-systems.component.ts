@@ -25,7 +25,7 @@ interface ExternalConnection {
   name: string;
   partner: string;
   eventType: string;
-  type: 'REST' | 'SOAP' | 'GRAPHQL';
+  type: 'REST' | 'SOAP' | 'GRAPHQL' | 'GRPC';
   environment: 'PRODUCTION' | 'SANDBOX';
   status: 'NOT_TESTED' | 'HEALTHY' | 'DEGRADED' | 'FAILED' | 'DISABLED';
   successRate: number | null;
@@ -349,8 +349,9 @@ export class ExternalSystemsComponent implements OnInit {
   readonly environmentFilter = signal('All');
 
   readonly typeOptions        = ['All', 'REST', 'SOAP', 'GRAPHQL'];
+  readonly typeOptions        = ['All', 'REST', 'SOAP', 'GRAPHQL', 'GRPC'];
   readonly environmentOptions = ['All', 'PRODUCTION', 'SANDBOX'];
-  readonly formTypeOptions    = ['REST', 'SOAP', 'GRAPHQL'];
+  readonly formTypeOptions    = ['REST', 'SOAP', 'GRAPHQL', 'GRPC'];
   readonly methodOptions      = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
   readonly authOptions        = ['None', 'API Key', 'Basic Auth', 'OAuth2'];
   readonly credentialTypeOptions = ['API Key', 'Basic Auth', 'OAuth2'];
@@ -735,6 +736,9 @@ export class ExternalSystemsComponent implements OnInit {
     }
     if (connection.type === 'SOAP') {
       return this.t('externalSystems.detail.wsdlHint', { wsdl: connection.wsdlFileName || connection.wsdlUrl || connection.url });
+    }
+    if (connection.type === 'GRPC') {
+      return this.t('externalSystems.detail.grpcHint');
     }
     return this.t('externalSystems.detail.restHint');
   }

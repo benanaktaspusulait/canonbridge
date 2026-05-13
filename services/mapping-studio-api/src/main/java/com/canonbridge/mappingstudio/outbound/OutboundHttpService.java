@@ -73,8 +73,9 @@ public class OutboundHttpService {
         }
         if (connection.protocol() != OutboundConnection.Protocol.REST
                 && connection.protocol() != OutboundConnection.Protocol.SOAP
-                && connection.protocol() != OutboundConnection.Protocol.GRAPHQL) {
-            throw new BadRequestException("Only REST, SOAP, and GraphQL outbound HTTP connections are supported");
+                && connection.protocol() != OutboundConnection.Protocol.GRAPHQL
+                && connection.protocol() != OutboundConnection.Protocol.GRPC) {
+            throw new BadRequestException("Only REST, SOAP, GraphQL, and gRPC outbound HTTP connections are supported");
         }
 
         UUID credentialId = connection.credentialId();
@@ -216,9 +217,13 @@ public class OutboundHttpService {
     }
 
     private String contentType(OutboundConnection.Protocol protocol) {
-        return protocol == OutboundConnection.Protocol.SOAP
-                ? "text/xml; charset=utf-8"
-                : "application/json";
+        if (protocol == OutboundConnection.Protocol.SOAP) {
+            return "text/xml; charset=utf-8";
+        }
+        if (protocol == OutboundConnection.Protocol.GRPC) {
+            return "application/grpc+json";
+        }
+        return "application/json";
     }
 
     private String requestBody(OutboundConnection connection, JsonObject payload) {
