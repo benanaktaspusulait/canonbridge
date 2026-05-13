@@ -1171,6 +1171,7 @@
     "backToList": "Back to Mappings",
     "back": "Back",
     "next": "Next",
+    "loading": "Loading mapping data...",
     "sourceType": {
       "title": "Select Source Type",
       "subtitle": "Choose how data will be ingested into CanonBridge",

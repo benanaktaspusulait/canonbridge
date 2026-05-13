@@ -38,6 +38,8 @@ interface ExternalSystemOption {
 })
 export class ConfigurationStepComponent implements OnInit {
   sourceType = input.required<SourceType>();
+  initialConfig = input<Record<string, unknown>>({});
+  initialSystemId = input<string | null>(null);
   
   configurationComplete = output<{
     externalSystemId: string | null;
@@ -72,6 +74,39 @@ export class ConfigurationStepComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadExternalSystems();
+    this.loadInitialValues();
+  }
+
+  loadInitialValues(): void {
+    const config = this.initialConfig();
+    const systemId = this.initialSystemId();
+    
+    if (systemId) {
+      this.selectedSystemId.set(systemId);
+    }
+    
+    // Load config values based on source type
+    if (config['topic']) {
+      this.kafkaTopic.set(config['topic'] as string);
+    }
+    if (config['consumerGroup']) {
+      this.kafkaConsumerGroup.set(config['consumerGroup'] as string);
+    }
+    if (config['endpoint']) {
+      this.webhookEndpoint.set(config['endpoint'] as string);
+    }
+    if (config['path']) {
+      this.restApiPath.set(config['path'] as string);
+    }
+    if (config['method']) {
+      this.restApiMethod.set(config['method'] as string);
+    }
+    if (config['url']) {
+      this.externalApiUrl.set(config['url'] as string);
+    }
+    if (config['schedule']) {
+      this.externalApiSchedule.set(config['schedule'] as string);
+    }
   }
 
   loadExternalSystems(): void {
@@ -90,6 +125,19 @@ export class ConfigurationStepComponent implements OnInit {
             endpoints: s.known_endpoints || []
           }))
         );
+        
+        // If we have a pre-selected system, load its endpoints
+        const systemId = this.initialSystemId();
+        if (systemId) {
+          const system = this.externalSystems().find(s => s.id === systemId);
+          if (system) {
+            this.selectedSystem.set(system);
+            if (system.endpoints && system.endpoints.length > 0) {
+              this.availableEndpoints.set(system.endpoints);
+            }
+          }
+        }
+        
         this.loading.set(false);
       },
       error: () => {

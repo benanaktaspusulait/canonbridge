@@ -20,6 +20,17 @@ export interface MappingDraft {
     | 'API_ENRICHMENT'
     | 'MANUAL';
   source_config?: string;
+  source_connection_id?: string;
+  sample_payload?: string;
+  target_schema_ref?: string;
+  transformation_rules?: any[];
+  kafka_topic?: string;
+  kafka_consumer_group?: string;
+  webhook_path?: string;
+  rest_api_path?: string;
+  rest_api_method?: string;
+  external_api_url?: string;
+  schedule_cron?: string;
   input_schema?: string;
   canonical_schema_ref?: string;
   mapping_rules?: string;

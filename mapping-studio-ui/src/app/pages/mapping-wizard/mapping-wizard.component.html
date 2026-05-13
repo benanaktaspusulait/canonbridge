@@ -22,53 +22,65 @@
 
   <div class="wizard-content">
     <div class="container">
-      @switch (currentStep()) {
-        @case (0) {
-          <app-source-type-selection 
-            (sourceTypeSelected)="onSourceTypeSelected($event)" />
-        }
-        @case (1) {
-          <app-configuration-step
-            [sourceType]="wizardState().sourceType!"
-            (configurationComplete)="onConfigurationComplete($event)"
-            (backClicked)="goBack()" />
-        }
-        @case (2) {
-          <app-sample-data-step
-            [method]="getConfigMethod()"
-            (sampleDataComplete)="onSampleDataComplete($event)"
-            (backClicked)="goBack()" />
-        }
-        @case (3) {
-          <div class="step-placeholder">
-            <h2>Step 3: Target Schema</h2>
-            <p>Select canonical schema (Coming soon...)</p>
-            <p-button label="Back" (onClick)="goBack()" severity="secondary" />
-            <p-button label="Next" (onClick)="goNext()" />
-          </div>
-        }
-        @case (4) {
-          <div class="step-placeholder">
-            <h2>Step 4: Field Mapping</h2>
-            <p>Map request fields to canonical schema (Coming soon...)</p>
-            <p-button label="Back" (onClick)="goBack()" severity="secondary" />
-            <p-button label="Next" (onClick)="goNext()" />
-          </div>
-        }
-        @case (5) {
-          <div class="step-placeholder">
-            <h2>Step 5: Test & Publish</h2>
-            <p>Test mapping and publish (Coming soon...)</p>
-            <p-button label="Back" (onClick)="goBack()" severity="secondary" />
-            <p-button label="Publish" icon="pi pi-check" />
-          </div>
-        }
-        @default {
-          <div class="step-placeholder">
-            <h2>Step {{ currentStep() }}</h2>
-            <p>Coming soon...</p>
-            <p-button label="Back" (onClick)="goBack()" />
-          </div>
+      @if (loading()) {
+        <div class="loading-state">
+          <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
+          <p>{{ 'wizard.loading' | i18n }}</p>
+        </div>
+      } @else {
+        @switch (currentStep()) {
+          @case (0) {
+            @if (!isEditMode()) {
+              <app-source-type-selection 
+                (sourceTypeSelected)="onSourceTypeSelected($event)" />
+            }
+          }
+          @case (1) {
+            <app-configuration-step
+              [sourceType]="wizardState().sourceType!"
+              [initialConfig]="wizardState().sourceConfig"
+              [initialSystemId]="wizardState().externalSystemId"
+              (configurationComplete)="onConfigurationComplete($event)"
+              (backClicked)="goBack()" />
+          }
+          @case (2) {
+            <app-sample-data-step
+              [method]="getConfigMethod()"
+              [initialSampleJson]="wizardState().sampleJson"
+              (sampleDataComplete)="onSampleDataComplete($event)"
+              (backClicked)="goBack()" />
+          }
+          @case (3) {
+            <div class="step-placeholder">
+              <h2>Step 3: Target Schema</h2>
+              <p>Select canonical schema (Coming soon...)</p>
+              <p-button label="Back" (onClick)="goBack()" severity="secondary" />
+              <p-button label="Next" (onClick)="goNext()" />
+            </div>
+          }
+          @case (4) {
+            <div class="step-placeholder">
+              <h2>Step 4: Field Mapping</h2>
+              <p>Map request fields to canonical schema (Coming soon...)</p>
+              <p-button label="Back" (onClick)="goBack()" severity="secondary" />
+              <p-button label="Next" (onClick)="goNext()" />
+            </div>
+          }
+          @case (5) {
+            <div class="step-placeholder">
+              <h2>Step 5: Test & Publish</h2>
+              <p>Test mapping and publish (Coming soon...)</p>
+              <p-button label="Back" (onClick)="goBack()" severity="secondary" />
+              <p-button label="Publish" icon="pi pi-check" />
+            </div>
+          }
+          @default {
+            <div class="step-placeholder">
+              <h2>Step {{ currentStep() }}</h2>
+              <p>Coming soon...</p>
+              <p-button label="Back" (onClick)="goBack()" />
+            </div>
+          }
         }
       }
     </div>

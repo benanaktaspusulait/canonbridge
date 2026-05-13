@@ -22,6 +22,7 @@ import { I18nPipe } from '../../../../core/i18n/i18n.pipe';
 })
 export class SampleDataStepComponent {
   method = input.required<string>();
+  initialSampleJson = input<string>('');
   
   sampleDataComplete = output<{
     sampleJson: string;
@@ -31,6 +32,14 @@ export class SampleDataStepComponent {
 
   sampleJson = signal('');
   jsonError = signal<string | null>(null);
+
+  constructor() {
+    // Load initial value when component initializes
+    const initial = this.initialSampleJson();
+    if (initial) {
+      this.sampleJson.set(initial);
+    }
+  }
 
   needsPayload(): boolean {
     const m = this.method().toUpperCase();

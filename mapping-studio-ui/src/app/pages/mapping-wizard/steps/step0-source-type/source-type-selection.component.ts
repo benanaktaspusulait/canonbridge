@@ -18,7 +18,7 @@ export class SourceTypeSelectionComponent {
   sourceTypes: SourceTypeOption[] = [
     {
       id: 'KAFKA',
-      icon: 'pi pi-send',
+      icon: 'pi pi-bolt',
       titleKey: 'wizard.sourceType.kafka',
       descriptionKey: 'wizard.sourceType.kafkaDesc'
     },
@@ -36,19 +36,19 @@ export class SourceTypeSelectionComponent {
     },
     {
       id: 'SCHEDULED_API',
-      icon: 'pi pi-cloud-download',
+      icon: 'pi pi-clock',
       titleKey: 'wizard.sourceType.externalApi',
       descriptionKey: 'wizard.sourceType.externalApiDesc'
     },
     {
       id: 'SOAP',
-      icon: 'pi pi-code',
+      icon: 'pi pi-server',
       titleKey: 'wizard.sourceType.soap',
       descriptionKey: 'wizard.sourceType.soapDesc'
     },
     {
       id: 'FILE_BATCH',
-      icon: 'pi pi-file',
+      icon: 'pi pi-file-import',
       titleKey: 'wizard.sourceType.fileBatch',
       descriptionKey: 'wizard.sourceType.fileBatchDesc'
     },

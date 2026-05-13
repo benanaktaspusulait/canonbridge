@@ -1230,6 +1230,7 @@
     "backToList": "Eşlemelere Dön",
     "back": "Geri",
     "next": "İleri",
+    "loading": "Eşleme verisi yükleniyor...",
     "sourceType": {
       "title": "Kaynak Tipi Seçin",
       "subtitle": "Verinin CanonBridge'e nasıl alınacağını seçin",

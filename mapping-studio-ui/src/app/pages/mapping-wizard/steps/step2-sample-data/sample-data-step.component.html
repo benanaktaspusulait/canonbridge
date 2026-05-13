@@ -43,7 +43,7 @@
           @if (jsonError()) {
             <p-message 
               severity="error" 
-              [text]="'wizard.sampleData.invalidJson' | i18n + ': ' + jsonError()" 
+              [text]="('wizard.sampleData.invalidJson' | i18n) + ': ' + jsonError()" 
               styleClass="json-error" />
           }
         </div>

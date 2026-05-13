@@ -1,6 +1,7 @@
 package com.canonbridge.mappingstudio.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.time.Instant;
 import java.util.UUID;
@@ -27,7 +28,10 @@ public record OutboundConnection(
         @JsonProperty("last_test_at") Instant lastTestAt,
         @JsonProperty("last_test_result") String lastTestResult,
         @JsonProperty("created_at") Instant createdAt,
-        @JsonProperty("updated_at") Instant updatedAt
+        @JsonProperty("updated_at") Instant updatedAt,
+        @JsonProperty("is_system_template") Boolean isSystemTemplate,
+        @JsonProperty("base_url") String baseUrl,
+        @JsonProperty("known_endpoints") JsonArray knownEndpoints
 ) {
     public enum ConnectionPurpose {
         SOURCE_PAYLOAD,

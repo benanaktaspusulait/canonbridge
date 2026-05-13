@@ -187,7 +187,10 @@ public class OutboundConnectionRepository {
                         : null,
                 row.getString("last_test_result"),
                 row.getLocalDateTime("created_at").toInstant(ZoneOffset.UTC),
-                row.getLocalDateTime("updated_at").toInstant(ZoneOffset.UTC)
+                row.getLocalDateTime("updated_at").toInstant(ZoneOffset.UTC),
+                row.getBoolean("is_system_template"),
+                row.getString("base_url"),
+                row.getJsonArray("known_endpoints")
         );
     }
 
