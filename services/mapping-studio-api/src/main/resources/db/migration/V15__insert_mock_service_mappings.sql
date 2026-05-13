@@ -105,7 +105,7 @@ INSERT INTO mapping_drafts (
     'FastCargo SOAP Tracking Mapping',
     'Maps FastCargo SOAP shipment tracking responses to canonical format',
     'SOAP',
-    '{"endpoint": "http://localhost:8081/ws/track", "wsdlUrl": "http://localhost:8081/wsdl/fastcargo.wsdl", "authType": "BASIC_AUTH", "username": "fastcargo-demo", "password": "fastcargo-secret", "soapAction": "getShipmentStatus"}'::jsonb,
+    '{"endpoint": "http://canonbridge-mock:8080/ws/track", "wsdlUrl": "http://canonbridge-mock:8080/wsdl/fastcargo.wsdl", "authType": "BASIC_AUTH", "username": "fastcargo-demo", "password": "fastcargo-secret", "soapAction": "getShipmentStatus"}'::jsonb,
     '{"type":"object","required":["trackingNumber","status"],"properties":{"trackingNumber":{"type":"string"},"status":{"type":"string"},"currentLocation":{"type":"object"},"estimatedDelivery":{"type":"string"},"weight":{"type":"number"},"weightUnit":{"type":"string"},"dimensions":{"type":"object"},"history":{"type":"array"},"deliveryDetails":{"type":"object"}}}'::jsonb,
     '55555555-5555-5555-5555-555555555555',
     '[

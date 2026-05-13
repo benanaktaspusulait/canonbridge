@@ -222,6 +222,35 @@ services:
       timeout: 5s
       retries: 3
 
+  canonbridge-mock:
+    build:
+      context: ./services/canonbridge-mock
+      dockerfile: Dockerfile
+    image: canonbridge/canonbridge-mock:latest
+    container_name: canonbridge-mock
+    ports:
+      - "8085:8080"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      PAYFLEX_API_KEY: demo-api-key-12345
+      SHOPMAX_CLIENT_ID: shopmax-demo-client
+      SHOPMAX_CLIENT_SECRET: shopmax-demo-secret
+      FASTCARGO_USERNAME: fastcargo-demo
+      FASTCARGO_PASSWORD: fastcargo-secret
+      WEBHOOK_STORAGE_DIR: /tmp/webhooks
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - webhook-data:/tmp/webhooks
+
   prometheus:
     image: prom/prometheus:v2.52.0
     container_name: canonbridge-prometheus
@@ -254,3 +283,4 @@ volumes:
   redis-data:
   prometheus-data:
   grafana-data:
+  webhook-data:
