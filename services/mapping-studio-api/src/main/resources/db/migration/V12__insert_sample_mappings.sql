@@ -43,7 +43,7 @@ SELECT
     'Customer Update Mapping',
     'Maps customer update events',
     'KAFKA',
-    '{"topic": "customer-updates", "consumerGroup": "mapping-studio"}',
+    '{"topic": "customer-updates", "consumerGroup": "mapping-studio", "sourceJson": "{\"customer\": {\"id\": \"CUST-12345\", \"email\": \"john.doe@example.com\", \"name\": \"John Doe\", \"phone\": \"+90 555 123 4567\"}}"}',
     '{"type": "object", "properties": {"customerId": {"type": "string"}}}',
     'canonical.customer.v1',
     '[{"field": "customerId", "source": "$.customer.id", "transform": "string"}]',

@@ -24,6 +24,7 @@ import { MappingService, MappingDraft } from '../../core/services/mapping.servic
 import { SchemaService } from '../../core/services/schema.service';
 import { CredentialService, type Credential, type CredentialAuthType } from '../../core/services/credential.service';
 import { ExternalSystemService, type TestResult } from '../../core/services/external-system.service';
+import { PartnerService } from '../../core/services/partner.service';
 import { AutoSaveService } from '../../core/services/auto-save.service';
 import { UndoRedoService } from '../../core/services/undo-redo.service';
 import { FormsModule } from '@angular/forms';
@@ -733,6 +734,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   private readonly schemaService = inject(SchemaService);
   private readonly credentialService = inject(CredentialService);
   private readonly externalSystemService = inject(ExternalSystemService);
+  private readonly partnerService = inject(PartnerService);
   private readonly autoSaveSvc = inject(AutoSaveService);
   private readonly undoRedoSvc: UndoRedoService<MappingRule[]> = inject(UndoRedoService);
   private readonly ajv = createStudioAjv();
@@ -740,6 +742,8 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   private readonly toast = inject(MessageService);
 
   readonly backendDraftId = signal<string | null>(null);
+  readonly partnerName = signal<string | null>(null);
+  readonly externalSystemName = signal<string | null>(null);
 
   @ViewChild('advancedExpr') private advancedExpr?: ElementRef<HTMLTextAreaElement>;
 
@@ -2002,6 +2006,28 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     this.externalApiName.set(draft.name ?? '');
     this.sourceType.set(this.mapBackendSourceType(draft.source_type));
     this.applySourceConfig(parseJsonString<Record<string, unknown>>(draft.source_config));
+    
+    // Analyze payload after source config is applied
+    if (this.sourceJson()) {
+      this.analyzePayload();
+    }
+
+    // Load partner information
+    if (draft.partner_id) {
+      this.partnerService.getById(draft.partner_id).subscribe({
+        next: (partner) => {
+          this.partnerName.set(partner.name ?? null);
+          // Load external system if available
+          if (partner.external_system_id) {
+            this.externalSystemService.getById(partner.external_system_id).subscribe({
+              next: (system) => this.externalSystemName.set(system.name ?? null),
+              error: () => this.externalSystemName.set(null)
+            });
+          }
+        },
+        error: () => this.partnerName.set(null)
+      });
+    }
 
     const inputSchema = parseJsonString<Record<string, unknown>>(draft.input_schema);
     this.inputSchemaDoc.set(inputSchema);
@@ -2040,7 +2066,13 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   }
 
   private loadCanonicalSchemaRef(ref: string, fallbackTargets: TargetField[]): void {
-    this.schemaService.getById(ref).subscribe({
+    // Check if ref is a UUID or a subject name
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ref);
+    const schemaObservable = isUuid 
+      ? this.schemaService.getById(ref)
+      : this.schemaService.getLatestActive(ref);
+    
+    schemaObservable.subscribe({
       next: (schema) => {
         const doc = parseJsonString<Record<string, unknown>>(schema.schema_json);
         if (!doc) return;

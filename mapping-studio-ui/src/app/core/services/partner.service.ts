@@ -13,6 +13,7 @@ export interface Partner {
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'ARCHIVED';
   metadata?: string;
   rate_limit_per_minute?: number;
+  external_system_id?: string;
   created_at?: string;
   updated_at?: string;
   created_by?: string;

@@ -1,7 +1,6 @@
 package com.canonbridge.mappingstudio.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.vertx.core.json.JsonObject;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -13,7 +12,7 @@ public record SchemaDefinition(
         @JsonProperty("schema_type") SchemaType schemaType,
         @JsonProperty("subject") String subject,
         @JsonProperty("version") Integer version,
-        @JsonProperty("schema_json") JsonObject schemaJson,
+        @JsonProperty("schema_json") String schemaJson,
         @JsonProperty("compatibility_mode") CompatibilityMode compatibilityMode,
         @JsonProperty("status") SchemaStatus status,
         @JsonProperty("description") String description,
