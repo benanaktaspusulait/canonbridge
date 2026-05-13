@@ -1,0 +1,53 @@
+<div class="mapping-wizard">
+  <div class="wizard-header">
+    <div class="container">
+      <div class="header-content">
+        <div>
+          <h1>{{ 'wizard.title' | i18n }}</h1>
+          <p>{{ 'wizard.subtitle' | i18n }}</p>
+        </div>
+        <a routerLink="/mappings" class="back-link">
+          <i class="pi pi-arrow-left"></i>
+          {{ 'wizard.backToList' | i18n }}
+        </a>
+      </div>
+      
+      <p-steps 
+        [model]="steps" 
+        [activeIndex]="currentStep()" 
+        [readonly]="true"
+        styleClass="wizard-steps" />
+    </div>
+  </div>
+
+  <div class="wizard-content">
+    <div class="container">
+      @switch (currentStep()) {
+        @case (0) {
+          <app-source-type-selection 
+            (sourceTypeSelected)="onSourceTypeSelected($event)" />
+        }
+        @case (1) {
+          <app-configuration-step
+            [sourceType]="wizardState().sourceType!"
+            (configurationComplete)="onConfigurationComplete($event)"
+            (backClicked)="goBack()" />
+        }
+        @case (2) {
+          <div class="step-placeholder">
+            <h2>Step 2: Sample Data</h2>
+            <p-button label="Back" (onClick)="goBack()" severity="secondary" />
+            <p-button label="Next" (onClick)="goNext()" />
+          </div>
+        }
+        @default {
+          <div class="step-placeholder">
+            <h2>Step {{ currentStep() }}</h2>
+            <p>Coming soon...</p>
+            <p-button label="Back" (onClick)="goBack()" />
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>

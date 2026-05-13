@@ -1,0 +1,89 @@
+.mapping-wizard {
+  min-height: 100vh;
+  background: var(--surface-ground);
+
+  .wizard-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-600) 100%);
+    color: white;
+    padding: 2rem 0;
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+
+      h1 {
+        font-size: 2rem;
+        font-weight: 600;
+        margin: 0 0 0.5rem 0;
+      }
+
+      p {
+        margin: 0;
+        opacity: 0.9;
+      }
+
+      .back-link {
+        color: white;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        transition: background 0.2s;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+      }
+    }
+
+    ::ng-deep .wizard-steps {
+      background: transparent;
+
+      .p-steps-item {
+        .p-menuitem-link {
+          background: transparent;
+          color: rgba(255, 255, 255, 0.7);
+        }
+
+        &.p-highlight .p-menuitem-link {
+          color: white;
+        }
+      }
+    }
+  }
+
+  .wizard-content {
+    padding: 3rem 0;
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    .step-placeholder {
+      background: var(--surface-card);
+      border-radius: 12px;
+      padding: 3rem;
+      text-align: center;
+
+      h2 {
+        margin-bottom: 1rem;
+      }
+
+      p-button {
+        margin: 0.5rem;
+      }
+    }
+  }
+}

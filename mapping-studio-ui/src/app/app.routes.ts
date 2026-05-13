@@ -37,6 +37,13 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'wizard',
+        loadComponent: () =>
+          import('./pages/mapping-wizard/mapping-wizard.component').then(
+            m => m.MappingWizardComponent
+          )
+      },
+      {
         path: 'partners',
         loadComponent: () =>
           import('./pages/partners/partners.component').then(m => m.PartnersComponent)

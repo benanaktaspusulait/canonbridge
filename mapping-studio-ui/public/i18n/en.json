@@ -1165,6 +1165,40 @@
       "copied": "Generated rule copied"
     }
   },
+  "wizard": {
+    "title": "New Mapping Wizard",
+    "subtitle": "Step-by-step guide to create a new mapping",
+    "backToList": "Back to Mappings",
+    "back": "Back",
+    "next": "Next",
+    "configuration": {
+      "title": "Configuration",
+      "subtitle": "Configure {{type}} source settings",
+      "externalSystem": "External System",
+      "selectSystem": "Select external system",
+      "selectSystemPlaceholder": "Choose an external system...",
+      "noSystems": "No external systems found. Please create one first.",
+      "createSystem": "Create External System",
+      "createNew": "Create New",
+      "loading": "Loading external systems...",
+      "sourceConfig": "Source Configuration",
+      "kafkaTopic": "Kafka Topic",
+      "kafkaTopicPlaceholder": "e.g. raw.partner.events",
+      "kafkaConsumerGroup": "Consumer Group",
+      "kafkaConsumerGroupPlaceholder": "e.g. canonbridge-consumer",
+      "webhookEndpoint": "Webhook Endpoint",
+      "webhookEndpointPlaceholder": "e.g. /webhooks/partner-events",
+      "restApiPath": "REST API Path",
+      "restApiPathPlaceholder": "e.g. /api/inbound/orders",
+      "restApiMethod": "HTTP Method",
+      "externalApiUrl": "External API URL",
+      "externalApiUrlPlaceholder": "e.g. https://api.partner.com/orders",
+      "schedule": "Schedule",
+      "schedulePlaceholder": "e.g. */5 * * * * (every 5 minutes)",
+      "scheduleHint": "Cron expression or interval",
+      "noConfigNeeded": "No additional configuration needed for this source type."
+    }
+  },
   "shortcuts": {
     "title": "Keyboard Shortcuts",
     "intro": "Use these keyboard shortcuts to work more efficiently in the Mapping Studio.",

@@ -1223,5 +1223,39 @@
       "download": "mapping-preview.rule indir",
       "copied": "Üretilen kural kopyalandı"
     }
+  },
+  "wizard": {
+    "title": "Yeni Eşleme Sihirbazı",
+    "subtitle": "Adım adım yeni eşleme oluşturma rehberi",
+    "backToList": "Eşlemelere Dön",
+    "back": "Geri",
+    "next": "İleri",
+    "configuration": {
+      "title": "Yapılandırma",
+      "subtitle": "{{type}} kaynak ayarlarını yapılandırın",
+      "externalSystem": "Dış Sistem",
+      "selectSystem": "Dış sistem seçin",
+      "selectSystemPlaceholder": "Bir dış sistem seçin...",
+      "noSystems": "Dış sistem bulunamadı. Lütfen önce bir tane oluşturun.",
+      "createSystem": "Dış Sistem Oluştur",
+      "createNew": "Yeni Oluştur",
+      "loading": "Dış sistemler yükleniyor...",
+      "sourceConfig": "Kaynak Yapılandırması",
+      "kafkaTopic": "Kafka Topic",
+      "kafkaTopicPlaceholder": "örn. raw.partner.events",
+      "kafkaConsumerGroup": "Consumer Group",
+      "kafkaConsumerGroupPlaceholder": "örn. canonbridge-consumer",
+      "webhookEndpoint": "Webhook Endpoint",
+      "webhookEndpointPlaceholder": "örn. /webhooks/partner-events",
+      "restApiPath": "REST API Path",
+      "restApiPathPlaceholder": "örn. /api/inbound/orders",
+      "restApiMethod": "HTTP Metodu",
+      "externalApiUrl": "Dış API URL",
+      "externalApiUrlPlaceholder": "örn. https://api.partner.com/orders",
+      "schedule": "Zamanlama",
+      "schedulePlaceholder": "örn. */5 * * * * (her 5 dakikada)",
+      "scheduleHint": "Cron ifadesi veya interval",
+      "noConfigNeeded": "Bu kaynak tipi için ek yapılandırma gerekmez."
+    }
   }
 }

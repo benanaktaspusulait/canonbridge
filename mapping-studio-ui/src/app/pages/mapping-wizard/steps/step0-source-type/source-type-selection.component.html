@@ -1,0 +1,25 @@
+<div class="source-type-selection">
+  <div class="header">
+    <h2>{{ 'wizard.sourceType.title' | i18n }}</h2>
+    <p>{{ 'wizard.sourceType.subtitle' | i18n }}</p>
+  </div>
+
+  <div class="source-type-grid">
+    @for (sourceType of sourceTypes; track sourceType.id) {
+      <div 
+        class="source-type-card"
+        (click)="selectSourceType(sourceType.id)"
+        (keydown.enter)="selectSourceType(sourceType.id)"
+        (keydown.space)="selectSourceType(sourceType.id)"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="sourceType.titleKey | i18n">
+        <div class="card-icon">
+          <i [class]="sourceType.icon" aria-hidden="true"></i>
+        </div>
+        <h3>{{ sourceType.titleKey | i18n }}</h3>
+        <p>{{ sourceType.descriptionKey | i18n }}</p>
+      </div>
+    }
+  </div>
+</div>

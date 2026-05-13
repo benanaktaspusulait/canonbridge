@@ -2,7 +2,6 @@ package com.canonbridge.mappingstudio.repository;
 
 import com.canonbridge.mappingstudio.domain.SchemaDefinition;
 import io.smallrye.mutiny.Uni;
-import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
@@ -165,7 +164,7 @@ public class SchemaRepository {
                 SchemaDefinition.SchemaType.valueOf(row.getString("schema_type")),
                 row.getString("subject"),
                 row.getInteger("version"),
-                row.getJsonObject("schema_json"),
+                row.getString("schema_json"),
                 SchemaDefinition.CompatibilityMode.valueOf(row.getString("compatibility_mode")),
                 SchemaDefinition.SchemaStatus.valueOf(row.getString("status")),
                 row.getString("description"),

@@ -1,0 +1,187 @@
+<div class="configuration-step">
+  <div class="step-header">
+    <h2>{{ 'wizard.configuration.title' | i18n }}</h2>
+    <p>{{ 'wizard.configuration.subtitle' | i18n: { type: getSourceTypeLabel() } }}</p>
+  </div>
+
+  <div class="config-content">
+    <!-- External System Selection -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <div class="card-header">
+          <h3>{{ 'wizard.configuration.externalSystem' | i18n }}</h3>
+        </div>
+      </ng-template>
+
+      @if (loading()) {
+        <p-message severity="info" [text]="'wizard.configuration.loading' | i18n" />
+      } @else if (externalSystems().length === 0) {
+        <p-message 
+          severity="warn" 
+          [text]="'wizard.configuration.noSystems' | i18n" />
+        <div class="action-buttons">
+          <a routerLink="/external-systems" class="create-link">
+            <p-button 
+              [label]="'wizard.configuration.createSystem' | i18n"
+              icon="pi pi-plus"
+              severity="success" />
+          </a>
+        </div>
+      } @else {
+        <div class="form-field">
+          <label for="external-system">{{ 'wizard.configuration.selectSystem' | i18n }}</label>
+          <p-select
+            id="external-system"
+            [options]="externalSystems()"
+            [ngModel]="selectedSystemId()"
+            (ngModelChange)="selectedSystemId.set($event)"
+            optionLabel="name"
+            optionValue="id"
+            [placeholder]="'wizard.configuration.selectSystemPlaceholder' | i18n"
+            styleClass="w-full">
+            <ng-template let-system pTemplate="item">
+              <div class="system-option">
+                <strong>{{ system.name }}</strong>
+                <span class="system-type">{{ system.type }}</span>
+              </div>
+            </ng-template>
+          </p-select>
+        </div>
+
+        <div class="action-buttons">
+          <a routerLink="/external-systems" class="create-link">
+            <p-button 
+              [label]="'wizard.configuration.createNew' | i18n"
+              icon="pi pi-plus"
+              [outlined]="true"
+              size="small" />
+          </a>
+        </div>
+      }
+    </p-card>
+
+    <!-- Source Type Specific Configuration -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <div class="card-header">
+          <h3>{{ 'wizard.configuration.sourceConfig' | i18n }}</h3>
+        </div>
+      </ng-template>
+
+      @switch (sourceType()) {
+        @case ('KAFKA') {
+          <div class="form-field">
+            <label for="kafka-topic">{{ 'wizard.configuration.kafkaTopic' | i18n }} *</label>
+            <input 
+              pInputText 
+              id="kafka-topic"
+              [ngModel]="kafkaTopic()"
+              (ngModelChange)="kafkaTopic.set($event)"
+              [placeholder]="'wizard.configuration.kafkaTopicPlaceholder' | i18n"
+              class="w-full" />
+          </div>
+
+          <div class="form-field">
+            <label for="kafka-group">{{ 'wizard.configuration.kafkaConsumerGroup' | i18n }} *</label>
+            <input 
+              pInputText 
+              id="kafka-group"
+              [ngModel]="kafkaConsumerGroup()"
+              (ngModelChange)="kafkaConsumerGroup.set($event)"
+              [placeholder]="'wizard.configuration.kafkaConsumerGroupPlaceholder' | i18n"
+              class="w-full" />
+          </div>
+        }
+
+        @case ('WEBHOOK') {
+          <div class="form-field">
+            <label for="webhook-endpoint">{{ 'wizard.configuration.webhookEndpoint' | i18n }} *</label>
+            <input 
+              pInputText 
+              id="webhook-endpoint"
+              [ngModel]="webhookEndpoint()"
+              (ngModelChange)="webhookEndpoint.set($event)"
+              [placeholder]="'wizard.configuration.webhookEndpointPlaceholder' | i18n"
+              class="w-full" />
+          </div>
+        }
+
+        @case ('REST_API') {
+          <div class="form-field">
+            <label for="rest-path">{{ 'wizard.configuration.restApiPath' | i18n }} *</label>
+            <input 
+              pInputText 
+              id="rest-path"
+              [ngModel]="restApiPath()"
+              (ngModelChange)="restApiPath.set($event)"
+              [placeholder]="'wizard.configuration.restApiPathPlaceholder' | i18n"
+              class="w-full" />
+          </div>
+
+          <div class="form-field">
+            <label for="rest-method">{{ 'wizard.configuration.restApiMethod' | i18n }}</label>
+            <p-select
+              id="rest-method"
+              [ngModel]="restApiMethod()"
+              (ngModelChange)="restApiMethod.set($event)"
+              [options]="[
+                { label: 'POST', value: 'POST' },
+                { label: 'PUT', value: 'PUT' },
+                { label: 'PATCH', value: 'PATCH' }
+              ]"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-full" />
+          </div>
+        }
+
+        @case ('SCHEDULED_API') {
+          <div class="form-field">
+            <label for="external-url">{{ 'wizard.configuration.externalApiUrl' | i18n }} *</label>
+            <input 
+              pInputText 
+              id="external-url"
+              [ngModel]="externalApiUrl()"
+              (ngModelChange)="externalApiUrl.set($event)"
+              [placeholder]="'wizard.configuration.externalApiUrlPlaceholder' | i18n"
+              class="w-full" />
+          </div>
+
+          <div class="form-field">
+            <label for="schedule">{{ 'wizard.configuration.schedule' | i18n }} *</label>
+            <input 
+              pInputText 
+              id="schedule"
+              [ngModel]="externalApiSchedule()"
+              (ngModelChange)="externalApiSchedule.set($event)"
+              [placeholder]="'wizard.configuration.schedulePlaceholder' | i18n"
+              class="w-full" />
+            <small class="field-hint">{{ 'wizard.configuration.scheduleHint' | i18n }}</small>
+          </div>
+        }
+
+        @default {
+          <p-message 
+            severity="info" 
+            [text]="'wizard.configuration.noConfigNeeded' | i18n" />
+        }
+      }
+    </p-card>
+  </div>
+
+  <div class="step-actions">
+    <p-button 
+      [label]="'wizard.back' | i18n"
+      icon="pi pi-arrow-left"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="onBack()" />
+    
+    <p-button 
+      [label]="'wizard.next' | i18n"
+      icon="pi pi-arrow-right"
+      iconPos="right"
+      [disabled]="!isConfigValid()"
+      (onClick)="onNext()" />
+  </div>
+</div>

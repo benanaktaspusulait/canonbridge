@@ -1,0 +1,94 @@
+.configuration-step {
+  max-width: 800px;
+  margin: 0 auto;
+
+  .step-header {
+    text-align: center;
+    margin-bottom: 2rem;
+
+    h2 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-color);
+    }
+
+    p {
+      color: var(--text-color-secondary);
+    }
+  }
+
+  .config-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+
+    p-card {
+      ::ng-deep .p-card {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .card-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--surface-border);
+
+        h3 {
+          margin: 0;
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: var(--text-color);
+        }
+      }
+    }
+
+    .form-field {
+      margin-bottom: 1.5rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--text-color);
+      }
+
+      .field-hint {
+        display: block;
+        margin-top: 0.25rem;
+        color: var(--text-color-secondary);
+        font-size: 0.875rem;
+      }
+    }
+
+    .system-option {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+
+      .system-type {
+        font-size: 0.875rem;
+        color: var(--text-color-secondary);
+      }
+    }
+
+    .action-buttons {
+      margin-top: 1rem;
+      display: flex;
+      gap: 0.5rem;
+
+      .create-link {
+        text-decoration: none;
+      }
+    }
+  }
+
+  .step-actions {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+}
