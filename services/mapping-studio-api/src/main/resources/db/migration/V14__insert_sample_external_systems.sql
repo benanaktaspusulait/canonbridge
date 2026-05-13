@@ -2,7 +2,7 @@
 
 -- PayFlex REST API - Payment Latest (Production, Healthy)
 INSERT INTO etl_outbound_connections (
-    connection_id, tenant_id, name, purpose, protocol, method, url,
+    connection_id, tenant_id, name, purpose, protocol, method, url, credential_id,
     environment, timeout_ms, status, last_test_at, last_test_result,
     retry_policy, response_handling
 ) VALUES (
@@ -13,6 +13,7 @@ INSERT INTO etl_outbound_connections (
     'REST',
     'GET',
     'http://canonbridge-mock:8080/api/payments/latest',
+    '11111111-2222-3333-4444-555555555551'::uuid,
     'PRODUCTION',
     5000,
     'HEALTHY',
@@ -24,7 +25,7 @@ INSERT INTO etl_outbound_connections (
 
 -- PayFlex REST API - Payment Query (Production, Healthy)
 INSERT INTO etl_outbound_connections (
-    connection_id, tenant_id, name, purpose, protocol, method, url,
+    connection_id, tenant_id, name, purpose, protocol, method, url, credential_id,
     environment, timeout_ms, status, last_test_at, last_test_result,
     retry_policy, response_handling
 ) VALUES (
@@ -35,6 +36,7 @@ INSERT INTO etl_outbound_connections (
     'REST',
     'POST',
     'http://canonbridge-mock:8080/api/payments/query',
+    '11111111-2222-3333-4444-555555555551'::uuid,
     'PRODUCTION',
     3000,
     'HEALTHY',
@@ -46,7 +48,7 @@ INSERT INTO etl_outbound_connections (
 
 -- FastCargo SOAP API - Tracking Service (Sandbox, Healthy)
 INSERT INTO etl_outbound_connections (
-    connection_id, tenant_id, name, purpose, protocol, method, url,
+    connection_id, tenant_id, name, purpose, protocol, method, url, credential_id,
     environment, timeout_ms, status, last_test_at, last_test_result,
     retry_policy, response_handling
 ) VALUES (
@@ -57,6 +59,7 @@ INSERT INTO etl_outbound_connections (
     'SOAP',
     'POST',
     'http://canonbridge-mock:8080/ws/track',
+    '11111111-2222-3333-4444-555555555552'::uuid,
     'SANDBOX',
     8000,
     'HEALTHY',
@@ -68,7 +71,7 @@ INSERT INTO etl_outbound_connections (
 
 -- ShopMax REST API - Recent Orders (Production, Healthy)
 INSERT INTO etl_outbound_connections (
-    connection_id, tenant_id, name, purpose, protocol, method, url,
+    connection_id, tenant_id, name, purpose, protocol, method, url, credential_id,
     environment, timeout_ms, status, last_test_at, last_test_result,
     retry_policy, response_handling
 ) VALUES (
@@ -79,6 +82,7 @@ INSERT INTO etl_outbound_connections (
     'REST',
     'GET',
     'http://canonbridge-mock:8080/api/orders/recent',
+    '11111111-2222-3333-4444-555555555553'::uuid,
     'PRODUCTION',
     10000,
     'HEALTHY',

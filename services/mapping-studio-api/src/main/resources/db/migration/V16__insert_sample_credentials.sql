@@ -12,7 +12,7 @@ INSERT INTO etl_credentials (
     'API_KEY',
     'PRODUCTION',
     'ACTIVE',
-    '{"apiKey": "demo-api-key-12345", "keyName": "X-API-Key", "keyLocation": "header"}', -- In production, this should be encrypted
+    '{"apiKey": "demo-api-key-12345", "headerName": "X-API-Key"}', -- In production, this should be encrypted
     'system',
     NOW(),
     NOW()
