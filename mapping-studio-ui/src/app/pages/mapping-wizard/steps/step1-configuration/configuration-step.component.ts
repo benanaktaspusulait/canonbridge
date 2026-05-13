@@ -200,6 +200,12 @@ export class ConfigurationStepComponent implements OnInit {
     return templates.filter(s => allowedProtocols.includes(s.protocol));
   }
 
+  needsExternalSystem(): boolean {
+    const sourceType = this.sourceType();
+    // Only these source types need external system selection
+    return ['REST_API', 'SCHEDULED_API', 'SOAP', 'API_ENRICHMENT'].includes(sourceType);
+  }
+
   getSourceTypeLabel(): string {
     const labels: Record<SourceType, string> = {
       'KAFKA': 'Kafka',
@@ -226,11 +232,23 @@ export class ConfigurationStepComponent implements OnInit {
     }
     
     if (type === 'REST_API') {
-      return this.restApiPath().trim() !== '';
+      // REST_API requires external system selection and path
+      return this.selectedSystemId() !== null && this.restApiPath().trim() !== '';
     }
     
     if (type === 'SCHEDULED_API') {
+      // SCHEDULED_API can optionally use external system, but URL and schedule are required
       return this.externalApiUrl().trim() !== '' && this.externalApiSchedule().trim() !== '';
+    }
+    
+    if (type === 'SOAP') {
+      // SOAP requires external system selection
+      return this.selectedSystemId() !== null;
+    }
+    
+    if (type === 'API_ENRICHMENT') {
+      // API_ENRICHMENT requires external system selection
+      return this.selectedSystemId() !== null;
     }
     
     return true;

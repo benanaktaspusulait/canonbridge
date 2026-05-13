@@ -71,8 +71,10 @@ public class OutboundHttpService {
         if (connection == null) {
             throw new BadRequestException("External system connection is required");
         }
-        if (connection.protocol() != OutboundConnection.Protocol.REST && connection.protocol() != OutboundConnection.Protocol.SOAP) {
-            throw new BadRequestException("Only REST and SOAP outbound HTTP connections are supported");
+        if (connection.protocol() != OutboundConnection.Protocol.REST
+                && connection.protocol() != OutboundConnection.Protocol.SOAP
+                && connection.protocol() != OutboundConnection.Protocol.GRAPHQL) {
+            throw new BadRequestException("Only REST, SOAP, and GraphQL outbound HTTP connections are supported");
         }
 
         UUID credentialId = connection.credentialId();
@@ -108,10 +110,8 @@ public class OutboundHttpService {
         applyCredential(builder, credential);
 
         if (outboundRequest != null && outboundRequest.payload() != null && allowsBody(method)) {
-            String body = outboundRequest.payload().encode();
-            builder.header("Content-Type", connection.protocol() == OutboundConnection.Protocol.SOAP
-                    ? "text/xml; charset=utf-8"
-                    : "application/json");
+            String body = requestBody(connection, outboundRequest.payload());
+            builder.header("Content-Type", contentType(connection.protocol()));
             builder.method(method, HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
         } else {
             builder.method(method, HttpRequest.BodyPublishers.noBody());
@@ -213,6 +213,56 @@ public class OutboundHttpService {
 
     private String defaultMethod(OutboundHttpRequest outboundRequest) {
         return outboundRequest != null && outboundRequest.payload() != null ? "POST" : "GET";
+    }
+
+    private String contentType(OutboundConnection.Protocol protocol) {
+        return protocol == OutboundConnection.Protocol.SOAP
+                ? "text/xml; charset=utf-8"
+                : "application/json";
+    }
+
+    private String requestBody(OutboundConnection connection, JsonObject payload) {
+        if (connection.protocol() != OutboundConnection.Protocol.SOAP) {
+            return payload.encode();
+        }
+
+        String operation = payload.getString("operation", connection.url() != null && connection.url().contains("/create")
+                ? "CreateShipment"
+                : "TrackShipment");
+        if ("CreateShipment".equalsIgnoreCase(operation)) {
+            String reference = payload.getString("reference", "REF-DEMO-001");
+            return """
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:fc="http://fastcargo.com/tracking">
+                        <soap:Body>
+                            <fc:CreateShipmentRequest>
+                                <fc:reference>%s</fc:reference>
+                            </fc:CreateShipmentRequest>
+                        </soap:Body>
+                    </soap:Envelope>
+                    """.formatted(escapeXml(reference));
+        }
+
+        String trackingNumber = payload.getString("trackingNumber", "TRK-DEMO-001");
+        return """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:fc="http://fastcargo.com/tracking">
+                    <soap:Body>
+                        <fc:TrackShipmentRequest>
+                            <fc:trackingNumber>%s</fc:trackingNumber>
+                        </fc:TrackShipmentRequest>
+                    </soap:Body>
+                </soap:Envelope>
+                """.formatted(escapeXml(trackingNumber));
+    }
+
+    private String escapeXml(String value) {
+        return value
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&apos;");
     }
 
     private boolean allowsBody(String method) {

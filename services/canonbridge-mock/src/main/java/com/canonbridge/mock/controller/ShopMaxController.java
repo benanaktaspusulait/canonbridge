@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -51,6 +52,88 @@ public class ShopMaxController {
         }
 
         return ResponseEntity.ok(shopMaxService.getRecentOrdersDetailed());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getOrderById(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @PathVariable String id,
+            @RequestParam(required = false) String format,
+            @RequestParam(required = false) String scenario) {
+
+        log.info("GET /api/orders/{} - format: {}, scenario: {}", id, format, scenario);
+
+        ResponseEntity<?> authError = validateBearer(authorization);
+        if (authError != null) {
+            return authError;
+        }
+
+        if (scenario != null) {
+            return handleScenario(scenario);
+        }
+
+        if ("compact".equalsIgnoreCase(format)) {
+            return ResponseEntity.ok(shopMaxService.getOrderCompact(id));
+        }
+
+        return ResponseEntity.ok(shopMaxService.getOrderDetailed(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<?> createOrder(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestBody(required = false) Map<String, Object> orderRequest,
+            @RequestParam(required = false) String scenario) {
+
+        log.info("POST /api/orders - scenario: {}", scenario);
+
+        ResponseEntity<?> authError = validateBearer(authorization);
+        if (authError != null) {
+            return authError;
+        }
+
+        if (scenario != null) {
+            return handleScenario(scenario);
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(shopMaxService.createOrder(orderRequest));
+    }
+
+    @GetMapping("/products")
+    public ResponseEntity<?> listProducts(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestParam(required = false) String scenario) {
+
+        log.info("GET /api/orders/products - scenario: {}", scenario);
+
+        ResponseEntity<?> authError = validateBearer(authorization);
+        if (authError != null) {
+            return authError;
+        }
+
+        if (scenario != null) {
+            return handleScenario(scenario);
+        }
+
+        return ResponseEntity.ok(Map.of("products", shopMaxService.getProducts()));
+    }
+
+    private ResponseEntity<?> validateBearer(String authorization) {
+        if (!isValidBearerToken(authorization)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Invalid or missing bearer token"));
+        }
+
+        if (isExpiredBearerToken(authorization)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of(
+                            "error", "token_expired",
+                            "error_description", "The access token has expired. Please obtain a new token.",
+                            "hint", "Use POST /oauth/token to refresh your token"
+                    ));
+        }
+
+        return null;
     }
 
     private boolean isValidBearerToken(String authorization) {

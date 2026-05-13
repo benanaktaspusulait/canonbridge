@@ -105,5 +105,69 @@
         margin: 0;
       }
     }
+
+    .edit-mode-step0 {
+      .selected-source-type {
+        background: var(--surface-card);
+        border-radius: 12px;
+        padding: 3rem;
+        max-width: 600px;
+        margin: 0 auto;
+
+        h2 {
+          text-align: center;
+          margin-bottom: 2rem;
+          color: var(--text-color);
+        }
+
+        .source-type-display {
+          display: flex;
+          align-items: center;
+          gap: 2rem;
+          padding: 2rem;
+          background: var(--surface-ground);
+          border-radius: 8px;
+          margin-bottom: 2rem;
+
+          .source-icon {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-600, var(--primary-color)));
+            border-radius: 50%;
+            color: white;
+            flex-shrink: 0;
+
+            i {
+              font-size: 2.5rem;
+            }
+          }
+
+          .source-info {
+            flex: 1;
+
+            h3 {
+              font-size: 1.5rem;
+              font-weight: 600;
+              margin: 0 0 0.5rem 0;
+              color: var(--text-color);
+            }
+
+            p {
+              margin: 0;
+              color: var(--text-color-secondary);
+              line-height: 1.5;
+            }
+          }
+        }
+
+        .actions {
+          display: flex;
+          justify-content: center;
+        }
+      }
+    }
   }
 }

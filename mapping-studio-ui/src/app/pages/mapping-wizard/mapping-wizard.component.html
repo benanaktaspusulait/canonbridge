@@ -33,6 +33,28 @@
             @if (!isEditMode()) {
               <app-source-type-selection 
                 (sourceTypeSelected)="onSourceTypeSelected($event)" />
+            } @else {
+              <div class="edit-mode-step0">
+                <div class="selected-source-type">
+                  <h2>{{ 'wizard.sourceType.selected' | i18n }}</h2>
+                  <div class="source-type-display">
+                    <div class="source-icon">
+                      <i [class]="getSourceTypeIcon()" aria-hidden="true"></i>
+                    </div>
+                    <div class="source-info">
+                      <h3>{{ getSourceTypeLabel() }}</h3>
+                      <p>{{ getSourceTypeDescription() }}</p>
+                    </div>
+                  </div>
+                  <div class="actions">
+                    <p-button 
+                      [label]="'wizard.next' | i18n" 
+                      icon="pi pi-arrow-right"
+                      iconPos="right"
+                      (onClick)="goNext()" />
+                  </div>
+                </div>
+              </div>
             }
           }
           @case (1) {

@@ -1175,6 +1175,7 @@
     "sourceType": {
       "title": "Select Source Type",
       "subtitle": "Choose how data will be ingested into CanonBridge",
+      "selected": "Selected Source Type",
       "kafka": "Kafka Topic",
       "kafkaDesc": "Stream from an existing raw topic",
       "webhook": "Webhook",

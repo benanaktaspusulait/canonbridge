@@ -33,6 +33,53 @@ public record OutboundConnection(
         @JsonProperty("base_url") String baseUrl,
         @JsonProperty("known_endpoints") JsonArray knownEndpoints
 ) {
+    public OutboundConnection(
+            UUID connectionId,
+            String tenantId,
+            UUID draftId,
+            String name,
+            ConnectionPurpose purpose,
+            Protocol protocol,
+            String method,
+            String url,
+            UUID credentialId,
+            Credential.Environment environment,
+            String schedule,
+            Integer timeoutMs,
+            JsonObject retryPolicy,
+            JsonObject responseHandling,
+            ConnectionStatus status,
+            Instant lastTestAt,
+            String lastTestResult,
+            Instant createdAt,
+            Instant updatedAt
+    ) {
+        this(
+                connectionId,
+                tenantId,
+                draftId,
+                name,
+                purpose,
+                protocol,
+                method,
+                url,
+                credentialId,
+                environment,
+                schedule,
+                timeoutMs,
+                retryPolicy,
+                responseHandling,
+                status,
+                lastTestAt,
+                lastTestResult,
+                createdAt,
+                updatedAt,
+                false,
+                null,
+                new JsonArray()
+        );
+    }
+
     public enum ConnectionPurpose {
         SOURCE_PAYLOAD,
         ENRICHMENT,

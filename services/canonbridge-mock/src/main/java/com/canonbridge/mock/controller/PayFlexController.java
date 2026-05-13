@@ -70,6 +70,31 @@ public class PayFlexController {
         return ResponseEntity.ok(payFlexService.queryPayments(queryRequest));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getPaymentById(
+            @RequestHeader(value = "X-API-Key", required = false) String apiKey,
+            @PathVariable String id,
+            @RequestParam(required = false) String format,
+            @RequestParam(required = false) String scenario) {
+
+        log.info("GET /api/payments/{} - format: {}, scenario: {}", id, format, scenario);
+
+        if (!isValidApiKey(apiKey)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Invalid or missing API key"));
+        }
+
+        if (scenario != null) {
+            return handleScenario(scenario);
+        }
+
+        if ("flat".equalsIgnoreCase(format)) {
+            return ResponseEntity.ok(payFlexService.getPaymentFlat(id));
+        }
+
+        return ResponseEntity.ok(payFlexService.getPaymentDetailed(id));
+    }
+
     private boolean isValidApiKey(String apiKey) {
         return mockConfig.getPayflex().getApiKey().equals(apiKey);
     }

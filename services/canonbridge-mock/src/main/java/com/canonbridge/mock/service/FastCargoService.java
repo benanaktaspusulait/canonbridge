@@ -51,6 +51,29 @@ public class FastCargoService {
                 );
     }
 
+    public String getCreateShipmentResponse(String reference) {
+        var now = Instant.now();
+        var trackingNumber = "FC-" + Long.toHexString(System.currentTimeMillis()).toUpperCase();
+
+        return """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+                               xmlns:fc="http://fastcargo.com/tracking">
+                    <soap:Body>
+                        <fc:CreateShipmentResponse>
+                            <fc:Shipment>
+                                <fc:Reference>%s</fc:Reference>
+                                <fc:TrackingNumber>%s</fc:TrackingNumber>
+                                <fc:Status>CREATED</fc:Status>
+                                <fc:CreatedAt>%s</fc:CreatedAt>
+                                <fc:LabelUrl>%s/labels/%s.pdf</fc:LabelUrl>
+                            </fc:Shipment>
+                        </fc:CreateShipmentResponse>
+                    </soap:Body>
+                </soap:Envelope>
+                """.formatted(reference, trackingNumber, now.toString(), serviceUrl, trackingNumber);
+    }
+
     public String getWsdl() {
         return """
                 <?xml version="1.0" encoding="UTF-8"?>

@@ -64,6 +64,33 @@ public class FastCargoSoapController {
         return ResponseEntity.ok(fastCargoService.getTrackingResponse(trackingNumber));
     }
 
+    @PostMapping(value = "/create", consumes = MediaType.TEXT_XML_VALUE, produces = MediaType.TEXT_XML_VALUE)
+    public ResponseEntity<String> createShipment(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestParam(required = false) String scenario,
+            @RequestBody String soapRequest) {
+
+        log.info("POST /ws/create - SOAP request received, scenario: {}", scenario);
+
+        if ("service-unavailable".equals(scenario)) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(createSoapFault("ServiceUnavailable", "FastCargo shipment creation service is temporarily unavailable"));
+        }
+
+        if (!isValidBasicAuth(authorization)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .header("WWW-Authenticate", "Basic realm=\"FastCargo SOAP API\"")
+                    .body(createSoapFault("Unauthorized", "Invalid or missing credentials"));
+        }
+
+        String reference = extractFirstText(soapRequest, "reference");
+        if (reference == null || reference.isBlank()) {
+            reference = "REF-" + System.currentTimeMillis();
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(fastCargoService.getCreateShipmentResponse(reference));
+    }
+
     @GetMapping(value = "/fastcargo.wsdl", produces = MediaType.TEXT_XML_VALUE)
     public ResponseEntity<String> getWsdl() {
         log.info("GET /ws/fastcargo.wsdl");
@@ -93,8 +120,12 @@ public class FastCargoSoapController {
     }
 
     private String extractTrackingNumber(String soapRequest) {
+        return extractFirstText(soapRequest, "trackingNumber");
+    }
+
+    private String extractFirstText(String soapRequest, String elementName) {
         java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
-                "<(?:[a-zA-Z0-9_]+:)?trackingNumber[^>]*>([^<]+)</(?:[a-zA-Z0-9_]+:)?trackingNumber>");
+                "<(?:[a-zA-Z0-9_]+:)?" + elementName + "[^>]*>([^<]+)</(?:[a-zA-Z0-9_]+:)?" + elementName + ">");
         java.util.regex.Matcher matcher = pattern.matcher(soapRequest);
         if (matcher.find()) {
             return matcher.group(1).trim();

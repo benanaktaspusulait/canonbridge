@@ -157,7 +157,8 @@ export class MappingWizardComponent implements OnInit {
   }
 
   goBack(): void {
-    if (this.currentStep() > 0) {
+    const minStep = this.isEditMode() ? 0 : 0;
+    if (this.currentStep() > minStep) {
       this.currentStep.update(step => step - 1);
     }
   }
@@ -170,5 +171,50 @@ export class MappingWizardComponent implements OnInit {
 
   getConfigMethod(): string {
     return (this.wizardState().sourceConfig['method'] as string) || 'GET';
+  }
+
+  getSourceTypeIcon(): string {
+    const sourceType = this.wizardState().sourceType;
+    const iconMap: Record<SourceType, string> = {
+      'KAFKA': 'pi pi-bolt',
+      'WEBHOOK': 'pi pi-link',
+      'REST_API': 'pi pi-globe',
+      'SCHEDULED_API': 'pi pi-clock',
+      'SOAP': 'pi pi-server',
+      'FILE_BATCH': 'pi pi-file-import',
+      'API_ENRICHMENT': 'pi pi-sitemap',
+      'MANUAL': 'pi pi-upload'
+    };
+    return sourceType ? iconMap[sourceType] : 'pi pi-question';
+  }
+
+  getSourceTypeLabel(): string {
+    const sourceType = this.wizardState().sourceType;
+    const labelMap: Record<SourceType, string> = {
+      'KAFKA': 'Kafka Topic',
+      'WEBHOOK': 'Webhook',
+      'REST_API': 'REST API',
+      'SCHEDULED_API': 'External API',
+      'SOAP': 'SOAP',
+      'FILE_BATCH': 'File Batch',
+      'API_ENRICHMENT': 'API Enrichment',
+      'MANUAL': 'Manual Upload'
+    };
+    return sourceType ? labelMap[sourceType] : 'Unknown';
+  }
+
+  getSourceTypeDescription(): string {
+    const sourceType = this.wizardState().sourceType;
+    const descMap: Record<SourceType, string> = {
+      'KAFKA': 'Stream from an existing raw topic',
+      'WEBHOOK': 'External systems send data to CanonBridge',
+      'REST_API': 'CanonBridge calls external REST API',
+      'SCHEDULED_API': 'Scheduled polling from external API',
+      'SOAP': 'SOAP web service integration',
+      'FILE_BATCH': 'Batch file processing',
+      'API_ENRICHMENT': 'Enrich data with external API',
+      'MANUAL': 'Manual data upload for testing'
+    };
+    return sourceType ? descMap[sourceType] : '';
   }
 }

@@ -242,7 +242,10 @@ public class ExternalSystemResource {
                 connection.lastTestAt(),
                 connection.lastTestResult(),
                 connection.createdAt(),
-                connection.updatedAt()
+                connection.updatedAt(),
+                connection.isSystemTemplate(),
+                connection.baseUrl(),
+                connection.knownEndpoints()
         );
     }
 

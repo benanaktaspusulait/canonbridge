@@ -1234,6 +1234,7 @@
     "sourceType": {
       "title": "Kaynak Tipi Seçin",
       "subtitle": "Verinin CanonBridge'e nasıl alınacağını seçin",
+      "selected": "Seçili Kaynak Tipi",
       "kafka": "Kafka Topic",
       "kafkaDesc": "Mevcut raw topic üzerinden akış",
       "webhook": "Webhook",

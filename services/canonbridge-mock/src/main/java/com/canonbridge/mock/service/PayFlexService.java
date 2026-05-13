@@ -91,6 +91,45 @@ public class PayFlexService {
         );
     }
 
+    public PaymentDetailedResponse getPaymentDetailed(String paymentId) {
+        PaymentDetailedResponse response = getLatestPaymentDetailed();
+        return new PaymentDetailedResponse(
+                new PaymentDetailedResponse.Payment(
+                        paymentId,
+                        response.payment().amount(),
+                        response.payment().status(),
+                        response.payment().type(),
+                        response.payment().createdAt(),
+                        response.payment().updatedAt()
+                ),
+                response.merchant(),
+                response.payer(),
+                response.beneficiary(),
+                response.risk(),
+                response.settlement(),
+                response.metadata()
+        );
+    }
+
+    public PaymentFlatResponse getPaymentFlat(String paymentId) {
+        PaymentFlatResponse response = getLatestPaymentFlat();
+        return new PaymentFlatResponse(
+                paymentId,
+                response.amt(),
+                response.ccy(),
+                response.src_iban(),
+                response.dst_iban(),
+                response.merchant_ref(),
+                response.created_ts(),
+                response.risk_lvl(),
+                response.status(),
+                response.payer_name(),
+                response.beneficiary_name(),
+                response.settlement_date(),
+                response.correlation_id()
+        );
+    }
+
     public List<PaymentDetailedResponse> queryPayments(Map<String, Object> queryRequest) {
         return List.of(getLatestPaymentDetailed());
     }
