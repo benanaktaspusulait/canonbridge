@@ -8,8 +8,12 @@ import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { SourceTypeSelectionComponent } from './steps/step0-source-type/source-type-selection.component';
 import { ConfigurationStepComponent } from './steps/step1-configuration/configuration-step.component';
 import { SampleDataStepComponent } from './steps/step2-sample-data/sample-data-step.component';
+import { TargetSchemaStepComponent } from './steps/step3-target-schema/target-schema-step.component';
+import { FieldMappingStepComponent } from './steps/step4-field-mapping/field-mapping-step.component';
+import { TestPublishStepComponent } from './steps/step5-test-publish/test-publish-step.component';
 import { SourceType, WizardState } from './models/mapping-wizard.models';
 import { MappingService } from '../../core/services/mapping.service';
+import { SchemaService } from '../../core/services/schema.service';
 
 @Component({
   selector: 'app-mapping-wizard',
@@ -22,7 +26,10 @@ import { MappingService } from '../../core/services/mapping.service';
     I18nPipe,
     SourceTypeSelectionComponent,
     ConfigurationStepComponent,
-    SampleDataStepComponent
+    SampleDataStepComponent,
+    TargetSchemaStepComponent,
+    FieldMappingStepComponent,
+    TestPublishStepComponent
   ],
   templateUrl: './mapping-wizard.component.html',
   styleUrl: './mapping-wizard.component.scss'
@@ -30,11 +37,13 @@ import { MappingService } from '../../core/services/mapping.service';
 export class MappingWizardComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private mappingService = inject(MappingService);
+  private schemaService = inject(SchemaService);
 
   currentStep = signal(0);
   mappingId = signal<string | null>(null);
   isEditMode = signal(false);
   loading = signal(false);
+  targetSchemaJson = signal<string>('{}');
   
   wizardState = signal<WizardState>({
     sourceType: null,
@@ -42,6 +51,7 @@ export class MappingWizardComponent implements OnInit {
     sourceConfig: {},
     sampleJson: '',
     targetSchemaRef: null,
+    targetSchemaJson: '',
     mappingRules: []
   });
 
@@ -76,8 +86,9 @@ export class MappingWizardComponent implements OnInit {
           sourceType: this.inferSourceType(mapping),
           externalSystemId: mapping.source_connection_id || null,
           sourceConfig: this.extractSourceConfig(mapping),
-          sampleJson: mapping.sample_payload || '',
+          sampleJson: mapping.sample_payload || this.extractSampleJson(mapping),
           targetSchemaRef: mapping.target_schema_ref || null,
+          targetSchemaJson: '',
           mappingRules: mapping.transformation_rules || []
         }));
         
@@ -95,6 +106,8 @@ export class MappingWizardComponent implements OnInit {
   private inferSourceType(mapping: any): SourceType {
     // Infer source type from mapping data
     if (mapping.source_type) {
+      const sourceConfig = this.extractSourceConfig(mapping);
+      if (mapping.source_type === 'API_ENRICHMENT' && sourceConfig['query']) return 'GRAPHQL';
       return mapping.source_type as SourceType;
     }
     
@@ -127,8 +140,31 @@ export class MappingWizardComponent implements OnInit {
       config['url'] = mapping.external_api_url || '';
       config['schedule'] = mapping.schedule_cron;
     }
+
+    Object.assign(config, this.parseJsonObject(mapping.source_config));
     
     return config;
+  }
+
+  private extractSampleJson(mapping: any): string {
+    const config = this.parseJsonObject(mapping.source_config);
+    return typeof config['sourceJson'] === 'string'
+      ? config['sourceJson']
+      : typeof config['sampleJson'] === 'string'
+        ? config['sampleJson']
+        : '';
+  }
+
+  private parseJsonObject(value: unknown): Record<string, unknown> {
+    if (!value) return {};
+    if (typeof value === 'object') return value as Record<string, unknown>;
+    if (typeof value !== 'string') return {};
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
   }
 
   onSourceTypeSelected(sourceType: SourceType): void {
@@ -156,6 +192,36 @@ export class MappingWizardComponent implements OnInit {
     this.currentStep.set(3);
   }
 
+  onTargetSchemaSelected(data: { schemaRef: string }): void {
+    this.wizardState.update(state => ({
+      ...state,
+      targetSchemaRef: data.schemaRef
+    }));
+    
+    // Load schema JSON for field mapping
+    this.schemaService.getById(data.schemaRef).subscribe({
+      next: (schema) => {
+        this.targetSchemaJson.set(schema.schema_json);
+        this.wizardState.update(state => ({
+          ...state,
+          targetSchemaJson: schema.schema_json
+        }));
+        this.currentStep.set(4);
+      },
+      error: () => {
+        this.currentStep.set(4);
+      }
+    });
+  }
+
+  onFieldMappingComplete(data: { rules: any[] }): void {
+    this.wizardState.update(state => ({
+      ...state,
+      mappingRules: data.rules
+    }));
+    this.currentStep.set(5);
+  }
+
   goBack(): void {
     const minStep = this.isEditMode() ? 0 : 0;
     if (this.currentStep() > minStep) {
@@ -180,6 +246,7 @@ export class MappingWizardComponent implements OnInit {
       'WEBHOOK': 'pi pi-link',
       'REST_API': 'pi pi-globe',
       'SCHEDULED_API': 'pi pi-clock',
+      'GRAPHQL': 'pi pi-share-alt',
       'SOAP': 'pi pi-server',
       'GRPC': 'pi pi-directions-alt',
       'FILE_BATCH': 'pi pi-file-import',
@@ -196,6 +263,7 @@ export class MappingWizardComponent implements OnInit {
       'WEBHOOK': 'Webhook',
       'REST_API': 'REST API',
       'SCHEDULED_API': 'External API',
+      'GRAPHQL': 'GraphQL',
       'SOAP': 'SOAP',
       'GRPC': 'gRPC',
       'FILE_BATCH': 'File Batch',
@@ -212,6 +280,7 @@ export class MappingWizardComponent implements OnInit {
       'WEBHOOK': 'External systems send data to CanonBridge',
       'REST_API': 'CanonBridge calls external REST API',
       'SCHEDULED_API': 'Scheduled polling from external API',
+      'GRAPHQL': 'Run a GraphQL query against an external API',
       'SOAP': 'SOAP web service integration',
       'GRPC': 'gRPC service integration',
       'FILE_BATCH': 'Batch file processing',

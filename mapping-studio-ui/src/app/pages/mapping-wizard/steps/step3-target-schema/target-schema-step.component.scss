@@ -1,0 +1,163 @@
+.step-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.card-header {
+  padding: 1.5rem;
+  
+  h2 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-color);
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+  
+  .subtitle {
+    margin: 0;
+    color: var(--text-color-secondary);
+    font-size: 0.95rem;
+  }
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 1rem;
+  color: var(--text-color-secondary);
+}
+
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  
+  label {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.95rem;
+  }
+  
+  .field-help {
+    color: var(--text-color-secondary);
+    font-size: 0.85rem;
+  }
+}
+
+.schema-option {
+  padding: 0.5rem 0;
+  
+  .schema-name {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.25rem;
+  }
+  
+  .schema-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-color-secondary);
+    margin-bottom: 0.25rem;
+    
+    .schema-subject {
+      font-family: monospace;
+    }
+    
+    .schema-version {
+      color: var(--primary-color);
+      font-weight: 500;
+    }
+  }
+  
+  .schema-description {
+    font-size: 0.85rem;
+    color: var(--text-color-secondary);
+    font-style: italic;
+  }
+}
+
+.schema-preview {
+  background: var(--surface-ground);
+  border: 1px solid var(--surface-border);
+  border-radius: 6px;
+  padding: 1.5rem;
+  
+  h3 {
+    margin: 0 0 1rem 0;
+    color: var(--text-color);
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  
+  h4 {
+    margin: 1.5rem 0 0.75rem 0;
+    color: var(--text-color);
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+}
+
+.schema-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  
+  .info-row {
+    display: flex;
+    gap: 1rem;
+    
+    .label {
+      font-weight: 600;
+      color: var(--text-color-secondary);
+      min-width: 100px;
+    }
+    
+    .value {
+      color: var(--text-color);
+      font-family: monospace;
+    }
+  }
+}
+
+.schema-json {
+  pre {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 4px;
+    padding: 1rem;
+    overflow-x: auto;
+    max-height: 400px;
+    
+    code {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.85rem;
+      color: var(--text-color);
+      line-height: 1.5;
+    }
+  }
+}
+
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+}
+
+// Dark mode support
+:host-context(.dark-mode) {
+  .schema-preview {
+    background: var(--surface-card);
+  }
+}

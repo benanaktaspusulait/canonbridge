@@ -1,0 +1,100 @@
+<div class="step-container">
+  <p-card>
+    <ng-template pTemplate="header">
+      <div class="card-header">
+        <h2>Select Target Canonical Schema</h2>
+        <p class="subtitle">Choose the canonical schema that your data will be transformed into</p>
+      </div>
+    </ng-template>
+
+    <ng-template pTemplate="content">
+      @if (loading()) {
+        <div class="loading-state">
+          <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
+          <p>Loading canonical schemas...</p>
+        </div>
+      } @else if (canonicalSchemas().length === 0) {
+        <p-message severity="warn" text="No active canonical schemas found. Please create one first." />
+      } @else {
+        <div class="form-grid">
+          <!-- Schema Selection -->
+          <div class="form-field">
+            <label for="schema-select">Canonical Schema *</label>
+            <p-select
+              id="schema-select"
+              [options]="canonicalSchemas()"
+              [(ngModel)]="selectedSchemaId"
+              (onChange)="onSchemaSelected($event.value)"
+              optionLabel="name"
+              optionValue="id"
+              placeholder="Select a canonical schema"
+              [style]="{'width': '100%'}"
+              [showClear]="true">
+              <ng-template let-schema pTemplate="item">
+                <div class="schema-option">
+                  <div class="schema-name">{{ schema.name }}</div>
+                  <div class="schema-meta">
+                    <span class="schema-subject">{{ schema.subject }}</span>
+                    <span class="schema-version">v{{ schema.version }}</span>
+                  </div>
+                  @if (schema.description) {
+                    <div class="schema-description">{{ schema.description }}</div>
+                  }
+                </div>
+              </ng-template>
+            </p-select>
+            <small class="field-help">Select the target canonical schema for transformation</small>
+          </div>
+
+          <!-- Schema Preview -->
+          @if (selectedSchema()) {
+            <div class="schema-preview">
+              <h3>Schema Preview</h3>
+              <div class="schema-info">
+                <div class="info-row">
+                  <span class="label">Name:</span>
+                  <span class="value">{{ selectedSchema()!.name }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Subject:</span>
+                  <span class="value">{{ selectedSchema()!.subject }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Version:</span>
+                  <span class="value">{{ selectedSchema()!.version }}</span>
+                </div>
+                @if (selectedSchema()!.description) {
+                  <div class="info-row">
+                    <span class="label">Description:</span>
+                    <span class="value">{{ selectedSchema()!.description }}</span>
+                  </div>
+                }
+              </div>
+              
+              <div class="schema-json">
+                <h4>Schema Structure</h4>
+                <pre><code>{{ getSchemaPreview() }}</code></pre>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </ng-template>
+
+    <ng-template pTemplate="footer">
+      <div class="button-group">
+        <p-button
+          label="Back"
+          icon="pi pi-arrow-left"
+          severity="secondary"
+          (onClick)="onBack()" />
+        <p-button
+          label="Next"
+          icon="pi pi-arrow-right"
+          iconPos="right"
+          [disabled]="!isValid()"
+          (onClick)="onNext()" />
+      </div>
+    </ng-template>
+  </p-card>
+</div>

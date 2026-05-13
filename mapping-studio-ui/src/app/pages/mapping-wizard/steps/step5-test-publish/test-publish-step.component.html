@@ -1,0 +1,134 @@
+<div class="step-container">
+  <p-card>
+    <ng-template pTemplate="header">
+      <div class="card-header">
+        <h2>Test & Publish Mapping</h2>
+        <p class="subtitle">Test your mapping with sample data and publish when ready</p>
+      </div>
+    </ng-template>
+
+    <ng-template pTemplate="content">
+      <div class="content-grid">
+        <!-- Left Column: Mapping Details & Summary -->
+        <div class="left-column">
+          <!-- Mapping Details -->
+          <div class="section">
+            <h3>Mapping Details</h3>
+            <div class="form-fields">
+              <div class="form-field">
+                <label for="mapping-name">Mapping Name *</label>
+                <input
+                  id="mapping-name"
+                  pInputText
+                  type="text"
+                  [(ngModel)]="mappingName"
+                  placeholder="Enter mapping name"
+                  [style]="{'width': '100%'}" />
+              </div>
+
+              <div class="form-field">
+                <label for="mapping-description">Description</label>
+                <textarea
+                  id="mapping-description"
+                  pInputTextarea
+                  [(ngModel)]="mappingDescription"
+                  placeholder="Optional description"
+                  [rows]="3"
+                  [style]="{'width': '100%'}"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Configuration Summary -->
+          <div class="section">
+            <h3>Configuration Summary</h3>
+            <div class="summary-list">
+              @for (item of getSummary(); track item) {
+                <div class="summary-item">
+                  <i class="pi pi-check-circle"></i>
+                  <span>{{ item }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Test Execution -->
+        <div class="right-column">
+          <div class="section">
+            <h3>Test Transformation</h3>
+            
+            <!-- Test Input -->
+            <div class="form-field">
+              <label for="test-input">Test Input JSON</label>
+              <textarea
+                id="test-input"
+                pInputTextarea
+                [(ngModel)]="testInput"
+                placeholder='{"example": "data"}'
+                [rows]="8"
+                [style]="{'width': '100%', 'font-family': 'monospace'}"></textarea>
+              <small class="field-help">Provide sample JSON to test the transformation</small>
+            </div>
+
+            <!-- Test Button -->
+            <div class="test-actions">
+              <p-button
+                label="Run Test"
+                icon="pi pi-play"
+                [loading]="testing()"
+                [disabled]="!testInput().trim()"
+                (onClick)="runTest()" />
+              
+              @if (testSuccess()) {
+                <span class="test-status success">
+                  <i class="pi pi-check-circle"></i>
+                  Test passed successfully
+                </span>
+              }
+            </div>
+
+            <!-- Test Output -->
+            @if (testOutput()) {
+              <div class="form-field">
+                <label>Test Output</label>
+                <pre class="test-output success"><code>{{ testOutput() }}</code></pre>
+              </div>
+            }
+
+            <!-- Test Error -->
+            @if (testError()) {
+              <p-message severity="error" [text]="testError()" />
+            }
+          </div>
+        </div>
+      </div>
+    </ng-template>
+
+    <ng-template pTemplate="footer">
+      <div class="button-group">
+        <p-button
+          label="Back"
+          icon="pi pi-arrow-left"
+          severity="secondary"
+          [disabled]="saving()"
+          (onClick)="onBack()" />
+        <div class="right-buttons">
+          <p-button
+            label="Save as Draft"
+            icon="pi pi-save"
+            severity="secondary"
+            [loading]="saving()"
+            [disabled]="!mappingName().trim()"
+            (onClick)="saveMapping()" />
+          <p-button
+            label="Publish"
+            icon="pi pi-check"
+            [loading]="saving()"
+            [disabled]="!mappingName().trim() || !testSuccess()"
+            (onClick)="saveMapping()" />
+        </div>
+      </div>
+    </ng-template>
+  </p-card>
+</div>

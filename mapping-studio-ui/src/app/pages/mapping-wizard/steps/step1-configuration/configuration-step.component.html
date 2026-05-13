@@ -192,6 +192,35 @@
           </div>
         }
 
+        @case ('GRAPHQL') {
+          <div class="form-field">
+            <label for="graphql-query">{{ 'wizard.configuration.graphqlQuery' | i18n }} *</label>
+            <textarea
+              id="graphql-query"
+              [ngModel]="graphqlQuery()"
+              (ngModelChange)="graphqlQuery.set($event)"
+              [placeholder]="'wizard.configuration.graphqlQueryPlaceholder' | i18n"
+              rows="8"
+              class="w-full code-textarea"></textarea>
+            <small class="field-hint">{{ 'wizard.configuration.graphqlQueryHint' | i18n }}</small>
+          </div>
+
+          <div class="form-field">
+            <label for="graphql-variables">{{ 'wizard.configuration.graphqlVariables' | i18n }}</label>
+            <textarea
+              id="graphql-variables"
+              [ngModel]="graphqlVariables()"
+              (ngModelChange)="onGraphqlVariablesChange($event)"
+              [placeholder]="'wizard.configuration.graphqlVariablesPlaceholder' | i18n"
+              rows="6"
+              class="w-full code-textarea"
+              [class.error]="graphqlVariablesError()"></textarea>
+            @if (graphqlVariablesError()) {
+              <p-message severity="error" [text]="graphqlVariablesError()!" />
+            }
+          </div>
+        }
+
         @case ('GRPC') {
           <div class="form-field">
             <label for="grpc-service">{{ 'wizard.configuration.grpcService' | i18n }} *</label>

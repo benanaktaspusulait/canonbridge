@@ -3,6 +3,7 @@ export type SourceType =
   | 'WEBHOOK'
   | 'REST_API'
   | 'SCHEDULED_API'
+  | 'GRAPHQL'
   | 'SOAP'
   | 'GRPC'
   | 'FILE_BATCH'
@@ -26,9 +27,7 @@ export interface WizardState {
 }
 
 export interface MappingRule {
-  id: string;
-  sourcePath: string;
-  targetKey: string;
-  transform: string;
-  required: boolean;
+  targetField: string;
+  expression: string;
+  description?: string;
 }

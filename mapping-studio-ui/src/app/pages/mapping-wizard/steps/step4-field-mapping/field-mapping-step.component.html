@@ -1,0 +1,153 @@
+<div class="step-container">
+  <p-card>
+    <ng-template pTemplate="header">
+      <div class="card-header">
+        <h2>Field Mapping</h2>
+        <p class="subtitle">Map source fields to target canonical schema fields using JSONata expressions</p>
+      </div>
+    </ng-template>
+
+    <ng-template pTemplate="content">
+      <div class="mapping-container">
+        <!-- Source Fields Reference -->
+        <div class="reference-panel">
+          <h3>Available Source Fields</h3>
+          <div class="field-list">
+            @if (sourceFields().length === 0) {
+              <p-message severity="info" text="No source fields detected" />
+            } @else {
+              @for (field of sourceFields(); track field) {
+                <div class="field-item" [title]="field">
+                  <i class="pi pi-tag"></i>
+                  <span>{{ field }}</span>
+                </div>
+              }
+            }
+          </div>
+        </div>
+
+        <!-- Mapping Rules -->
+        <div class="mapping-rules">
+          <div class="rules-header">
+            <h3>Mapping Rules</h3>
+            <p-button
+              label="Add Rule"
+              icon="pi pi-plus"
+              size="small"
+              (onClick)="addMappingRule()" />
+          </div>
+
+          @if (mappingRules().length === 0) {
+            <p-message severity="info" text="No mapping rules defined. Click 'Add Rule' to create one." />
+          } @else {
+            <div class="rules-list">
+              @for (rule of mappingRules(); track $index) {
+                <div class="rule-card">
+                  <div class="rule-header">
+                    <span class="rule-number">#{{ $index + 1 }}</span>
+                    <p-button
+                      icon="pi pi-trash"
+                      severity="danger"
+                      [text]="true"
+                      [rounded]="true"
+                      size="small"
+                      (onClick)="removeMappingRule($index)" />
+                  </div>
+
+                  <div class="rule-fields">
+                    <!-- Target Field -->
+                    <div class="form-field">
+                      <label>Target Field *</label>
+                      <input
+                        pInputText
+                        type="text"
+                        [value]="rule.targetField"
+                        (input)="updateRule($index, 'targetField', $any($event.target).value)"
+                        placeholder="e.g., customer.name"
+                        [style]="{'width': '100%'}" />
+                      <small class="field-help">Target field in canonical schema</small>
+                    </div>
+
+                    <!-- JSONata Expression -->
+                    <div class="form-field">
+                      <label>JSONata Expression *</label>
+                      <textarea
+                        pInputTextarea
+                        [value]="rule.expression"
+                        (input)="updateRule($index, 'expression', $any($event.target).value)"
+                        placeholder="e.g., payload.customerName or $uppercase(name)"
+                        [rows]="3"
+                        [style]="{'width': '100%'}"></textarea>
+                      <small class="field-help">JSONata expression to transform source data</small>
+                    </div>
+
+                    <!-- Description (Optional) -->
+                    <div class="form-field">
+                      <label>Description</label>
+                      <input
+                        pInputText
+                        type="text"
+                        [value]="rule.description || ''"
+                        (input)="updateRule($index, 'description', $any($event.target).value)"
+                        placeholder="Optional description"
+                        [style]="{'width': '100%'}" />
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- JSONata Help -->
+          <p-accordion [multiple]="false" class="jsonata-help">
+            <p-accordionTab header="JSONata Expression Examples">
+              <div class="examples">
+                <div class="example">
+                  <strong>Direct mapping:</strong>
+                  <code>payload.customerName</code>
+                  <p>Maps source field directly to target</p>
+                </div>
+                <div class="example">
+                  <strong>String transformation:</strong>
+                  <code>$uppercase(name)</code>
+                  <p>Converts string to uppercase</p>
+                </div>
+                <div class="example">
+                  <strong>Concatenation:</strong>
+                  <code>firstName & " " & lastName</code>
+                  <p>Combines multiple fields</p>
+                </div>
+                <div class="example">
+                  <strong>Conditional:</strong>
+                  <code>status = "active" ? "ACTIVE" : "INACTIVE"</code>
+                  <p>Conditional transformation</p>
+                </div>
+                <div class="example">
+                  <strong>Array mapping:</strong>
+                  <code>items.{ "id": productId, "qty": quantity }</code>
+                  <p>Transform array of objects</p>
+                </div>
+              </div>
+            </p-accordionTab>
+          </p-accordion>
+        </div>
+      </div>
+    </ng-template>
+
+    <ng-template pTemplate="footer">
+      <div class="button-group">
+        <p-button
+          label="Back"
+          icon="pi pi-arrow-left"
+          severity="secondary"
+          (onClick)="onBack()" />
+        <p-button
+          label="Next"
+          icon="pi pi-arrow-right"
+          iconPos="right"
+          [disabled]="!isValid()"
+          (onClick)="onNext()" />
+      </div>
+    </ng-template>
+  </p-card>
+</div>

@@ -41,6 +41,12 @@ export class SourceTypeSelectionComponent {
       descriptionKey: 'wizard.sourceType.externalApiDesc'
     },
     {
+      id: 'GRAPHQL',
+      icon: 'pi pi-share-alt',
+      titleKey: 'wizard.sourceType.graphql',
+      descriptionKey: 'wizard.sourceType.graphqlDesc'
+    },
+    {
       id: 'SOAP',
       icon: 'pi pi-server',
       titleKey: 'wizard.sourceType.soap',

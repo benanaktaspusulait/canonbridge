@@ -72,6 +72,11 @@ export class ConfigurationStepComponent implements OnInit {
   externalApiUrl = signal('');
   externalApiSchedule = signal('');
 
+  // GraphQL config
+  graphqlQuery = signal('');
+  graphqlVariables = signal('{}');
+  graphqlVariablesError = signal<string | null>(null);
+
   // gRPC config
   grpcService = signal('');
   grpcMethod = signal('');
@@ -110,6 +115,14 @@ export class ConfigurationStepComponent implements OnInit {
     }
     if (config['schedule']) {
       this.externalApiSchedule.set(config['schedule'] as string);
+    }
+    if (config['query']) {
+      this.graphqlQuery.set(config['query'] as string);
+    }
+    if (config['variables']) {
+      const variables = config['variables'];
+      this.graphqlVariables.set(typeof variables === 'string' ? variables : JSON.stringify(variables, null, 2));
+      this.validateGraphqlVariables(this.graphqlVariables());
     }
     if (config['service']) {
       this.grpcService.set(config['service'] as string);
@@ -185,6 +198,10 @@ export class ConfigurationStepComponent implements OnInit {
         this.grpcService.set(segments[1] ?? '');
         this.grpcMethod.set(segments[2] ?? endpoint.description);
       }
+      if (this.sourceType() === 'GRAPHQL') {
+        this.restApiPath.set(endpoint.path);
+        this.restApiMethod.set(endpoint.method || 'POST');
+      }
     }
   }
 
@@ -200,6 +217,7 @@ export class ConfigurationStepComponent implements OnInit {
       'WEBHOOK': [], // Webhook doesn't use external systems
       'REST_API': ['REST'],
       'SCHEDULED_API': ['REST', 'GRAPHQL', 'GRPC'],
+      'GRAPHQL': ['GRAPHQL'],
       'SOAP': ['SOAP'],
       'GRPC': ['GRPC'],
       'FILE_BATCH': [],
@@ -219,7 +237,7 @@ export class ConfigurationStepComponent implements OnInit {
   needsExternalSystem(): boolean {
     const sourceType = this.sourceType();
     // Only these source types need external system selection
-    return ['REST_API', 'SCHEDULED_API', 'SOAP', 'GRPC', 'API_ENRICHMENT'].includes(sourceType);
+    return ['REST_API', 'SCHEDULED_API', 'GRAPHQL', 'SOAP', 'GRPC', 'API_ENRICHMENT'].includes(sourceType);
   }
 
   getSourceTypeLabel(): string {
@@ -228,6 +246,7 @@ export class ConfigurationStepComponent implements OnInit {
       'WEBHOOK': 'Webhook',
       'REST_API': 'REST API',
       'SCHEDULED_API': 'External API',
+      'GRAPHQL': 'GraphQL',
       'SOAP': 'SOAP',
       'GRPC': 'gRPC',
       'FILE_BATCH': 'File Batch',
@@ -256,6 +275,10 @@ export class ConfigurationStepComponent implements OnInit {
     if (type === 'SCHEDULED_API') {
       // SCHEDULED_API can optionally use external system, but URL and schedule are required
       return this.externalApiUrl().trim() !== '' && this.externalApiSchedule().trim() !== '';
+    }
+
+    if (type === 'GRAPHQL') {
+      return this.selectedSystemId() !== null && this.graphqlQuery().trim() !== '' && this.graphqlVariablesError() === null;
     }
     
     if (type === 'SOAP') {
@@ -298,6 +321,13 @@ export class ConfigurationStepComponent implements OnInit {
         url: this.externalApiUrl(),
         schedule: this.externalApiSchedule()
       };
+    } else if (type === 'GRAPHQL') {
+      config = {
+        path: this.restApiPath() || '/graphql',
+        method: 'POST',
+        query: this.graphqlQuery(),
+        variables: this.parseGraphqlVariables()
+      };
     } else if (type === 'GRPC') {
       config = {
         service: this.grpcService(),
@@ -311,6 +341,35 @@ export class ConfigurationStepComponent implements OnInit {
       externalSystemId: this.selectedSystemId(),
       config
     });
+  }
+
+  onGraphqlVariablesChange(value: string): void {
+    this.graphqlVariables.set(value);
+    this.validateGraphqlVariables(value);
+  }
+
+  private validateGraphqlVariables(value: string): void {
+    if (!value.trim()) {
+      this.graphqlVariablesError.set(null);
+      return;
+    }
+    try {
+      const parsed = JSON.parse(value);
+      this.graphqlVariablesError.set(parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+        ? null
+        : 'Variables must be a JSON object');
+    } catch (error: any) {
+      this.graphqlVariablesError.set(error?.message ?? 'Invalid JSON');
+    }
+  }
+
+  private parseGraphqlVariables(): Record<string, unknown> {
+    try {
+      const parsed = JSON.parse(this.graphqlVariables() || '{}');
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
   }
 
   onBack(): void {
