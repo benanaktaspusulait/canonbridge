@@ -26,6 +26,14 @@
   box-shadow: inset 3px 0 0 var(--red-500);
 }
 
+.studio-rule-selected {
+  background: color-mix(in srgb, var(--primary-color) 7%, var(--surface-card));
+}
+
+.studio-rule-active {
+  box-shadow: inset 3px 0 0 var(--primary-color);
+}
+
 .studio-canonical-issue {
   display: flex;
   flex-wrap: wrap;

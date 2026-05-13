@@ -88,8 +88,7 @@
               variant="text"
               severity="secondary"
               size="small"
-              routerLink="/studio"
-              [queryParams]="{ mappingId: m.id }"
+              (onClick)="openInStudio(m)"
               [pTooltip]="'mappings.openStudio' | i18n" />
             <p-button
               icon="pi pi-ban"
@@ -172,8 +171,7 @@
       <p-button
         [label]="'mappings.openStudio' | i18n"
         icon="pi pi-objects-column"
-        routerLink="/studio"
-        [queryParams]="{ mappingId: m.id }"
+        (onClick)="openInStudio(m)"
         styleClass="w-full" />
       <p-button
         [label]="'mappings.deprecate' | i18n"

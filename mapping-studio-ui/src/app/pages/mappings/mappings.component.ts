@@ -1,7 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -65,6 +65,7 @@ export class MappingsComponent implements OnInit {
   private readonly toast = inject(MessageService);
   private readonly i18n = inject(I18nService);
   private readonly mappingService = inject(MappingService);
+  private readonly router = inject(Router);
 
   readonly loading = signal(false);
 
@@ -158,6 +159,10 @@ export class MappingsComponent implements OnInit {
   openDetails(mapping: MappingVersion): void {
     this.selectedMapping.set(mapping);
     this.detailVisible = true;
+  }
+
+  openInStudio(mapping: MappingVersion): void {
+    void this.router.navigate(['/studio'], { queryParams: { mappingId: mapping.id } });
   }
 
   deprecate(mapping: MappingVersion, event: Event): void {

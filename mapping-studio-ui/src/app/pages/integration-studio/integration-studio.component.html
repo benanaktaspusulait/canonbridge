@@ -1083,7 +1083,8 @@
               <tr
                 cdkDrag
                 (click)="selectRuleRow(rule)"
-                [class.studio-rule-selected]="selectedRule()?.id === rule.id"
+                [class.studio-rule-selected]="isRuleSelected(rule)"
+                [class.studio-rule-active]="selectedRule()?.id === rule.id"
                 [class.studio-rule-row--ajv]="ruleRowAjvError(rule.id)">
                 <td cdkDragHandle class="studio-drag-handle" (click)="$event.stopPropagation()">
                   <i class="pi pi-bars text-color-secondary"></i>

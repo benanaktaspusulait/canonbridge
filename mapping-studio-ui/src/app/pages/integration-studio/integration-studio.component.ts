@@ -802,6 +802,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   rules = signal<MappingRule[]>([]);
 
   selectedRule = signal<MappingRule | null>(null);
+  selectedRuleIds = signal<ReadonlySet<string>>(new Set());
   ruleInspectorTab = signal<string>('visual');
   readonly canUndoRules = computed(() => this.undoRedoSvc.canUndo());
   readonly canRedoRules = computed(() => this.undoRedoSvc.canRedo());
@@ -1656,6 +1657,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
 
     const rules = normalizeBackendRules(draft.mapping_rules);
     this.rules.set(rules);
+    this.selectAllRules(rules);
     this.selectedRule.set(rules[0] ?? null);
     this.ruleInspectorTab.set('visual');
     this.resetRuleHistory();
@@ -1721,6 +1723,33 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
 
   private applySourceConfig(config: Record<string, unknown> | null): void {
     if (!config) return;
+    const sourceJson = config['sourceJson'] ?? config['sampleJson'];
+    if (typeof sourceJson === 'string') {
+      this.sourceJson.set(sourceJson);
+    }
+    const sourceFileMeta = config['sourceFileMeta'];
+    if (sourceFileMeta && typeof sourceFileMeta === 'object') {
+      const meta = sourceFileMeta as Record<string, unknown>;
+      this.sourceFileMeta.set({
+        name: String(meta['name'] ?? 'mapping-sample.json'),
+        size: String(meta['size'] ?? this.formatFileSize(this.sourceJson().length))
+      });
+    } else if (typeof sourceJson === 'string' && sourceJson.trim()) {
+      this.sourceFileMeta.set({ name: 'mapping-sample.json', size: this.formatFileSize(sourceJson.length) });
+    }
+    const sourceType = config['sourceType'];
+    if (
+      sourceType === 'kafka' ||
+      sourceType === 'webhook' ||
+      sourceType === 'restApi' ||
+      sourceType === 'externalApi' ||
+      sourceType === 'soap' ||
+      sourceType === 'fileBatch' ||
+      sourceType === 'apiEnrichment' ||
+      sourceType === 'manual'
+    ) {
+      this.sourceType.set(sourceType);
+    }
     this.kafkaTopic.set(String(config['topic'] ?? ''));
     this.kafkaConsumerGroup.set(String(config['consumerGroup'] ?? ''));
     this.webhookUrl.set(String(config['url'] ?? config['endpoint'] ?? ''));
@@ -1732,12 +1761,34 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     this.soapOperation.set(String(config['operation'] ?? ''));
     this.enrichmentLookupName.set(String(config['lookupName'] ?? ''));
     this.enrichmentUrlTemplate.set(String(config['urlTemplate'] ?? ''));
+    const selectedCredentialId = config['credentialId'];
+    if (typeof selectedCredentialId === 'string') this.selectedCredentialId.set(selectedCredentialId);
     const method = String(config['method'] ?? '');
     if (this.externalApiMethods.includes(method as ExternalApiMethod)) {
       this.externalApiMethod.set(method as ExternalApiMethod);
       this.restApiMethod.set(method as ExternalApiMethod);
       this.enrichmentMethod.set(method as ExternalApiMethod);
     }
+    const authType = config['authType'];
+    if (
+      authType === 'API_KEY' ||
+      authType === 'BASIC_AUTH' ||
+      authType === 'BEARER_TOKEN' ||
+      authType === 'OAUTH2_CLIENT_CREDENTIALS'
+    ) {
+      this.restApiAuthType.set(authType);
+    }
+    const format = config['format'];
+    if (format === 'CSV' || format === 'JSONL' || format === 'JSON_ARRAY') {
+      this.fileBatchFormat.set(format);
+    }
+    if (typeof config['delimiter'] === 'string') this.fileBatchDelimiter.set(config['delimiter']);
+    if (typeof config['hasHeaderRow'] === 'boolean') this.fileBatchHasHeaderRow.set(config['hasHeaderRow']);
+    const failurePolicy = config['failurePolicy'];
+    if (failurePolicy === 'DLQ' || failurePolicy === 'SKIP_ENRICHMENT' || failurePolicy === 'RETRY') {
+      this.enrichmentFailurePolicy.set(failurePolicy);
+    }
+    if (typeof config['webhookKeyMasked'] === 'string') this.webhookKeyMasked.set(config['webhookKeyMasked']);
   }
 
   private sourceValidationRulesFromDraft(value: unknown): SourceValidationRule[] {
@@ -2146,6 +2197,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     };
     this.pushRuleHistory();
     this.rules.update(rs => [...rs, newRule]);
+    this.selectedRuleIds.update(ids => new Set([...ids, newRule.id]));
     const added = this.rules().find(r => r.id === newRule.id) ?? null;
     this.selectedRule.set(added);
     this.ruleInspectorTab.set('visual');
@@ -2166,6 +2218,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
       };
       this.pushRuleHistory();
       this.rules.update(rs => [...rs, newRule]);
+      this.selectedRuleIds.update(ids => new Set([...ids, newRule.id]));
       rule = newRule;
     }
     this.maxUnlockedStep.update(m => Math.max(m, 2));
@@ -2179,6 +2232,11 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     const id = rule.id;
     this.pushRuleHistory();
     this.rules.update(rs => rs.filter(r => r !== rule));
+    this.selectedRuleIds.update(ids => {
+      const next = new Set(ids);
+      next.delete(id);
+      return next;
+    });
     if (this.selectedRule()?.id === id) {
       this.selectedRule.set(this.rules()[0] ?? null);
     }
@@ -2197,6 +2255,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     const previous = this.undoRedoSvc.undo();
     if (!previous) return;
     this.rules.set(previous);
+    this.selectAllRules(previous);
     this.reselectRuleAfterHistory();
   }
 
@@ -2204,6 +2263,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     const next = this.undoRedoSvc.redo();
     if (!next) return;
     this.rules.set(next);
+    this.selectAllRules(next);
     this.reselectRuleAfterHistory();
   }
 
@@ -2224,6 +2284,14 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
 
   private resetRuleHistory(): void {
     this.undoRedoSvc.clear();
+  }
+
+  isRuleSelected(rule: MappingRule): boolean {
+    return this.selectedRuleIds().has(rule.id);
+  }
+
+  private selectAllRules(rules = this.rules()): void {
+    this.selectedRuleIds.set(new Set(rules.map(rule => rule.id)));
   }
 
   openNestedMapping(rule: MappingRule): void {
@@ -2943,6 +3011,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
         this.webhookUrl.set(cfg.webhook?.url ?? this.webhookUrl());
         this.webhookKeyMasked.set(cfg.webhook?.keyMasked ?? this.webhookKeyMasked());
         this.fixtures.set(cfg.fixtures ?? this.fixtures());
+        this.selectAllRules(cfg.rules);
         this.selectedRule.set(cfg.rules[0] ?? null);
         this.ruleInspectorTab.set('visual');
         this.resetRuleHistory();
@@ -3030,20 +3099,25 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   }
 
   private sourceConfigSnapshot(): Record<string, unknown> {
+    const base = this.sourceConfigBaseSnapshot();
     if (this.sourceType() === 'kafka') {
       return {
+        ...base,
         topic: this.kafkaTopic(),
         consumerGroup: this.kafkaConsumerGroup()
       };
     }
     if (this.sourceType() === 'webhook') {
       return {
+        ...base,
         url: this.webhookUrl(),
-        keyMasked: this.webhookKeyMasked()
+        keyMasked: this.webhookKeyMasked(),
+        webhookKeyMasked: this.webhookKeyMasked()
       };
     }
     if (this.sourceType() === 'restApi') {
       return {
+        ...base,
         method: this.restApiMethod(),
         path: this.restApiPath(),
         authType: this.restApiAuthType()
@@ -3051,6 +3125,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     }
     if (this.sourceType() === 'externalApi') {
       return {
+        ...base,
         url: this.externalApiUrl(),
         method: this.externalApiMethod(),
         schedule: this.externalApiSchedule(),
@@ -3059,6 +3134,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     }
     if (this.sourceType() === 'soap') {
       return {
+        ...base,
         endpoint: this.soapEndpoint(),
         soapAction: this.soapAction(),
         operation: this.soapOperation()
@@ -3066,6 +3142,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     }
     if (this.sourceType() === 'fileBatch') {
       return {
+        ...base,
         format: this.fileBatchFormat(),
         delimiter: this.fileBatchDelimiter(),
         hasHeaderRow: this.fileBatchHasHeaderRow()
@@ -3073,6 +3150,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     }
     if (this.sourceType() === 'apiEnrichment') {
       return {
+        ...base,
         lookupName: this.enrichmentLookupName(),
         method: this.enrichmentMethod(),
         urlTemplate: this.enrichmentUrlTemplate(),
@@ -3080,7 +3158,15 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
         failurePolicy: this.enrichmentFailurePolicy()
       };
     }
-    return {};
+    return base;
+  }
+
+  private sourceConfigBaseSnapshot(): Record<string, unknown> {
+    return {
+      sourceType: this.sourceType(),
+      sourceJson: this.sourceJson(),
+      sourceFileMeta: this.sourceFileMeta()
+    };
   }
 
   private loadExternalSystemSample(): void {
