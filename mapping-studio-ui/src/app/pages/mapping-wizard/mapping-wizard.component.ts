@@ -147,12 +147,35 @@ export class MappingWizardComponent implements OnInit {
   }
 
   private extractSampleJson(mapping: any): string {
+    // First check if there's a sample_payload field directly on the mapping
+    if (mapping.sample_payload && typeof mapping.sample_payload === 'string') {
+      return mapping.sample_payload;
+    }
+    
+    // Then check source_config
     const config = this.parseJsonObject(mapping.source_config);
-    return typeof config['sourceJson'] === 'string'
-      ? config['sourceJson']
-      : typeof config['sampleJson'] === 'string'
-        ? config['sampleJson']
-        : '';
+    
+    // Check various possible field names
+    if (typeof config['sourceJson'] === 'string' && config['sourceJson']) {
+      return config['sourceJson'];
+    }
+    if (typeof config['sampleJson'] === 'string' && config['sampleJson']) {
+      return config['sampleJson'];
+    }
+    if (typeof config['payload'] === 'string' && config['payload']) {
+      return config['payload'];
+    }
+    
+    // Check if there's a requestTransformation template
+    const reqTransform = config['requestTransformation'];
+    if (reqTransform && typeof reqTransform === 'object') {
+      const template = (reqTransform as any)['template'];
+      if (template && typeof template === 'object') {
+        return JSON.stringify(template, null, 2);
+      }
+    }
+    
+    return '';
   }
 
   private parseJsonObject(value: unknown): Record<string, unknown> {
@@ -258,10 +281,13 @@ export class MappingWizardComponent implements OnInit {
 
   getSourceTypeLabel(): string {
     const sourceType = this.wizardState().sourceType;
+    const config = this.wizardState().sourceConfig;
+    const method = config['method'] as string | undefined;
+    
     const labelMap: Record<SourceType, string> = {
       'KAFKA': 'Kafka Topic',
       'WEBHOOK': 'Webhook',
-      'REST_API': 'REST API',
+      'REST_API': method ? `REST API (${method.toUpperCase()})` : 'REST API',
       'SCHEDULED_API': 'External API',
       'GRAPHQL': 'GraphQL',
       'SOAP': 'SOAP',
@@ -275,10 +301,15 @@ export class MappingWizardComponent implements OnInit {
 
   getSourceTypeDescription(): string {
     const sourceType = this.wizardState().sourceType;
+    const config = this.wizardState().sourceConfig;
+    const method = config['method'] as string | undefined;
+    const path = config['path'] as string | undefined;
+    const url = config['url'] as string | undefined;
+    
     const descMap: Record<SourceType, string> = {
       'KAFKA': 'Stream from an existing raw topic',
       'WEBHOOK': 'External systems send data to CanonBridge',
-      'REST_API': 'CanonBridge calls external REST API',
+      'REST_API': this.buildRestApiDescription(method, path, url),
       'SCHEDULED_API': 'Scheduled polling from external API',
       'GRAPHQL': 'Run a GraphQL query against an external API',
       'SOAP': 'SOAP web service integration',
@@ -288,5 +319,21 @@ export class MappingWizardComponent implements OnInit {
       'MANUAL': 'Manual data upload for testing'
     };
     return sourceType ? descMap[sourceType] : '';
+  }
+
+  private buildRestApiDescription(method?: string, path?: string, url?: string): string {
+    const parts: string[] = ['CanonBridge calls external REST API'];
+    
+    if (method) {
+      parts.push(`using ${method.toUpperCase()} method`);
+    }
+    
+    if (path) {
+      parts.push(`at ${path}`);
+    } else if (url) {
+      parts.push(`at ${url}`);
+    }
+    
+    return parts.join(' ');
   }
 }
