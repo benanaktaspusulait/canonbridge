@@ -479,7 +479,7 @@
   },
   "studio": {
     "title": "Integration Studio",
-    "subtitle": "Partner yükünden kurumsal şemanıza tasarım: kod yazmadan görsel dönüşümler, canlı önizleme ve yerel test — demo tamamen tarayıcıda.",
+    "subtitle": "Partner yükünden kurumsal şemanıza görsel dönüşümler, canlı önizleme ve yerel doğrulama ile tasarım.",
     "heroKicker": "CanonBridge",
     "heroBadge": "Yerel önizleme · API yok",
     "heroBadgeHybrid": "Yerel önizleme · dönüşüm motoru doğruluyor",
@@ -507,10 +507,11 @@
       "advancedRules": "Motor kuralı",
       "advancedHint": "istisnai"
     },
-    "ingestTitle": "Örnek yükü al",
+    "ingestTitle": "Kaynak yükü al",
     "ingestSubtitle": "Partner sisteminden JSON yapıştırın veya dosya yükleyin. Yapı, eşleme için alan ağacına dönüştürülür.",
     "loadFile": "JSON dosyası yükle",
     "cancel": "İptal",
+    "remove": "Sil",
     "config": {
       "import": "Config içe al",
       "export": "Config dışa aktar",
@@ -532,22 +533,36 @@
       "webhook": "Webhook",
       "webhookDesc": "Dış sistem CanonBridge'e veri göndersin.",
       "webhookHint": "URL + giriş API key",
+      "restApi": "REST API",
+      "restApiDesc": "Inbound HTTP endpoint açın.",
+      "restApiHint": "Metod, path, auth",
       "externalApi": "Dış API",
       "externalApiDesc": "CanonBridge dışarı gidip veriyi alsın.",
       "externalApiHint": "URL, metod, auth, zamanlama",
+      "soap": "SOAP",
+      "soapDesc": "XML envelope veya WSDL uyumlu yanıt yükleyin.",
+      "soapHint": "Endpoint + action",
+      "fileBatch": "Dosya Batch",
+      "fileBatchDesc": "CSV, JSONL veya JSON array dosyası yükleyin.",
+      "fileBatchHint": "Batch ingest",
+      "apiEnrichment": "API Zenginleştirme",
+      "apiEnrichmentDesc": "Mapping kayıtlarını zenginleştirmek için API çağırın.",
+      "apiEnrichmentHint": "Transform sırasında lookup",
       "manual": "Manuel Yükleme",
       "manualDesc": "Kurulum ve test için JSON bırakın.",
-      "manualHint": "En hızlı demo yolu"
+      "manualHint": "JSON yapıştır veya yükle"
     },
     "sourceCommon": {
-      "uploadInstead": "Örnek dosya yükle"
+      "uploadInstead": "JSON yükle"
     },
     "sourceKafka": {
       "title": "Kafka kaynağı",
-      "subtitle": "Runtime tetikleyici olarak mevcut raw topic'i kullanın ve mapping için örnek veri çekin.",
+      "subtitle": "Runtime tetikleyici olarak mevcut raw topic'i kullanın, mapping için yakalanmış JSON yükleyin.",
       "badge": "Mevcut pipeline",
       "topic": "Topic",
       "consumerGroup": "Consumer group",
+      "topicPlaceholder": "Kafka topic girin",
+      "consumerGroupPlaceholder": "Consumer group girin",
       "fetchSample": "Son örneği çek"
     },
     "sourceWebhook": {
@@ -558,12 +573,14 @@
       "apiKey": "Giriş API key",
       "rotate": "Döndür",
       "captureSample": "Örnek yakala",
+      "notConfigured": "Yapılandırılmadı",
+      "rotateUnavailable": "Webhook key döndürme endpoint oluşturulduktan sonra kullanılabilir.",
       "copyUrl": "Webhook URL kopyala",
       "copyKey": "Giriş API key kopyala",
       "copiedUrl": "Webhook URL kopyalandı",
       "copiedKey": "Giriş API key kopyalandı",
       "rotated": "Webhook anahtarı döndürüldü",
-      "rotatedDetail": "Bu taslak için yeni maskeli demo anahtarı hazır."
+      "rotatedDetail": "Bu taslak için yeni maskeli anahtar hazır."
     },
     "sourceApi": {
       "title": "Dış API kaynağı",
@@ -575,15 +592,62 @@
       "schedule": "Zamanlama",
       "auth": "Kimlik doğrulama",
       "test": "API çağrısını test et",
+      "namePlaceholder": "Bağlantı adı girin",
+      "urlPlaceholder": "https://api.partner.com/resource",
+      "schedulePlaceholder": "Cron veya interval",
       "invalidUrl": "Testten önce geçerli bir HTTP veya HTTPS URL girin.",
       "testPassed": "Dış API testi başarılı",
-      "testFailed": "Dış API demo testi başarısız",
-      "testRequiredBeforeMapping": "Dış API kaynağı için mapping doğrulaması çalışmadan önce geçerli bir demo test gerekir.",
-      "demoTestDetail": "Demo yanıt {{duration}}ms içinde yakalandı ve kaynak ağacına yüklendi.",
-      "demoResultTitle": "Demo yanıt hazır",
-      "demoResultText": "HTTP {{status}} · {{duration}}ms · {{capturedAt}} saatinde yakalandı. Bu yanıt artık kaynak ağacıdır.",
+      "testFailed": "Dış API testi başarısız",
+      "testRequiredBeforeMapping": "Mapping doğrulaması çalışmadan önce yanıt JSON'u yükleyin.",
+      "responseRequiredTitle": "Yanıt JSON gerekli",
+      "responseRequired": "Kaynak ağacı oluşturmak için gerçek API yanıt JSON'unu yükleyin veya yapıştırın.",
+      "resultTitle": "Yanıt hazır",
+      "resultText": "HTTP {{status}} · {{duration}}ms · {{capturedAt}} saatinde yakalandı. Bu yanıt artık kaynak ağacıdır.",
       "sampleImported": "Dış sistem örneği içe alındı",
       "importedFrom": "{{name}} kaynağından"
+    },
+    "sourceRest": {
+      "title": "REST API kaynağı",
+      "subtitle": "Inbound request şeklini yapılandırın, mapping için yakalanmış payload yükleyin.",
+      "badge": "Inbound HTTP",
+      "path": "Path",
+      "pathPlaceholder": "/api/inbound/resource"
+    },
+    "sourceSoap": {
+      "title": "SOAP kaynağı",
+      "subtitle": "SOAP metadatasını yapılandırın, ardından yakalanmış XML envelope yükleyin.",
+      "badge": "XML payload",
+      "endpoint": "Endpoint",
+      "endpointPlaceholder": "https://partner.example.com/soap",
+      "action": "SOAP action",
+      "actionPlaceholder": "urn:Operation",
+      "operation": "Operation",
+      "operationPlaceholder": "OperationName",
+      "uploadXml": "XML yükle"
+    },
+    "sourceFileBatch": {
+      "title": "Dosya batch kaynağı",
+      "subtitle": "Mapping kurulumu için CSV, JSONL veya JSON array dosyası yükleyin.",
+      "badge": "Batch dosya",
+      "format": "Format",
+      "delimiter": "Ayraç",
+      "headerRow": "Header satırı",
+      "uploadFile": "Dosya yükle"
+    },
+    "sourceEnrichment": {
+      "title": "API zenginleştirme",
+      "subtitle": "Transform sırasında kayıtları zenginleştiren lookup çağrısını yapılandırın.",
+      "badge": "Lookup API",
+      "lookupName": "Lookup adı",
+      "lookupNamePlaceholder": "Customer profile lookup",
+      "urlTemplate": "URL template",
+      "urlTemplatePlaceholder": "https://api.partner.com/customers/{{customerId}}",
+      "failurePolicy": "Hata politikası",
+      "policy": {
+        "RETRY": "Tekrar dene",
+        "DLQ": "DLQ'ya gönder",
+        "SKIP_ENRICHMENT": "Zenginleştirmeyi atla"
+      }
     },
     "sourceAuth": {
       "add": "Kimlik doğrulama ekle",
@@ -605,6 +669,7 @@
       "saved": "Credential kaydedildi",
       "savedDetail": "Artık kimlik doğrulama seçiminde kullanılabilir.",
       "unnamedCredential": "Adsız credential",
+      "noCredential": "Credential seçilmedi",
       "lastUsed": "Son kullanım",
       "typeLabel": {
         "API_KEY": "API Key",
@@ -615,9 +680,9 @@
     },
     "publishSummary": {
       "eyebrow": "Yayın onayı",
-      "version": "demo-v{{fields}}.{{rules}}.{{advanced}}",
-      "ready": "Doğrulama geçti. Yayınlama bu yerel demo versiyonunu sabitler ve teslimata hazır gösterir.",
-      "blocked": "Bu yerel demo versiyonunu yayınlamadan önce başarılı bir test çalıştırın."
+      "version": "v{{fields}}.{{rules}}.{{advanced}}",
+      "ready": "Doğrulama geçti. Yayınlama bu versiyonu kaydeder ve teslimata hazır gösterir.",
+      "blocked": "Bu versiyonu yayınlamadan önce başarılı bir test çalıştırın."
     },
     "upload": {
       "browse": "Dosya seç",
@@ -940,7 +1005,7 @@
     "phSeparator": "Ayraç (boşluk)",
     "noExtraParams": "Ek parametre yok",
     "validateTitle": "Doğrulamayı çalıştır",
-    "validateSubtitle": "Dönüşümleri örnek JSON üzerinde yerel çalıştırır ve zorunlu kanonik alanları kontrol eder (yalnızca demo, API yok).",
+    "validateSubtitle": "Dönüşümleri yüklenen JSON üzerinde yerel çalıştırır ve zorunlu kanonik alanları kontrol eder.",
     "validateSubtitleHybrid": "Eşlemeyi tarayıcıda çalıştırır, zorunlu alanları kontrol eder ve aynı üretim motorunda derleme/değerlendirme eşliğini doğrular.",
     "testMapping": "Eşlemeyi test et",
     "test": {
@@ -948,10 +1013,10 @@
       "failedToast": "Test başarısız — doğrulama mesajlarını ve kuralları gözden geçirin.",
       "running": "Mapping kuralları ve şema kontrolleri çalıştırılıyor..."
     },
-    "publishDemo": "Yayınla (demo)",
+    "publishDemo": "Yayınla",
     "schemaOk": "Şema kontrolü başarılı",
     "schemaFail": "Şema kontrolü başarısız",
-    "publishSuccess": "Demo yayın kaydedildi. Üretimde bu sürüm yükseltilir ve trafik yeni eşlemeye yönlendirilir.",
+    "publishSuccess": "Mapping versiyonu kaydedildi ve yükseltmeye hazır.",
     "publish": {
       "blocked": "Yayınlamadan önce doğrulama hatalarını giderin ve başarılı bir test çalıştırın."
     },
@@ -963,7 +1028,7 @@
       "copy": "Çıktıyı kopyala",
       "download": "Çıktıyı indir"
     },
-    "jsonPlaceholder": "{ \"ornek\": \"partner-json\" }",
+    "jsonPlaceholder": "JSON'u buraya yapıştırın veya dosya bırakın.",
     "json": {
       "fileMeta": "{{name}} · {{size}}",
       "syntaxPreview": "Sözdizimi vurgulu önizleme (salt okunur)"
@@ -1062,7 +1127,7 @@
       "optional": "Opsiyonel",
       "continue": "Teste geç",
       "coverageTitle": "Kapsam ve kalite",
-      "coverageSubtitle": "Mapping'in satış demosunda güven veren kısa sağlık özeti.",
+      "coverageSubtitle": "Mevcut mapping için kısa sağlık özeti.",
       "requiredCoverage": "Zorunlu kapsam",
       "visualRules": "Görsel kural",
       "advancedRules": "Motor kuralı",

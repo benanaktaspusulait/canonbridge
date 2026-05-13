@@ -444,7 +444,7 @@
   },
   "studio": {
     "title": "Integration Studio",
-    "subtitle": "Design how partner payloads become your canonical schema: no-code visual transforms, live preview, and local test runs — all in-browser for this demo.",
+    "subtitle": "Design how partner payloads become your canonical schema with visual transforms, live preview, and local validation.",
     "heroKicker": "CanonBridge",
     "heroBadge": "Local preview · no API calls",
     "heroBadgeHybrid": "Local preview · transformation engine verified",
@@ -472,10 +472,11 @@
       "advancedRules": "Engine rules",
       "advancedHint": "exceptional"
     },
-    "ingestTitle": "Ingest sample payload",
+    "ingestTitle": "Ingest source payload",
     "ingestSubtitle": "Paste JSON from a partner system or load a file. The structure is parsed into a field tree for mapping.",
     "loadFile": "Load JSON file",
     "cancel": "Cancel",
+    "remove": "Remove",
     "config": {
       "import": "Import config",
       "export": "Export config",
@@ -497,22 +498,36 @@
       "webhook": "Webhook",
       "webhookDesc": "External systems send data to CanonBridge.",
       "webhookHint": "URL + inbound API key",
+      "restApi": "REST API",
+      "restApiDesc": "Expose a typed inbound REST contract.",
+      "restApiHint": "Method, path, auth",
       "externalApi": "External API",
       "externalApiDesc": "CanonBridge goes out and fetches data.",
       "externalApiHint": "URL, method, auth, schedule",
+      "soap": "SOAP / XML",
+      "soapDesc": "Connect legacy XML and SOAP services.",
+      "soapHint": "Envelope, action, XML paths",
+      "fileBatch": "File / Batch",
+      "fileBatchDesc": "Map CSV, JSONL, or JSON array feeds.",
+      "fileBatchHint": "Upload, parse, row rules",
+      "apiEnrichment": "API Enrichment",
+      "apiEnrichmentDesc": "Lookup extra data during a flow.",
+      "apiEnrichmentHint": "Payload + API response",
       "manual": "Manual Upload",
       "manualDesc": "Paste or drop JSON for setup and tests.",
-      "manualHint": "Fastest demo path"
+      "manualHint": "Paste or upload JSON"
     },
     "sourceCommon": {
-      "uploadInstead": "Upload sample instead"
+      "uploadInstead": "Upload JSON"
     },
     "sourceKafka": {
       "title": "Kafka source",
-      "subtitle": "Use the existing raw topic as the runtime trigger and fetch a sample for mapping.",
+      "subtitle": "Use an existing raw topic as the runtime trigger, then upload a captured JSON payload for mapping.",
       "badge": "Existing pipeline",
       "topic": "Topic",
       "consumerGroup": "Consumer group",
+      "topicPlaceholder": "Enter Kafka topic",
+      "consumerGroupPlaceholder": "Enter consumer group",
       "fetchSample": "Fetch latest sample"
     },
     "sourceWebhook": {
@@ -523,12 +538,21 @@
       "apiKey": "Inbound API key",
       "rotate": "Rotate",
       "captureSample": "Capture sample",
+      "notConfigured": "Not configured",
+      "rotateUnavailable": "Webhook key rotation is available after an endpoint is created.",
       "copyUrl": "Copy webhook URL",
       "copyKey": "Copy inbound API key",
       "copiedUrl": "Webhook URL copied",
       "copiedKey": "Inbound API key copied",
       "rotated": "Webhook key rotated",
-      "rotatedDetail": "A new masked demo key is ready for this draft."
+      "rotatedDetail": "A new masked key is ready for this draft."
+    },
+    "sourceRest": {
+      "title": "Inbound REST API",
+      "subtitle": "Define the REST request contract a partner will call, then map body, header, or path values to canonical fields.",
+      "badge": "API contract",
+      "path": "Path",
+      "pathPlaceholder": "/api/inbound/orders"
     },
     "sourceApi": {
       "title": "External API source",
@@ -540,15 +564,55 @@
       "schedule": "Schedule",
       "auth": "Authentication",
       "test": "Test API call",
+      "namePlaceholder": "Enter connection name",
+      "urlPlaceholder": "https://api.partner.com/resource",
+      "schedulePlaceholder": "Cron or interval",
       "invalidUrl": "Enter a valid HTTP or HTTPS URL before testing.",
       "testPassed": "External API test passed",
-      "testFailed": "External API demo test failed",
-      "testRequiredBeforeMapping": "External API source must have a valid demo test before mapping validation can run.",
-      "demoTestDetail": "Demo response captured in {{duration}}ms and loaded into the source tree.",
-      "demoResultTitle": "Demo response ready",
-      "demoResultText": "HTTP {{status}} · {{duration}}ms · captured at {{capturedAt}}. This response is now the source tree.",
+      "testFailed": "External API test failed",
+      "testRequiredBeforeMapping": "Load a response JSON before running mapping validation.",
+      "responseRequiredTitle": "Response JSON required",
+      "responseRequired": "Upload or paste the real API response JSON to build the source tree.",
+      "resultTitle": "Response ready",
+      "resultText": "HTTP {{status}} · {{duration}}ms · captured at {{capturedAt}}. This response is now the source tree.",
       "sampleImported": "External system sample imported",
       "importedFrom": "From {{name}}"
+    },
+    "sourceSoap": {
+      "title": "SOAP source",
+      "subtitle": "Configure SOAP metadata, then upload a captured XML envelope.",
+      "badge": "XML payload",
+      "endpoint": "Endpoint",
+      "endpointPlaceholder": "https://partner.example.com/soap",
+      "action": "SOAP action",
+      "actionPlaceholder": "urn:Operation",
+      "operation": "Operation",
+      "operationPlaceholder": "OperationName",
+      "uploadXml": "Upload XML"
+    },
+    "sourceFileBatch": {
+      "title": "File batch source",
+      "subtitle": "Upload CSV, JSONL, or JSON array files for mapping setup.",
+      "badge": "Batch file",
+      "format": "Format",
+      "delimiter": "Delimiter",
+      "headerRow": "Header row",
+      "uploadFile": "Upload file"
+    },
+    "sourceEnrichment": {
+      "title": "API enrichment",
+      "subtitle": "Configure the lookup call used to enrich records during transformation.",
+      "badge": "Lookup API",
+      "lookupName": "Lookup name",
+      "lookupNamePlaceholder": "Customer profile lookup",
+      "urlTemplate": "URL template",
+      "urlTemplatePlaceholder": "https://api.partner.com/customers/{{customerId}}",
+      "failurePolicy": "Failure policy",
+      "policy": {
+        "RETRY": "Retry",
+        "DLQ": "Send to DLQ",
+        "SKIP_ENRICHMENT": "Skip enrichment"
+      }
     },
     "sourceAuth": {
       "add": "Add authentication",
@@ -570,6 +634,7 @@
       "saved": "Credential saved",
       "savedDetail": "It is now available in the authentication selector.",
       "unnamedCredential": "Unnamed credential",
+      "noCredential": "No credential selected",
       "lastUsed": "Last used",
       "typeLabel": {
         "API_KEY": "API Key",
@@ -580,9 +645,9 @@
     },
     "publishSummary": {
       "eyebrow": "Publish confirmation",
-      "version": "demo-v{{fields}}.{{rules}}.{{advanced}}",
-      "ready": "Validation passed. Publishing will freeze this local demo version and show it as ready for handoff.",
-      "blocked": "Run a successful test before publishing this local demo version."
+      "version": "v{{fields}}.{{rules}}.{{advanced}}",
+      "ready": "Validation passed. Publishing will save this version and show it as ready for handoff.",
+      "blocked": "Run a successful test before publishing this version."
     },
     "upload": {
       "browse": "Browse",
@@ -881,7 +946,7 @@
     "phSeparator": "Separator (space)",
     "noExtraParams": "No extra parameters",
     "validateTitle": "Run validation",
-    "validateSubtitle": "Executes transforms locally against the sample JSON and checks required canonical fields (demo-only, no API).",
+    "validateSubtitle": "Executes transforms locally against the loaded JSON and checks required canonical fields.",
     "validateSubtitleHybrid": "Runs mappings in the browser, checks required fields, and verifies compile/eval parity in the same engine used by ingestion.",
     "testMapping": "Test mapping",
     "test": {
@@ -889,10 +954,10 @@
       "failedToast": "Test failed — review validation messages and rules.",
       "running": "Running mapping rules and schema checks..."
     },
-    "publishDemo": "Publish (demo)",
+    "publishDemo": "Publish",
     "schemaOk": "Schema check passed",
     "schemaFail": "Schema check failed",
-    "publishSuccess": "Demo publish recorded. In production this version would be promoted and traffic would route to the new mapping.",
+    "publishSuccess": "Mapping version saved and ready for promotion.",
     "publish": {
       "blocked": "Fix validation errors and run a successful test before publishing."
     },
@@ -904,7 +969,7 @@
       "copy": "Copy output",
       "download": "Download output"
     },
-    "jsonPlaceholder": "{ \"your\": \"partner-json\" }",
+    "jsonPlaceholder": "Paste JSON here or drop a file.",
     "json": {
       "fileMeta": "{{name}} · {{size}}",
       "syntaxPreview": "Syntax-highlighted preview (read-only)"
@@ -1003,7 +1068,7 @@
       "optional": "Optional",
       "continue": "Continue to test",
       "coverageTitle": "Coverage and quality",
-      "coverageSubtitle": "A compact health summary that gives confidence in a sales demo.",
+      "coverageSubtitle": "A compact health summary for the current mapping.",
       "requiredCoverage": "Required coverage",
       "visualRules": "Visual rules",
       "advancedRules": "Engine rules",

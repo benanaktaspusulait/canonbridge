@@ -111,7 +111,7 @@
       <input
         #fileIn
         type="file"
-        accept="application/json,.json,.txt,text/plain"
+        accept="application/json,.json,.jsonl,.csv,.xml,.txt,text/plain,text/csv,application/xml,text/xml"
         class="sr-only"
         (change)="onFileSelected($event)" />
       <input
@@ -157,15 +157,22 @@
             <div class="studio-form-grid">
               <label>
                 <span>{{ 'studio.sourceKafka.topic' | i18n }}</span>
-                <input pInputText value="tenant-001.raw.acme-marketplace.order-created" />
+                <input
+                  pInputText
+                  [ngModel]="kafkaTopic()"
+                  (ngModelChange)="kafkaTopic.set($event)"
+                  [placeholder]="'studio.sourceKafka.topicPlaceholder' | i18n" />
               </label>
               <label>
                 <span>{{ 'studio.sourceKafka.consumerGroup' | i18n }}</span>
-                <input pInputText value="canonbridge-transformer-acme-order-created" />
+                <input
+                  pInputText
+                  [ngModel]="kafkaConsumerGroup()"
+                  (ngModelChange)="kafkaConsumerGroup.set($event)"
+                  [placeholder]="'studio.sourceKafka.consumerGroupPlaceholder' | i18n" />
               </label>
             </div>
             <div class="toolbar-row">
-              <p-button [label]="'studio.sourceKafka.fetchSample' | i18n" icon="pi pi-download" (onClick)="loadKafkaSample()" />
               <p-button [label]="'studio.sourceCommon.uploadInstead' | i18n" icon="pi pi-upload" variant="outlined" severity="secondary" (onClick)="fileIn.click()" />
             </div>
           </section>
@@ -177,40 +184,92 @@
                 <h3>{{ 'studio.sourceWebhook.title' | i18n }}</h3>
                 <p>{{ 'studio.sourceWebhook.subtitle' | i18n }}</p>
               </div>
-              <p-tag severity="success" [value]="'studio.sourceWebhook.ready' | i18n" />
+              <p-tag
+                [severity]="webhookUrl() ? 'success' : 'warn'"
+                [value]="webhookUrl() ? ('studio.sourceWebhook.ready' | i18n) : ('studio.sourceWebhook.notConfigured' | i18n)" />
             </div>
             <div class="studio-copy-row">
               <label>
                 <span>{{ 'studio.sourceWebhook.url' | i18n }}</span>
-                <input pInputText [value]="webhookUrl()" readonly />
+                <input
+                  pInputText
+                  [value]="webhookUrl()"
+                  [placeholder]="'studio.sourceWebhook.notConfigured' | i18n"
+                  readonly />
               </label>
               <p-button
                 icon="pi pi-copy"
                 variant="outlined"
                 severity="secondary"
                 [ariaLabel]="'studio.sourceWebhook.copyUrl' | i18n"
+                [disabled]="!webhookUrl()"
                 (onClick)="copyWebhookUrl()" />
             </div>
             <div class="studio-copy-row">
               <label>
                 <span>{{ 'studio.sourceWebhook.apiKey' | i18n }}</span>
-                <input pInputText [value]="webhookKeyMasked()" readonly />
+                <input
+                  pInputText
+                  [value]="webhookKeyMasked()"
+                  [placeholder]="'studio.sourceWebhook.notConfigured' | i18n"
+                  readonly />
               </label>
               <p-button
                 icon="pi pi-copy"
                 variant="outlined"
                 severity="secondary"
                 [ariaLabel]="'studio.sourceWebhook.copyKey' | i18n"
+                [disabled]="!webhookKeyMasked()"
                 (onClick)="copyWebhookKey()" />
               <p-button
                 [label]="'studio.sourceWebhook.rotate' | i18n"
                 icon="pi pi-refresh"
                 variant="outlined"
                 severity="secondary"
+                [disabled]="!webhookKeyMasked()"
                 (onClick)="rotateWebhookKey()" />
             </div>
             <div class="toolbar-row">
-              <p-button [label]="'studio.sourceWebhook.captureSample' | i18n" icon="pi pi-bolt" (onClick)="captureWebhookSample()" />
+              <p-button [label]="'studio.sourceCommon.uploadInstead' | i18n" icon="pi pi-upload" variant="outlined" severity="secondary" (onClick)="fileIn.click()" />
+            </div>
+          </section>
+        }
+        @case ('restApi') {
+          <section class="studio-source-config">
+            <div class="studio-source-config__head">
+              <div>
+                <h3>{{ 'studio.sourceRest.title' | i18n }}</h3>
+                <p>{{ 'studio.sourceRest.subtitle' | i18n }}</p>
+              </div>
+              <p-tag severity="info" [value]="'studio.sourceRest.badge' | i18n" />
+            </div>
+            <div class="studio-form-grid">
+              <label>
+                <span>{{ 'studio.sourceApi.method' | i18n }}</span>
+                <select class="studio-native-select" [ngModel]="restApiMethod()" (ngModelChange)="setRestApiMethod($event)">
+                  @for (method of externalApiMethods; track method) {
+                    <option [value]="method">{{ method }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>{{ 'studio.sourceRest.path' | i18n }}</span>
+                <input
+                  pInputText
+                  [ngModel]="restApiPath()"
+                  (ngModelChange)="restApiPath.set($event)"
+                  [placeholder]="'studio.sourceRest.pathPlaceholder' | i18n" />
+              </label>
+              <label>
+                <span>{{ 'studio.sourceApi.auth' | i18n }}</span>
+                <select class="studio-native-select" [ngModel]="restApiAuthType()" (ngModelChange)="setRestApiAuthType($event)">
+                  @for (type of authTypes; track type) {
+                    <option [value]="type">{{ ('studio.sourceAuth.typeLabel.' + type) | i18n }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+            <div class="toolbar-row">
               <p-button [label]="'studio.sourceCommon.uploadInstead' | i18n" icon="pi pi-upload" variant="outlined" severity="secondary" (onClick)="fileIn.click()" />
             </div>
           </section>
@@ -231,7 +290,11 @@
             <div class="studio-form-grid studio-form-grid--api">
               <label>
                 <span>{{ 'studio.sourceApi.name' | i18n }}</span>
-                <input pInputText [ngModel]="externalApiName()" (ngModelChange)="externalApiName.set($event)" />
+                <input
+                  pInputText
+                  [ngModel]="externalApiName()"
+                  (ngModelChange)="externalApiName.set($event)"
+                  [placeholder]="'studio.sourceApi.namePlaceholder' | i18n" />
               </label>
               <label>
                 <span>{{ 'studio.sourceApi.method' | i18n }}</span>
@@ -243,15 +306,24 @@
               </label>
               <label class="studio-form-grid__wide">
                 <span>{{ 'studio.sourceApi.url' | i18n }}</span>
-                <input pInputText [ngModel]="externalApiUrl()" (ngModelChange)="externalApiUrl.set($event)" />
+                <input
+                  pInputText
+                  [ngModel]="externalApiUrl()"
+                  (ngModelChange)="externalApiUrl.set($event)"
+                  [placeholder]="'studio.sourceApi.urlPlaceholder' | i18n" />
               </label>
               <label>
                 <span>{{ 'studio.sourceApi.schedule' | i18n }}</span>
-                <input pInputText [ngModel]="externalApiSchedule()" (ngModelChange)="externalApiSchedule.set($event)" />
+                <input
+                  pInputText
+                  [ngModel]="externalApiSchedule()"
+                  (ngModelChange)="externalApiSchedule.set($event)"
+                  [placeholder]="'studio.sourceApi.schedulePlaceholder' | i18n" />
               </label>
               <label>
                 <span>{{ 'studio.sourceApi.auth' | i18n }}</span>
                 <select class="studio-native-select" [ngModel]="selectedCredentialId()" (ngModelChange)="selectedCredentialId.set($event)">
+                  <option value="">{{ 'studio.sourceAuth.noCredential' | i18n }}</option>
                   @for (credential of credentials(); track credential.id) {
                     <option [value]="credential.id">{{ credential.name }}</option>
                   }
@@ -276,8 +348,8 @@
               <div class="studio-source-test-result">
                 <i class="pi pi-check-circle" aria-hidden="true"></i>
                 <span>
-                  <strong>{{ 'studio.sourceApi.demoResultTitle' | i18n }}</strong>
-                  <small>{{ 'studio.sourceApi.demoResultText' | i18n: { status: test.status, duration: test.durationMs, capturedAt: test.capturedAt } }}</small>
+                  <strong>{{ 'studio.sourceApi.resultTitle' | i18n }}</strong>
+                  <small>{{ 'studio.sourceApi.resultText' | i18n: { status: test.status, duration: test.durationMs, capturedAt: test.capturedAt } }}</small>
                 </span>
               </div>
             }
@@ -368,6 +440,140 @@
                 </div>
               </aside>
             }
+          </section>
+        }
+        @case ('soap') {
+          <section class="studio-source-config">
+            <div class="studio-source-config__head">
+              <div>
+                <h3>{{ 'studio.sourceSoap.title' | i18n }}</h3>
+                <p>{{ 'studio.sourceSoap.subtitle' | i18n }}</p>
+              </div>
+              <p-tag severity="info" [value]="'studio.sourceSoap.badge' | i18n" />
+            </div>
+            <div class="studio-form-grid">
+              <label class="studio-form-grid__wide">
+                <span>{{ 'studio.sourceSoap.endpoint' | i18n }}</span>
+                <input
+                  pInputText
+                  [ngModel]="soapEndpoint()"
+                  (ngModelChange)="soapEndpoint.set($event)"
+                  [placeholder]="'studio.sourceSoap.endpointPlaceholder' | i18n" />
+              </label>
+              <label>
+                <span>{{ 'studio.sourceSoap.action' | i18n }}</span>
+                <input
+                  pInputText
+                  [ngModel]="soapAction()"
+                  (ngModelChange)="soapAction.set($event)"
+                  [placeholder]="'studio.sourceSoap.actionPlaceholder' | i18n" />
+              </label>
+              <label>
+                <span>{{ 'studio.sourceSoap.operation' | i18n }}</span>
+                <input
+                  pInputText
+                  [ngModel]="soapOperation()"
+                  (ngModelChange)="soapOperation.set($event)"
+                  [placeholder]="'studio.sourceSoap.operationPlaceholder' | i18n" />
+              </label>
+            </div>
+            <div class="toolbar-row">
+              <p-button [label]="'studio.sourceSoap.uploadXml' | i18n" icon="pi pi-upload" variant="outlined" severity="secondary" (onClick)="fileIn.click()" />
+            </div>
+          </section>
+        }
+        @case ('fileBatch') {
+          <section class="studio-source-config">
+            <div class="studio-source-config__head">
+              <div>
+                <h3>{{ 'studio.sourceFileBatch.title' | i18n }}</h3>
+                <p>{{ 'studio.sourceFileBatch.subtitle' | i18n }}</p>
+              </div>
+              <p-tag severity="info" [value]="'studio.sourceFileBatch.badge' | i18n" />
+            </div>
+            <div class="studio-form-grid">
+              <label>
+                <span>{{ 'studio.sourceFileBatch.format' | i18n }}</span>
+                <select class="studio-native-select" [ngModel]="fileBatchFormat()" (ngModelChange)="setFileBatchFormat($event)">
+                  @for (format of fileBatchFormats; track format) {
+                    <option [value]="format">{{ format }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>{{ 'studio.sourceFileBatch.delimiter' | i18n }}</span>
+                <input
+                  pInputText
+                  [ngModel]="fileBatchDelimiter()"
+                  (ngModelChange)="fileBatchDelimiter.set($event)"
+                  [disabled]="fileBatchFormat() !== 'CSV'" />
+              </label>
+              <label class="studio-inline-field">
+                <span>{{ 'studio.sourceFileBatch.headerRow' | i18n }}</span>
+                <p-toggleSwitch [ngModel]="fileBatchHasHeaderRow()" (ngModelChange)="fileBatchHasHeaderRow.set($event)" />
+              </label>
+            </div>
+            <div class="toolbar-row">
+              <p-button [label]="'studio.sourceFileBatch.uploadFile' | i18n" icon="pi pi-upload" variant="outlined" severity="secondary" (onClick)="fileIn.click()" />
+            </div>
+          </section>
+        }
+        @case ('apiEnrichment') {
+          <section class="studio-source-config studio-source-config--api">
+            <div class="studio-source-config__head">
+              <div>
+                <h3>{{ 'studio.sourceEnrichment.title' | i18n }}</h3>
+                <p>{{ 'studio.sourceEnrichment.subtitle' | i18n }}</p>
+              </div>
+              <p-tag severity="info" [value]="'studio.sourceEnrichment.badge' | i18n" />
+            </div>
+            <div class="studio-form-grid studio-form-grid--api">
+              <label>
+                <span>{{ 'studio.sourceEnrichment.lookupName' | i18n }}</span>
+                <input
+                  pInputText
+                  [ngModel]="enrichmentLookupName()"
+                  (ngModelChange)="enrichmentLookupName.set($event)"
+                  [placeholder]="'studio.sourceEnrichment.lookupNamePlaceholder' | i18n" />
+              </label>
+              <label>
+                <span>{{ 'studio.sourceApi.method' | i18n }}</span>
+                <select class="studio-native-select" [ngModel]="enrichmentMethod()" (ngModelChange)="setEnrichmentMethod($event)">
+                  @for (method of externalApiMethods; track method) {
+                    <option [value]="method">{{ method }}</option>
+                  }
+                </select>
+              </label>
+              <label class="studio-form-grid__wide">
+                <span>{{ 'studio.sourceEnrichment.urlTemplate' | i18n }}</span>
+                <input
+                  pInputText
+                  [ngModel]="enrichmentUrlTemplate()"
+                  (ngModelChange)="enrichmentUrlTemplate.set($event)"
+                  [placeholder]="'studio.sourceEnrichment.urlTemplatePlaceholder' | i18n" />
+              </label>
+              <label>
+                <span>{{ 'studio.sourceApi.auth' | i18n }}</span>
+                <select class="studio-native-select" [ngModel]="selectedCredentialId()" (ngModelChange)="selectedCredentialId.set($event)">
+                  <option value="">{{ 'studio.sourceAuth.noCredential' | i18n }}</option>
+                  @for (credential of credentials(); track credential.id) {
+                    <option [value]="credential.id">{{ credential.name }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>{{ 'studio.sourceEnrichment.failurePolicy' | i18n }}</span>
+                <select class="studio-native-select" [ngModel]="enrichmentFailurePolicy()" (ngModelChange)="setEnrichmentFailurePolicy($event)">
+                  @for (policy of enrichmentFailurePolicies; track policy) {
+                    <option [value]="policy">{{ ('studio.sourceEnrichment.policy.' + policy) | i18n }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+            <div class="toolbar-row">
+              <p-button [label]="'studio.sourceAuth.add' | i18n" icon="pi pi-key" variant="outlined" severity="secondary" (onClick)="authDrawerOpen.set(true)" />
+              <p-button [label]="'studio.sourceCommon.uploadInstead' | i18n" icon="pi pi-upload" variant="outlined" severity="secondary" (onClick)="fileIn.click()" />
+            </div>
           </section>
         }
         @default {
@@ -796,7 +1002,7 @@
                   variant="text"
                   severity="danger"
                   (onClick)="removeTargetAt(rowIndex)"
-                  [disabled]="targetFields().length <= 1" />
+                  [ariaLabel]="'studio.remove' | i18n" />
               </td>
             </tr>
           }
@@ -926,8 +1132,7 @@
                     icon="pi pi-trash"
                     variant="text"
                     severity="danger"
-                    (onClick)="removeRule(rule)"
-                    [disabled]="rules().length <= 1" />
+                    (onClick)="removeRule(rule)" />
                 </td>
               </tr>
             }

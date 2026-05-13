@@ -1,18 +1,62 @@
-# CanonBridge Güçlü Çalışırlık Kanıt Senaryoları
+# CanonBridge No-Code API Integration Kanıt Senaryoları
 
-Bu doküman, CanonBridge projesinin "gerçekten kuvvetli ve çalışıyor" olduğunu göstermek için gereken kabul, kanıt ve test senaryolarını tanımlar.
+Bu doküman, CanonBridge projesinin ana ürün iddiasını kanıtlamak için gereken kabul, kanıt ve test senaryolarını tanımlar:
+
+> CanonBridge, business kullanıcıların kod yazmadan farklı API, webhook, SOAP, Kafka ve dosya/event kaynaklarını canonical modele bağlayabildiği no-code integration platformudur.
 
 Amaç yalnızca servislerin ayağa kalktığını göstermek değildir. Amaç şunları kanıtlamaktır:
 
-- Partner verisi güvenilir biçimde içeri alınır.
-- Mapping Studio üzerinden üretilen/versiyonlanan mapping gerçek runtime tarafından kullanılır.
+- Farklı integration tipleri aynı no-code modelle tanımlanır.
+- Business kullanıcı Mapping Studio üzerinden kaynak sample'ı içeri alır, field mapping yapar, preview eder ve publish eder.
+- Publish edilen integration runtime tarafından gerçek event/API trafiğinde kullanılır.
+- REST, webhook, SOAP/XML, Kafka, scheduled polling, outbound API enrichment ve DLQ replay gibi farklı akışlar ortak integration lifecycle içinde çalışır.
+- JSON, XML/SOAP, nested payload, array, enum, tarih, para ve optional field dönüşümleri kod yazmadan yönetilir.
+- Credential, authentication, retry, timeout, rate limit, masking ve audit gibi enterprise ihtiyaçları no-code integration akışının parçasıdır.
 - Transformer doğru, deterministik ve valid canonical çıktı üretir.
 - Kafka, retry, DLQ, idempotency ve outbox davranışları veri kaybını engeller.
 - Sistem kötü veri, duplicate event, geçici dependency hatası, yavaş downstream ve deploy/restart altında tutarlı kalır.
 - UI, API, transformer, mock servisler ve altyapı birlikte uçtan uca çalışır.
 - Güvenlik, gözlemlenebilirlik, performans ve operasyon kabiliyetleri ölçülebilir kanıt üretir.
 
-Bu doküman bir "demo script" değil, proje kabul planıdır. Demo başarılı olabilir ama kabul başarısız olabilir. Kabul için her senaryonun kanıtı saklanmalıdır.
+Bu doküman bir "demo script" değil, ürün kabul planıdır. Demo başarılı olabilir ama kabul başarısız olabilir. Kabul için her senaryonun no-code kurulum adımları, runtime çıktısı ve operasyonel kanıtı saklanmalıdır.
+
+---
+
+## 0. Ürün İddiası ve Kanıt Mantığı
+
+CanonBridge'in pazardaki ana vaadi şudur:
+
+```text
+Yeni bir partner entegrasyonu için custom adapter kodu yazmak yerine:
+
+1. Kaynağı seç
+2. Örnek payload'u al
+3. Auth/credential bilgilerini güvenli tanımla
+4. Alanları canonical modele map et
+5. Preview/test et
+6. Publish et
+7. Canlı trafikte izle
+8. Hata olursa DLQ'dan sample'a dönüştürüp düzelt
+```
+
+Bu nedenle kabul senaryoları sadece "PayFlex çalıştı" gibi tekil entegrasyonlardan oluşmamalıdır. Her senaryo şu soruya cevap vermelidir:
+
+> Bu integration tipi business kullanıcı tarafından kod yazmadan tanımlanabiliyor, test edilebiliyor, yayınlanabiliyor ve işletilebiliyor mu?
+
+### Kanıtlanması Gereken Integration Tipleri
+
+| Integration tipi | Örnek partner | Kaynak formatı | Trigger | CanonBridge kanıtı |
+|---|---|---|---|---|
+| Inbound webhook | PayFlex | JSON | HTTP POST | Webhook auth, raw event, canonical transform |
+| Inbound REST API | Partner REST push veya manual test | JSON | HTTP POST/PUT | Request body/header mapping, API key/JWT |
+| Outbound REST polling | PayFlex transaction query | JSON | Schedule/manual | Credential, query params, response mapping |
+| SOAP/XML API | FastCargo | SOAP XML | Manual/scheduled call | XML parse, SOAP fault handling, canonical shipment |
+| Kafka event stream | ShopMax | JSON event | Kafka topic | Topic-based resolution, consumer group, canonical output |
+| File/batch import | Marketplace CSV/JSONL feed | CSV/JSONL/JSON | Upload/scheduled file pickup | Row-level mapping, partial failure, batch report |
+| API enrichment | Order event + customer lookup | JSON + REST response | Inline outbound call | Multi-step mapping, timeout/retry, secret masking |
+| DLQ replay/fix loop | Any failed partner | Original failed payload | Operator action | No-code fix draft, preview, publish, replay |
+
+Not: Bazı tipler MVP'de tam runtime olarak tamamlanmamış olabilir. Bu durumda doküman, "kanıtlandı", "kısmen kanıtlandı" ve "backlog" ayrımını açıkça göstermelidir. Ürün iddiası açısından boş kalan integration tipi varsa bu release notunda risk olarak yazılmalıdır.
 
 ---
 
@@ -74,7 +118,9 @@ Kanıt geçerli sayılması için yalnızca "başarılı" yazması yetmez. Raw i
 
 | Alan | Kanıtlanacak kabiliyet | İlgili bileşenler |
 |---|---|---|
-| Partner ingress | Webhook, SOAP, Kafka kaynaklarından veri kabulü | `services/webhook-receiver`, `services/canonbridge-mock`, Kafka |
+| No-code integration builder | Kaynak seçimi, sample alma, auth tanımı, mapping, preview, publish | `mapping-studio-ui`, `services/mapping-studio-api` |
+| Partner ingress | Webhook, REST, SOAP, Kafka, batch kaynaklarından veri kabulü | `services/webhook-receiver`, `services/canonbridge-mock`, Kafka |
+| Outbound API integration | REST/SOAP çağrısı, credential resolver, timeout/retry, response mapping | Mapping Studio API outbound services, mock APIs |
 | Mapping lifecycle | Draft, preview, publish, immutable version, rollback | `mapping-studio-ui`, `services/mapping-studio-api` |
 | Transformation | JSONata mapping, Ajv validation, schema version resolution | `services/transformer` |
 | Error handling | Validation error, transient error, retry, DLQ | Transformer, Kafka topics |
@@ -83,6 +129,45 @@ Kanıt geçerli sayılması için yalnızca "başarılı" yazması yetmez. Raw i
 | Observability | Health, metrics, logs, correlation ID, dashboards | Prometheus, Grafana, service logs |
 | Performance | Throughput, p95/p99 latency, lag, memory, worker pool | Transformer, Kafka, Kubernetes/Docker |
 | Operations | Deploy, graceful shutdown, rollback, DR, runbooks | Docker Compose, Kubernetes manifests, docs/operations |
+
+---
+
+## 3.1 No-Code Integration Coverage Matrisi
+
+Bu matristeki amaç, CanonBridge'in yalnızca bir transformer olmadığını; business kullanıcının farklı entegrasyon tiplerini aynı ürün deneyimiyle kurabildiğini kanıtlamaktır.
+
+| ID | Integration tipi | No-code kurulumda kullanıcı ne yapar? | Örnek senaryo | Runtime kanıtı |
+|---|---|---|---|---|
+| NC-001 | Webhook JSON inbound | Webhook source seçer, secret/header tanımlar, sample payload alır, canonical alanlara map eder | PayFlex `payment.completed` | HTTP webhook -> raw topic -> canonical payment |
+| NC-002 | REST JSON inbound | REST endpoint contract tanımlar, request body/header mapping yapar | Generic partner order push | HTTP request -> validation -> canonical order |
+| NC-003 | Outbound REST pull | Base URL, auth, method, path, query params ve schedule tanımlar | PayFlex transaction detail lookup | Scheduled/manual call -> response mapping -> canonical payment detail |
+| NC-004 | SOAP/XML | WSDL/endpoint veya sample SOAP response tanımlar, XML alanlarını canonical modele map eder | FastCargo shipment tracking | SOAP response -> normalized JSON -> canonical shipment |
+| NC-005 | Kafka inbound | Topic, key strategy, envelope/topic partner resolution tanımlar | ShopMax `order.created` | Kafka raw topic -> transformer -> canonical order |
+| NC-006 | File/batch | CSV/JSONL/JSON file sample yükler, kolon/field mapping yapar | Marketplace daily product feed | Batch rows -> canonical events + row error report |
+| NC-007 | API enrichment | Ana event'e ek olarak outbound lookup step'i ekler | Order event -> customer API lookup | Combined payload -> enriched canonical order |
+| NC-008 | Error recovery | DLQ payload'u sample olarak draft'a alır, mapping/schema düzeltir | Invalid PayFlex payload | DLQ -> fix draft -> publish -> replay success |
+| NC-009 | Versioning/rollback | v1/v2 mapping versiyonlarını UI'da yönetir | Hatalı status enum mapping rollback | Active version switch -> runtime output change |
+| NC-010 | Monitoring/operation | Partner health, DLQ, throughput ve errors izler | Mixed partner traffic | Dashboard/metrics/audit evidence |
+
+Her NC senaryosunda aşağıdaki üç kanıt birlikte aranır:
+
+1. **No-code setup kanıtı**: UI/API üzerinden integration tanımı, credential metadata, sample, mapping rule ve publish kaydı.
+2. **Runtime kanıtı**: Gerçek HTTP/SOAP/Kafka/file event'i canonical output üretir veya beklenen DLQ/retry davranışını gösterir.
+3. **Operasyon kanıtı**: Audit log, metric, structured log, health/readiness veya dashboard üzerinde iz bırakır.
+
+### MVP Durum Etiketi
+
+Her integration tipi test run sonunda şu etiketlerden biriyle raporlanmalıdır:
+
+| Etiket | Anlamı |
+|---|---|
+| `PROVEN` | UI/API kurulumu ve runtime akışı uçtan uca kanıtlandı |
+| `RUNTIME_ONLY` | Runtime çalışıyor, no-code kurulum deneyimi eksik veya manuel |
+| `DESIGN_ONLY` | Mimari/doküman var, çalışan runtime yok |
+| `PARTIAL` | Ana akış çalışıyor ama auth, schedule, replay veya observability eksik |
+| `BLOCKED` | Ürün iddiasını desteklemek için kritik eksik var |
+
+Release notunda en az NC-001, NC-004, NC-005 ve NC-008 `PROVEN` veya açıkça gerekçelendirilmiş `PARTIAL` olmalıdır. No-code API integration ana iddiası için NC-003 ve NC-007 de production öncesi kritik kabul edilir.
 
 ---
 
@@ -146,9 +231,12 @@ Mevcut örnek kaynaklar:
 |---|---:|---|
 | Build | Evet | Backend, frontend ve transformer build hatasız |
 | Unit tests | Evet | Tüm unit testler geçer |
+| No-code authoring coverage | Evet | En az webhook, REST/Kafka, SOAP ve DLQ fix flow no-code kurulabilir |
+| Integration type coverage | Evet | Her desteklenen integration tipi `PROVEN/PARTIAL/DESIGN_ONLY` etiketiyle raporlanır |
 | Mapping fixture validation | Evet | Tüm mapping fixture çiftleri beklenen canonical çıktıyı üretir |
 | Schema compatibility | Evet | Backward incompatible değişiklik versiyonsuz geçmez |
 | Core E2E | Evet | PayFlex, FastCargo, ShopMax akışları geçer |
+| Outbound API E2E | Beta/GA için evet | Credential'lı REST/SOAP outbound çağrı ve response mapping kanıtlanır |
 | DLQ/retry | Evet | Bad payload DLQ'ya, transient hata retry'a gider |
 | Security smoke | Evet | Yetkisiz istekler reddedilir, secret/PII loglanmaz |
 | Observability smoke | Evet | Health, metrics, structured logs görünür |
@@ -159,7 +247,7 @@ Mevcut örnek kaynaklar:
 
 ## 6. Komut Bazlı Temel Kanıt Paketi
 
-Bu bölüm, "önce projeyi kırık mı değil mi görelim" kanıtıdır.
+Bu bölüm, "önce projeyi kırık mı değil mi görelim" kanıtıdır. No-code API integration iddiası için bu komutlar tek başına yeterli değildir; sadece teknik baseline sağlar. Asıl ürün kanıtı, Section 3.1 ve Section 7'deki integration type coverage ile tamamlanır.
 
 ### 6.1 Transformer
 
@@ -246,6 +334,11 @@ Başarı kriterleri:
 
 ## 7. Kritik E2E Senaryo Seti
 
+Bu bölümdeki her senaryo iki açıdan değerlendirilmelidir:
+
+- **No-code authoring**: Integration Mapping Studio/API üzerinden kod yazmadan tanımlanabiliyor mu?
+- **Runtime execution**: Tanımlanan integration gerçek protokolüyle çalışıp canonical çıktı üretiyor mu?
+
 ### E2E-001 PayFlex Webhook Happy Path
 
 Amaç: PayFlex ödeme webhook'unun güvenli biçimde alınmasını, raw event'e dönüşmesini ve canonical çıktıya gitmesini kanıtlamak.
@@ -277,6 +370,7 @@ Başarı kriterleri:
 - Partner alanları canonical alanlara doğru taşınır.
 - PII loglarda full payload olarak görünmez.
 - Yanlış webhook key ile aynı payload 401 döner.
+- Webhook source, secret header ve mapping rule'ları UI/API üzerinden no-code tanımlanabilir.
 
 Kanıt:
 
@@ -370,8 +464,182 @@ Başarı kriterleri:
 - Canonical event schema-valid olur.
 - `orderId`, `customerId`, `items`, `totalAmount`, `shippingAddress` doğru taşınır.
 - Offset yalnızca başarılı produce veya DLQ sonrası commit edilir.
+- Topic adı, key strategy ve partner/event resolution no-code integration metadata'sında tanımlanabilir.
 
-### E2E-006 Mapping Studio Draft to Publish
+### E2E-006 Inbound REST API Push
+
+Amaç: Webhook dışındaki standart REST JSON push entegrasyonlarının da no-code tanımlanabildiğini kanıtlamak.
+
+Örnek:
+
+```text
+Partner REST client
+  -> CanonBridge inbound REST endpoint
+  -> Request body/header validation
+  -> Transformer
+  -> canonical.customer.updated veya canonical.order.created
+```
+
+No-code kurulum:
+
+1. Kullanıcı `REST inbound` source seçer.
+2. HTTP method, path, required headers ve auth tipi tanımlar.
+3. Sample JSON request body yükler.
+4. Request body alanlarını canonical modele map eder.
+5. Header veya path parametrelerini mapping expression içinde kullanır.
+6. Preview yapar ve publish eder.
+
+Test örneği:
+
+```bash
+curl -i -X POST http://localhost:3000/v1/transform \
+  -H "Content-Type: application/json" \
+  -H "X-Partner-Id: generic-rest-partner" \
+  -H "X-Event-Type: customer.updated" \
+  -d '{
+    "customer_id": "CUST-1001",
+    "email": "ada@example.com",
+    "status": "active",
+    "updated_at": "2026-05-13T09:00:00Z"
+  }'
+```
+
+Başarı kriterleri:
+
+- REST source no-code tanımlanır.
+- Request validation required body/header alanlarını uygular.
+- Canonical output schema-valid olur.
+- Auth eksikse request reddedilir.
+- Header/path/body alanları mapping'de kullanılabilir.
+
+### E2E-007 Outbound REST Polling
+
+Amaç: CanonBridge'in yalnızca gelen eventleri değil, dış REST API'lerden veri çekme entegrasyonlarını da no-code kurabildiğini kanıtlamak.
+
+Örnek:
+
+```text
+Schedule/manual trigger
+  -> PayFlex REST API transaction query
+  -> Credential resolver
+  -> Response mapping
+  -> canonical.payment.detail
+```
+
+No-code kurulum:
+
+1. Kullanıcı `Outbound REST` integration tipi seçer.
+2. Base URL, method, path template ve query params tanımlar.
+3. Credential tipi seçer: API key, bearer token, basic auth veya OAuth2 client credentials.
+4. Timeout, retry ve rate limit ayarlarını girer.
+5. Response sample'ını import eder.
+6. Response alanlarını canonical modele map eder.
+7. Manual test veya schedule ile çalıştırır.
+
+Test örneği:
+
+```bash
+curl -i http://localhost:8080/api/payflex/transactions/TXN-12345 \
+  -H "X-API-Key: demo-api-key-12345"
+```
+
+Başarı kriterleri:
+
+- Credential secret write-only kalır.
+- API key/bearer/basic auth header'ı runtime'da eklenir ama loglanmaz.
+- 200 response canonical output üretir.
+- 401/403 credential error olarak sınıflandırılır.
+- 404 business-not-found olarak yönetilir.
+- 500/502/503/504 transient retry politikasına girer.
+
+### E2E-008 SOAP/XML API Integration
+
+Amaç: SOAP/XML legacy API'lerin de no-code integration modeliyle temsil edilebildiğini kanıtlamak.
+
+Bu senaryo E2E-004'ün ürün odaklı genişletilmiş halidir.
+
+No-code kurulum:
+
+1. Kullanıcı `SOAP/XML` integration tipi seçer.
+2. Endpoint, SOAPAction, auth ve request template tanımlar.
+3. XML response sample'ı yükler veya mock response alır.
+4. XML path alanlarını canonical modele map eder.
+5. SOAP fault mapping kurallarını tanımlar.
+6. Preview/test çalıştırır ve publish eder.
+
+Başarı kriterleri:
+
+- XML namespace'leri doğru parse edilir.
+- SOAP body içindeki alanlar canonical modele taşınır.
+- SOAP Fault success event üretmez.
+- Basic auth/credential loglarda maskelenir.
+- Aynı no-code publish/versioning akışına dahildir.
+
+### E2E-009 File / Batch Import
+
+Amaç: API dışı batch entegrasyon ihtiyacının da ürün kapsamına alınabileceğini ve kabul kriterlerinin net olduğunu göstermek.
+
+Örnek:
+
+```text
+Marketplace daily CSV feed
+  -> File upload veya scheduled pickup
+  -> Row parser
+  -> Row-level mapping
+  -> canonical.product.updated events
+  -> Batch report
+```
+
+No-code kurulum:
+
+1. Kullanıcı `File/batch` source seçer.
+2. CSV, JSONL veya JSON array sample yükler.
+3. Delimiter, header row, encoding ve date/number formatlarını tanımlar.
+4. Kolonları canonical modele map eder.
+5. Row-level validation kurallarını belirler.
+6. Batch preview ile success/error row sayısını görür.
+7. Publish eder.
+
+Başarı kriterleri:
+
+- Valid rows canonical event'e dönüşür.
+- Invalid rows tüm batch'i düşürmeden row error report'a yazılır.
+- Batch report success/failed/skipped sayıları verir.
+- Re-run idempotency veya duplicate handling politikası belgelenir.
+- Bu runtime henüz implement değilse senaryo `DESIGN_ONLY` veya `PARTIAL` olarak açık işaretlenir.
+
+### E2E-010 API Enrichment / Multi-Step Integration
+
+Amaç: Tek payload mapping'in ötesinde, event işlenirken dış API'den zenginleştirme yapılabildiğini kanıtlamak.
+
+Örnek:
+
+```text
+ShopMax order.created
+  -> Extract customerId
+  -> Customer REST API lookup
+  -> Merge order + customer response
+  -> canonical.order.created enriched
+```
+
+No-code kurulum:
+
+1. Kullanıcı ana source olarak Kafka/REST/Webhook seçer.
+2. Mapping flow'a `Outbound REST lookup` step'i ekler.
+3. Lookup request path/query parametresini ana payload'dan bağlar.
+4. Credential seçer.
+5. Response sample'ını canonical mapping'e dahil eder.
+6. Timeout/fallback politikasını tanımlar.
+
+Başarı kriterleri:
+
+- Lookup başarılıysa canonical event enriched alanları içerir.
+- Lookup timeout olursa configured fallback/retry uygulanır.
+- Credential secret görünmez.
+- Enrichment failure'ın DLQ mı partial success mi olacağı integration metadata'sında açıkça tanımlıdır.
+- Audit log multi-step flow'u takip edilebilir kılar.
+
+### E2E-011 Mapping Studio Draft to Publish
 
 Amaç: Kullanıcının no-code mapping oluşturup publish ettiği mapping'in runtime tarafından kullanılabildiğini kanıtlamak.
 
@@ -397,6 +665,8 @@ Başarı kriterleri:
 - Publish sonrası immutable `mapping_versions` kaydı oluşur.
 - Published version değiştirilemez.
 - Transformer yeni versiyonu kullanır.
+- Integration type metadata'sı mapping version ile birlikte saklanır.
+- Aynı authoring deneyimi REST, webhook, SOAP ve Kafka senaryolarında tekrar kullanılabilir.
 
 Kanıt:
 
@@ -406,7 +676,7 @@ Kanıt:
 - Transformer reload sonucu
 - Runtime transform çıktısı
 
-### E2E-007 Mapping Rollback
+### E2E-012 Mapping Rollback
 
 Amaç: Hatalı mapping publish edildiğinde önceki versiyona hızlı ve güvenli dönüş yapılabildiğini kanıtlamak.
 
@@ -425,7 +695,7 @@ Başarı kriterleri:
 - v2 immutable kalır, silinmez.
 - Transformer cache reload sonrası v1 çıktısını üretir.
 
-### E2E-008 DLQ to Fix Draft Loop
+### E2E-013 DLQ to Fix Draft Loop
 
 Amaç: DLQ'ya düşen event'in Mapping Studio'da düzeltme sürecini başlatabildiğini kanıtlamak.
 
@@ -1089,9 +1359,11 @@ Bu senaryolar manuel kalırsa kabul maliyeti yüksek olur. Aşağıdaki otomasyo
 
 | Alan | Ağırlık | PASS koşulu |
 |---|---:|---|
-| Build/test baseline | 15 | Tüm build ve unit testler geçer |
-| Core transformation | 20 | Fixture, schema, JSONata, version resolution geçer |
-| E2E journeys | 20 | PayFlex, FastCargo, ShopMax, Mapping Studio publish geçer |
+| Build/test baseline | 10 | Tüm build ve unit testler geçer |
+| No-code integration authoring | 20 | Kaynak seçimi, credential, sample, mapping, preview, publish akışı çalışır |
+| Integration type coverage | 20 | Webhook, REST, SOAP/XML, Kafka, outbound API ve DLQ fix loop kanıtlanır veya açık etiketlenir |
+| Core transformation | 15 | Fixture, schema, JSONata, version resolution geçer |
+| E2E journeys | 15 | PayFlex, FastCargo, ShopMax, REST/outbound ve Mapping Studio publish geçer |
 | Reliability | 15 | Duplicate, retry, DLQ, graceful shutdown, offset commit kanıtlanır |
 | Security | 10 | Auth, credential, masking, rate limit geçer |
 | Observability | 10 | Health, metrics, logs, dashboards, alerts çalışır |
@@ -1108,9 +1380,37 @@ Release sınıflandırması:
 
 Bloklayıcı bir güvenlik veya veri kaybı hatası varsa toplam puan ne olursa olsun release production candidate sayılamaz.
 
+No-code authoring olmadan yalnızca runtime transformer testleri geçiyorsa skor en fazla 70 kabul edilmelidir. Çünkü ürün iddiası "kod yazmadan integration kurmak"tır; sadece backend transform başarısı bu iddiayı tek başına kanıtlamaz.
+
 ---
 
-## 21. Final Sign-off Şablonu
+## 21. Integration Coverage Rapor Şablonu
+
+Her kabul koşusunda bu tablo doldurulmalıdır:
+
+| Integration tipi | MVP durumu | No-code setup kanıtı | Runtime kanıtı | Eksik/risk |
+|---|---|---|---|---|
+| Webhook JSON inbound |  |  |  |  |
+| REST JSON inbound |  |  |  |  |
+| Outbound REST polling |  |  |  |  |
+| SOAP/XML |  |  |  |  |
+| Kafka inbound |  |  |  |  |
+| File/batch |  |  |  |  |
+| API enrichment |  |  |  |  |
+| DLQ replay/fix loop |  |  |  |  |
+| Versioning/rollback |  |  |  |  |
+| Monitoring/operation |  |  |  |  |
+
+Karar kuralı:
+
+- `PROVEN`: Sales demo, beta ve production claim için kullanılabilir.
+- `PARTIAL`: Demo'da gösterilebilir ama eksik açıkça söylenmelidir.
+- `DESIGN_ONLY`: Ürün vizyonu olarak anlatılabilir, çalışan özellik gibi sunulmamalıdır.
+- `BLOCKED`: Release riskidir.
+
+---
+
+## 22. Final Sign-off Şablonu
 
 ```markdown
 # CanonBridge Acceptance Sign-off
@@ -1129,9 +1429,12 @@ Date:
 ## Passed Gates
 - [ ] Build
 - [ ] Unit tests
+- [ ] No-code integration authoring
+- [ ] Integration type coverage matrix
 - [ ] Integration tests
 - [ ] Contract tests
 - [ ] Core E2E
+- [ ] Outbound API E2E
 - [ ] DLQ/retry
 - [ ] Security smoke
 - [ ] Observability smoke
@@ -1141,6 +1444,8 @@ Date:
 ## Evidence
 - Build logs:
 - Test reports:
+- No-code setup screenshots:
+- Published integration IDs:
 - E2E logs:
 - Metrics screenshots:
 - Dashboard screenshots:
@@ -1161,26 +1466,26 @@ Date:
 
 ---
 
-## 22. En Kısa "Gerçekten Çalışıyor" Demo Paketi
+## 23. En Kısa "No-Code API Integration Çalışıyor" Demo Paketi
 
-Zaman çok sınırlıysa, aşağıdaki paket minimum ikna setidir. Bu production kabul yerine geçmez ama projenin gerçek olduğunu güçlü biçimde gösterir.
+Zaman çok sınırlıysa, aşağıdaki paket minimum ikna setidir. Bu production kabul yerine geçmez ama projenin ana ürün iddiasının gerçek olduğunu güçlü biçimde gösterir.
 
-1. `npm test` ve `npm run build` transformer için geçer.
-2. `mvn test` Mapping Studio API için geçer.
-3. `npm run build` Mapping Studio UI için geçer.
-4. Docker Compose ile Kafka/Postgres/mock servisler ayağa kalkar.
-5. PayFlex webhook event'i canonical payment çıktısı üretir.
-6. ShopMax Kafka order event'i canonical order çıktısı üretir.
-7. FastCargo SOAP request valid XML response üretir ve normalized transform yapılır.
-8. Invalid payload DLQ'ya düşer.
-9. Mapping Studio'da sample upload -> preview -> publish akışı gösterilir.
-10. `/metrics`, health endpoint'leri ve log correlation canlı gösterilir.
+1. Mapping Studio'da yeni integration oluştur: source type olarak `Webhook JSON` seç.
+2. PayFlex sample payload'u yükle, credential/header secret tanımla, fields -> canonical payment mapping yap.
+3. Preview çalıştır, publish et, published version ID göster.
+4. Gerçek PayFlex webhook request gönder ve canonical payment output'u göster.
+5. Aynı no-code akışla `Kafka inbound` integration göster: ShopMax topic + sample + mapping + canonical order.
+6. Aynı no-code akışla `SOAP/XML` integration göster: FastCargo SOAP response sample + XML field mapping + canonical shipment.
+7. Outbound REST capability göster: PayFlex transaction API credential metadata + response mapping + successful test call.
+8. Invalid payload gönder, DLQ'ya düşür, DLQ payload'unu sample olarak fix draft'a import et.
+9. Mapping düzeltmesini preview et, publish et, replay ile success göster.
+10. `/metrics`, health endpoint'leri, audit log ve structured correlation log'larını canlı göster.
 
-Bu 10 madde canlı ve kanıtlı gösterilebiliyorsa proje "sadece doküman değil, çalışan ürün çekirdeği var" seviyesini ispatlar.
+Bu 10 madde canlı ve kanıtlı gösterilebiliyorsa proje "sadece transformer değil, no-code integration platform çekirdeği var" seviyesini ispatlar.
 
 ---
 
-## 23. İlgili Dokümanlar
+## 24. İlgili Dokümanlar
 
 - `README.md`
 - `TESTING_GUIDE.md`

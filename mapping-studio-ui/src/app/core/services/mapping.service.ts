@@ -10,7 +10,15 @@ export interface MappingDraft {
   event_type?: string;
   name: string;
   description?: string;
-  source_type?: 'KAFKA' | 'WEBHOOK' | 'SCHEDULED_API' | 'MANUAL';
+  source_type?:
+    | 'KAFKA'
+    | 'WEBHOOK'
+    | 'REST_API'
+    | 'SCHEDULED_API'
+    | 'SOAP'
+    | 'FILE_BATCH'
+    | 'API_ENRICHMENT'
+    | 'MANUAL';
   source_config?: string;
   input_schema?: string;
   canonical_schema_ref?: string;

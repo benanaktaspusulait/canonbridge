@@ -69,9 +69,26 @@ import { NestedMappingDialogComponent } from './nested-mapping-dialog.component'
 
 const TARGET_KEY_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*$/;
 type UploadDropTarget = string;
-type StudioSourceType = 'kafka' | 'webhook' | 'externalApi' | 'manual';
+type StudioSourceType =
+  | 'kafka'
+  | 'webhook'
+  | 'restApi'
+  | 'externalApi'
+  | 'soap'
+  | 'fileBatch'
+  | 'apiEnrichment'
+  | 'manual';
+type BackendSourceType =
+  | 'KAFKA'
+  | 'WEBHOOK'
+  | 'REST_API'
+  | 'SCHEDULED_API'
+  | 'SOAP'
+  | 'FILE_BATCH'
+  | 'API_ENRICHMENT'
+  | 'MANUAL';
 type SourceAuthType = 'API_KEY' | 'BASIC_AUTH' | 'BEARER_TOKEN' | 'OAUTH2_CLIENT_CREDENTIALS';
-type ExternalApiMethod = 'GET' | 'POST' | 'PUT';
+type ExternalApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 type CredentialOption = {
   id: string;
   name: string;
@@ -93,12 +110,38 @@ type StudioConfigExport = {
   targetFields: TargetField[];
   rules: MappingRule[];
   sourceValidationRules: SourceValidationRule[];
+  kafka?: {
+    topic: string;
+    consumerGroup: string;
+  };
   externalApi: {
     name: string;
     method: ExternalApiMethod;
     url: string;
     schedule: string;
     selectedCredentialId: string;
+  };
+  restApi?: {
+    method: ExternalApiMethod;
+    path: string;
+    authType: SourceAuthType;
+  };
+  soap?: {
+    endpoint: string;
+    soapAction: string;
+    operation: string;
+  };
+  fileBatch?: {
+    format: 'CSV' | 'JSONL' | 'JSON_ARRAY';
+    delimiter: string;
+    hasHeaderRow: boolean;
+  };
+  apiEnrichment?: {
+    lookupName: string;
+    method: ExternalApiMethod;
+    urlTemplate: string;
+    selectedCredentialId: string;
+    failurePolicy: 'DLQ' | 'SKIP_ENRICHMENT' | 'RETRY';
   };
   credentials: CredentialOption[];
   webhook: {
@@ -107,171 +150,6 @@ type StudioConfigExport = {
   };
   fixtures: FixtureRow[];
 };
-
-const DEMO_JSON = `{
-  "customer": {
-    "full_name": "Ayşe Yılmaz",
-    "status": "A"
-  },
-  "order": {
-    "placed_at": "2026-05-10",
-    "qty": "4"
-  }
-}`;
-
-const KAFKA_SAMPLE_JSON = `{
-  "topic": "tenant-001.raw.acme-marketplace.order-created",
-  "partition": 3,
-  "offset": 98221,
-  "payload": {
-    "order_id": "ORD-9841",
-    "customer_name": "Ayşe Yılmaz",
-    "status": "A",
-    "placed_at": "2026-05-10",
-    "qty": "4"
-  }
-}`;
-
-const WEBHOOK_SAMPLE_JSON = `{
-  "delivery_id": "whd_48921",
-  "event": "order.created",
-  "data": {
-    "customer": {
-      "name": "Ayşe Yılmaz",
-      "state": "ACTIVE"
-    },
-    "order": {
-      "id": "ORD-7781",
-      "created_at": "2026-05-10T09:15:00Z",
-      "quantity": 4
-    }
-  }
-}`;
-
-const EXTERNAL_API_SAMPLE_JSON = `{
-  "orders": [
-    {
-      "id": "ORD-5521",
-      "customer": {
-        "name": "Ayşe Yılmaz",
-        "status": "ACTIVE"
-      },
-      "placedAt": "2026-05-10T09:15:00Z",
-      "quantity": 4,
-      "shippingQuote": {
-        "serviceLevel": "EXPRESS",
-        "etaDays": 2,
-        "price": 12.5
-      }
-    }
-  ],
-  "nextUpdatedSince": "2026-05-10T09:16:00Z"
-}`;
-
-const DEFAULT_TARGETS: TargetField[] = [
-  {
-    key: 'musteriAdi',
-    type: 'string',
-    required: true,
-    description: 'Canonical customer display name',
-    source: 'manual'
-  },
-  {
-    key: 'durum',
-    type: 'string',
-    required: true,
-    description: 'Lifecycle state (AKTIF / PASIF / ASKIDA)',
-    source: 'manual'
-  },
-  {
-    key: 'tarih',
-    type: 'date',
-    required: true,
-    description: 'Order date (DD/MM/YYYY)',
-    source: 'manual'
-  },
-  {
-    key: 'adet',
-    type: 'number',
-    required: true,
-    description: 'Line quantity',
-    source: 'manual'
-  }
-];
-
-const DEFAULT_RULES: MappingRule[] = [
-  {
-    id: 'r1',
-    sourcePath: 'customer.full_name',
-    targetKey: 'musteriAdi',
-    transform: 'direct',
-    paramA: '',
-    paramB: '',
-    paramC: '',
-    advancedExpression: ''
-  },
-  {
-    id: 'r2',
-    sourcePath: 'customer.status',
-    targetKey: 'durum',
-    transform: 'enum_map',
-    paramA: JSON.stringify([
-      { source: 'A', target: 'AKTIF' },
-      { source: 'B', target: 'PASIF' },
-      { source: 'C', target: 'ASKIDA' }
-    ]),
-    paramB: '',
-    paramC: '',
-    advancedExpression: ''
-  },
-  {
-    id: 'r3',
-    sourcePath: 'order.placed_at',
-    targetKey: 'tarih',
-    transform: 'date_format',
-    paramA: 'yyyy-MM-dd',
-    paramB: 'dd/MM/yyyy',
-    paramC: '',
-    advancedExpression: ''
-  },
-  {
-    id: 'r4',
-    sourcePath: 'order.qty',
-    targetKey: 'adet',
-    transform: 'number_coerce',
-    paramA: '',
-    paramB: '',
-    paramC: '',
-    advancedExpression: ''
-  }
-];
-
-const DEFAULT_SOURCE_VALIDATION_RULES: SourceValidationRule[] = [
-  {
-    id: 'sv1',
-    path: 'customer.full_name',
-    kind: 'required',
-    paramA: '',
-    paramB: '',
-    enabled: true
-  },
-  {
-    id: 'sv2',
-    path: 'customer.status',
-    kind: 'enum',
-    paramA: 'A,B,C',
-    paramB: '',
-    enabled: true
-  },
-  {
-    id: 'sv3',
-    path: 'order.qty',
-    kind: 'required',
-    paramA: '',
-    paramB: '',
-    enabled: true
-  }
-];
 
 type EnumMapPair = { source: string; target: string };
 type RuleStatusSeverity = 'success' | 'warn' | 'danger' | 'info' | 'secondary';
@@ -468,6 +346,85 @@ function applyTemplate(template: string, payload: unknown): string {
   });
 }
 
+function parseDelimitedLine(line: string, delimiter: string): string[] {
+  const cells: string[] = [];
+  let current = '';
+  let quoted = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    const next = line[i + 1];
+    if (ch === '"' && quoted && next === '"') {
+      current += '"';
+      i += 1;
+    } else if (ch === '"') {
+      quoted = !quoted;
+    } else if (ch === delimiter && !quoted) {
+      cells.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  cells.push(current);
+  return cells.map(cell => cell.trim());
+}
+
+function csvToJsonArray(text: string, delimiter = ',', hasHeaderRow = true): Record<string, string>[] {
+  const lines = text
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
+  if (!lines.length) return [];
+  const firstRow = parseDelimitedLine(lines[0], delimiter);
+  const headers = hasHeaderRow
+    ? firstRow.map((header, index) => header || `column_${index + 1}`)
+    : firstRow.map((_, index) => `column_${index + 1}`);
+  const dataLines = hasHeaderRow ? lines.slice(1) : lines;
+  return dataLines.map(line => {
+    const cells = parseDelimitedLine(line, delimiter);
+    return headers.reduce<Record<string, string>>((row, header, index) => {
+      row[header] = cells[index] ?? '';
+      return row;
+    }, {});
+  });
+}
+
+function xmlElementToJson(element: Element): unknown {
+  const children = Array.from(element.children);
+  const attributes = Array.from(element.attributes).reduce<Record<string, string>>((acc, attr) => {
+    acc[`@${attr.name}`] = attr.value;
+    return acc;
+  }, {});
+  const text = element.textContent?.trim() ?? '';
+  if (!children.length) {
+    return Object.keys(attributes).length ? { ...attributes, '#text': text } : text;
+  }
+  const body = children.reduce<Record<string, unknown>>((acc, child) => {
+    const key = child.localName || child.nodeName;
+    const value = xmlElementToJson(child);
+    if (acc[key] === undefined) {
+      acc[key] = value;
+    } else if (Array.isArray(acc[key])) {
+      (acc[key] as unknown[]).push(value);
+    } else {
+      acc[key] = [acc[key], value];
+    }
+    return acc;
+  }, attributes);
+  return body;
+}
+
+function xmlTextToJsonObject(text: string): Record<string, unknown> {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(text, 'application/xml');
+  const parserError = doc.querySelector('parsererror');
+  if (parserError) {
+    throw new Error(parserError.textContent?.trim() || 'Invalid XML');
+  }
+  const root = doc.documentElement;
+  return { [root.localName || root.nodeName]: xmlElementToJson(root) };
+}
+
 /** Token inserted when appending a field path into the advanced editor. */
 function normalizePathToken(path: string): string {
   return path.replace(/\[(\d+)\]/g, '.$1').trim() || '$';
@@ -656,7 +613,6 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   private readonly toast = inject(MessageService);
 
   readonly backendDraftId = signal<string | null>(null);
-  private readonly tenantId = 'default';
 
   @ViewChild('advancedExpr') private advancedExpr?: ElementRef<HTMLTextAreaElement>;
 
@@ -685,52 +641,52 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   uploadDropTarget = signal<UploadDropTarget | null>(null);
   sourceFileMeta = signal<{ name: string; size: string } | null>(null);
   sourceType = signal<StudioSourceType>('manual');
+  kafkaTopic = signal('');
+  kafkaConsumerGroup = signal('');
+  restApiMethod = signal<ExternalApiMethod>('POST');
+  restApiPath = signal('');
+  restApiAuthType = signal<SourceAuthType>('API_KEY');
   externalApiMethod = signal<ExternalApiMethod>('GET');
-  externalApiUrl = signal('https://api.carrier-a.example/v1/orders');
-  externalApiName = signal('Carrier A orders');
-  externalApiSchedule = signal('*/5 * * * *');
+  externalApiUrl = signal('');
+  externalApiName = signal('');
+  externalApiSchedule = signal('');
+  soapEndpoint = signal('');
+  soapAction = signal('');
+  soapOperation = signal('');
+  fileBatchFormat = signal<'CSV' | 'JSONL' | 'JSON_ARRAY'>('CSV');
+  fileBatchDelimiter = signal(',');
+  fileBatchHasHeaderRow = signal(true);
+  enrichmentLookupName = signal('');
+  enrichmentMethod = signal<ExternalApiMethod>('GET');
+  enrichmentUrlTemplate = signal('');
+  enrichmentFailurePolicy = signal<'DLQ' | 'SKIP_ENRICHMENT' | 'RETRY'>('RETRY');
   externalApiLastTest = signal<{ status: number; durationMs: number; capturedAt: string } | null>(null);
   externalApiLastError = signal<string | null>(null);
   authDrawerOpen = signal(false);
   authType = signal<SourceAuthType>('API_KEY');
-  credentialName = signal('Carrier A Production API Key');
+  credentialName = signal('');
   credentialHeaderName = signal('X-API-Key');
   credentialValue = signal('');
   credentialUsername = signal('');
   credentialPassword = signal('');
-  credentialTokenUrl = signal('https://auth.carrier-a.example/oauth/token');
+  credentialTokenUrl = signal('');
   credentialClientId = signal('');
   credentialClientSecret = signal('');
-  credentialScope = signal('orders.read');
-  credentials = signal<CredentialOption[]>([
-    {
-      id: 'cred_carrier_a_oauth_prod',
-      name: 'Carrier A Production OAuth2',
-      type: 'OAUTH2_CLIENT_CREDENTIALS',
-      environment: 'Production',
-      lastUsed: '2h'
-    },
-    {
-      id: 'cred_webhook_ingress_demo',
-      name: 'Webhook inbound API key',
-      type: 'API_KEY',
-      environment: 'Sandbox',
-      lastUsed: 'Never'
-    }
-  ]);
-  selectedCredentialId = signal('cred_carrier_a_oauth_prod');
-  webhookUrl = signal('https://api.canonbridge.example/webhooks/acme/order-created/wh_7R9k2');
-  webhookKeyMasked = signal('cb_wh_************8f2a');
+  credentialScope = signal('');
+  credentials = signal<CredentialOption[]>([]);
+  selectedCredentialId = signal('');
+  webhookUrl = signal('');
+  webhookKeyMasked = signal('');
 
   activeStep = signal(0);
-  sourceJson = signal(DEMO_JSON);
+  sourceJson = signal('');
   parseError = signal<string | null>(null);
   treeNodes = signal<TreeNode[]>([]);
   sourcePaths = signal<string[]>([]);
-  sourceValidationRules = signal<SourceValidationRule[]>(DEFAULT_SOURCE_VALIDATION_RULES.map(rule => ({ ...rule })));
+  sourceValidationRules = signal<SourceValidationRule[]>([]);
 
-  targetFields = signal<TargetField[]>([...DEFAULT_TARGETS]);
-  rules = signal<MappingRule[]>(DEFAULT_RULES.map(r => ({ ...r })));
+  targetFields = signal<TargetField[]>([]);
+  rules = signal<MappingRule[]>([]);
 
   selectedRule = signal<MappingRule | null>(null);
   ruleInspectorTab = signal<string>('visual');
@@ -765,10 +721,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   readonly rulesWithOutputSchemaErrors = signal<Set<string>>(new Set());
 
   validateStepTab = signal<'test' | 'fixtures' | 'expression'>('test');
-  fixtures = signal<FixtureRow[]>([
-    { id: 'fx_1', name: 'Fixture 1', inputJson: '', expectedJson: '', status: 'idle' },
-    { id: 'fx_2', name: 'Fixture 2', inputJson: '', expectedJson: '', status: 'idle' }
-  ]);
+  fixtures = signal<FixtureRow[]>([]);
   fixtureRunSummary = signal<string | null>(null);
   fixtureConfigMessage = signal<{ severity: 'info' | 'error'; text: string } | null>(null);
   selectedFixtureDetailId = signal<string | null>(null);
@@ -795,11 +748,39 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
       hintKey: 'studio.sourceType.webhookHint'
     },
     {
+      id: 'restApi',
+      icon: 'pi pi-globe',
+      titleKey: 'studio.sourceType.restApi',
+      descKey: 'studio.sourceType.restApiDesc',
+      hintKey: 'studio.sourceType.restApiHint'
+    },
+    {
       id: 'externalApi',
       icon: 'pi pi-cloud-download',
       titleKey: 'studio.sourceType.externalApi',
       descKey: 'studio.sourceType.externalApiDesc',
       hintKey: 'studio.sourceType.externalApiHint'
+    },
+    {
+      id: 'soap',
+      icon: 'pi pi-code',
+      titleKey: 'studio.sourceType.soap',
+      descKey: 'studio.sourceType.soapDesc',
+      hintKey: 'studio.sourceType.soapHint'
+    },
+    {
+      id: 'fileBatch',
+      icon: 'pi pi-file',
+      titleKey: 'studio.sourceType.fileBatch',
+      descKey: 'studio.sourceType.fileBatchDesc',
+      hintKey: 'studio.sourceType.fileBatchHint'
+    },
+    {
+      id: 'apiEnrichment',
+      icon: 'pi pi-sitemap',
+      titleKey: 'studio.sourceType.apiEnrichment',
+      descKey: 'studio.sourceType.apiEnrichmentDesc',
+      hintKey: 'studio.sourceType.apiEnrichmentHint'
     },
     {
       id: 'manual',
@@ -809,7 +790,9 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
       hintKey: 'studio.sourceType.manualHint'
     }
   ];
-  readonly externalApiMethods: ExternalApiMethod[] = ['GET', 'POST', 'PUT'];
+  readonly externalApiMethods: ExternalApiMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+  readonly fileBatchFormats: ('CSV' | 'JSONL' | 'JSON_ARRAY')[] = ['CSV', 'JSONL', 'JSON_ARRAY'];
+  readonly enrichmentFailurePolicies: ('DLQ' | 'SKIP_ENRICHMENT' | 'RETRY')[] = ['RETRY', 'DLQ', 'SKIP_ENRICHMENT'];
   readonly authTypes: SourceAuthType[] = ['API_KEY', 'BASIC_AUTH', 'BEARER_TOKEN', 'OAUTH2_CLIENT_CREDENTIALS'];
   readonly selectedCredential = computed(() =>
     this.credentials().find(credential => credential.id === this.selectedCredentialId()) ?? null
@@ -1169,7 +1152,34 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   }
 
   private hasUnpublishedDraft(): boolean {
-    return !this.published() && (this.rules().length > 0 || this.activeStep() > 0 || this.testOutput() !== null);
+    return !this.published() && (this.hasDraftContent() || this.activeStep() > 0 || this.testOutput() !== null);
+  }
+
+  private hasDraftContent(): boolean {
+    return Boolean(
+      this.sourceJson().trim() ||
+        this.sourceFileMeta() ||
+        this.inputSchemaDoc() ||
+        this.canonicalSchemaDoc() ||
+        this.targetFields().length ||
+        this.rules().length ||
+        this.sourceValidationRules().length ||
+        this.kafkaTopic().trim() ||
+        this.kafkaConsumerGroup().trim() ||
+        this.restApiPath().trim() ||
+        this.externalApiName().trim() ||
+        this.externalApiUrl().trim() ||
+        this.externalApiSchedule().trim() ||
+        this.soapEndpoint().trim() ||
+        this.soapAction().trim() ||
+        this.soapOperation().trim() ||
+        this.enrichmentLookupName().trim() ||
+        this.enrichmentUrlTemplate().trim() ||
+        this.credentials().length ||
+        this.webhookUrl().trim() ||
+        this.webhookKeyMasked().trim() ||
+        this.fixtures().some(row => row.name.trim() || row.inputJson.trim() || row.expectedJson.trim())
+    );
   }
 
   stepClass(i: number): string {
@@ -1254,8 +1264,43 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   }
 
   setExternalApiMethod(value: string): void {
-    if (value === 'GET' || value === 'POST' || value === 'PUT') {
+    if (value === 'GET' || value === 'POST' || value === 'PUT' || value === 'PATCH' || value === 'DELETE') {
       this.externalApiMethod.set(value);
+    }
+  }
+
+  setRestApiMethod(value: string): void {
+    if (value === 'GET' || value === 'POST' || value === 'PUT' || value === 'PATCH' || value === 'DELETE') {
+      this.restApiMethod.set(value);
+    }
+  }
+
+  setRestApiAuthType(value: string): void {
+    if (
+      value === 'API_KEY' ||
+      value === 'BASIC_AUTH' ||
+      value === 'BEARER_TOKEN' ||
+      value === 'OAUTH2_CLIENT_CREDENTIALS'
+    ) {
+      this.restApiAuthType.set(value);
+    }
+  }
+
+  setFileBatchFormat(value: string): void {
+    if (value === 'CSV' || value === 'JSONL' || value === 'JSON_ARRAY') {
+      this.fileBatchFormat.set(value);
+    }
+  }
+
+  setEnrichmentMethod(value: string): void {
+    if (value === 'GET' || value === 'POST' || value === 'PUT' || value === 'PATCH' || value === 'DELETE') {
+      this.enrichmentMethod.set(value);
+    }
+  }
+
+  setEnrichmentFailurePolicy(value: string): void {
+    if (value === 'DLQ' || value === 'SKIP_ENRICHMENT' || value === 'RETRY') {
+      this.enrichmentFailurePolicy.set(value);
     }
   }
 
@@ -1270,21 +1315,8 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadKafkaSample(): void {
-    this.sourceType.set('kafka');
-    this.sourceFileMeta.set({ name: 'kafka-latest-message.json', size: '0.3 KB' });
-    this.sourceJson.set(KAFKA_SAMPLE_JSON);
-    this.analyzePayload();
-  }
-
-  captureWebhookSample(): void {
-    this.sourceType.set('webhook');
-    this.sourceFileMeta.set({ name: 'webhook-captured-payload.json', size: '0.3 KB' });
-    this.sourceJson.set(WEBHOOK_SAMPLE_JSON);
-    this.analyzePayload();
-  }
-
   async copyWebhookUrl(): Promise<void> {
+    if (!this.webhookUrl()) return;
     try {
       await navigator.clipboard.writeText(this.webhookUrl());
     } catch {
@@ -1298,6 +1330,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   }
 
   async copyWebhookKey(): Promise<void> {
+    if (!this.webhookKeyMasked()) return;
     try {
       await navigator.clipboard.writeText(this.webhookKeyMasked());
     } catch {
@@ -1311,12 +1344,17 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   }
 
   rotateWebhookKey(): void {
-    const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
-    this.webhookKeyMasked.set(`cb_wh_************${suffix}`);
+    if (!this.webhookKeyMasked()) {
+      this.toast.add({
+        severity: 'warn',
+        summary: this.i18n.translate('studio.sourceWebhook.notConfigured'),
+        life: 3000
+      });
+      return;
+    }
     this.toast.add({
-      severity: 'success',
-      summary: this.i18n.translate('studio.sourceWebhook.rotated'),
-      detail: this.i18n.translate('studio.sourceWebhook.rotatedDetail'),
+      severity: 'info',
+      summary: this.i18n.translate('studio.sourceWebhook.rotateUnavailable'),
       life: 3500
     });
   }
@@ -1333,20 +1371,12 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
       });
       return;
     }
-    const durationMs = 150 + Math.floor(Math.random() * 160);
-    this.externalApiLastError.set(null);
-    this.externalApiLastTest.set({
-      status: 200,
-      durationMs,
-      capturedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    });
-    this.sourceFileMeta.set({ name: `${this.externalApiName() || 'external-api'}-response.json`, size: '0.5 KB' });
-    this.sourceJson.set(EXTERNAL_API_SAMPLE_JSON);
-    this.analyzePayload();
+    this.externalApiLastTest.set(null);
+    this.externalApiLastError.set(this.i18n.translate('studio.sourceApi.responseRequired'));
     this.toast.add({
-      severity: 'success',
-      summary: this.i18n.translate('studio.sourceApi.testPassed'),
-      detail: this.i18n.translate('studio.sourceApi.demoTestDetail', { duration: durationMs }),
+      severity: 'info',
+      summary: this.i18n.translate('studio.sourceApi.responseRequiredTitle'),
+      detail: this.i18n.translate('studio.sourceApi.responseRequired'),
       life: 4000
     });
   }
@@ -1375,6 +1405,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   onSourceJsonChange(value: string): void {
     this.sourceJson.set(value);
     this.parseError.set(null);
+    if (value.trim()) this.externalApiLastError.set(null);
     if (this.sourceDebounceTimer) clearTimeout(this.sourceDebounceTimer);
     this.sourceDebounceTimer = setTimeout(() => {
       this.analyzePayloadSoft();
@@ -1385,6 +1416,12 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   /** Refresh tree + paths from JSON without clearing validation / test outputs. */
   analyzePayloadSoft(): void {
     this.inputSchemaValidationIssues.set([]);
+    if (!this.sourceJson().trim()) {
+      this.treeNodes.set([]);
+      this.sourcePaths.set([]);
+      this.parseError.set(null);
+      return;
+    }
     try {
       const parsed = JSON.parse(this.sourceJson()) as unknown;
       const issues: AjvIssue[] = [];
@@ -1412,6 +1449,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
 
   analyzePayload(): void {
     this.parseError.set(null);
+    if (this.sourceJson().trim()) this.externalApiLastError.set(null);
     this.testOutput.set(null);
     this.altTestOutput.set(null);
     this.altParseError.set(null);
@@ -1530,10 +1568,38 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     });
     const reader = new FileReader();
     reader.onload = () => {
-      this.sourceJson.set(String(reader.result ?? ''));
-      this.analyzePayload();
+      try {
+        this.sourceJson.set(this.normalizeSourceSampleText(String(reader.result ?? ''), file.name));
+        this.analyzePayload();
+      } catch (e) {
+        this.parseError.set(e instanceof Error ? e.message : String(e));
+      }
     };
     reader.readAsText(file);
+  }
+
+  private normalizeSourceSampleText(text: string, fileName = ''): string {
+    const trimmed = text.trim();
+    const lowerName = fileName.toLowerCase();
+    if (!trimmed) return text;
+    if (this.sourceType() === 'soap' || lowerName.endsWith('.xml') || trimmed.startsWith('<')) {
+      return JSON.stringify(xmlTextToJsonObject(trimmed), null, 2);
+    }
+    if ((this.sourceType() === 'fileBatch' && this.fileBatchFormat() === 'CSV') || lowerName.endsWith('.csv')) {
+      return JSON.stringify(csvToJsonArray(trimmed, this.fileBatchDelimiter() || ',', this.fileBatchHasHeaderRow()), null, 2);
+    }
+    if ((this.sourceType() === 'fileBatch' && this.fileBatchFormat() === 'JSONL') || lowerName.endsWith('.jsonl')) {
+      return JSON.stringify(
+        trimmed
+          .split(/\r?\n/)
+          .map(line => line.trim())
+          .filter(Boolean)
+          .map(line => JSON.parse(line) as unknown),
+        null,
+        2
+      );
+    }
+    return text;
   }
 
   onTreeNodeSelect(ev: { node?: TreeNode }): void {
@@ -2287,10 +2353,11 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     this.rulesWithOutputSchemaErrors.set(new Set());
     this.canonicalSchemaIssuesDetail.set([]);
     this.testRunPending.set(true);
-    if (this.sourceType() === 'externalApi' && !this.externalApiLastTest()) {
+    const hasSourcePayload = Boolean(this.sourceJson().trim());
+    if (this.sourceType() === 'externalApi' && !hasSourcePayload && !this.externalApiLastTest()) {
       this.testExternalApi();
     }
-    if (this.sourceType() === 'externalApi' && this.externalApiLastError()) {
+    if (this.sourceType() === 'externalApi' && !hasSourcePayload && this.externalApiLastError()) {
       this.validationOk.set(false);
       this.validationMessages.set([
         this.i18n.translate('studio.sourceApi.testRequiredBeforeMapping'),
@@ -2449,16 +2516,8 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
 
     const draft: MappingDraft = {
       name: this.externalApiName() || 'Untitled Mapping',
-      source_type: this.sourceType() === 'kafka' ? 'KAFKA'
-        : this.sourceType() === 'webhook' ? 'WEBHOOK'
-        : this.sourceType() === 'externalApi' ? 'SCHEDULED_API'
-        : 'MANUAL',
-      source_config: JSON.stringify({
-        url: this.externalApiUrl(),
-        method: this.externalApiMethod(),
-        schedule: this.externalApiSchedule(),
-        credentialId: this.selectedCredentialId()
-      }),
+      source_type: this.mapSourceType(this.sourceType()),
+      source_config: JSON.stringify(this.sourceConfigSnapshot()),
       input_schema: this.inputSchemaDoc() ? JSON.stringify(this.inputSchemaDoc()) : undefined,
       canonical_schema_ref: this.canonicalSchemaMeta()?.$id,
       mapping_rules: JSON.stringify(this.rules()),
@@ -2525,8 +2584,8 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
           throw new Error(this.i18n.translate('studio.config.invalidShape'));
         }
         this.sourceType.set(cfg.sourceType ?? 'manual');
-        this.sourceJson.set(typeof cfg.sourceJson === 'string' ? cfg.sourceJson : DEMO_JSON);
-        this.sourceFileMeta.set(cfg.sourceFileMeta ?? { name: file.name, size: this.formatFileSize(file.size) });
+        this.sourceJson.set(typeof cfg.sourceJson === 'string' ? cfg.sourceJson : '');
+        this.sourceFileMeta.set(cfg.sourceFileMeta ?? null);
         this.inputSchemaDoc.set(cfg.inputSchemaDoc ?? null);
         this.inputSchemaMeta.set(cfg.inputSchemaMeta ?? null);
         this.canonicalSchemaDoc.set(cfg.canonicalSchemaDoc ?? null);
@@ -2534,11 +2593,27 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
         this.targetFields.set(cfg.targetFields);
         this.rules.set(cfg.rules);
         this.sourceValidationRules.set(cfg.sourceValidationRules ?? []);
+        this.kafkaTopic.set(cfg.kafka?.topic ?? '');
+        this.kafkaConsumerGroup.set(cfg.kafka?.consumerGroup ?? '');
+        this.restApiMethod.set(cfg.restApi?.method ?? this.restApiMethod());
+        this.restApiPath.set(cfg.restApi?.path ?? this.restApiPath());
+        this.restApiAuthType.set(cfg.restApi?.authType ?? this.restApiAuthType());
         this.externalApiName.set(cfg.externalApi?.name ?? this.externalApiName());
         this.externalApiMethod.set(cfg.externalApi?.method ?? this.externalApiMethod());
         this.externalApiUrl.set(cfg.externalApi?.url ?? this.externalApiUrl());
         this.externalApiSchedule.set(cfg.externalApi?.schedule ?? this.externalApiSchedule());
         this.selectedCredentialId.set(cfg.externalApi?.selectedCredentialId ?? this.selectedCredentialId());
+        this.soapEndpoint.set(cfg.soap?.endpoint ?? this.soapEndpoint());
+        this.soapAction.set(cfg.soap?.soapAction ?? this.soapAction());
+        this.soapOperation.set(cfg.soap?.operation ?? this.soapOperation());
+        this.fileBatchFormat.set(cfg.fileBatch?.format ?? this.fileBatchFormat());
+        this.fileBatchDelimiter.set(cfg.fileBatch?.delimiter ?? this.fileBatchDelimiter());
+        this.fileBatchHasHeaderRow.set(cfg.fileBatch?.hasHeaderRow ?? this.fileBatchHasHeaderRow());
+        this.enrichmentLookupName.set(cfg.apiEnrichment?.lookupName ?? this.enrichmentLookupName());
+        this.enrichmentMethod.set(cfg.apiEnrichment?.method ?? this.enrichmentMethod());
+        this.enrichmentUrlTemplate.set(cfg.apiEnrichment?.urlTemplate ?? this.enrichmentUrlTemplate());
+        this.enrichmentFailurePolicy.set(cfg.apiEnrichment?.failurePolicy ?? this.enrichmentFailurePolicy());
+        this.selectedCredentialId.set(cfg.apiEnrichment?.selectedCredentialId ?? this.selectedCredentialId());
         this.credentials.set(cfg.credentials ?? this.credentials());
         this.webhookUrl.set(cfg.webhook?.url ?? this.webhookUrl());
         this.webhookKeyMasked.set(cfg.webhook?.keyMasked ?? this.webhookKeyMasked());
@@ -2579,6 +2654,8 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   }
 
   private autosaveDraft(): void {
+    if (!this.hasDraftContent()) return;
+
     const snapshot = this.studioConfigSnapshot();
     try {
       localStorage.setItem(STUDIO_DRAFT_STORAGE_KEY, JSON.stringify(snapshot));
@@ -2593,7 +2670,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
       name: snapshot.sourceFileMeta?.name ?? 'Untitled Draft',
       description: '',
       source_type: this.mapSourceType(snapshot.sourceType),
-      source_config: JSON.stringify(snapshot.externalApi ?? {}),
+      source_config: JSON.stringify(this.sourceConfigSnapshot()),
       input_schema: snapshot.inputSchemaDoc ? JSON.stringify(snapshot.inputSchemaDoc) : undefined,
       canonical_schema_ref: (snapshot.canonicalSchemaMeta as { $id?: string } | null)?.$id,
       mapping_rules: JSON.stringify(snapshot.rules),
@@ -2615,11 +2692,69 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     }
   }
 
-  private mapSourceType(st: string): 'KAFKA' | 'WEBHOOK' | 'SCHEDULED_API' | 'MANUAL' {
+  private mapSourceType(st: string): BackendSourceType {
     if (st === 'kafka') return 'KAFKA';
     if (st === 'webhook') return 'WEBHOOK';
+    if (st === 'restApi') return 'REST_API';
     if (st === 'externalApi') return 'SCHEDULED_API';
+    if (st === 'soap') return 'SOAP';
+    if (st === 'fileBatch') return 'FILE_BATCH';
+    if (st === 'apiEnrichment') return 'API_ENRICHMENT';
     return 'MANUAL';
+  }
+
+  private sourceConfigSnapshot(): Record<string, unknown> {
+    if (this.sourceType() === 'kafka') {
+      return {
+        topic: this.kafkaTopic(),
+        consumerGroup: this.kafkaConsumerGroup()
+      };
+    }
+    if (this.sourceType() === 'webhook') {
+      return {
+        url: this.webhookUrl(),
+        keyMasked: this.webhookKeyMasked()
+      };
+    }
+    if (this.sourceType() === 'restApi') {
+      return {
+        method: this.restApiMethod(),
+        path: this.restApiPath(),
+        authType: this.restApiAuthType()
+      };
+    }
+    if (this.sourceType() === 'externalApi') {
+      return {
+        url: this.externalApiUrl(),
+        method: this.externalApiMethod(),
+        schedule: this.externalApiSchedule(),
+        credentialId: this.selectedCredentialId()
+      };
+    }
+    if (this.sourceType() === 'soap') {
+      return {
+        endpoint: this.soapEndpoint(),
+        soapAction: this.soapAction(),
+        operation: this.soapOperation()
+      };
+    }
+    if (this.sourceType() === 'fileBatch') {
+      return {
+        format: this.fileBatchFormat(),
+        delimiter: this.fileBatchDelimiter(),
+        hasHeaderRow: this.fileBatchHasHeaderRow()
+      };
+    }
+    if (this.sourceType() === 'apiEnrichment') {
+      return {
+        lookupName: this.enrichmentLookupName(),
+        method: this.enrichmentMethod(),
+        urlTemplate: this.enrichmentUrlTemplate(),
+        credentialId: this.selectedCredentialId(),
+        failurePolicy: this.enrichmentFailurePolicy()
+      };
+    }
+    return {};
   }
 
   private loadExternalSystemSample(): void {
@@ -2634,11 +2769,8 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
       this.sourceJson.set(sample['sampleJson']);
       this.sourceFileMeta.set({ name: `${connectionName}.sample.json`, size: this.formatFileSize(sample['sampleJson'].length) });
       this.draftSourceLabel.set(connectionName);
-      this.externalApiLastTest.set({
-        status: 200,
-        durationMs: 184,
-        capturedAt: new Date().toLocaleTimeString()
-      });
+      this.externalApiLastTest.set(null);
+      this.externalApiLastError.set(null);
       localStorage.removeItem(STUDIO_EXTERNAL_SAMPLE_KEY);
       this.toast.add({
         severity: 'success',
@@ -2665,12 +2797,38 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
       targetFields: this.targetFields(),
       rules: this.rules(),
       sourceValidationRules: this.sourceValidationRules(),
+      kafka: {
+        topic: this.kafkaTopic(),
+        consumerGroup: this.kafkaConsumerGroup()
+      },
+      restApi: {
+        method: this.restApiMethod(),
+        path: this.restApiPath(),
+        authType: this.restApiAuthType()
+      },
       externalApi: {
         name: this.externalApiName(),
         method: this.externalApiMethod(),
         url: this.externalApiUrl(),
         schedule: this.externalApiSchedule(),
         selectedCredentialId: this.selectedCredentialId()
+      },
+      soap: {
+        endpoint: this.soapEndpoint(),
+        soapAction: this.soapAction(),
+        operation: this.soapOperation()
+      },
+      fileBatch: {
+        format: this.fileBatchFormat(),
+        delimiter: this.fileBatchDelimiter(),
+        hasHeaderRow: this.fileBatchHasHeaderRow()
+      },
+      apiEnrichment: {
+        lookupName: this.enrichmentLookupName(),
+        method: this.enrichmentMethod(),
+        urlTemplate: this.enrichmentUrlTemplate(),
+        selectedCredentialId: this.selectedCredentialId(),
+        failurePolicy: this.enrichmentFailurePolicy()
       },
       credentials: this.credentials(),
       webhook: {
@@ -2809,7 +2967,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   }
 
   removeFixtureRow(id: string): void {
-    this.fixtures.update(rs => (rs.length <= 1 ? rs : rs.filter(r => r.id !== id)));
+    this.fixtures.update(rs => rs.filter(r => r.id !== id));
     if (this.selectedFixtureDetailId() === id) {
       this.selectedFixtureDetailId.set(null);
     }

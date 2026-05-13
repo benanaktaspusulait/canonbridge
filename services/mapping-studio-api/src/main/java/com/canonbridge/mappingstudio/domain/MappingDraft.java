@@ -134,7 +134,11 @@ public class MappingDraft {
     public enum SourceType {
         KAFKA,
         WEBHOOK,
+        REST_API,
         SCHEDULED_API,
+        SOAP,
+        FILE_BATCH,
+        API_ENRICHMENT,
         MANUAL
     }
 
