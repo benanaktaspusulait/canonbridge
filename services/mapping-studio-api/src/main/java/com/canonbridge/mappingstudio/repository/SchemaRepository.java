@@ -167,11 +167,11 @@ public class SchemaRepository {
                 row.getString("schema_json"),
                 SchemaDefinition.CompatibilityMode.valueOf(row.getString("compatibility_mode")),
                 SchemaDefinition.SchemaStatus.valueOf(row.getString("status")),
-                row.getString("description"),
+                row.getString("description"), // Can be null
                 row.getString("created_by"),
-                row.getLocalDateTime("created_at").toInstant(ZoneOffset.UTC),
+                row.getLocalDateTime("created_at") != null ? row.getLocalDateTime("created_at").toInstant(ZoneOffset.UTC) : Instant.now(),
                 row.getString("updated_by"),
-                row.getLocalDateTime("updated_at").toInstant(ZoneOffset.UTC)
+                row.getLocalDateTime("updated_at") != null ? row.getLocalDateTime("updated_at").toInstant(ZoneOffset.UTC) : Instant.now()
         );
     }
 

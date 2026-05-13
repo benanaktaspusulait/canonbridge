@@ -44,6 +44,28 @@
                     <div class="source-info">
                       <h3>{{ getSourceTypeLabel() }}</h3>
                       <p>{{ getSourceTypeDescription() }}</p>
+                      @if (wizardState().sourceConfig['path'] || wizardState().sourceConfig['url']) {
+                        <div class="config-details">
+                          @if (wizardState().sourceConfig['method']) {
+                            <span class="detail-badge method-badge">
+                              <i class="pi pi-send"></i>
+                              {{ wizardState().sourceConfig['method'] }}
+                            </span>
+                          }
+                          @if (wizardState().sourceConfig['path']) {
+                            <span class="detail-badge path-badge">
+                              <i class="pi pi-link"></i>
+                              {{ wizardState().sourceConfig['path'] }}
+                            </span>
+                          }
+                          @if (wizardState().sourceConfig['url']) {
+                            <span class="detail-badge url-badge">
+                              <i class="pi pi-globe"></i>
+                              {{ wizardState().sourceConfig['url'] }}
+                            </span>
+                          }
+                        </div>
+                      }
                     </div>
                   </div>
                   <div class="actions">

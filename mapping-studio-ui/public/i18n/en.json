@@ -1216,6 +1216,7 @@
       "noPayloadNeeded": "This HTTP method doesn't require a request payload. Click Next to continue.",
       "requestPayload": "Request Payload",
       "uploadFile": "Upload JSON",
+      "formatJson": "Format JSON",
       "jsonPlaceholder": "{\n  \"orderId\": \"12345\",\n  \"customerId\": \"67890\",\n  \"items\": [\n    {\n      \"productId\": \"ABC\",\n      \"quantity\": 2\n    }\n  ]\n}",
       "invalidJson": "Invalid JSON",
       "hint": "Paste a sample request payload or upload a JSON file. This will be used to map fields to the canonical schema."

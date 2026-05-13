@@ -17,6 +17,15 @@
           <div class="card-header">
             <h3>{{ 'wizard.sampleData.requestPayload' | i18n }}</h3>
             <div class="header-actions">
+              <p-button
+                [label]="'wizard.sampleData.formatJson' | i18n"
+                icon="pi pi-align-justify"
+                severity="secondary"
+                [outlined]="true"
+                size="small"
+                [disabled]="!sampleJson().trim()"
+                (onClick)="formatJson()"
+                styleClass="format-button" />
               <label for="file-upload" class="file-upload-label">
                 <i class="pi pi-upload"></i>
                 {{ 'wizard.sampleData.uploadFile' | i18n }}

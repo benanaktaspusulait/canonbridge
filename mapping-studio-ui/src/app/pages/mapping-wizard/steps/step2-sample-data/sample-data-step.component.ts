@@ -97,4 +97,19 @@ export class SampleDataStepComponent {
     
     reader.readAsText(file);
   }
+
+  formatJson(): void {
+    const json = this.sampleJson().trim();
+    if (!json) return;
+
+    try {
+      const parsed = JSON.parse(json);
+      const formatted = JSON.stringify(parsed, null, 2);
+      this.sampleJson.set(formatted);
+      this.jsonError.set(null);
+    } catch (e: any) {
+      // If JSON is invalid, show error but don't change the content
+      this.jsonError.set(e.message);
+    }
+  }
 }
