@@ -56,6 +56,10 @@ export class DashboardComponent implements OnInit {
     // Load metrics
     this.metricsService.getDashboardStats().subscribe({
       next: (data) => {
+        if (!data) {
+          this.loading.set(false);
+          return;
+        }
         this._stats.set([
           {
             labelKey: 'dashboard.stat.msgProcessed.label',
@@ -115,6 +119,7 @@ export class DashboardComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load dashboard stats:', err);
+        this._stats.set([]);
         this.loading.set(false);
       }
     });
@@ -122,7 +127,13 @@ export class DashboardComponent implements OnInit {
     // Load recent mappings
     this.mappingService.list().subscribe({
       next: (drafts) => {
-        const recent = drafts
+        if (!drafts) {
+          this._recentMappings.set([]);
+          this.loading.set(false);
+          return;
+        }
+        const mappings = Array.isArray(drafts) ? drafts : [];
+        const recent = mappings
           .sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''))
           .slice(0, 5)
           .map(d => this.draftToRecentMapping(d));
@@ -131,6 +142,7 @@ export class DashboardComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load recent mappings:', err);
+        this._recentMappings.set([]);
         this.loading.set(false);
       }
     });

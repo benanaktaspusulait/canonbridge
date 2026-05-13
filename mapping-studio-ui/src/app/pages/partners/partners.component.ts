@@ -80,36 +80,45 @@ export class PartnersComponent implements OnInit {
   readonly activeCount = computed(() => this._partners().filter(p => p.status === 'active').length);
   readonly totalMappings = computed(() => this._partners().reduce((sum, p) => sum + p.activeMappings, 0));
 
-  async ngOnInit() {
-    await this.loadPartners();
+  ngOnInit() {
+    this.loadPartners();
   }
 
-  private async loadPartners() {
-    try {
-      const apiPartners = await this.partnerService.getAll();
-      // Transform API partners to UI format
-      const uiPartners: Partner[] = apiPartners.map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        slug: p.external_id,
-        status: this.mapApiStatusToUi(p.status),
-        eventTypes: 0, // TODO: Get from API
-        activeMappings: 0, // TODO: Get from API
-        dlqCount: 0, // TODO: Get from API
-        throughput: p.status === 'ACTIVE' ? '~0/hr' : '—',
-        lastSeen: 'just now',
-        contactEmail: p.contact_email || '',
-        description: p.description || ''
-      }));
-      this._partners.set(uiPartners);
-    } catch (error) {
-      console.error('Failed to load partners:', error);
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'Failed to load partners'
-      });
-    }
+  private loadPartners() {
+    this.partnerService.list().subscribe({
+      next: (apiPartners) => {
+        // Handle null/undefined response defensively
+        if (!apiPartners) {
+          this._partners.set([]);
+          return;
+        }
+        const partners = Array.isArray(apiPartners) ? apiPartners : [];
+        // Transform API partners to UI format
+        const uiPartners: Partner[] = partners.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          slug: p.external_id,
+          status: this.mapApiStatusToUi(p.status),
+          eventTypes: 0, // TODO: Get from API
+          activeMappings: 0, // TODO: Get from API
+          dlqCount: 0, // TODO: Get from API
+          throughput: p.status === 'ACTIVE' ? '~0/hr' : '—',
+          lastSeen: 'just now',
+          contactEmail: p.contact_email || '',
+          description: p.description || ''
+        }));
+        this._partners.set(uiPartners);
+      },
+      error: (error) => {
+        console.error('Failed to load partners:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to load partners'
+        });
+        this._partners.set([]);
+      }
+    });
   }
 
   private mapApiStatusToUi(apiStatus: string): 'active' | 'inactive' | 'degraded' {
@@ -160,7 +169,7 @@ export class PartnersComponent implements OnInit {
     }
   }
 
-  async save(): Promise<void> {
+  save(): void {
     if (!this.formValid) {
       this.messageService.add({
         severity: 'warn',
@@ -181,32 +190,46 @@ export class PartnersComponent implements OnInit {
       return;
     }
 
-    try {
-      if (this.isEdit && this.form.id) {
-        await this.partnerService.update(this.form.id, {
-          name: this.form.name.trim(),
-          status: this.mapUiStatusToApi(this.form.status),
-          description: this.form.description.trim()
-        });
-        this.messageService.add({ severity: 'success', summary: this.t('partners.toast.updated'), detail: this.form.name });
-      } else {
-        await this.partnerService.create({
-          external_id: slug,
-          name: this.form.name.trim(),
-          status: this.mapUiStatusToApi(this.form.status),
-          description: this.form.description.trim()
-        });
-        this.messageService.add({ severity: 'success', summary: this.t('partners.toast.onboarded'), detail: this.form.name });
-      }
-      
-      await this.loadPartners();
-      this.dialogVisible = false;
-    } catch (error) {
-      console.error('Failed to save partner:', error);
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'Failed to save partner'
+    if (this.isEdit && this.form.id) {
+      this.partnerService.update(this.form.id, {
+        name: this.form.name.trim(),
+        status: this.mapUiStatusToApi(this.form.status),
+        description: this.form.description.trim()
+      }).subscribe({
+        next: () => {
+          this.messageService.add({ severity: 'success', summary: this.t('partners.toast.updated'), detail: this.form.name });
+          this.loadPartners();
+          this.dialogVisible = false;
+        },
+        error: (error) => {
+          console.error('Failed to update partner:', error);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to update partner'
+          });
+        }
+      });
+    } else {
+      this.partnerService.create({
+        external_id: slug,
+        name: this.form.name.trim(),
+        status: this.mapUiStatusToApi(this.form.status),
+        description: this.form.description.trim()
+      }).subscribe({
+        next: () => {
+          this.messageService.add({ severity: 'success', summary: this.t('partners.toast.onboarded'), detail: this.form.name });
+          this.loadPartners();
+          this.dialogVisible = false;
+        },
+        error: (error) => {
+          console.error('Failed to create partner:', error);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to create partner'
+          });
+        }
       });
     }
   }
@@ -219,19 +242,21 @@ export class PartnersComponent implements OnInit {
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: this.t('partners.delete'),
       rejectLabel: this.t('partners.cancel'),
-      accept: async () => {
-        try {
-          await this.partnerService.delete(partner.id);
-          await this.loadPartners();
-          this.messageService.add({ severity: 'warn', summary: this.t('partners.toast.deleted'), detail: partner.name });
-        } catch (error) {
-          console.error('Failed to delete partner:', error);
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to delete partner'
-          });
-        }
+      accept: () => {
+        this.partnerService.delete(partner.id).subscribe({
+          next: () => {
+            this.loadPartners();
+            this.messageService.add({ severity: 'warn', summary: this.t('partners.toast.deleted'), detail: partner.name });
+          },
+          error: (error) => {
+            console.error('Failed to delete partner:', error);
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'Failed to delete partner'
+            });
+          }
+        });
       }
     });
   }

@@ -101,8 +101,15 @@ export class DlqComponent implements OnInit {
     this.loading.set(true);
     this.dlqService.listMessages(100, 0).subscribe({
       next: (apiMessages) => {
+        // Handle null/undefined response defensively
+        if (!apiMessages) {
+          this._messages.set([]);
+          this.loading.set(false);
+          return;
+        }
+        const messages = Array.isArray(apiMessages) ? apiMessages : [];
         // Map API messages to UI format
-        const uiMessages: DlqMessage[] = apiMessages.map(msg => ({
+        const uiMessages: DlqMessage[] = messages.map(msg => ({
           id: msg.id,
           partner: this.extractPartnerFromTopic(msg.originalTopic),
           eventType: this.extractEventTypeFromPayload(msg.payload),
@@ -125,6 +132,7 @@ export class DlqComponent implements OnInit {
           summary: 'Error', 
           detail: 'Failed to load DLQ messages' 
         });
+        this._messages.set([]);
         this.loading.set(false);
       }
     });

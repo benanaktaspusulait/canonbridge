@@ -216,6 +216,11 @@ export class ExternalSystemsComponent implements OnInit {
       next: (apiConnections) => {
         // Map API connections to UI format
         // Handle null/undefined response defensively
+        if (!apiConnections) {
+          this._connections.set([]);
+          this.loading.set(false);
+          return;
+        }
         const connections = Array.isArray(apiConnections) ? apiConnections : [];
         const uiConnections: ExternalConnection[] = connections.map(conn => this.mapApiToUi(conn));
         this._connections.set(uiConnections);
@@ -228,6 +233,7 @@ export class ExternalSystemsComponent implements OnInit {
           summary: 'Error',
           detail: 'Failed to load external systems'
         });
+        this._connections.set([]);
         this.loading.set(false);
       }
     });

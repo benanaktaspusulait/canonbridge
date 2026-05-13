@@ -137,7 +137,7 @@ services:
       CANONBRIDGE_CREDENTIAL_ENCRYPTION_KEY: ${CANONBRIDGE_CREDENTIAL_ENCRYPTION_KEY:?CANONBRIDGE_CREDENTIAL_ENCRYPTION_KEY must be set in .env file}
       RATELIMIT_ENABLED: ${RATELIMIT_ENABLED:-true}
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -169,7 +169,7 @@ services:
       OUTBOX_ENABLED: "false"
       LOG_LEVEL: "info"
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -216,7 +216,7 @@ services:
     ports:
       - "4200:80"
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:80/health"]
       interval: 30s
       timeout: 5s
       retries: 3

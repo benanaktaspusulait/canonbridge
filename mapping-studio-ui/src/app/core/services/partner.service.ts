@@ -63,10 +63,6 @@ export class PartnerService {
     return this.http.get<Partner[]>(this.baseUrl, { headers: this.getHeaders() });
   }
 
-  async getAll(): Promise<Partner[]> {
-    return this.http.get<Partner[]>(this.baseUrl, { headers: this.getHeaders() }).toPromise() as Promise<Partner[]>;
-  }
-
   getById(id: string): Observable<Partner> {
     return this.http.get<Partner>(`${this.baseUrl}/${id}`, { headers: this.getHeaders() });
   }
@@ -75,15 +71,15 @@ export class PartnerService {
     return this.http.get<Partner>(`${this.baseUrl}/external/${externalId}`, { headers: this.getHeaders() });
   }
 
-  async create(partner: PartnerCreateRequest): Promise<Partner> {
-    return this.http.post<Partner>(this.baseUrl, partner, { headers: this.getHeaders() }).toPromise() as Promise<Partner>;
+  create(partner: PartnerCreateRequest): Observable<Partner> {
+    return this.http.post<Partner>(this.baseUrl, partner, { headers: this.getHeaders() });
   }
 
-  async update(id: string, partner: PartnerUpdateRequest): Promise<Partner> {
-    return this.http.put<Partner>(`${this.baseUrl}/${id}`, partner, { headers: this.getHeaders() }).toPromise() as Promise<Partner>;
+  update(id: string, partner: PartnerUpdateRequest): Observable<Partner> {
+    return this.http.put<Partner>(`${this.baseUrl}/${id}`, partner, { headers: this.getHeaders() });
   }
 
-  async delete(id: string): Promise<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`, { headers: this.getHeaders() }).toPromise() as Promise<void>;
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`, { headers: this.getHeaders() });
   }
 }

@@ -106,11 +106,18 @@ export class MappingsComponent implements OnInit {
     this.loading.set(true);
     this.mappingService.list().subscribe({
       next: (drafts) => {
-        const mapped = drafts.map(d => this.draftToViewModel(d));
+        if (!drafts) {
+          this._mappings.set([]);
+          this.loading.set(false);
+          return;
+        }
+        const mappings = Array.isArray(drafts) ? drafts : [];
+        const mapped = mappings.map(d => this.draftToViewModel(d));
         this._mappings.set(mapped);
         this.loading.set(false);
       },
       error: () => {
+        this._mappings.set([]);
         this.loading.set(false);
       }
     });

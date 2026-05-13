@@ -69,6 +69,11 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     // Load system metrics
     this.metricsService.getMonitoringMetrics(this.timeWindow).subscribe({
       next: (data) => {
+        if (!data || !data.system) {
+          this.metrics.set([]);
+          this.loading.set(false);
+          return;
+        }
         const sys = data.system;
         this.metrics.set([
           { labelKey: 'monitoring.metric.throughput.label', sloKey: 'monitoring.metric.throughput.slo', value: String(sys.throughput), unit: 'msg/sec', ok: true,  icon: 'pi-send',              color: '#dbeafe' },
@@ -82,6 +87,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('Failed to load monitoring metrics:', err);
+        this.metrics.set([]);
         this.loading.set(false);
       }
     });
@@ -89,11 +95,17 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     // Load partner health
     this.metricsService.getPartnerHealth(this.timeWindow).subscribe({
       next: (data) => {
+        if (!data || !data.partners) {
+          this.partnerHealth.set([]);
+          this.loading.set(false);
+          return;
+        }
         this.partnerHealth.set(data.partners);
         this.loading.set(false);
       },
       error: (err) => {
         console.error('Failed to load partner health:', err);
+        this.partnerHealth.set([]);
         this.loading.set(false);
       }
     });
