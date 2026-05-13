@@ -237,6 +237,7 @@
       "typeConfig": "Type config",
       "pollHint": "Scheduled poll: {{schedule}}",
       "wsdlHint": "WSDL: {{wsdl}}",
+      "grpcHint": "gRPC service with RPC method, metadata, and message payload.",
       "webhookHint": "Webhook receiver with generated URL and inbound API key.",
       "restHint": "REST endpoint used for demo outbound reads or enrichment."
     },
@@ -511,6 +512,9 @@
       "soap": "SOAP / XML",
       "soapDesc": "Connect legacy XML and SOAP services.",
       "soapHint": "Envelope, action, XML paths",
+      "grpc": "gRPC",
+      "grpcDesc": "Call strongly typed RPC-style services.",
+      "grpcHint": "Service, method, metadata",
       "fileBatch": "File / Batch",
       "fileBatchDesc": "Map CSV, JSONL, or JSON array feeds.",
       "fileBatchHint": "Upload, parse, row rules",
@@ -557,6 +561,15 @@
       "badge": "API contract",
       "path": "Path",
       "pathPlaceholder": "/api/inbound/resource"
+    },
+    "sourceGrpc": {
+      "title": "gRPC source",
+      "subtitle": "Call a gRPC-style service and map the returned message payload.",
+      "badge": "RPC service",
+      "endpoint": "Endpoint",
+      "endpointPlaceholder": "https://api.partner.com/grpc/customer.ProfileService/GetCustomer",
+      "method": "RPC method",
+      "methodPlaceholder": "GetCustomer"
     },
     "sourceApi": {
       "title": "External API source",
@@ -1186,6 +1199,8 @@
       "externalApiDesc": "CanonBridge goes out and fetches data",
       "soap": "SOAP / XML",
       "soapDesc": "Connect legacy XML and SOAP services",
+      "grpc": "gRPC",
+      "grpcDesc": "Call strongly typed RPC-style services",
       "fileBatch": "File / Batch",
       "fileBatchDesc": "Map CSV, JSONL, or JSON array feeds",
       "apiEnrichment": "API Enrichment",
@@ -1231,6 +1246,11 @@
       "schedule": "Schedule",
       "schedulePlaceholder": "e.g. */5 * * * * (every 5 minutes)",
       "scheduleHint": "Cron expression or interval",
+      "grpcService": "gRPC service",
+      "grpcServicePlaceholder": "e.g. customer.ProfileService",
+      "grpcMethod": "RPC method",
+      "grpcMethodPlaceholder": "e.g. GetCustomer",
+      "grpcHint": "You can select from known RPC endpoints above or enter service and method manually",
       "noConfigNeeded": "No additional configuration needed for this source type."
     }
   },

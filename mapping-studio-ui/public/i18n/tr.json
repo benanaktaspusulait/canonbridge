@@ -249,6 +249,7 @@
       "typeConfig": "Tip konfigürasyonu",
       "pollHint": "Zamanlı sorgu: {{schedule}}",
       "wsdlHint": "WSDL: {{wsdl}}",
+      "grpcHint": "RPC metodu, metadata ve mesaj payload'u olan gRPC servisi.",
       "webhookHint": "Üretilmiş URL ve inbound API key ile webhook alıcısı.",
       "restHint": "Demo outbound okuma veya zenginleştirme için REST endpoint."
     },
@@ -546,6 +547,9 @@
       "soap": "SOAP",
       "soapDesc": "XML envelope veya WSDL uyumlu yanıt yükleyin.",
       "soapHint": "Endpoint + action",
+      "grpc": "gRPC",
+      "grpcDesc": "Tipli RPC servislerini çağırın.",
+      "grpcHint": "Servis, metod, metadata",
       "fileBatch": "Dosya Batch",
       "fileBatchDesc": "CSV, JSONL veya JSON array dosyası yükleyin.",
       "fileBatchHint": "Batch ingest",
@@ -618,6 +622,15 @@
       "badge": "Inbound HTTP",
       "path": "Path",
       "pathPlaceholder": "/api/inbound/resource"
+    },
+    "sourceGrpc": {
+      "title": "gRPC kaynağı",
+      "subtitle": "gRPC tarzı bir servisi çağırın ve dönen mesaj payload'unu eşleyin.",
+      "badge": "RPC servisi",
+      "endpoint": "Endpoint",
+      "endpointPlaceholder": "https://api.partner.com/grpc/customer.ProfileService/GetCustomer",
+      "method": "RPC metodu",
+      "methodPlaceholder": "GetCustomer"
     },
     "sourceSoap": {
       "title": "SOAP kaynağı",
@@ -1245,6 +1258,8 @@
       "externalApiDesc": "CanonBridge dışarı gidip veriyi alsın",
       "soap": "SOAP / XML",
       "soapDesc": "XML envelope veya WSDL uyumlu yanıt yükleyin",
+      "grpc": "gRPC",
+      "grpcDesc": "Tipli RPC servislerini çağırın",
       "fileBatch": "Dosya Batch",
       "fileBatchDesc": "CSV, JSONL veya JSON array dosyası yükleyin",
       "apiEnrichment": "API Zenginleştirme",
@@ -1290,6 +1305,11 @@
       "schedule": "Zamanlama",
       "schedulePlaceholder": "örn. */5 * * * * (her 5 dakikada)",
       "scheduleHint": "Cron ifadesi veya interval",
+      "grpcService": "gRPC servisi",
+      "grpcServicePlaceholder": "örn. customer.ProfileService",
+      "grpcMethod": "RPC metodu",
+      "grpcMethodPlaceholder": "örn. GetCustomer",
+      "grpcHint": "Yukarıdan bilinen RPC endpoint'i seçebilir veya servis ve metodu manuel girebilirsiniz",
       "noConfigNeeded": "Bu kaynak tipi için ek yapılandırma gerekmez."
     }
   }

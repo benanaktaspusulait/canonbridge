@@ -2156,7 +2156,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     this.externalApiSchedule.set(String(config['schedule'] ?? ''));
     this.soapEndpoint.set(String(config['endpoint'] ?? ''));
     this.soapAction.set(String(config['soapAction'] ?? ''));
-    this.soapOperation.set(String(config['operation'] ?? ''));
+    this.soapOperation.set(String(config['operation'] ?? config['rpcMethod'] ?? ''));
     this.enrichmentLookupName.set(String(config['lookupName'] ?? ''));
     this.enrichmentUrlTemplate.set(String(config['urlTemplate'] ?? ''));
     const selectedCredentialId = config['credentialId'];
@@ -3569,7 +3569,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
         ...base,
         endpoint: this.externalApiUrl(),
         service: 'customer.ProfileService',
-        rpcMethod: 'GetCustomer'
+        rpcMethod: this.soapOperation() || 'GetCustomer'
       };
     }
     if (this.sourceType() === 'fileBatch') {
@@ -3625,6 +3625,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
         sourceType === 'restApi' ||
         sourceType === 'externalApi' ||
         sourceType === 'soap' ||
+        sourceType === 'grpc' ||
         sourceType === 'fileBatch' ||
         sourceType === 'apiEnrichment' ||
         sourceType === 'manual'

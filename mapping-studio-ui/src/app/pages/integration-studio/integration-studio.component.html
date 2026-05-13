@@ -485,6 +485,38 @@
             </div>
           </section>
         }
+        @case ('grpc') {
+          <section class="studio-source-config">
+            <div class="studio-source-config__head">
+              <div>
+                <h3>{{ 'studio.sourceGrpc.title' | i18n }}</h3>
+                <p>{{ 'studio.sourceGrpc.subtitle' | i18n }}</p>
+              </div>
+              <p-tag severity="info" [value]="'studio.sourceGrpc.badge' | i18n" />
+            </div>
+            <div class="studio-form-grid">
+              <label class="studio-form-grid__wide">
+                <span>{{ 'studio.sourceGrpc.endpoint' | i18n }}</span>
+                <input
+                  pInputText
+                  [ngModel]="externalApiUrl()"
+                  (ngModelChange)="externalApiUrl.set($event)"
+                  [placeholder]="'studio.sourceGrpc.endpointPlaceholder' | i18n" />
+              </label>
+              <label>
+                <span>{{ 'studio.sourceGrpc.method' | i18n }}</span>
+                <input
+                  pInputText
+                  [ngModel]="soapOperation()"
+                  (ngModelChange)="soapOperation.set($event)"
+                  [placeholder]="'studio.sourceGrpc.methodPlaceholder' | i18n" />
+              </label>
+            </div>
+            <div class="toolbar-row">
+              <p-button [label]="'studio.sourceCommon.uploadInstead' | i18n" icon="pi pi-upload" variant="outlined" severity="secondary" (onClick)="fileIn.click()" />
+            </div>
+          </section>
+        }
         @case ('fileBatch') {
           <section class="studio-source-config">
             <div class="studio-source-config__head">

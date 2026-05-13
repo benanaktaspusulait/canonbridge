@@ -181,6 +181,7 @@ export class MappingWizardComponent implements OnInit {
       'REST_API': 'pi pi-globe',
       'SCHEDULED_API': 'pi pi-clock',
       'SOAP': 'pi pi-server',
+      'GRPC': 'pi pi-directions-alt',
       'FILE_BATCH': 'pi pi-file-import',
       'API_ENRICHMENT': 'pi pi-sitemap',
       'MANUAL': 'pi pi-upload'
@@ -196,6 +197,7 @@ export class MappingWizardComponent implements OnInit {
       'REST_API': 'REST API',
       'SCHEDULED_API': 'External API',
       'SOAP': 'SOAP',
+      'GRPC': 'gRPC',
       'FILE_BATCH': 'File Batch',
       'API_ENRICHMENT': 'API Enrichment',
       'MANUAL': 'Manual Upload'
@@ -211,6 +213,7 @@ export class MappingWizardComponent implements OnInit {
       'REST_API': 'CanonBridge calls external REST API',
       'SCHEDULED_API': 'Scheduled polling from external API',
       'SOAP': 'SOAP web service integration',
+      'GRPC': 'gRPC service integration',
       'FILE_BATCH': 'Batch file processing',
       'API_ENRICHMENT': 'Enrich data with external API',
       'MANUAL': 'Manual data upload for testing'

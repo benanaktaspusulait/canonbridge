@@ -348,7 +348,6 @@ export class ExternalSystemsComponent implements OnInit {
   readonly typeFilter       = signal('All');
   readonly environmentFilter = signal('All');
 
-  readonly typeOptions        = ['All', 'REST', 'SOAP', 'GRAPHQL'];
   readonly typeOptions        = ['All', 'REST', 'SOAP', 'GRAPHQL', 'GRPC'];
   readonly environmentOptions = ['All', 'PRODUCTION', 'SANDBOX'];
   readonly formTypeOptions    = ['REST', 'SOAP', 'GRAPHQL', 'GRPC'];
@@ -714,6 +713,7 @@ export class ExternalSystemsComponent implements OnInit {
         connectionName: connection.name,
         partner: connection.partner,
         eventType: connection.eventType,
+        sourceType: this.studioSourceTypeForConnection(connection),
         sampleJson: connection.sampleJson,
         capturedAt: new Date().toISOString()
       })
@@ -741,6 +741,13 @@ export class ExternalSystemsComponent implements OnInit {
       return this.t('externalSystems.detail.grpcHint');
     }
     return this.t('externalSystems.detail.restHint');
+  }
+
+  private studioSourceTypeForConnection(connection: ExternalConnection): string {
+    if (connection.type === 'SOAP') return 'soap';
+    if (connection.type === 'GRPC') return 'grpc';
+    if (connection.type === 'GRAPHQL') return 'apiEnrichment';
+    return 'externalApi';
   }
 
   get formValid(): boolean {
