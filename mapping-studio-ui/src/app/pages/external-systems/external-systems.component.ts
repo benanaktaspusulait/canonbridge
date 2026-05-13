@@ -215,7 +215,9 @@ export class ExternalSystemsComponent implements OnInit {
     this.externalSystemService.list().subscribe({
       next: (apiConnections) => {
         // Map API connections to UI format
-        const uiConnections: ExternalConnection[] = apiConnections.map(conn => this.mapApiToUi(conn));
+        // Handle null/undefined response defensively
+        const connections = Array.isArray(apiConnections) ? apiConnections : [];
+        const uiConnections: ExternalConnection[] = connections.map(conn => this.mapApiToUi(conn));
         this._connections.set(uiConnections);
         this.loading.set(false);
       },

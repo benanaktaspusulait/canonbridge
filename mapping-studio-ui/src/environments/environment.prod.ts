@@ -11,14 +11,14 @@ export const environment = {
   
   // API Configuration
   api: {
-    baseUrl: 'https://api.canonbridge.com/api',
+    baseUrl: '/api',
     timeout: 30000, // 30 seconds
     retryAttempts: 3,
   },
   
   // WebSocket Configuration
   websocket: {
-    url: 'wss://api.canonbridge.com',
+    url: '',
     reconnectInterval: 5000,
     maxReconnectAttempts: 10,
   },
