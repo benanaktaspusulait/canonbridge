@@ -10,11 +10,22 @@ export interface PartnerMappingConfig {
   inputSchema: string;
   mapping: string;
   canonicalSchema: string;
+  enrichmentSteps?: EnrichmentStepConfig[];
   topics: {
     raw: string;
     canonical: string;
     dlq: string;
   };
+}
+
+export interface EnrichmentStepConfig {
+  name: string;
+  url: string;
+  method?: string;
+  headers?: Record<string, string>;
+  timeoutMs?: number;
+  mergePath?: string;
+  required?: boolean;
 }
 
 function registryKey(partnerId: string, eventType: string, version?: string): string {

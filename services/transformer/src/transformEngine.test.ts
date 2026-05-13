@@ -5,6 +5,7 @@ import { InMemoryCache } from './cache.js';
 import { writeFile, mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
+import http from 'node:http';
 
 describe('TransformEngine', () => {
   let testDir: string;
@@ -369,6 +370,116 @@ describe('TransformEngine', () => {
         id: 'ORD-789-v2',
         total: 249.99,
       });
+    }
+  });
+
+  it('should merge API enrichment data before validation and mapping', async () => {
+    const server = http.createServer((req, res) => {
+      if (req.url !== '/risk' || req.method !== 'POST') {
+        res.writeHead(404).end();
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ score: 91, tier: 'gold' }));
+    });
+    await new Promise<void>((resolve) => server.listen(0, resolve));
+
+    try {
+      const address = server.address();
+      if (address === null || typeof address === 'string') {
+        throw new Error('Expected TCP test server address');
+      }
+
+      const enrichedInputSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object',
+        required: ['orderId', 'risk'],
+        properties: {
+          partnerId: { type: 'string' },
+          eventType: { type: 'string' },
+          orderId: { type: 'string' },
+          amount: { type: 'number' },
+          risk: {
+            type: 'object',
+            required: ['score'],
+            properties: {
+              score: { type: 'number' },
+              tier: { type: 'string' },
+            },
+          },
+        },
+      };
+
+      const enrichedCanonicalSchema = {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object',
+        required: ['id', 'total', 'riskScore'],
+        properties: {
+          id: { type: 'string' },
+          total: { type: 'number' },
+          riskScore: { type: 'number' },
+        },
+      };
+
+      const enrichedMapping = `{
+  "id": orderId,
+  "total": amount,
+  "riskScore": risk.score
+}`;
+
+      const enrichedConfig = {
+        partnerId: 'test-partner',
+        eventType: 'order-enriched',
+        inputSchema: 'partners/test-partner/enriched-input.schema.json',
+        canonicalSchema: 'partners/test-partner/enriched-canonical.schema.json',
+        mapping: 'partners/test-partner/enriched-mapping.jsonata',
+        enrichmentSteps: [
+          {
+            name: 'risk',
+            url: `http://127.0.0.1:${address.port}/risk`,
+            mergePath: 'risk',
+          },
+        ],
+        topics: {
+          raw: 'test.raw.enriched',
+          canonical: 'test.canonical.enriched',
+          dlq: 'test.dlq.enriched',
+        },
+      };
+
+      await writeFile(
+        path.join(testDir, 'partners/test-partner', 'enriched-input.schema.json'),
+        JSON.stringify(enrichedInputSchema),
+      );
+      await writeFile(
+        path.join(testDir, 'partners/test-partner', 'enriched-canonical.schema.json'),
+        JSON.stringify(enrichedCanonicalSchema),
+      );
+      await writeFile(path.join(testDir, 'partners/test-partner', 'enriched-mapping.jsonata'), enrichedMapping);
+      await mkdir(path.join(testDir, 'partners/test-partner-enriched'), { recursive: true });
+      await writeFile(
+        path.join(testDir, 'partners/test-partner-enriched', 'config.json'),
+        JSON.stringify(enrichedConfig),
+      );
+      await registry.load();
+
+      const result = await engine.transformEnvelope({
+        partnerId: 'test-partner',
+        eventType: 'order-enriched',
+        orderId: 'ORD-900',
+        amount: 32,
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.canonical).toEqual({
+          id: 'ORD-900',
+          total: 32,
+          riskScore: 91,
+        });
+      }
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
     }
   });
 });

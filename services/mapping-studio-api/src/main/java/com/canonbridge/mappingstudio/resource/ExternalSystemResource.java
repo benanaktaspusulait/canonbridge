@@ -112,6 +112,34 @@ public class ExternalSystemResource {
                 });
     }
 
+    @POST
+    @Path("/{connectionId}/trigger")
+    @Operation(summary = "Manually trigger an outbound REST/SOAP polling connection")
+    public Uni<Response> trigger(
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            @PathParam("connectionId") UUID connectionId,
+            OutboundHttpRequest request) {
+        String requiredTenantId = requireTenantId(tenantId);
+        return connectionRepository.findById(requiredTenantId, connectionId)
+                .chain(connection -> {
+                    if (connection == null) {
+                        return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND).build());
+                    }
+                    if (connection.purpose() != OutboundConnection.ConnectionPurpose.SOURCE_PAYLOAD) {
+                        return Uni.createFrom().item(Response.status(Response.Status.CONFLICT)
+                                .entity(new TriggerError("Connection purpose must be SOURCE_PAYLOAD"))
+                                .build());
+                    }
+                    if (connection.status() == OutboundConnection.ConnectionStatus.DISABLED) {
+                        return Uni.createFrom().item(Response.status(Response.Status.CONFLICT)
+                                .entity(new TriggerError("Connection is disabled"))
+                                .build());
+                    }
+                    return outboundHttpService.execute(requiredTenantId, connection, request)
+                            .chain(result -> recordAndRespond(requiredTenantId, connectionId, result));
+                });
+    }
+
     private String requireTenantId(String tenantId) {
         if (tenantId == null || tenantId.isBlank()) {
             throw new BadRequestException("X-Tenant-Id header is required");
@@ -161,4 +189,6 @@ public class ExternalSystemResource {
                 connection.updatedAt()
         );
     }
+
+    public record TriggerError(String error) {}
 }

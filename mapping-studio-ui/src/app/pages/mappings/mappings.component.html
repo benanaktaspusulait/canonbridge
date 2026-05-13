@@ -62,7 +62,7 @@
         </th>
         <th pSortableColumn="createdAt">{{ 'table.published' | i18n }} <p-sortIcon field="createdAt" /></th>
         <th pSortableColumn="publishedBy">{{ 'table.by' | i18n }} <p-sortIcon field="publishedBy" /></th>
-        <th style="width:130px"></th>
+        <th style="width:160px"></th>
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-m>
@@ -83,6 +83,14 @@
               size="small"
               (onClick)="openDetails(m)"
               [pTooltip]="'mappings.preview' | i18n" />
+            <p-button
+              icon="pi pi-objects-column"
+              variant="text"
+              severity="secondary"
+              size="small"
+              routerLink="/studio"
+              [queryParams]="{ mappingId: m.id }"
+              [pTooltip]="'mappings.openStudio' | i18n" />
             <p-button
               icon="pi pi-ban"
               variant="text"
@@ -165,6 +173,7 @@
         [label]="'mappings.openStudio' | i18n"
         icon="pi pi-objects-column"
         routerLink="/studio"
+        [queryParams]="{ mappingId: m.id }"
         styleClass="w-full" />
       <p-button
         [label]="'mappings.deprecate' | i18n"

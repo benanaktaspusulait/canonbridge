@@ -7,7 +7,7 @@ import * as ajv2020Ns from 'ajv/dist/2020.js';
 const Ajv2020 = ajv2020Ns.default as unknown as new (opts?: import('ajv').Options) => import('ajv').Ajv;
 import addFormats from 'ajv-formats';
 import jsonata from 'jsonata';
-import type { PartnerMappingConfig } from './partnerRegistry.js';
+import type { EnrichmentStepConfig, PartnerMappingConfig } from './partnerRegistry.js';
 import type { PartnerRegistry } from './partnerRegistry.js';
 import { mappingVersion } from './partnerRegistry.js';
 import type { TransformCache, Compiled, CacheEntry } from './cache.js';
@@ -19,7 +19,7 @@ function formatAjvErrors(validate: ValidateFunction): string {
   return new Ajv2020({ allErrors: true, strict: false }).errorsText(errs);
 }
 
-export type TransformStage = 'resolve' | 'input_validation' | 'transform' | 'output_validation';
+export type TransformStage = 'resolve' | 'enrichment' | 'input_validation' | 'transform' | 'output_validation';
 
 export type TransformResult =
   | { ok: true; canonical: unknown; durationMs: number }
@@ -160,6 +160,51 @@ export class TransformEngine {
     return compiled;
   }
 
+  private async applyEnrichmentSteps(
+    envelope: Record<string, unknown>,
+    steps: EnrichmentStepConfig[] | undefined,
+  ): Promise<Record<string, unknown>> {
+    if (!steps?.length) return envelope;
+
+    let enriched = { ...envelope };
+    for (const step of steps) {
+      if (!step.name || !step.url) {
+        throw new Error('Enrichment step requires name and url');
+      }
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), step.timeoutMs ?? 5000);
+      try {
+        const method = (step.method ?? 'POST').toUpperCase();
+        const response = await fetch(step.url, {
+          method,
+          headers: {
+            Accept: 'application/json',
+            ...(method === 'GET' ? {} : { 'Content-Type': 'application/json' }),
+            ...(step.headers ?? {}),
+          },
+          body: method === 'GET' || method === 'HEAD' ? undefined : JSON.stringify(enriched),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          if (step.required ?? true) {
+            throw new Error(`Enrichment step ${step.name} returned HTTP ${response.status}`);
+          }
+          continue;
+        }
+
+        const text = await response.text();
+        const value = text ? (JSON.parse(text) as unknown) : null;
+        enriched = mergeAtPath(enriched, step.mergePath ?? `enrichment.${step.name}`, value);
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+
+    return enriched;
+  }
+
   async transformEnvelope(raw: unknown, context?: EnvelopeContext): Promise<TransformResult> {
     const start = Date.now();
     const elapsed = () => Date.now() - start;
@@ -204,6 +249,18 @@ export class TransformEngine {
       return {
         ok: false,
         stage: 'resolve',
+        message: err instanceof Error ? err.message : String(err),
+        details: err,
+        durationMs: elapsed(),
+      };
+    }
+
+    try {
+      envelope = await this.applyEnrichmentSteps(envelope, config.enrichmentSteps);
+    } catch (err) {
+      return {
+        ok: false,
+        stage: 'enrichment',
         message: err instanceof Error ? err.message : String(err),
         details: err,
         durationMs: elapsed(),
@@ -262,4 +319,25 @@ export class TransformEngine {
 
     return { ok: true, canonical: transformed, durationMs: elapsed() };
   }
+}
+
+function mergeAtPath(root: Record<string, unknown>, pathExpression: string, value: unknown): Record<string, unknown> {
+  const parts = pathExpression
+    .split('.')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length === 0) return root;
+
+  const next: Record<string, unknown> = { ...root };
+  let cursor = next;
+  for (const part of parts.slice(0, -1)) {
+    const existing = cursor[part];
+    const child = existing !== null && typeof existing === 'object' && !Array.isArray(existing)
+      ? { ...(existing as Record<string, unknown>) }
+      : {};
+    cursor[part] = child;
+    cursor = child;
+  }
+  cursor[parts[parts.length - 1]] = value;
+  return next;
 }

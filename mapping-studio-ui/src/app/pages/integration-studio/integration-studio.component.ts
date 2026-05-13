@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   HostListener,
   OnDestroy,
@@ -12,6 +13,7 @@ import {
 } from '@angular/core';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   JsonataCheckService,
   type JsonataBatchResultEntry
@@ -19,11 +21,12 @@ import {
 import { KeyboardShortcutsService } from '../../core/services/keyboard-shortcuts.service';
 import { AccessibilityService } from '../../core/services/accessibility.service';
 import { MappingService, MappingDraft } from '../../core/services/mapping.service';
+import { SchemaService } from '../../core/services/schema.service';
 import { AutoSaveService } from '../../core/services/auto-save.service';
 import { UndoRedoService } from '../../core/services/undo-redo.service';
 import { FormsModule } from '@angular/forms';
 import { JsonPipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import mappingEngine from 'jsonata';
 import { TreeNode } from 'primeng/api';
 import { TreeModule } from 'primeng/tree';
@@ -153,11 +156,117 @@ type StudioConfigExport = {
 
 type EnumMapPair = { source: string; target: string };
 type RuleStatusSeverity = 'success' | 'warn' | 'danger' | 'info' | 'secondary';
+type SourceValidationSeverity = 'success' | 'error' | 'warn' | 'info';
+
+type JsonValidationResult = {
+  severity: SourceValidationSeverity;
+  text: string;
+};
 
 function formatPrimitive(v: unknown): string {
   if (v === null) return 'null';
   if (typeof v === 'string') return JSON.stringify(v);
   return String(v);
+}
+
+function parseJsonString<T>(value: unknown): T | null {
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value) as T;
+    } catch {
+      return null;
+    }
+  }
+  return value as T;
+}
+
+function jsonParseErrorLocation(message: string, source: string): string | null {
+  const position = /position\s+(\d+)/i.exec(message)?.[1];
+  if (!position) return null;
+  const index = Number(position);
+  if (!Number.isFinite(index)) return null;
+  const before = source.slice(0, Math.max(0, index));
+  const lines = before.split(/\r\n|\r|\n/);
+  const line = lines.length;
+  const column = (lines[lines.length - 1]?.length ?? 0) + 1;
+  return `line ${line}, column ${column}`;
+}
+
+function sourcePathFromBackend(value: unknown): string {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  return raw.replace(/^\$\.?/, '').replace(/^\./, '');
+}
+
+function mapBackendTransform(value: unknown): TransformKind {
+  const raw = String(value ?? '').toLowerCase();
+  if (raw === 'date_format') return 'date_format';
+  if (raw === 'enum_map') return 'enum_map';
+  if (raw === 'number_coerce') return 'number_coerce';
+  return 'direct';
+}
+
+function targetTypeFromBackend(value: unknown): TargetField['type'] {
+  const raw = String(value ?? '').toLowerCase();
+  if (raw === 'number' || raw === 'integer') return 'number';
+  if (raw === 'date') return 'date';
+  if (raw === 'object') return 'object';
+  if (raw === 'array') return 'array';
+  if (raw === 'boolean') return 'boolean';
+  return 'string';
+}
+
+function normalizeBackendRules(value: unknown): MappingRule[] {
+  const rows = parseJsonString<unknown[]>(value);
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .map((row, index): MappingRule | null => {
+      if (!row || typeof row !== 'object') return null;
+      const record = row as Record<string, unknown>;
+      const targetKey = String(record['targetKey'] ?? record['field'] ?? '').trim();
+      const sourcePath = sourcePathFromBackend(record['sourcePath'] ?? record['source']);
+      if (!targetKey && !sourcePath) return null;
+      return {
+        id: String(record['id'] ?? `rule_${index}_${targetKey || sourcePath}`),
+        sourcePath,
+        targetKey,
+        transform: mapBackendTransform(record['transform']),
+        paramA: String(record['paramA'] ?? ''),
+        paramB: String(record['paramB'] ?? ''),
+        paramC: String(record['paramC'] ?? ''),
+        advancedExpression: String(record['advancedExpression'] ?? ''),
+        jsonataExpression: typeof record['jsonataExpression'] === 'string' ? record['jsonataExpression'] : undefined,
+        children: Array.isArray(record['children']) ? normalizeBackendRules(record['children']) : undefined,
+        isNested: Boolean(record['isNested']),
+        parentId: typeof record['parentId'] === 'string' ? record['parentId'] : undefined
+      };
+    })
+    .filter((rule): rule is MappingRule => rule !== null);
+}
+
+function targetFieldsFromRules(rules: MappingRule[], rawRules: unknown): TargetField[] {
+  const rawRows = parseJsonString<unknown[]>(rawRules) ?? [];
+  const byTarget = new Map<string, Record<string, unknown>>();
+  for (const row of rawRows) {
+    if (row && typeof row === 'object') {
+      const record = row as Record<string, unknown>;
+      const target = String(record['targetKey'] ?? record['field'] ?? '').trim();
+      if (target) byTarget.set(target, record);
+    }
+  }
+  return rules
+    .filter(rule => rule.targetKey)
+    .map(rule => {
+      const raw = byTarget.get(rule.targetKey);
+      return {
+        key: rule.targetKey,
+        type: targetTypeFromBackend(raw?.['transform']),
+        required: false,
+        description: '',
+        source: 'schema' as const
+      };
+    });
 }
 
 function buildTreeNodes(value: unknown, path: string): TreeNode[] {
@@ -602,10 +711,13 @@ const STUDIO_EXTERNAL_SAMPLE_KEY = 'canonbridge:external-systems:selected-sample
 })
 export class IntegrationStudioComponent implements OnInit, OnDestroy {
   private readonly i18n = inject(I18nService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly jsonataCheck = inject(JsonataCheckService);
   private readonly shortcuts = inject(KeyboardShortcutsService);
   private readonly a11y = inject(AccessibilityService);
   private readonly mappingService = inject(MappingService);
+  private readonly schemaService = inject(SchemaService);
   private readonly autoSaveSvc = inject(AutoSaveService);
   private readonly undoRedoSvc: UndoRedoService<MappingRule[]> = inject(UndoRedoService);
   private readonly ajv = createStudioAjv();
@@ -681,6 +793,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   activeStep = signal(0);
   sourceJson = signal('');
   parseError = signal<string | null>(null);
+  jsonValidationResult = signal<JsonValidationResult | null>(null);
   treeNodes = signal<TreeNode[]>([]);
   sourcePaths = signal<string[]>([]);
   sourceValidationRules = signal<SourceValidationRule[]>([]);
@@ -1019,6 +1132,10 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadExternalSystemSample();
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      const mappingId = params.get('mappingId');
+      if (mappingId) this.loadMappingDraft(mappingId);
+    });
     this.analyzePayload();
     this.selectedRule.set(this.rules()[0] ?? null);
     this.autosaveTimer = setInterval(() => this.autosaveDraft(), 2500);
@@ -1405,6 +1522,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   onSourceJsonChange(value: string): void {
     this.sourceJson.set(value);
     this.parseError.set(null);
+    this.jsonValidationResult.set(null);
     if (value.trim()) this.externalApiLastError.set(null);
     if (this.sourceDebounceTimer) clearTimeout(this.sourceDebounceTimer);
     this.sourceDebounceTimer = setTimeout(() => {
@@ -1449,6 +1567,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
 
   analyzePayload(): void {
     this.parseError.set(null);
+    this.jsonValidationResult.set(null);
     if (this.sourceJson().trim()) this.externalApiLastError.set(null);
     this.testOutput.set(null);
     this.altTestOutput.set(null);
@@ -1458,6 +1577,212 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     this.published.set(false);
     this.ruleEvalErrors.set({});
     this.analyzePayloadSoft();
+  }
+
+  validateSourceJson(): void {
+    const raw = this.sourceJson();
+    if (!raw.trim()) {
+      const text = this.i18n.translate('studio.json.empty');
+      this.parseError.set(text);
+      this.jsonValidationResult.set({ severity: 'warn', text });
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      const issues: AjvIssue[] = [];
+      const schema = this.inputSchemaDoc();
+      if (schema) {
+        const validation = validateWithAjv(this.ajv, schema, parsed);
+        if (!validation.ok) issues.push(...validation.issues);
+      }
+      issues.push(...this.validateSourceRules(parsed));
+      this.analyzePayloadSoft();
+
+      if (issues.length) {
+        const text = this.i18n.translate('studio.json.schemaInvalid', { count: issues.length });
+        this.inputSchemaValidationIssues.set(issues);
+        this.jsonValidationResult.set({ severity: 'error', text });
+        this.toast.add({ severity: 'error', summary: this.i18n.translate('studio.json.invalid'), detail: text, life: 4500 });
+        return;
+      }
+
+      const text = schema
+        ? this.i18n.translate('studio.json.validWithSchema')
+        : this.i18n.translate('studio.json.valid');
+      this.parseError.set(null);
+      this.jsonValidationResult.set({ severity: 'success', text });
+      this.toast.add({ severity: 'success', summary: this.i18n.translate('studio.json.validTitle'), detail: text, life: 3000 });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      const where = jsonParseErrorLocation(message, raw);
+      const text = where
+        ? this.i18n.translate('studio.json.invalidAt', { where, message })
+        : this.i18n.translate('studio.json.invalidDetail', { message });
+      this.parseError.set(text);
+      this.treeNodes.set([]);
+      this.sourcePaths.set([]);
+      this.jsonValidationResult.set({ severity: 'error', text });
+      this.toast.add({ severity: 'error', summary: this.i18n.translate('studio.json.invalid'), detail: text, life: 6000 });
+    }
+  }
+
+  private loadMappingDraft(id: string): void {
+    this.mappingService.getById(id).subscribe({
+      next: (draft) => this.applyMappingDraft(draft),
+      error: () => {
+        this.toast.add({
+          severity: 'error',
+          summary: this.i18n.translate('studio.draft.loadFailed'),
+          detail: id,
+          life: 5000
+        });
+      }
+    });
+  }
+
+  private applyMappingDraft(draft: MappingDraft): void {
+    this.backendDraftId.set(draft.id ?? null);
+    this.externalApiName.set(draft.name ?? '');
+    this.sourceType.set(this.mapBackendSourceType(draft.source_type));
+    this.applySourceConfig(parseJsonString<Record<string, unknown>>(draft.source_config));
+
+    const inputSchema = parseJsonString<Record<string, unknown>>(draft.input_schema);
+    this.inputSchemaDoc.set(inputSchema);
+    this.inputSchemaMeta.set(inputSchema ? this.schemaMetaFromDoc(inputSchema) : null);
+    const inputPaths = new Set<string>();
+    if (inputSchema) collectSchemaValuePaths(inputSchema, '', inputPaths);
+    this.inputSchemaPathSuggestions.set([...inputPaths].sort((a, b) => a.localeCompare(b)));
+
+    const rules = normalizeBackendRules(draft.mapping_rules);
+    this.rules.set(rules);
+    this.selectedRule.set(rules[0] ?? null);
+    this.ruleInspectorTab.set('visual');
+    this.resetRuleHistory();
+
+    const fallbackTargets = targetFieldsFromRules(rules, draft.mapping_rules);
+    this.targetFields.set(fallbackTargets);
+    this.canonicalSchemaDoc.set(null);
+    this.canonicalSchemaMeta.set(draft.canonical_schema_ref ? { $id: draft.canonical_schema_ref } : null);
+    if (draft.canonical_schema_ref) this.loadCanonicalSchemaRef(draft.canonical_schema_ref, fallbackTargets);
+
+    this.sourceValidationRules.set(this.sourceValidationRulesFromDraft(draft.validation_rules));
+    this.maxUnlockedStep.set(rules.length ? 4 : inputSchema ? 1 : 0);
+    this.activeStep.set(rules.length ? 2 : 0);
+    this.validationOk.set(null);
+    this.validationMessages.set([]);
+    this.published.set(draft.status === 'READY_TO_PUBLISH' || draft.status === 'VALID');
+    this.draftSourceLabel.set(draft.name ?? draft.event_type ?? null);
+    this.analyzePayloadSoft();
+    this.toast.add({
+      severity: 'success',
+      summary: this.i18n.translate('studio.draft.loaded'),
+      detail: draft.name ?? draft.event_type ?? draft.id,
+      life: 3500
+    });
+  }
+
+  private loadCanonicalSchemaRef(ref: string, fallbackTargets: TargetField[]): void {
+    this.schemaService.getById(ref).subscribe({
+      next: (schema) => {
+        const doc = parseJsonString<Record<string, unknown>>(schema.schema_json);
+        if (!doc) return;
+        const fields = targetFieldsFromCanonicalPayloadProperties(doc);
+        this.canonicalSchemaDoc.set(doc);
+        this.canonicalSchemaMeta.set({
+          title: schema.name ?? (typeof doc['title'] === 'string' ? doc['title'] : undefined),
+          $id: typeof doc['$id'] === 'string' ? doc['$id'] : ref
+        });
+        if (fields.length) this.targetFields.set(fields);
+      },
+      error: () => {
+        this.targetFields.set(fallbackTargets);
+      }
+    });
+  }
+
+  private schemaMetaFromDoc(doc: Record<string, unknown>): { title?: string; $id?: string } {
+    return {
+      title: typeof doc['title'] === 'string' ? doc['title'] : undefined,
+      $id: typeof doc['$id'] === 'string' ? doc['$id'] : undefined
+    };
+  }
+
+  private mapBackendSourceType(value: MappingDraft['source_type']): StudioSourceType {
+    if (value === 'KAFKA') return 'kafka';
+    if (value === 'WEBHOOK') return 'webhook';
+    if (value === 'REST_API') return 'restApi';
+    if (value === 'SCHEDULED_API') return 'externalApi';
+    if (value === 'SOAP') return 'soap';
+    if (value === 'FILE_BATCH') return 'fileBatch';
+    if (value === 'API_ENRICHMENT') return 'apiEnrichment';
+    return 'manual';
+  }
+
+  private applySourceConfig(config: Record<string, unknown> | null): void {
+    if (!config) return;
+    this.kafkaTopic.set(String(config['topic'] ?? ''));
+    this.kafkaConsumerGroup.set(String(config['consumerGroup'] ?? ''));
+    this.webhookUrl.set(String(config['url'] ?? config['endpoint'] ?? ''));
+    this.restApiPath.set(String(config['path'] ?? ''));
+    this.externalApiUrl.set(String(config['url'] ?? ''));
+    this.externalApiSchedule.set(String(config['schedule'] ?? ''));
+    this.soapEndpoint.set(String(config['endpoint'] ?? ''));
+    this.soapAction.set(String(config['soapAction'] ?? ''));
+    this.soapOperation.set(String(config['operation'] ?? ''));
+    this.enrichmentLookupName.set(String(config['lookupName'] ?? ''));
+    this.enrichmentUrlTemplate.set(String(config['urlTemplate'] ?? ''));
+    const method = String(config['method'] ?? '');
+    if (this.externalApiMethods.includes(method as ExternalApiMethod)) {
+      this.externalApiMethod.set(method as ExternalApiMethod);
+      this.restApiMethod.set(method as ExternalApiMethod);
+      this.enrichmentMethod.set(method as ExternalApiMethod);
+    }
+  }
+
+  private sourceValidationRulesFromDraft(value: unknown): SourceValidationRule[] {
+    const parsed = parseJsonString<unknown>(value);
+    if (Array.isArray(parsed)) {
+      return parsed
+        .map((row, index): SourceValidationRule | null => {
+          if (!row || typeof row !== 'object') return null;
+          const record = row as Record<string, unknown>;
+          const kind = record['kind'];
+          if (
+            kind !== 'required' &&
+            kind !== 'type' &&
+            kind !== 'enum' &&
+            kind !== 'min' &&
+            kind !== 'max' &&
+            kind !== 'min_length' &&
+            kind !== 'max_length' &&
+            kind !== 'regex'
+          ) {
+            return null;
+          }
+          return {
+            id: String(record['id'] ?? `validation_${index}`),
+            path: String(record['path'] ?? ''),
+            kind,
+            paramA: String(record['paramA'] ?? ''),
+            paramB: String(record['paramB'] ?? ''),
+            enabled: record['enabled'] !== false
+          };
+        })
+        .filter((row): row is SourceValidationRule => row !== null);
+    }
+    if (!parsed || typeof parsed !== 'object') return [];
+    const record = parsed as Record<string, unknown>;
+    const required = record['required'];
+    if (!Array.isArray(required)) return [];
+    return required.map((path, index) => ({
+      id: `required_${index}_${String(path)}`,
+      path: String(path),
+      kind: 'required',
+      paramA: '',
+      paramB: '',
+      enabled: true
+    }));
   }
 
   onFileSelected(ev: Event): void {
@@ -2665,9 +2990,10 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     }
 
     this.autoSaveSvc.registerAutoSave('studio-wizard', this.rules());
+    if (this.published()) return;
 
     const draftPayload = {
-      name: snapshot.sourceFileMeta?.name ?? 'Untitled Draft',
+      name: snapshot.sourceFileMeta?.name ?? (this.externalApiName() || this.draftSourceLabel() || 'Untitled Draft'),
       description: '',
       source_type: this.mapSourceType(snapshot.sourceType),
       source_config: JSON.stringify(this.sourceConfigSnapshot()),

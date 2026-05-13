@@ -1035,7 +1035,20 @@
     "jsonPlaceholder": "JSON'u buraya yapıştırın veya dosya bırakın.",
     "json": {
       "fileMeta": "{{name}} · {{size}}",
-      "syntaxPreview": "Sözdizimi vurgulu önizleme (salt okunur)"
+      "syntaxPreview": "Sözdizimi vurgulu önizleme (salt okunur)",
+      "validate": "JSON doğrula",
+      "validTitle": "JSON geçerli",
+      "valid": "JSON sözdizimi geçerli.",
+      "validWithSchema": "JSON sözdizimi ve giriş şeması kontrolleri geçti.",
+      "invalid": "JSON doğrulama başarısız",
+      "invalidDetail": "{{message}}",
+      "invalidAt": "{{where}}: {{message}}",
+      "schemaInvalid": "JSON sözdizimi geçerli, fakat {{count}} şema/kural hatası incelenmeli.",
+      "empty": "Doğrulamadan önce JSON yapıştırın veya yükleyin."
+    },
+    "draft": {
+      "loaded": "Mapping yüklendi",
+      "loadFailed": "Mapping yüklenemedi"
     },
     "invalidJson": "Geçersiz JSON",
     "validation": {

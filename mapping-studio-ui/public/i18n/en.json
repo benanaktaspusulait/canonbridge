@@ -976,7 +976,20 @@
     "jsonPlaceholder": "Paste JSON here or drop a file.",
     "json": {
       "fileMeta": "{{name}} · {{size}}",
-      "syntaxPreview": "Syntax-highlighted preview (read-only)"
+      "syntaxPreview": "Syntax-highlighted preview (read-only)",
+      "validate": "Validate JSON",
+      "validTitle": "JSON is valid",
+      "valid": "JSON syntax is valid.",
+      "validWithSchema": "JSON syntax and input schema checks passed.",
+      "invalid": "JSON validation failed",
+      "invalidDetail": "{{message}}",
+      "invalidAt": "{{where}}: {{message}}",
+      "schemaInvalid": "JSON syntax is valid, but {{count}} schema/rule issue(s) need review.",
+      "empty": "Paste or upload JSON before validating."
+    },
+    "draft": {
+      "loaded": "Mapping loaded",
+      "loadFailed": "Mapping could not be loaded"
     },
     "invalidJson": "Invalid JSON",
     "validation": {

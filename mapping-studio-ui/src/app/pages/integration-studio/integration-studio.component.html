@@ -653,6 +653,7 @@
         </div>
       }
       <div class="toolbar-row studio-action-row">
+        <p-button [label]="'studio.json.validate' | i18n" icon="pi pi-check-circle" variant="outlined" severity="secondary" (onClick)="validateSourceJson()" />
         <p-button [label]="'studio.analyze' | i18n" icon="pi pi-sync" (onClick)="analyzePayload()" />
         <p-button
           [label]="'studio.config.import' | i18n"
@@ -698,6 +699,9 @@
       }
       @if (parseError()) {
         <p-message severity="error" [text]="parseError()!" styleClass="w-full mt-3" />
+      }
+      @if (!parseError() && jsonValidationResult(); as result) {
+        <p-message [severity]="result.severity" [text]="result.text" styleClass="w-full mt-3" />
       }
       <div
         class="studio-json-drop mt-3"
