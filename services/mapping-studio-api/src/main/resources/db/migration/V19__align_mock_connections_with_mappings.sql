@@ -104,6 +104,79 @@ ON CONFLICT (tenant_id, subject, version) DO UPDATE SET
     description = EXCLUDED.description,
     updated_at = NOW();
 
+-- Create the missing draft records that will be referenced by connections
+INSERT INTO mapping_drafts (
+    id, tenant_id, partner_id, event_type, name, description,
+    source_type, source_config, input_schema, canonical_schema_ref,
+    mapping_rules, generated_jsonata, validation_rules,
+    status, created_by, updated_by, created_at, updated_at
+) VALUES 
+    (
+        '77777777-7777-7777-7777-777777777777'::uuid,
+        'tenant-demo',
+        '11111111-1111-1111-1111-111111111111'::uuid,
+        'payment.received',
+        'PayFlex Payment Webhook Mapping',
+        'Maps PayFlex webhook payment events to canonical payment format',
+        'WEBHOOK',
+        '{}'::jsonb,
+        '{"type":"object","properties":{"transactionId":{"type":"string"},"amount":{"type":"number"},"currency":{"type":"string"},"status":{"type":"string"}}}'::jsonb,
+        NULL,
+        '[]'::jsonb,
+        '{}',
+        '{}'::jsonb,
+        'DRAFT',
+        'system',
+        'system',
+        NOW(),
+        NOW()
+    ),
+    (
+        '88888888-8888-8888-8888-888888888888'::uuid,
+        'tenant-demo',
+        '22222222-2222-2222-2222-222222222222'::uuid,
+        'shipment.tracking',
+        'FastCargo Tracking SOAP Mapping',
+        'Maps FastCargo SOAP tracking responses to canonical shipment format',
+        'SOAP',
+        '{}'::jsonb,
+        '{"type":"object","properties":{"trackingNumber":{"type":"string"},"status":{"type":"string"},"location":{"type":"string"}}}'::jsonb,
+        NULL,
+        '[]'::jsonb,
+        '{}',
+        '{}'::jsonb,
+        'DRAFT',
+        'system',
+        'system',
+        NOW(),
+        NOW()
+    ),
+    (
+        '99999999-9999-9999-9999-999999999999'::uuid,
+        'tenant-demo',
+        '33333333-3333-3333-3333-333333333333'::uuid,
+        'order.created',
+        'ShopMax Order Mapping',
+        'Maps ShopMax order events to canonical order format',
+        'KAFKA',
+        '{}'::jsonb,
+        '{"type":"object","properties":{"orderId":{"type":"string"},"customerId":{"type":"string"},"items":{"type":"array"},"total":{"type":"number"}}}'::jsonb,
+        NULL,
+        '[]'::jsonb,
+        '{}',
+        '{}'::jsonb,
+        'DRAFT',
+        'system',
+        'system',
+        NOW(),
+        NOW()
+    )
+ON CONFLICT (id) DO UPDATE SET
+    source_config = EXCLUDED.source_config,
+    input_schema = EXCLUDED.input_schema,
+    mapping_rules = EXCLUDED.mapping_rules,
+    updated_at = NOW();
+
 INSERT INTO mapping_drafts (
     id, tenant_id, partner_id, event_type, name, description,
     source_type, source_config, input_schema, canonical_schema_ref,
