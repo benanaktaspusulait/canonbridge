@@ -232,12 +232,12 @@ export class ExternalSystemsComponent implements OnInit {
   }
 
   private mapApiToUi(conn: OutboundConnection): ExternalConnection {
-    const lastTestResult = conn.lastTestResult ? JSON.parse(conn.lastTestResult) : null;
+    const lastTestResult = conn.last_test_result ? JSON.parse(conn.last_test_result) : null;
     const status = this.mapStatus(conn.status || 'NOT_TESTED');
     
     return {
-      id: conn.connectionId || '',
-      connectionId: conn.connectionId,
+      id: conn.connection_id || '',
+      connectionId: conn.connection_id,
       name: conn.name,
       partner: this.extractPartnerFromName(conn.name),
       eventType: this.extractEventType(conn.name),
@@ -249,14 +249,14 @@ export class ExternalSystemsComponent implements OnInit {
       avgMs: lastTestResult?.durationMs || null,
       p95Ms: lastTestResult?.durationMs ? Math.round(lastTestResult.durationMs * 1.7) : null,
       lastError: lastTestResult?.success === false ? (lastTestResult.error || 'Test failed') : '—',
-      lastSuccess: conn.lastTestAt ? this.formatTimestamp(conn.lastTestAt) : '—',
+      lastSuccess: conn.last_test_at ? this.formatTimestamp(conn.last_test_at) : '—',
       calls24h: 0,
       method: conn.method || 'GET',
       url: conn.url,
-      authType: conn.credentialId ? 'OAuth2' : 'None',
-      timeoutMs: conn.timeoutMs || 5000,
-      credentialName: conn.credentialId || '',
-      credentialId: conn.credentialId,
+      authType: conn.credential_id ? 'OAuth2' : 'None',
+      timeoutMs: conn.timeout_ms || 5000,
+      credentialName: conn.credential_id || '',
+      credentialId: conn.credential_id,
       pollSchedule: conn.schedule || '',
       schedule: conn.schedule,
       pollInterval: '',
@@ -271,10 +271,10 @@ export class ExternalSystemsComponent implements OnInit {
       mappings: [],
       sparkline: this.generateSparkline(status),
       purpose: conn.purpose,
-      retryPolicy: conn.retryPolicy,
-      responseHandling: conn.responseHandling,
-      lastTestAt: conn.lastTestAt,
-      lastTestResult: conn.lastTestResult
+      retryPolicy: conn.retry_policy,
+      responseHandling: conn.response_handling,
+      lastTestAt: conn.last_test_at,
+      lastTestResult: conn.last_test_result
     };
   }
 
@@ -466,9 +466,9 @@ export class ExternalSystemsComponent implements OnInit {
       url: this.form.url,
       environment: this.form.environment as any,
       schedule: this.form.pollSchedule || undefined,
-      timeoutMs: this.form.timeoutMs,
-      retryPolicy: this.form.retryPolicy,
-      responseHandling: this.form.responseHandling
+      timeout_ms: this.form.timeoutMs,
+      retry_policy: this.form.retryPolicy,
+      response_handling: this.form.responseHandling
     };
 
     if (this.isEdit && this.form.id) {

@@ -1,0 +1,60 @@
+{
+  "eventId": "sm-550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2026-05-13T10:30:00Z",
+  "eventType": "order.created",
+  "orderId": "ORD-20260513-001",
+  "customerId": "CUST-12345",
+  "customerEmail": "customer@shopmax.com",
+  "items": [
+    {
+      "sku": "PROD-001",
+      "name": "Wireless Headphones",
+      "category": "Electronics",
+      "quantity": 1,
+      "unitPrice": 79.99,
+      "totalPrice": 79.99,
+      "taxAmount": 6.40
+    },
+    {
+      "sku": "PROD-002",
+      "name": "USB-C Cable",
+      "category": "Accessories",
+      "quantity": 2,
+      "unitPrice": 9.99,
+      "totalPrice": 19.98,
+      "taxAmount": 1.60
+    }
+  ],
+  "subtotal": 99.97,
+  "taxTotal": 8.00,
+  "shippingCost": 5.99,
+  "totalAmount": 113.96,
+  "currency": "USD",
+  "paymentMethod": "CREDIT_CARD",
+  "paymentStatus": "PAID",
+  "shippingAddress": {
+    "recipientName": "Jane Doe",
+    "street": "123 Main St",
+    "apartment": "Apt 4B",
+    "city": "San Francisco",
+    "state": "CA",
+    "zipCode": "94102",
+    "country": "USA",
+    "phone": "+1-415-555-0123"
+  },
+  "billingAddress": {
+    "street": "123 Main St",
+    "city": "San Francisco",
+    "state": "CA",
+    "zipCode": "94102",
+    "country": "USA"
+  },
+  "shippingMethod": "STANDARD",
+  "estimatedDelivery": "2026-05-17T18:00:00Z",
+  "notes": "Please leave at front door",
+  "source": "WEB",
+  "metadata": {
+    "campaignId": "SPRING2026",
+    "referrer": "google_ads"
+  }
+}

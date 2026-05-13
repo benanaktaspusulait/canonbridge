@@ -1,0 +1,11 @@
+{
+  "transactionId": "TXN-20260513-003",
+  "originalTransactionId": "TXN-20260513-001",
+  "merchantId": "MERCH-001",
+  "amount": 149.99,
+  "currency": "USD",
+  "status": "REFUNDED",
+  "refundReason": "Customer request",
+  "customerEmail": "customer@example.com",
+  "timestamp": "2026-05-13T11:00:00Z"
+}

@@ -1,0 +1,14 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" 
+                  xmlns:trac="http://fastcargo.com/tracking">
+   <soapenv:Header>
+      <trac:Authentication>
+         <trac:username>fastcargo-demo</trac:username>
+         <trac:password>fastcargo-secret</trac:password>
+      </trac:Authentication>
+   </soapenv:Header>
+   <soapenv:Body>
+      <trac:GetShipmentStatusRequest>
+         <trac:trackingNumber>FC123456789</trac:trackingNumber>
+      </trac:GetShipmentStatusRequest>
+   </soapenv:Body>
+</soapenv:Envelope>

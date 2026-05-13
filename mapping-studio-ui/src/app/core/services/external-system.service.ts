@@ -4,25 +4,25 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface OutboundConnection {
-  connectionId?: string;
-  tenantId?: string;
-  draftId?: string;
+  connection_id?: string;
+  tenant_id?: string;
+  draft_id?: string;
   name: string;
   purpose?: 'SOURCE_PAYLOAD' | 'ENRICHMENT' | 'DESTINATION' | 'MANUAL_TEST';
   protocol: 'REST' | 'SOAP' | 'GRAPHQL';
   method: string;
   url: string;
-  credentialId?: string;
+  credential_id?: string;
   environment: 'PRODUCTION' | 'SANDBOX';
   schedule?: string;
-  timeoutMs?: number;
-  retryPolicy?: any;
-  responseHandling?: any;
+  timeout_ms?: number;
+  retry_policy?: any;
+  response_handling?: any;
   status?: 'NOT_TESTED' | 'HEALTHY' | 'DEGRADED' | 'FAILED' | 'DISABLED';
-  lastTestAt?: string;
-  lastTestResult?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  last_test_at?: string;
+  last_test_result?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface TestRequest {

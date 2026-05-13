@@ -1,0 +1,15 @@
+{
+  "transactionId": "TXN-20260513-002",
+  "merchantId": "MERCH-001",
+  "amount": 299.99,
+  "currency": "USD",
+  "status": "FAILED",
+  "paymentMethod": "CREDIT_CARD",
+  "cardLast4": "0002",
+  "cardBrand": "VISA",
+  "errorCode": "INSUFFICIENT_FUNDS",
+  "errorMessage": "Card declined due to insufficient funds",
+  "customerEmail": "customer@example.com",
+  "customerName": "Jane Smith",
+  "timestamp": "2026-05-13T10:35:00Z"
+}

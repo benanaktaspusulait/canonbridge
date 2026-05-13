@@ -1,0 +1,10 @@
+{
+  "eventId": "sm-660e8400-e29b-41d4-a716-446655440001",
+  "timestamp": "2026-05-13T11:00:00Z",
+  "eventType": "order.cancelled",
+  "orderId": "ORD-20260513-001",
+  "customerId": "CUST-12345",
+  "cancellationReason": "Customer request",
+  "refundAmount": 113.96,
+  "refundStatus": "PENDING"
+}

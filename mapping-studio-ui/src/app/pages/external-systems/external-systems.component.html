@@ -362,7 +362,7 @@
       <span>{{ 'externalSystems.form.timeoutMs' | i18n }}</span>
       <p-inputNumber [(ngModel)]="form.timeoutMs" [min]="500" [step]="500" [showButtons]="true" inputStyleClass="w-full" />
     </label>
-    @if (form.type === 'Scheduled Poll') {
+    @if (form.pollSchedule) {
       <label class="field">
         <span>{{ 'externalSystems.form.pollSchedule' | i18n }}</span>
         <input pInputText [(ngModel)]="form.pollSchedule" autocomplete="off" placeholder="*/5 * * * *" />
