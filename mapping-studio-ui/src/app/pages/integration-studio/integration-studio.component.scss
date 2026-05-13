@@ -55,6 +55,24 @@
   margin-top: 0.25rem;
 }
 
+.studio-source-test-result--failed {
+  border-color: color-mix(in srgb, var(--red-500) 45%, var(--surface-border));
+  background: color-mix(in srgb, var(--red-500) 7%, var(--surface-card));
+}
+
+.studio-source-test-body {
+  max-height: 14rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0.75rem 0 0;
+  padding: 0.75rem;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--border-radius);
+  background: var(--surface-ground);
+  font-size: 0.78rem;
+}
+
 /* ── Live Preview Card ─────────────────────────────────────────── */
 .studio-live-preview {
   border: 1px solid var(--surface-border);

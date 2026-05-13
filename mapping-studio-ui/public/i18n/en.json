@@ -578,7 +578,9 @@
       "responseRequiredTitle": "Response JSON required",
       "responseRequired": "Upload or paste the real API response JSON to build the source tree.",
       "resultTitle": "Response ready",
+      "errorTitle": "Response failed",
       "resultText": "HTTP {{status}} · {{duration}}ms · captured at {{capturedAt}}. This response is now the source tree.",
+      "nonJsonResponse": "The API responded successfully, but the response body is not valid JSON. The raw response is shown below.",
       "sampleImported": "External system sample imported",
       "importedFrom": "From {{name}}"
     },
@@ -637,6 +639,8 @@
       "save": "Save credential",
       "saved": "Credential saved",
       "savedDetail": "It is now available in the authentication selector.",
+      "saveFailed": "Credential could not be saved",
+      "missingSecret": "Enter the required secret fields before saving.",
       "unnamedCredential": "Unnamed credential",
       "noCredential": "No credential selected",
       "lastUsed": "Last used",

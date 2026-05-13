@@ -22,6 +22,8 @@ import { KeyboardShortcutsService } from '../../core/services/keyboard-shortcuts
 import { AccessibilityService } from '../../core/services/accessibility.service';
 import { MappingService, MappingDraft } from '../../core/services/mapping.service';
 import { SchemaService } from '../../core/services/schema.service';
+import { CredentialService, type Credential, type CredentialAuthType } from '../../core/services/credential.service';
+import { ExternalSystemService, type TestResult } from '../../core/services/external-system.service';
 import { AutoSaveService } from '../../core/services/auto-save.service';
 import { UndoRedoService } from '../../core/services/undo-redo.service';
 import { FormsModule } from '@angular/forms';
@@ -95,7 +97,7 @@ type ExternalApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 type CredentialOption = {
   id: string;
   name: string;
-  type: SourceAuthType;
+  type: CredentialAuthType;
   environment: 'Sandbox' | 'Production';
   lastUsed: string;
 };
@@ -718,6 +720,8 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   private readonly a11y = inject(AccessibilityService);
   private readonly mappingService = inject(MappingService);
   private readonly schemaService = inject(SchemaService);
+  private readonly credentialService = inject(CredentialService);
+  private readonly externalSystemService = inject(ExternalSystemService);
   private readonly autoSaveSvc = inject(AutoSaveService);
   private readonly undoRedoSvc: UndoRedoService<MappingRule[]> = inject(UndoRedoService);
   private readonly ajv = createStudioAjv();
@@ -772,9 +776,11 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   enrichmentMethod = signal<ExternalApiMethod>('GET');
   enrichmentUrlTemplate = signal('');
   enrichmentFailurePolicy = signal<'DLQ' | 'SKIP_ENRICHMENT' | 'RETRY'>('RETRY');
-  externalApiLastTest = signal<{ status: number; durationMs: number; capturedAt: string } | null>(null);
+  externalApiLastTest = signal<{ success: boolean; status: number; durationMs: number; capturedAt: string; body: string } | null>(null);
   externalApiLastError = signal<string | null>(null);
+  externalApiTestPending = signal(false);
   authDrawerOpen = signal(false);
+  credentialSavePending = signal(false);
   authType = signal<SourceAuthType>('API_KEY');
   credentialName = signal('');
   credentialHeaderName = signal('X-API-Key');
@@ -1132,6 +1138,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
+    this.loadCredentials();
     this.loadExternalSystemSample();
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
       const mappingId = params.get('mappingId');
@@ -1489,35 +1496,226 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
       });
       return;
     }
+
+    let payload: Record<string, unknown> | null = null;
+    if (this.sourceJson().trim() && this.externalApiMethod() !== 'GET') {
+      try {
+        const parsed = JSON.parse(this.sourceJson()) as unknown;
+        if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          payload = parsed as Record<string, unknown>;
+        }
+      } catch {
+        /* Request payload is optional for connection tests. */
+      }
+    }
+
+    this.externalApiTestPending.set(true);
     this.externalApiLastTest.set(null);
-    this.externalApiLastError.set(this.i18n.translate('studio.sourceApi.responseRequired'));
-    this.toast.add({
-      severity: 'info',
-      summary: this.i18n.translate('studio.sourceApi.responseRequiredTitle'),
-      detail: this.i18n.translate('studio.sourceApi.responseRequired'),
-      life: 4000
+    this.externalApiLastError.set(null);
+    this.externalSystemService.testAdhoc({
+      connection: {
+        name: this.externalApiName().trim() || 'Studio API test',
+        purpose: 'SOURCE_PAYLOAD',
+        protocol: 'REST',
+        method: this.externalApiMethod(),
+        url: this.externalApiUrl().trim(),
+        credential_id: this.selectedCredentialId() || undefined,
+        environment: 'SANDBOX',
+        timeout_ms: 8000
+      },
+      request: {
+        headers: {},
+        payload
+      }
+    }).subscribe({
+      next: (result) => this.applyExternalApiTestResult(result),
+      error: (err) => {
+        const detail = this.httpErrorText(err);
+        this.externalApiLastError.set(detail);
+        this.externalApiLastTest.set(null);
+        this.externalApiTestPending.set(false);
+        this.toast.add({
+          severity: 'error',
+          summary: this.i18n.translate('studio.sourceApi.testFailed'),
+          detail,
+          life: 6000
+        });
+      }
     });
   }
 
   saveCredential(): void {
     const name = this.credentialName().trim() || this.i18n.translate('studio.sourceAuth.unnamedCredential');
-    const id = `cred_${Date.now()}`;
-    const credential: CredentialOption = {
-      id,
-      name,
-      type: this.authType(),
-      environment: 'Sandbox',
-      lastUsed: 'Never'
+    const secret = this.credentialSecretPayload();
+    if (!secret) {
+      this.toast.add({
+        severity: 'warn',
+        summary: this.i18n.translate('studio.sourceAuth.missingSecret'),
+        life: 4000
+      });
+      return;
+    }
+
+    this.credentialSavePending.set(true);
+    this.credentialService.create({
+      displayName: name,
+      authType: this.authType(),
+      environment: 'SANDBOX',
+      secret
+    }).subscribe({
+      next: (created) => {
+        const option = this.credentialToOption(created);
+        this.credentials.update(rows => [option, ...rows.filter(row => row.id !== option.id)]);
+        this.selectedCredentialId.set(option.id);
+        this.authDrawerOpen.set(false);
+        this.clearCredentialForm();
+        this.credentialSavePending.set(false);
+        this.toast.add({
+          severity: 'success',
+          summary: this.i18n.translate('studio.sourceAuth.saved'),
+          detail: this.i18n.translate('studio.sourceAuth.savedDetail'),
+          life: 3000
+        });
+      },
+      error: (err) => {
+        this.credentialSavePending.set(false);
+        this.toast.add({
+          severity: 'error',
+          summary: this.i18n.translate('studio.sourceAuth.saveFailed'),
+          detail: this.httpErrorText(err),
+          life: 6000
+        });
+      }
+    });
+  }
+
+  private loadCredentials(): void {
+    this.credentialService.list().subscribe({
+      next: (credentials) => {
+        this.credentials.set(credentials.map(credential => this.credentialToOption(credential)));
+      },
+      error: () => {
+        this.credentials.set([]);
+      }
+    });
+  }
+
+  private credentialToOption(credential: Credential): CredentialOption {
+    return {
+      id: credential.credential_id,
+      name: credential.display_name,
+      type: credential.auth_type,
+      environment: credential.environment === 'PRODUCTION' ? 'Production' : 'Sandbox',
+      lastUsed: credential.last_used_at ? new Date(credential.last_used_at).toLocaleString() : 'Never'
     };
-    this.credentials.update(rows => [credential, ...rows]);
-    this.selectedCredentialId.set(id);
-    this.authDrawerOpen.set(false);
+  }
+
+  private credentialSecretPayload(): Record<string, string> | null {
+    if (this.authType() === 'API_KEY') {
+      const apiKey = this.credentialValue().trim();
+      if (!apiKey) return null;
+      return {
+        headerName: this.credentialHeaderName().trim() || 'X-API-Key',
+        apiKey
+      };
+    }
+    if (this.authType() === 'BASIC_AUTH') {
+      const username = this.credentialUsername().trim();
+      const password = this.credentialPassword();
+      if (!username || !password) return null;
+      return { username, password };
+    }
+    if (this.authType() === 'BEARER_TOKEN') {
+      const token = this.credentialValue().trim();
+      if (!token) return null;
+      return { token };
+    }
+
+    const tokenUrl = this.credentialTokenUrl().trim();
+    const clientId = this.credentialClientId().trim();
+    const clientSecret = this.credentialClientSecret();
+    if (!tokenUrl || !clientId || !clientSecret) return null;
+    return {
+      tokenUrl,
+      clientId,
+      clientSecret,
+      scope: this.credentialScope().trim()
+    };
+  }
+
+  private clearCredentialForm(): void {
+    this.credentialName.set('');
+    this.credentialValue.set('');
+    this.credentialUsername.set('');
+    this.credentialPassword.set('');
+    this.credentialTokenUrl.set('');
+    this.credentialClientId.set('');
+    this.credentialClientSecret.set('');
+    this.credentialScope.set('');
+  }
+
+  private applyExternalApiTestResult(result: TestResult): void {
+    const status = result.statusCode ?? 0;
+    const durationMs = result.durationMs ?? 0;
+    const body = result.body ?? result.responseBody ?? '';
+    const capturedAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    this.externalApiLastTest.set({
+      success: result.success,
+      status,
+      durationMs,
+      capturedAt,
+      body
+    });
+    this.externalApiTestPending.set(false);
+
+    if (!result.success) {
+      const detail = `HTTP ${status}: ${body || result.errorMessage || this.i18n.translate('studio.sourceApi.testFailed')}`;
+      this.externalApiLastError.set(detail);
+      this.toast.add({
+        severity: 'error',
+        summary: this.i18n.translate('studio.sourceApi.testFailed'),
+        detail,
+        life: 7000
+      });
+      return;
+    }
+
+    try {
+      const parsed = body ? JSON.parse(body) as unknown : {};
+      this.sourceJson.set(JSON.stringify(parsed, null, 2));
+      this.sourceFileMeta.set({
+        name: `${this.externalApiName().trim() || 'external-api'}.response.json`,
+        size: this.formatFileSize(this.sourceJson().length)
+      });
+      this.externalApiLastError.set(null);
+      this.analyzePayload();
+    } catch {
+      this.externalApiLastError.set(this.i18n.translate('studio.sourceApi.nonJsonResponse'));
+    }
+
     this.toast.add({
       severity: 'success',
-      summary: this.i18n.translate('studio.sourceAuth.saved'),
-      detail: this.i18n.translate('studio.sourceAuth.savedDetail'),
-      life: 3000
+      summary: this.i18n.translate('studio.sourceApi.testPassed'),
+      detail: `HTTP ${status} · ${durationMs}ms`,
+      life: 4000
     });
+  }
+
+  private httpErrorText(err: unknown): string {
+    if (err && typeof err === 'object') {
+      const record = err as Record<string, unknown>;
+      const error = record['error'];
+      if (error && typeof error === 'object') {
+        const e = error as Record<string, unknown>;
+        if (typeof e['error'] === 'string') return e['error'];
+        if (typeof e['message'] === 'string') return e['message'];
+      }
+      if (typeof error === 'string') return error;
+      if (typeof record['message'] === 'string') return record['message'];
+      if (typeof record['status'] === 'number') return `HTTP ${record['status']}`;
+    }
+    return String(err ?? this.i18n.translate('studio.sourceApi.testFailed'));
   }
 
   onSourceJsonChange(value: string): void {

@@ -606,7 +606,9 @@
       "responseRequiredTitle": "Yanıt JSON gerekli",
       "responseRequired": "Kaynak ağacı oluşturmak için gerçek API yanıt JSON'unu yükleyin veya yapıştırın.",
       "resultTitle": "Yanıt hazır",
+      "errorTitle": "Yanıt başarısız",
       "resultText": "HTTP {{status}} · {{duration}}ms · {{capturedAt}} saatinde yakalandı. Bu yanıt artık kaynak ağacıdır.",
+      "nonJsonResponse": "API başarılı döndü fakat yanıt gövdesi geçerli JSON değil. Ham yanıt aşağıda gösteriliyor.",
       "sampleImported": "Dış sistem örneği içe alındı",
       "importedFrom": "{{name}} kaynağından"
     },
@@ -672,6 +674,8 @@
       "save": "Credential kaydet",
       "saved": "Credential kaydedildi",
       "savedDetail": "Artık kimlik doğrulama seçiminde kullanılabilir.",
+      "saveFailed": "Credential kaydedilemedi",
+      "missingSecret": "Kaydetmeden önce gerekli secret alanlarını girin.",
       "unnamedCredential": "Adsız credential",
       "noCredential": "Credential seçilmedi",
       "lastUsed": "Son kullanım",

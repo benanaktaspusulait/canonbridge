@@ -282,7 +282,7 @@
                 <p>{{ 'studio.sourceApi.subtitle' | i18n }}</p>
               </div>
               @if (externalApiLastTest(); as test) {
-                <p-tag severity="success" [value]="'HTTP ' + test.status + ' · ' + test.durationMs + 'ms'" />
+                <p-tag [severity]="test.success ? 'success' : 'danger'" [value]="'HTTP ' + test.status + ' · ' + test.durationMs + 'ms'" />
               } @else {
                 <p-tag severity="warn" [value]="'studio.sourceApi.notTested' | i18n" />
               }
@@ -341,17 +341,20 @@
             }
             <div class="toolbar-row">
               <p-button [label]="'studio.sourceAuth.add' | i18n" icon="pi pi-key" variant="outlined" severity="secondary" (onClick)="authDrawerOpen.set(true)" />
-              <p-button [label]="'studio.sourceApi.test' | i18n" icon="pi pi-play" (onClick)="testExternalApi()" />
+              <p-button [label]="'studio.sourceApi.test' | i18n" icon="pi pi-play" [loading]="externalApiTestPending()" (onClick)="testExternalApi()" />
               <p-button [label]="'studio.sourceCommon.uploadInstead' | i18n" icon="pi pi-upload" variant="outlined" severity="secondary" (onClick)="fileIn.click()" />
             </div>
             @if (externalApiLastTest(); as test) {
-              <div class="studio-source-test-result">
-                <i class="pi pi-check-circle" aria-hidden="true"></i>
+              <div class="studio-source-test-result" [class.studio-source-test-result--failed]="!test.success">
+                <i class="pi" [class.pi-check-circle]="test.success" [class.pi-exclamation-triangle]="!test.success" aria-hidden="true"></i>
                 <span>
-                  <strong>{{ 'studio.sourceApi.resultTitle' | i18n }}</strong>
+                  <strong>{{ (test.success ? 'studio.sourceApi.resultTitle' : 'studio.sourceApi.errorTitle') | i18n }}</strong>
                   <small>{{ 'studio.sourceApi.resultText' | i18n: { status: test.status, duration: test.durationMs, capturedAt: test.capturedAt } }}</small>
                 </span>
               </div>
+              @if (test.body) {
+                <pre class="studio-source-test-body">{{ test.body }}</pre>
+              }
             }
             @if (externalApiLastError(); as apiError) {
               <p-message severity="error" [text]="apiError" styleClass="w-full mt-2" />
@@ -435,7 +438,7 @@
                 }
                 <p class="studio-secret-note"><i class="pi pi-lock" aria-hidden="true"></i>{{ 'studio.sourceAuth.writeOnly' | i18n }}</p>
                 <div class="toolbar-row studio-auth-actions">
-                  <p-button [label]="'studio.sourceAuth.save' | i18n" icon="pi pi-check" (onClick)="saveCredential()" />
+                  <p-button [label]="'studio.sourceAuth.save' | i18n" icon="pi pi-check" [loading]="credentialSavePending()" (onClick)="saveCredential()" />
                   <p-button [label]="'studio.cancel' | i18n" variant="outlined" severity="secondary" (onClick)="authDrawerOpen.set(false)" />
                 </div>
               </aside>

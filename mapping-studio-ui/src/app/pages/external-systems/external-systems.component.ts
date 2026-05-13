@@ -275,7 +275,7 @@ export class ExternalSystemsComponent implements OnInit {
       wsdlPreview: '',
       sampleJson: '{}',
       requestPreview: '{}',
-      responsePreview: lastTestResult?.responseBody || '{}',
+      responsePreview: lastTestResult?.body || lastTestResult?.responseBody || '{}',
       mappings: [],
       sparkline: this.generateSparkline(status),
       purpose: conn.purpose,
@@ -610,18 +610,19 @@ export class ExternalSystemsComponent implements OnInit {
 
     this.externalSystemService.test(connection.id, {
       headers: {},
-      body: connection.requestPreview ? JSON.parse(connection.requestPreview) : undefined
+      payload: connection.requestPreview ? JSON.parse(connection.requestPreview) : undefined
     }).subscribe({
       next: (result) => {
         const nextStatus: ExternalConnection['status'] = result.success ? 'HEALTHY' : 'FAILED';
+        const durationMs = result.durationMs ?? 0;
         
         this._connections.update(list => list.map(c => c.id === connection.id ? {
           ...c,
           status: nextStatus,
           successRate: result.success ? 99.7 : 0,
-          avgMs: result.durationMs,
-          p95Ms: Math.round(result.durationMs * 1.7),
-          lastError: result.success ? '—' : (result.errorMessage || 'Test failed'),
+          avgMs: durationMs,
+          p95Ms: Math.round(durationMs * 1.7),
+          lastError: result.success ? '—' : (result.errorMessage || result.body || 'Test failed'),
           lastSuccess: result.success ? 'just now' : c.lastSuccess,
           sparkline: this.generateSparkline(nextStatus)
         } : c));
@@ -634,7 +635,7 @@ export class ExternalSystemsComponent implements OnInit {
         this.toast.add({
           severity: result.success ? 'success' : 'error',
           summary: result.success ? this.t('externalSystems.toast.testPassed') : this.t('externalSystems.toast.testFailed'),
-          detail: result.success ? `${connection.name} · ${result.durationMs}ms` : result.errorMessage
+          detail: result.success ? `${connection.name} · ${durationMs}ms` : (result.errorMessage || result.body)
         });
         this.testingId.set(null);
       },

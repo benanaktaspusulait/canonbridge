@@ -27,16 +27,21 @@ export interface OutboundConnection {
 
 export interface TestRequest {
   headers?: Record<string, string>;
-  body?: string;
-  queryParams?: Record<string, string>;
+  payload?: Record<string, unknown> | null;
 }
 
 export interface TestResult {
   success: boolean;
-  statusCode: number;
-  durationMs: number;
+  statusCode?: number;
+  durationMs?: number;
+  body?: string;
   responseBody?: string;
   errorMessage?: string;
+}
+
+export interface AdhocTestRequest {
+  connection: OutboundConnection;
+  request: TestRequest;
 }
 
 @Injectable({
@@ -72,5 +77,9 @@ export class ExternalSystemService {
 
   test(id: string, request: TestRequest): Observable<TestResult> {
     return this.http.post<TestResult>(`${this.baseUrl}/${id}/test`, request);
+  }
+
+  testAdhoc(request: AdhocTestRequest): Observable<TestResult> {
+    return this.http.post<TestResult>(`${this.baseUrl}/test-adhoc`, request);
   }
 }

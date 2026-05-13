@@ -113,6 +113,25 @@ public class ExternalSystemResource {
     }
 
     @POST
+    @Path("/test-adhoc")
+    @Operation(summary = "Execute an ad-hoc test request without persisting the connection")
+    public Uni<Response> testAdhoc(
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            AdhocTestRequest request) {
+        String requiredTenantId = requireTenantId(tenantId);
+        if (request == null || request.connection() == null) {
+            throw new BadRequestException("connection is required");
+        }
+
+        OutboundConnection connection = withTenant(requiredTenantId, request.connection());
+        return outboundHttpService.execute(requiredTenantId, connection, request.request())
+                .map(result -> Response.ok(result).build())
+                .onFailure().recoverWithItem(throwable -> Response.status(Response.Status.BAD_GATEWAY)
+                        .entity(new TriggerError(throwable.getMessage()))
+                        .build());
+    }
+
+    @POST
     @Path("/{connectionId}/trigger")
     @Operation(summary = "Manually trigger an outbound REST/SOAP polling connection")
     public Uni<Response> trigger(
@@ -191,4 +210,9 @@ public class ExternalSystemResource {
     }
 
     public record TriggerError(String error) {}
+
+    public record AdhocTestRequest(
+            OutboundConnection connection,
+            OutboundHttpRequest request
+    ) {}
 }
