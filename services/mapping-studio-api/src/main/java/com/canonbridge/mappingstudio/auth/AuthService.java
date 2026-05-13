@@ -5,9 +5,13 @@ import com.canonbridge.mappingstudio.repository.UserRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.mindrot.jbcrypt.BCrypt;
+import org.jboss.logging.Logger;
 
 @ApplicationScoped
 public class AuthService {
+
+    private static final Logger LOG = Logger.getLogger(AuthService.class);
 
     @Inject
     UserRepository userRepository;
@@ -19,23 +23,13 @@ public class AuthService {
         return userRepository.findByEmail(email)
             .chain(user -> {
                 if (user == null) {
-                    System.out.println("DEBUG: User not found for email: " + email);
                     return Uni.createFrom().failure(new AuthException("Invalid credentials"));
                 }
 
-                System.out.println("DEBUG: User found: " + user.getEmail());
-                System.out.println("DEBUG: Password hash from DB: " + user.getPasswordHash());
-                System.out.println("DEBUG: Input password: " + password);
-                
-                // Temporary: use plain text comparison for testing
-                boolean passwordMatches = password.equals(user.getPasswordHash());
-                //boolean passwordMatches = BCrypt.checkpw(password, user.getPasswordHash());
-                System.out.println("DEBUG: Password matches: " + passwordMatches);
-                
-                if (!passwordMatches) {
+                if (!BCrypt.checkpw(password, user.getPasswordHash())) {
                     return Uni.createFrom().failure(new AuthException("Invalid credentials"));
                 }
-
+                
                 // Update last login
                 return userRepository.updateLastLogin(user.getId())
                     .replaceWith(user);

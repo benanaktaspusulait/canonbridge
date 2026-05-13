@@ -25,21 +25,27 @@ public class AuthResource {
     @Path("/login")
     @Operation(summary = "Login with email and password")
     public Uni<Response> login(@Valid LoginRequest request) {
+        if (request == null || request.getEmail() == null || request.getPassword() == null) {
+            return Uni.createFrom().item(
+                Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErrorResponse("Email and password are required"))
+                    .build()
+            );
+        }
+        
         return authService.login(request.getEmail(), request.getPassword())
             .map(authResponse -> Response.ok(authResponse).build())
             .onFailure(AuthService.AuthException.class)
-            .recoverWithItem(error -> {
-                error.printStackTrace(); // Log the error
-                return Response.status(Response.Status.UNAUTHORIZED)
+            .recoverWithItem(error ->
+                Response.status(Response.Status.UNAUTHORIZED)
                     .entity(new ErrorResponse(error.getMessage()))
-                    .build();
-            })
-            .onFailure().recoverWithItem(error -> {
-                error.printStackTrace(); // Log the error
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .build()
+            )
+            .onFailure().recoverWithItem(error ->
+                Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(new ErrorResponse("Authentication failed: " + error.getMessage()))
-                    .build();
-            });
+                    .build()
+            );
     }
 
     @GET

@@ -15,9 +15,9 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Index for faster lookups
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_tenant_id ON users(tenant_id);
-CREATE INDEX idx_users_status ON users(status);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_tenant_id ON users(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
 
 -- Trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_users_updated_at()
@@ -34,12 +34,12 @@ CREATE TRIGGER trigger_update_users_updated_at
     EXECUTE FUNCTION update_users_updated_at();
 
 -- Insert demo users (password is 'demo123' hashed with BCrypt)
--- BCrypt hash for 'demo123': $2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy
+-- BCrypt hash for 'demo123': $2a$10$lYUYFslQumBgSp4H5H0w0eZzNLf6VSu4uGclL.Q7/1CDtvzLA38Oa
 INSERT INTO users (id, tenant_id, email, password_hash, name, role, status, created_at, updated_at)
 VALUES
-    (gen_random_uuid(), 'tenant-acme', 'admin@canonbridge.io', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'Admin User', 'admin', 'ACTIVE', NOW(), NOW()),
-    (gen_random_uuid(), 'tenant-acme', 'engineer@canonbridge.io', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'Integration Engineer', 'integration_author', 'ACTIVE', NOW(), NOW()),
-    (gen_random_uuid(), 'tenant-acme', 'operator@canonbridge.io', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'Platform Operator', 'operator', 'ACTIVE', NOW(), NOW())
+    (gen_random_uuid(), 'tenant-acme', 'admin@canonbridge.io', '$2a$10$lYUYFslQumBgSp4H5H0w0eZzNLf6VSu4uGclL.Q7/1CDtvzLA38Oa', 'Admin User', 'admin', 'ACTIVE', NOW(), NOW()),
+    (gen_random_uuid(), 'tenant-acme', 'engineer@canonbridge.io', '$2a$10$lYUYFslQumBgSp4H5H0w0eZzNLf6VSu4uGclL.Q7/1CDtvzLA38Oa', 'Integration Engineer', 'integration_author', 'ACTIVE', NOW(), NOW()),
+    (gen_random_uuid(), 'tenant-acme', 'operator@canonbridge.io', '$2a$10$lYUYFslQumBgSp4H5H0w0eZzNLf6VSu4uGclL.Q7/1CDtvzLA38Oa', 'Platform Operator', 'operator', 'ACTIVE', NOW(), NOW())
 ON CONFLICT (tenant_id, email) DO NOTHING;
 
 -- Comments

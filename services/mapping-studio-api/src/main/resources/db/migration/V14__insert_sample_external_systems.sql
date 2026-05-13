@@ -4,7 +4,7 @@
 INSERT INTO etl_outbound_connections (
     connection_id, tenant_id, name, purpose, protocol, method, url,
     environment, timeout_ms, status, last_test_at, last_test_result,
-    retry_policy, response_handling, credential_id
+    retry_policy, response_handling
 ) VALUES (
     'a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d',
     'tenant-acme',
@@ -19,15 +19,14 @@ INSERT INTO etl_outbound_connections (
     NOW() - INTERVAL '2 minutes',
     '{"statusCode": 200, "durationMs": 184, "success": true}',
     '{"maxAttempts": 3, "backoff": "exponential", "retryableStatuses": [429, 503, 504]}'::jsonb,
-    '{"successField": "payment", "errorField": "error"}'::jsonb,
-    'payflex-api-key'
+    '{"successField": "payment", "errorField": "error"}'::jsonb
 );
 
 -- PayFlex REST API - Payment Query (Production, Healthy)
 INSERT INTO etl_outbound_connections (
     connection_id, tenant_id, name, purpose, protocol, method, url,
     environment, timeout_ms, status, last_test_at, last_test_result,
-    retry_policy, response_handling, credential_id
+    retry_policy, response_handling
 ) VALUES (
     'b2c3d4e5-f6a7-4b5c-9d0e-1f2a3b4c5d6e',
     'tenant-acme',
@@ -42,15 +41,14 @@ INSERT INTO etl_outbound_connections (
     NOW() - INTERVAL '1 minute',
     '{"statusCode": 200, "durationMs": 22, "success": true}',
     '{"maxAttempts": 2, "backoff": "fixed", "backoffMs": 1000}'::jsonb,
-    '{"successField": "payments", "errorField": "error"}'::jsonb,
-    'payflex-api-key'
+    '{"successField": "payments", "errorField": "error"}'::jsonb
 );
 
 -- FastCargo SOAP API - Tracking Service (Sandbox, Healthy)
 INSERT INTO etl_outbound_connections (
     connection_id, tenant_id, name, purpose, protocol, method, url,
     environment, timeout_ms, status, last_test_at, last_test_result,
-    retry_policy, response_handling, credential_id
+    retry_policy, response_handling
 ) VALUES (
     'c3d4e5f6-a7b8-4c5d-0e1f-2a3b4c5d6e7f',
     'tenant-acme',
@@ -65,15 +63,14 @@ INSERT INTO etl_outbound_connections (
     NOW() - INTERVAL '16 minutes',
     '{"statusCode": 200, "durationMs": 1220, "success": true, "responseBody": "<?xml version=\"1.0\"?><soap:Envelope><soap:Body><TrackingResponse><trackingNumber>TRK-12345</trackingNumber><status>DELIVERED</status></TrackingResponse></soap:Body></soap:Envelope>"}',
     '{"maxAttempts": 3, "backoff": "exponential", "initialBackoffMs": 500}'::jsonb,
-    '{"soapAction": "GetTrackingInfo", "namespace": "http://fastcargo.example.com/tracking/v1"}'::jsonb,
-    'fastcargo-basic-auth'
+    '{"soapAction": "GetTrackingInfo", "namespace": "http://fastcargo.example.com/tracking/v1"}'::jsonb
 );
 
 -- ShopMax REST API - Recent Orders (Production, Healthy)
 INSERT INTO etl_outbound_connections (
     connection_id, tenant_id, name, purpose, protocol, method, url,
     environment, timeout_ms, status, last_test_at, last_test_result,
-    retry_policy, response_handling, credential_id
+    retry_policy, response_handling
 ) VALUES (
     'd4e5f6a7-b8c9-4d5e-1f2a-3b4c5d6e7f8a',
     'tenant-acme',
@@ -88,8 +85,7 @@ INSERT INTO etl_outbound_connections (
     NOW() - INTERVAL '48 minutes',
     '{"statusCode": 200, "durationMs": 320, "success": true}',
     '{"maxAttempts": 3, "backoff": "exponential", "maxBackoffMs": 5000}'::jsonb,
-    '{"successField": "orders", "errorField": "error"}'::jsonb,
-    'shopmax-oauth2'
+    '{"successField": "orders", "errorField": "error"}'::jsonb
 );
 
 -- ShopMax OAuth2 Token Endpoint (Production, Healthy)
@@ -101,7 +97,7 @@ INSERT INTO etl_outbound_connections (
     'e5f6a7b8-c9d0-4e5f-2a3b-4c5d6e7f8a9b',
     'tenant-acme',
     'ShopMax OAuth2 Token API',
-    'AUTHENTICATION',
+    'ENRICHMENT',
     'REST',
     'POST',
     'http://canonbridge-mock:8080/oauth/token',
@@ -145,7 +141,7 @@ INSERT INTO etl_outbound_connections (
     'a7b8c9d0-e1f2-4a5b-4c5d-6e7f8a9b0c1d',
     'tenant-acme',
     'FastCargo WSDL Service',
-    'METADATA',
+    'MANUAL_TEST',
     'REST',
     'GET',
     'http://canonbridge-mock:8080/wsdl/fastcargo.wsdl',

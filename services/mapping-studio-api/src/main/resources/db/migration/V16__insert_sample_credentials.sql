@@ -4,65 +4,53 @@
 -- PayFlex API Key Credential
 INSERT INTO etl_credentials (
     credential_id, tenant_id, display_name, auth_type, environment, status,
-    encrypted_secret, secret_metadata, created_by, updated_by, created_at, updated_at
+    encrypted_secret_json, created_by, created_at, updated_at
 ) VALUES (
-    'payflex-api-key'::uuid,
+    '11111111-2222-3333-4444-555555555551'::uuid,
     'tenant-acme',
     'PayFlex Demo API Key',
     'API_KEY',
     'PRODUCTION',
     'ACTIVE',
-    'demo-api-key-12345', -- In production, this should be encrypted
-    '{"keyName": "X-API-Key", "keyLocation": "header"}'::jsonb,
-    'system',
+    '{"apiKey": "demo-api-key-12345", "keyName": "X-API-Key", "keyLocation": "header"}', -- In production, this should be encrypted
     'system',
     NOW(),
     NOW()
-) ON CONFLICT (credential_id) DO UPDATE SET
-    encrypted_secret = EXCLUDED.encrypted_secret,
-    updated_at = NOW();
+);
 
 -- FastCargo Basic Auth Credential
 INSERT INTO etl_credentials (
     credential_id, tenant_id, display_name, auth_type, environment, status,
-    encrypted_secret, secret_metadata, created_by, updated_by, created_at, updated_at
+    encrypted_secret_json, created_by, created_at, updated_at
 ) VALUES (
-    'fastcargo-basic-auth'::uuid,
+    '11111111-2222-3333-4444-555555555552'::uuid,
     'tenant-acme',
     'FastCargo Demo Basic Auth',
     'BASIC_AUTH',
     'SANDBOX',
     'ACTIVE',
-    'fastcargo-demo:fastcargo-secret', -- In production, this should be encrypted
-    '{"username": "fastcargo-demo", "password": "fastcargo-secret"}'::jsonb,
-    'system',
+    '{"username": "fastcargo-demo", "password": "fastcargo-secret"}', -- In production, this should be encrypted
     'system',
     NOW(),
     NOW()
-) ON CONFLICT (credential_id) DO UPDATE SET
-    encrypted_secret = EXCLUDED.encrypted_secret,
-    updated_at = NOW();
+);
 
 -- ShopMax OAuth2 Client Credentials
 INSERT INTO etl_credentials (
     credential_id, tenant_id, display_name, auth_type, environment, status,
-    encrypted_secret, secret_metadata, created_by, updated_by, created_at, updated_at
+    encrypted_secret_json, created_by, created_at, updated_at
 ) VALUES (
-    'shopmax-oauth2'::uuid,
+    '11111111-2222-3333-4444-555555555553'::uuid,
     'tenant-acme',
     'ShopMax Demo OAuth2',
     'OAUTH2_CLIENT_CREDENTIALS',
     'PRODUCTION',
     'ACTIVE',
-    'shopmax-demo-client:shopmax-demo-secret', -- In production, this should be encrypted
-    '{"clientId": "shopmax-demo-client", "clientSecret": "shopmax-demo-secret", "tokenUrl": "http://canonbridge-mock:8080/oauth/token", "scope": "orders.read"}'::jsonb,
-    'system',
+    '{"clientId": "shopmax-demo-client", "clientSecret": "shopmax-demo-secret", "tokenUrl": "http://canonbridge-mock:8080/oauth/token", "scope": "orders.read"}', -- In production, this should be encrypted
     'system',
     NOW(),
     NOW()
-) ON CONFLICT (credential_id) DO UPDATE SET
-    encrypted_secret = EXCLUDED.encrypted_secret,
-    updated_at = NOW();
+);
 
 -- Log completion
 DO $$
