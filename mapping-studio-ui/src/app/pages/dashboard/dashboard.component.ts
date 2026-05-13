@@ -8,6 +8,7 @@ import { BadgeModule } from 'primeng/badge';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { MetricsService } from '../../core/services/metrics.service';
 import { MappingService, MappingDraft } from '../../core/services/mapping.service';
+import { environment } from '../../../environments/environment';
 
 interface StatCard {
   labelKey: string;
@@ -45,6 +46,7 @@ export class DashboardComponent implements OnInit {
   
   readonly stats = this._stats.asReadonly();
   readonly recentMappings = this._recentMappings.asReadonly();
+  readonly demoModeEnabled = environment.features.enableDemoMode;
 
   ngOnInit(): void {
     this.loadDashboardData();

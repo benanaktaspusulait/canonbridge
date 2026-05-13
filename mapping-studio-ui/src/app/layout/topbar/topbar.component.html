@@ -22,7 +22,9 @@
 
   <ng-template pTemplate="end">
     <div id="page-actions" class="flex align-items-center flex-wrap gap-1 md:gap-2" role="toolbar" aria-label="Page actions">
-      <p-tag [value]="'topbar.demo' | i18n" severity="warn" [rounded]="true" role="status" aria-label="Demo mode active" />
+      @if (demoModeEnabled) {
+        <p-tag [value]="'topbar.demo' | i18n" severity="warn" [rounded]="true" role="status" aria-label="Demo mode active" />
+      }
       <p-button
         [icon]="theme.darkMode() ? 'pi pi-sun' : 'pi pi-moon'"
         [rounded]="true"
@@ -54,10 +56,7 @@
         severity="secondary"
         [pTooltip]="'topbar.notifications' | i18n"
         tooltipPosition="bottom"
-        [attr.aria-label]="('topbar.notifications' | i18n) + ' (3 unread)'"
-        pBadge
-        value="3"
-        badgeSeverity="danger" />
+        [attr.aria-label]="'topbar.notifications' | i18n" />
 
       <p-button
         icon="pi pi-question-circle"

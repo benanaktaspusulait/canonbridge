@@ -53,7 +53,7 @@
       <div class="layout-sidebar-footer" role="contentinfo">
         <span class="layout-sidebar-status-dot" aria-hidden="true"></span>
         <span class="layout-sidebar-footer-copy">
-          <strong>{{ 'topbar.demo' | i18n }}</strong>
+          <strong>{{ auth.currentUser()?.tenantName ?? ('sidebar.logoSub' | i18n) }}</strong>
           <span>{{ 'sidebar.logoSub' | i18n }}</span>
         </span>
       </div>

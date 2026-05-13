@@ -6,6 +6,7 @@ import { TopbarComponent } from './topbar/topbar.component';
 import { SkipLinksComponent } from './skip-links/skip-links.component';
 import { KeyboardShortcutsDialogComponent } from './keyboard-shortcuts-dialog/keyboard-shortcuts-dialog.component';
 import { I18nService } from '../core/i18n/i18n.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-layout',
@@ -18,6 +19,7 @@ export class LayoutComponent {
   private readonly i18n = inject(I18nService);
 
   sidebarCollapsed = signal(false);
+  readonly demoModeEnabled = environment.features.enableDemoMode;
 
   readonly demoBannerText = computed(
     () =>

@@ -3,6 +3,8 @@ import { Router, RouterModule } from '@angular/router';
 import { TooltipModule } from 'primeng/tooltip';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { ThemeService } from '../../core/theme/theme.service';
+import { AuthService } from '../../core/services/auth.service';
+import { environment } from '../../../environments/environment';
 
 interface NavEntry {
   route: string;
@@ -26,9 +28,7 @@ const PRIMARY_NAV: NavEntry[] = [
   {
     route: '/dlq',
     icon: 'pi pi-exclamation-triangle',
-    labelKey: 'nav.dlq',
-    badge: '12',
-    badgeStyleClass: 'p-badge-danger'
+    labelKey: 'nav.dlq'
   },
   { route: '/monitoring', icon: 'pi pi-chart-line', labelKey: 'nav.monitoring' }
 ];
@@ -47,9 +47,14 @@ const SECONDARY_NAV: NavEntry[] = [
 })
 export class SidebarComponent {
   private readonly router = inject(Router);
+  readonly auth = inject(AuthService);
   readonly theme = inject(ThemeService);
 
   @Input() collapsed = false;
+
+  private readonly secondaryNavItems = environment.features.enableDemoMode
+    ? SECONDARY_NAV
+    : SECONDARY_NAV.filter(item => item.route !== '/demo');
 
   readonly navGroups: NavGroup[] = [
     {
@@ -58,10 +63,10 @@ export class SidebarComponent {
     },
     {
       labelKey: 'sidebar.preferencesGroup',
-      items: SECONDARY_NAV
+      items: this.secondaryNavItems
     }
   ];
-  readonly iconNavItems: NavEntry[] = [...PRIMARY_NAV, ...SECONDARY_NAV];
+  readonly iconNavItems: NavEntry[] = [...PRIMARY_NAV, ...this.secondaryNavItems];
   
   isActive(route: string): boolean {
     return this.router.url === route;

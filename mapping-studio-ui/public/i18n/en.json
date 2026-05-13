@@ -66,7 +66,7 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "subtitle": "Operational snapshot of CanonBridge — metrics below are illustrative for demo purposes.",
+    "subtitle": "Operational snapshot of CanonBridge.",
     "studio": "Integration Studio",
     "monitoring": "Monitoring",
     "demo": "Demo Mode",
@@ -74,12 +74,12 @@
     "recentSubtitle": "Latest mapping activity across all partners",
     "viewAll": "View All",
     "stat": {
-      "msgProcessed": { "label": "Messages Processed", "change": "+12.3% vs yesterday" },
-      "activeMappings": { "label": "Active Mappings", "change": "+2 this week" },
-      "dlq": { "label": "DLQ Messages", "change": "+5 in last hour" },
-      "lag": { "label": "Consumer Lag", "change": "Within SLO target" },
-      "p99": { "label": "Transformation p99", "change": "SLO: < 200ms" },
-      "partners": { "label": "Active Partners", "change": "3 tenants" }
+      "msgProcessed": { "label": "Messages Processed", "change": "Total processed" },
+      "activeMappings": { "label": "Active Mappings", "change": "Currently active" },
+      "dlq": { "label": "DLQ Messages", "change": "Needs attention" },
+      "lag": { "label": "Consumer Lag", "change": "Current queue lag" },
+      "p99": { "label": "Transformation p99", "change": "Latest latency" },
+      "partners": { "label": "Active Partners", "change": "Currently connected" }
     }
   },
   "table": {
@@ -1121,4 +1121,3 @@
     "navigationWarning": "Navigating away will discard unsaved changes"
   }
 }
-

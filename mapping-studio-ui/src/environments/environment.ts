@@ -39,6 +39,7 @@ export const environment = {
   
   // Feature Flags
   features: {
+    enableDemoMode: true,
     enableDarkMode: true,
     enableAdvancedEditor: false,
     enableBetaFeatures: true,

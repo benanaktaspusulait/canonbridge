@@ -5,7 +5,6 @@ import { AvatarModule } from 'primeng/avatar';
 import { MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 import { MenuItem } from 'primeng/api';
-import { BadgeModule } from 'primeng/badge';
 import { SelectModule } from 'primeng/select';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TagModule } from 'primeng/tag';
@@ -13,6 +12,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { I18nService, LangId } from '../../core/i18n/i18n.service';
 import { ThemeService } from '../../core/theme/theme.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-topbar',
@@ -23,7 +23,6 @@ import { ThemeService } from '../../core/theme/theme.service';
     AvatarModule,
     MenuModule,
     TooltipModule,
-    BadgeModule,
     SelectModule,
     ToolbarModule,
     TagModule,
@@ -39,6 +38,7 @@ export class TopbarComponent {
   readonly auth = inject(AuthService);
   readonly i18n = inject(I18nService);
   readonly theme = inject(ThemeService);
+  readonly demoModeEnabled = environment.features.enableDemoMode;
 
   userMenuOpen = false;
 

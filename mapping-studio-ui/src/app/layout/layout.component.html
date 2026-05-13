@@ -4,13 +4,15 @@
   <app-sidebar [collapsed]="sidebarCollapsed()" />
   <div class="layout-main">
     <app-topbar (toggleSidebar)="toggleSidebar()" />
-    <p-message
-      severity="warn"
-      [text]="demoBannerText()"
-      [closable]="false"
-      styleClass="layout-demo-alert"
-      role="alert"
-      aria-live="polite" />
+    @if (demoModeEnabled) {
+      <p-message
+        severity="warn"
+        [text]="demoBannerText()"
+        [closable]="false"
+        styleClass="layout-demo-alert"
+        role="alert"
+        aria-live="polite" />
+    }
     <main id="main-content" class="layout-content" role="main" tabindex="-1">
       <router-outlet />
     </main>

@@ -81,7 +81,7 @@ export class AuthService {
   private loadFromStorage(): User | null {
     try {
       const raw = sessionStorage.getItem(this.STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
+      return raw ? this.normalizeStoredUser(JSON.parse(raw)) : null;
     } catch {
       return null;
     }
@@ -97,6 +97,15 @@ export class AuthService {
 
   private getInitials(name: string): string {
     return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  }
+
+  private normalizeStoredUser(user: User): User {
+    if (!user.tenantName || user.tenantName === 'Acme Corp') {
+      user.tenantName = this.formatTenantName(user.tenantId);
+      sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+    }
+
+    return user;
   }
 
   private formatTenantName(tenantId: string): string {
