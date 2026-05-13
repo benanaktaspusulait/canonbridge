@@ -34,10 +34,33 @@
             (backClicked)="goBack()" />
         }
         @case (2) {
+          <app-sample-data-step
+            [method]="getConfigMethod()"
+            (sampleDataComplete)="onSampleDataComplete($event)"
+            (backClicked)="goBack()" />
+        }
+        @case (3) {
           <div class="step-placeholder">
-            <h2>Step 2: Sample Data</h2>
+            <h2>Step 3: Target Schema</h2>
+            <p>Select canonical schema (Coming soon...)</p>
             <p-button label="Back" (onClick)="goBack()" severity="secondary" />
             <p-button label="Next" (onClick)="goNext()" />
+          </div>
+        }
+        @case (4) {
+          <div class="step-placeholder">
+            <h2>Step 4: Field Mapping</h2>
+            <p>Map request fields to canonical schema (Coming soon...)</p>
+            <p-button label="Back" (onClick)="goBack()" severity="secondary" />
+            <p-button label="Next" (onClick)="goNext()" />
+          </div>
+        }
+        @case (5) {
+          <div class="step-placeholder">
+            <h2>Step 5: Test & Publish</h2>
+            <p>Test mapping and publish (Coming soon...)</p>
+            <p-button label="Back" (onClick)="goBack()" severity="secondary" />
+            <p-button label="Publish" icon="pi pi-check" />
           </div>
         }
         @default {

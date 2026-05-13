@@ -34,7 +34,7 @@
             id="external-system"
             [options]="externalSystems()"
             [ngModel]="selectedSystemId()"
-            (ngModelChange)="selectedSystemId.set($event)"
+            (ngModelChange)="onSystemSelected($event)"
             optionLabel="name"
             optionValue="id"
             [placeholder]="'wizard.configuration.selectSystemPlaceholder' | i18n"
@@ -47,6 +47,33 @@
             </ng-template>
           </p-select>
         </div>
+
+        @if (selectedSystemId() && availableEndpoints().length > 0) {
+          <div class="form-field">
+            <label for="endpoint">{{ 'wizard.configuration.selectEndpoint' | i18n }}</label>
+            <p-select
+              id="endpoint"
+              [options]="availableEndpoints()"
+              [ngModel]="selectedEndpointPath()"
+              (ngModelChange)="onEndpointSelected($event)"
+              optionLabel="description"
+              optionValue="path"
+              [placeholder]="'wizard.configuration.selectEndpointPlaceholder' | i18n"
+              styleClass="w-full">
+              <ng-template let-endpoint pTemplate="item">
+                <div class="endpoint-option">
+                  <strong>{{ endpoint.description }}</strong>
+                  <div class="endpoint-details">
+                    <span class="method-badge" [class]="'method-' + endpoint.method.toLowerCase()">
+                      {{ endpoint.method }}
+                    </span>
+                    <span class="endpoint-path">{{ endpoint.path }}</span>
+                  </div>
+                </div>
+              </ng-template>
+            </p-select>
+          </div>
+        }
 
         <div class="action-buttons">
           <a routerLink="/external-systems" class="create-link">
@@ -116,6 +143,7 @@
               (ngModelChange)="restApiPath.set($event)"
               [placeholder]="'wizard.configuration.restApiPathPlaceholder' | i18n"
               class="w-full" />
+            <small class="field-hint">{{ 'wizard.configuration.restApiPathHint' | i18n }}</small>
           </div>
 
           <div class="form-field">
@@ -125,9 +153,11 @@
               [ngModel]="restApiMethod()"
               (ngModelChange)="restApiMethod.set($event)"
               [options]="[
+                { label: 'GET', value: 'GET' },
                 { label: 'POST', value: 'POST' },
                 { label: 'PUT', value: 'PUT' },
-                { label: 'PATCH', value: 'PATCH' }
+                { label: 'PATCH', value: 'PATCH' },
+                { label: 'DELETE', value: 'DELETE' }
               ]"
               optionLabel="label"
               optionValue="value"

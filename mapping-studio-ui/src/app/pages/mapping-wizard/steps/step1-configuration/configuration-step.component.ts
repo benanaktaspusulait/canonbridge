@@ -8,13 +8,15 @@ import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { I18nPipe } from '../../../../core/i18n/i18n.pipe';
-import { ExternalSystemService } from '../../../../core/services/external-system.service';
+import { ExternalSystemService, OutboundConnection } from '../../../../core/services/external-system.service';
 import { SourceType } from '../../models/mapping-wizard.models';
 
 interface ExternalSystemOption {
   id: string;
   name: string;
   type: string;
+  url: string;
+  endpoints?: Array<{path: string; method: string; description: string}>;
 }
 
 @Component({
@@ -48,6 +50,9 @@ export class ConfigurationStepComponent implements OnInit {
 
   externalSystems = signal<ExternalSystemOption[]>([]);
   selectedSystemId = signal<string | null>(null);
+  selectedSystem = signal<ExternalSystemOption | null>(null);
+  availableEndpoints = signal<Array<{path: string; method: string; description: string}>>([]);
+  selectedEndpointPath = signal<string | null>(null);
   loading = signal(true);
 
   // Kafka config
@@ -73,11 +78,16 @@ export class ConfigurationStepComponent implements OnInit {
     this.loading.set(true);
     this.externalSystemService.list().subscribe({
       next: (systems) => {
+        // Filter systems based on selected source type
+        const filtered = this.filterSystemsBySourceType(systems);
+        
         this.externalSystems.set(
-          systems.map(s => ({
-            id: s.id!,
+          filtered.map(s => ({
+            id: s.connection_id!,
             name: s.name,
-            type: s.system_type
+            type: s.protocol,
+            url: s.base_url || s.url,
+            endpoints: s.known_endpoints || []
           }))
         );
         this.loading.set(false);
@@ -86,6 +96,60 @@ export class ConfigurationStepComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  onSystemSelected(systemId: string): void {
+    this.selectedSystemId.set(systemId);
+    const system = this.externalSystems().find(s => s.id === systemId);
+    this.selectedSystem.set(system || null);
+    
+    if (system && system.endpoints && system.endpoints.length > 0) {
+      this.availableEndpoints.set(system.endpoints);
+    } else {
+      this.availableEndpoints.set([]);
+    }
+    
+    // Reset endpoint selection
+    this.selectedEndpointPath.set(null);
+    this.restApiPath.set('');
+  }
+
+  onEndpointSelected(path: string): void {
+    this.selectedEndpointPath.set(path);
+    this.restApiPath.set(path);
+    
+    // Set method from endpoint if available
+    const endpoint = this.availableEndpoints().find(e => e.path === path);
+    if (endpoint) {
+      this.restApiMethod.set(endpoint.method);
+    }
+  }
+
+  private filterSystemsBySourceType(systems: OutboundConnection[]): OutboundConnection[] {
+    const sourceType = this.sourceType();
+    
+    // Only show system templates (not specific endpoint configurations)
+    const templates = systems.filter(s => s.is_system_template === true);
+    
+    // Map source types to compatible protocols
+    const protocolMap: Record<SourceType, string[]> = {
+      'KAFKA': [], // Kafka doesn't use external systems
+      'WEBHOOK': [], // Webhook doesn't use external systems
+      'REST_API': ['REST'],
+      'SCHEDULED_API': ['REST', 'GRAPHQL'],
+      'SOAP': ['SOAP'],
+      'FILE_BATCH': [],
+      'API_ENRICHMENT': ['REST', 'GRAPHQL', 'SOAP'],
+      'MANUAL': []
+    };
+
+    const allowedProtocols = protocolMap[sourceType];
+    
+    if (allowedProtocols.length === 0) {
+      return templates; // No filtering needed
+    }
+    
+    return templates.filter(s => allowedProtocols.includes(s.protocol));
   }
 
   getSourceTypeLabel(): string {

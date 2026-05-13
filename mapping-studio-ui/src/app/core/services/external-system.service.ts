@@ -23,6 +23,14 @@ export interface OutboundConnection {
   last_test_result?: string;
   created_at?: string;
   updated_at?: string;
+  // New fields for system templates
+  is_system_template?: boolean;
+  base_url?: string;
+  known_endpoints?: Array<{
+    path: string;
+    method: string;
+    description: string;
+  }>;
 }
 
 export interface TestRequest {

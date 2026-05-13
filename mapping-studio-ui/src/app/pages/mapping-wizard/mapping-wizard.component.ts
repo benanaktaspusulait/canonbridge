@@ -7,6 +7,7 @@ import { MenuItem } from 'primeng/api';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { SourceTypeSelectionComponent } from './steps/step0-source-type/source-type-selection.component';
 import { ConfigurationStepComponent } from './steps/step1-configuration/configuration-step.component';
+import { SampleDataStepComponent } from './steps/step2-sample-data/sample-data-step.component';
 import { SourceType, WizardState } from './models/mapping-wizard.models';
 
 @Component({
@@ -19,7 +20,8 @@ import { SourceType, WizardState } from './models/mapping-wizard.models';
     StepsModule,
     I18nPipe,
     SourceTypeSelectionComponent,
-    ConfigurationStepComponent
+    ConfigurationStepComponent,
+    SampleDataStepComponent
   ],
   templateUrl: './mapping-wizard.component.html',
   styleUrl: './mapping-wizard.component.scss'
@@ -62,6 +64,14 @@ export class MappingWizardComponent {
     this.currentStep.set(2);
   }
 
+  onSampleDataComplete(data: { sampleJson: string }): void {
+    this.wizardState.update(state => ({
+      ...state,
+      sampleJson: data.sampleJson
+    }));
+    this.currentStep.set(3);
+  }
+
   goBack(): void {
     if (this.currentStep() > 0) {
       this.currentStep.update(step => step - 1);
@@ -72,5 +82,9 @@ export class MappingWizardComponent {
     if (this.currentStep() < this.steps.length - 1) {
       this.currentStep.update(step => step + 1);
     }
+  }
+
+  getConfigMethod(): string {
+    return (this.wizardState().sourceConfig['method'] as string) || 'GET';
   }
 }

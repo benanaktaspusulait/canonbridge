@@ -1,0 +1,74 @@
+<div class="sample-data-step">
+  <div class="step-header">
+    <h2>{{ 'wizard.sampleData.title' | i18n }}</h2>
+    <p>{{ 'wizard.sampleData.subtitle' | i18n }}</p>
+  </div>
+
+  <div class="sample-content">
+    @if (!needsPayload()) {
+      <p-card>
+        <p-message 
+          severity="info" 
+          [text]="'wizard.sampleData.noPayloadNeeded' | i18n" />
+      </p-card>
+    } @else {
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="card-header">
+            <h3>{{ 'wizard.sampleData.requestPayload' | i18n }}</h3>
+            <div class="header-actions">
+              <label for="file-upload" class="file-upload-label">
+                <i class="pi pi-upload"></i>
+                {{ 'wizard.sampleData.uploadFile' | i18n }}
+              </label>
+              <input 
+                type="file" 
+                id="file-upload" 
+                accept=".json"
+                (change)="loadSampleFile($event)"
+                style="display: none;" />
+            </div>
+          </div>
+        </ng-template>
+
+        <div class="json-editor">
+          <textarea
+            [value]="sampleJson()"
+            (input)="onJsonChange($any($event.target).value)"
+            [placeholder]="'wizard.sampleData.jsonPlaceholder' | i18n"
+            rows="15"
+            class="json-textarea"
+            [class.error]="jsonError()"></textarea>
+          
+          @if (jsonError()) {
+            <p-message 
+              severity="error" 
+              [text]="'wizard.sampleData.invalidJson' | i18n + ': ' + jsonError()" 
+              styleClass="json-error" />
+          }
+        </div>
+
+        <div class="json-hint">
+          <i class="pi pi-info-circle"></i>
+          <span>{{ 'wizard.sampleData.hint' | i18n }}</span>
+        </div>
+      </p-card>
+    }
+  </div>
+
+  <div class="step-actions">
+    <p-button 
+      [label]="'wizard.back' | i18n"
+      icon="pi pi-arrow-left"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="onBack()" />
+    
+    <p-button 
+      [label]="'wizard.next' | i18n"
+      icon="pi pi-arrow-right"
+      iconPos="right"
+      [disabled]="!isValid()"
+      (onClick)="onNext()" />
+  </div>
+</div>

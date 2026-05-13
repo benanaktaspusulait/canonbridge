@@ -74,6 +74,86 @@
       }
     }
 
+    .endpoint-option {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+
+      strong {
+        font-size: 0.9375rem;
+      }
+
+      .endpoint-details {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+
+        .method-badge {
+          padding: 0.125rem 0.5rem;
+          border-radius: 4px;
+          font-weight: 600;
+          font-size: 0.75rem;
+          text-transform: uppercase;
+
+          &.method-get {
+            background: #e3f2fd;
+            color: #1976d2;
+
+            @media (prefers-color-scheme: dark) {
+              background: rgba(33, 150, 243, 0.2);
+              color: #90caf9;
+            }
+          }
+
+          &.method-post {
+            background: #e8f5e9;
+            color: #388e3c;
+
+            @media (prefers-color-scheme: dark) {
+              background: rgba(76, 175, 80, 0.2);
+              color: #a5d6a7;
+            }
+          }
+
+          &.method-put {
+            background: #fff3e0;
+            color: #f57c00;
+
+            @media (prefers-color-scheme: dark) {
+              background: rgba(255, 152, 0, 0.2);
+              color: #ffb74d;
+            }
+          }
+
+          &.method-patch {
+            background: #fce4ec;
+            color: #c2185b;
+
+            @media (prefers-color-scheme: dark) {
+              background: rgba(233, 30, 99, 0.2);
+              color: #f48fb1;
+            }
+          }
+
+          &.method-delete {
+            background: #ffebee;
+            color: #d32f2f;
+
+            @media (prefers-color-scheme: dark) {
+              background: rgba(244, 67, 54, 0.2);
+              color: #ef5350;
+            }
+          }
+        }
+
+        .endpoint-path {
+          color: var(--text-color-secondary);
+          font-family: 'Courier New', monospace;
+        }
+      }
+    }
+
     .action-buttons {
       margin-top: 1rem;
       display: flex;

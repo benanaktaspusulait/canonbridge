@@ -1,0 +1,132 @@
+.sample-data-step {
+  max-width: 900px;
+  margin: 0 auto;
+
+  .step-header {
+    text-align: center;
+    margin-bottom: 2rem;
+
+    h2 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-color);
+    }
+
+    p {
+      color: var(--text-color-secondary);
+    }
+  }
+
+  .sample-content {
+    margin-bottom: 2rem;
+
+    p-card {
+      ::ng-deep .p-card {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .card-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--surface-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        h3 {
+          margin: 0;
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: var(--text-color);
+        }
+
+        .header-actions {
+          .file-upload-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background 0.2s;
+
+            &:hover {
+              background: var(--primary-600);
+            }
+
+            i {
+              font-size: 0.875rem;
+            }
+          }
+        }
+      }
+    }
+
+    .json-editor {
+      position: relative;
+
+      .json-textarea {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid var(--surface-border);
+        border-radius: 6px;
+        font-family: 'Courier New', Consolas, monospace;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        resize: vertical;
+        background: var(--surface-ground);
+        color: var(--text-color);
+        transition: border-color 0.2s;
+
+        &:focus {
+          outline: none;
+          border-color: var(--primary-color);
+        }
+
+        &.error {
+          border-color: var(--red-500);
+        }
+
+        &::placeholder {
+          color: var(--text-color-secondary);
+          opacity: 0.6;
+        }
+      }
+
+      .json-error {
+        margin-top: 0.5rem;
+      }
+    }
+
+    .json-hint {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: var(--blue-50);
+      border-left: 3px solid var(--blue-500);
+      border-radius: 4px;
+      font-size: 0.875rem;
+      color: var(--blue-900);
+
+      @media (prefers-color-scheme: dark) {
+        background: rgba(33, 150, 243, 0.1);
+        color: var(--blue-200);
+      }
+
+      i {
+        color: var(--blue-500);
+      }
+    }
+  }
+
+  .step-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+}
