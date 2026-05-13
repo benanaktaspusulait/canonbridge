@@ -21,7 +21,7 @@
 </div>
 
 <div class="stats-grid">
-  @for (stat of stats; track stat.labelKey) {
+  @for (stat of stats(); track stat.labelKey) {
     <div class="stat-card">
       <div class="stat-icon" [style.background]="stat.iconBg">
         <i class="pi {{ stat.icon }}"></i>
@@ -53,7 +53,7 @@
     </div>
   </ng-template>
 
-  <p-table [value]="recentMappings" styleClass="p-datatable-sm">
+  <p-table [value]="recentMappings()" styleClass="p-datatable-sm">
     <ng-template pTemplate="header">
       <tr>
         <th>{{ 'table.partner' | i18n }}</th>

@@ -40,8 +40,11 @@ export class DashboardComponent implements OnInit {
   private readonly mappingService = inject(MappingService);
 
   readonly loading = signal(false);
-  readonly stats = signal<StatCard[]>([]);
-  readonly recentMappings = signal<RecentMapping[]>([]);
+  private readonly _stats = signal<StatCard[]>([]);
+  private readonly _recentMappings = signal<RecentMapping[]>([]);
+  
+  readonly stats = this._stats.asReadonly();
+  readonly recentMappings = this._recentMappings.asReadonly();
 
   ngOnInit(): void {
     this.loadDashboardData();
@@ -53,7 +56,7 @@ export class DashboardComponent implements OnInit {
     // Load metrics
     this.metricsService.getDashboardStats().subscribe({
       next: (data) => {
-        this.stats.set([
+        this._stats.set([
           {
             labelKey: 'dashboard.stat.msgProcessed.label',
             changeKey: 'dashboard.stat.msgProcessed.change',
@@ -123,7 +126,7 @@ export class DashboardComponent implements OnInit {
           .sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''))
           .slice(0, 5)
           .map(d => this.draftToRecentMapping(d));
-        this.recentMappings.set(recent);
+        this._recentMappings.set(recent);
         this.loading.set(false);
       },
       error: (err) => {
