@@ -12,5 +12,7 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json* ./
 RUN npm install --omit=dev
 COPY --from=build /app/dist ./dist
+COPY partners ./partners
+COPY schemas ./schemas
 EXPOSE 8080
 CMD ["node", "dist/index.js"]
