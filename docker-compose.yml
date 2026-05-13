@@ -211,11 +211,10 @@ services:
       dockerfile: Dockerfile
     image: canonbridge/mapping-studio-ui:latest
     container_name: canonbridge-mapping-studio-ui
-    depends_on:
-      mapping-studio-api:
-        condition: service_healthy
     ports:
       - "4200:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:80/health"]
       interval: 30s

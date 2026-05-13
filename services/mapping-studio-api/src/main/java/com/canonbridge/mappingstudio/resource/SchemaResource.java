@@ -66,6 +66,24 @@ public class SchemaResource {
     }
 
     @GET
+    @Path("/{subject}")
+    @Operation(summary = "Get schema by subject (shorthand for latest active)")
+    public Uni<Response> getBySubject(
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            @PathParam("subject") String subject) {
+        // If subject looks like a UUID, treat it as ID lookup
+        try {
+            UUID id = UUID.fromString(subject);
+            return schemaRepository.findById(requireTenantId(tenantId), id)
+                    .map(this::okOrNotFound);
+        } catch (IllegalArgumentException e) {
+            // Not a UUID, treat as subject name - return latest active
+            return schemaRepository.findLatestActive(requireTenantId(tenantId), subject)
+                    .map(this::okOrNotFound);
+        }
+    }
+
+    @GET
     @Path("/{id}")
     @Operation(summary = "Get schema by ID")
     public Uni<Response> get(

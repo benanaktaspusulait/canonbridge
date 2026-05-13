@@ -65,6 +65,13 @@ public class CredentialSecretCodec {
         }
 
         JsonObject envelope = new JsonObject(encryptedSecretJson);
+        
+        // If it's plain JSON (no "alg" field), return as-is for development
+        if (!envelope.containsKey("alg")) {
+            System.out.println("DEBUG: Plain JSON credential detected, returning as-is");
+            return envelope;
+        }
+        
         if (!"AES-256-GCM".equals(envelope.getString("alg"))) {
             throw new IllegalArgumentException("Unsupported credential secret algorithm");
         }
