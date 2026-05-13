@@ -333,6 +333,8 @@
     "colLastFailed": "Last Failed",
     "tooltipRedrive": "Redrive",
     "tooltipInspect": "Inspect payload",
+    "tooltipFixDraft": "Create fix draft",
+    "createFixDraft": "Create fix draft",
     "tooltipDiscard": "Discard",
     "inspectorTitle": "Payload inspector",
     "payload": "Payload",
@@ -348,6 +350,8 @@
       "redriven": "Message redriven",
       "redrivenAll": "DLQ redriven",
       "redriveFailed": "Redrive failed",
+      "fixDraftReady": "Fix draft ready",
+      "fixDraftFailed": "Fix draft failed",
       "discarded": "Message(s) discarded",
       "count": "{{count}} message(s)"
     },
@@ -552,7 +556,7 @@
       "subtitle": "Define the REST request contract a partner will call, then map body, header, or path values to canonical fields.",
       "badge": "API contract",
       "path": "Path",
-      "pathPlaceholder": "/api/inbound/orders"
+      "pathPlaceholder": "/api/inbound/resource"
     },
     "sourceApi": {
       "title": "External API source",

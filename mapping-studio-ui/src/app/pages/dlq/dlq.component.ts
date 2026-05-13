@@ -11,9 +11,10 @@ import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { Router } from '@angular/router';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
-import { DlqService, DlqMessage as ApiDlqMessage } from '../../core/services/dlq.service';
+import { DlqService } from '../../core/services/dlq.service';
 
 interface DlqMessage {
   id: string;
@@ -48,11 +49,13 @@ export class DlqComponent implements OnInit {
   private readonly toast = inject(MessageService);
   private readonly i18n = inject(I18nService);
   private readonly dlqService = inject(DlqService);
+  private readonly router = inject(Router);
 
   selected: DlqMessage[] = [];
   inspectorVisible = false;
   readonly inspected = signal<DlqMessage | null>(null);
   readonly loading = signal(false);
+  private readonly studioImportKey = 'canonbridge:external-systems:selected-sample';
 
   private readonly _messages = signal<DlqMessage[]>([]);
 
@@ -186,6 +189,38 @@ export class DlqComponent implements OnInit {
   inspect(msg: DlqMessage): void {
     this.inspected.set(msg);
     this.inspectorVisible = true;
+  }
+
+  createFixDraft(msg: DlqMessage): void {
+    const parsed = this.parsePayload(msg.payload);
+    if (parsed === null) {
+      this.toast.add({
+        severity: 'error',
+        summary: this.t('dlq.toast.fixDraftFailed'),
+        detail: msg.id
+      });
+      return;
+    }
+
+    const sampleJson = JSON.stringify(parsed, null, 2);
+    localStorage.setItem(this.studioImportKey, JSON.stringify({
+      sourceType: 'manual',
+      sampleJson,
+      connectionName: `${msg.partner} ${msg.eventType} DLQ fix`,
+      partner: msg.partner,
+      eventType: msg.eventType,
+      dlqId: msg.id,
+      traceId: msg.traceId,
+      errorType: msg.errorType,
+      errorMessage: msg.errorMessage
+    }));
+    this.toast.add({
+      severity: 'success',
+      summary: this.t('dlq.toast.fixDraftReady'),
+      detail: msg.id,
+      life: 2500
+    });
+    void this.router.navigate(['/studio']);
   }
 
   // ── Redrive ───────────────────────────────────────────────────────────────

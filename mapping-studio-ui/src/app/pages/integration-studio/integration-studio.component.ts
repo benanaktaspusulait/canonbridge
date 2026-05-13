@@ -2764,7 +2764,21 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
       const sample = JSON.parse(raw) as Record<string, unknown>;
       if (typeof sample['sampleJson'] !== 'string') return;
       const connectionName = String(sample['connectionName'] ?? 'External system sample');
-      this.sourceType.set('externalApi');
+      const sourceType = String(sample['sourceType'] ?? 'externalApi');
+      if (
+        sourceType === 'kafka' ||
+        sourceType === 'webhook' ||
+        sourceType === 'restApi' ||
+        sourceType === 'externalApi' ||
+        sourceType === 'soap' ||
+        sourceType === 'fileBatch' ||
+        sourceType === 'apiEnrichment' ||
+        sourceType === 'manual'
+      ) {
+        this.sourceType.set(sourceType);
+      } else {
+        this.sourceType.set('externalApi');
+      }
       this.externalApiName.set(connectionName);
       this.sourceJson.set(sample['sampleJson']);
       this.sourceFileMeta.set({ name: `${connectionName}.sample.json`, size: this.formatFileSize(sample['sampleJson'].length) });

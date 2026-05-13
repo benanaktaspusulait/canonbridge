@@ -111,6 +111,13 @@
               (onClick)="inspect(msg)"
               [pTooltip]="'dlq.tooltipInspect' | i18n" />
             <p-button
+              icon="pi pi-wrench"
+              variant="text"
+              severity="secondary"
+              size="small"
+              (onClick)="createFixDraft(msg)"
+              [pTooltip]="'dlq.tooltipFixDraft' | i18n" />
+            <p-button
               icon="pi pi-trash"
               variant="text"
               severity="danger"
@@ -190,6 +197,13 @@
         icon="pi pi-refresh"
         styleClass="w-full"
         (onClick)="redriveMessage(msg)" />
+      <p-button
+        [label]="'dlq.createFixDraft' | i18n"
+        icon="pi pi-wrench"
+        severity="secondary"
+        variant="outlined"
+        styleClass="w-full"
+        (onClick)="createFixDraft(msg)" />
       <p-button
         [label]="'dlq.discard' | i18n"
         icon="pi pi-trash"

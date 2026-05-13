@@ -348,6 +348,8 @@
     "colLastFailed": "Son hata",
     "tooltipRedrive": "Yeniden gönder",
     "tooltipInspect": "Yükü incele",
+    "tooltipFixDraft": "Düzeltme taslağı oluştur",
+    "createFixDraft": "Düzeltme taslağı oluştur",
     "tooltipDiscard": "Sil",
     "inspectorTitle": "Payload inceleyici",
     "payload": "Payload",
@@ -361,6 +363,8 @@
       "redriven": "Mesaj yeniden gönderildi",
       "redrivenAll": "DLQ yeniden gönderildi",
       "redriveFailed": "Yeniden gönderim başarısız",
+      "fixDraftReady": "Düzeltme taslağı hazır",
+      "fixDraftFailed": "Düzeltme taslağı oluşturulamadı",
       "discarded": "Mesaj(lar) silindi",
       "count": "{{count}} mesaj"
     },
