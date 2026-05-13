@@ -4,10 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
 import { MessageModule } from 'primeng/message';
-import { AccordionModule } from 'primeng/accordion';
-import { I18nPipe } from '../../../../core/i18n/i18n.pipe';
 
 export interface MappingRule {
   targetField: string;
@@ -24,10 +21,7 @@ export interface MappingRule {
     CardModule,
     ButtonModule,
     InputTextModule,
-    InputTextareaModule,
-    MessageModule,
-    AccordionModule,
-    I18nPipe
+    MessageModule
   ],
   templateUrl: './field-mapping-step.component.html',
   styleUrl: './field-mapping-step.component.scss'

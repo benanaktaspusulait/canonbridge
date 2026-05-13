@@ -5,7 +5,6 @@ import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { MessageModule } from 'primeng/message';
-import { I18nPipe } from '../../../../core/i18n/i18n.pipe';
 import { SchemaService, SchemaDefinition } from '../../../../core/services/schema.service';
 
 @Component({
@@ -17,8 +16,7 @@ import { SchemaService, SchemaDefinition } from '../../../../core/services/schem
     CardModule,
     ButtonModule,
     SelectModule,
-    MessageModule,
-    I18nPipe
+    MessageModule
   ],
   templateUrl: './target-schema-step.component.html',
   styleUrl: './target-schema-step.component.scss'

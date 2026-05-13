@@ -21,7 +21,8 @@
                   id="mapping-name"
                   pInputText
                   type="text"
-                  [(ngModel)]="mappingName"
+                  [ngModel]="mappingName()"
+                  (ngModelChange)="mappingName.set($event)"
                   placeholder="Enter mapping name"
                   [style]="{'width': '100%'}" />
               </div>
@@ -30,8 +31,8 @@
                 <label for="mapping-description">Description</label>
                 <textarea
                   id="mapping-description"
-                  pInputTextarea
-                  [(ngModel)]="mappingDescription"
+                  [ngModel]="mappingDescription()"
+                  (ngModelChange)="mappingDescription.set($event)"
                   placeholder="Optional description"
                   [rows]="3"
                   [style]="{'width': '100%'}"></textarea>
@@ -63,8 +64,8 @@
               <label for="test-input">Test Input JSON</label>
               <textarea
                 id="test-input"
-                pInputTextarea
-                [(ngModel)]="testInput"
+                [ngModel]="testInput()"
+                (ngModelChange)="testInput.set($event)"
                 placeholder='{"example": "data"}'
                 [rows]="8"
                 [style]="{'width': '100%', 'font-family': 'monospace'}"></textarea>

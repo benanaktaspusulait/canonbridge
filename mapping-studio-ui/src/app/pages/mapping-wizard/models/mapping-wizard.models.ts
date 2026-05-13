@@ -23,6 +23,7 @@ export interface WizardState {
   sourceConfig: Record<string, unknown>;
   sampleJson: string;
   targetSchemaRef: string | null;
+  targetSchemaJson: string;
   mappingRules: MappingRule[];
 }
 

@@ -5,10 +5,8 @@ import { Router } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { I18nPipe } from '../../../../core/i18n/i18n.pipe';
 import { MappingService } from '../../../../core/services/mapping.service';
 import { WizardState } from '../../models/mapping-wizard.models';
 
@@ -21,10 +19,8 @@ import { WizardState } from '../../models/mapping-wizard.models';
     CardModule,
     ButtonModule,
     InputTextModule,
-    InputTextareaModule,
     MessageModule,
-    ProgressSpinnerModule,
-    I18nPipe
+    ProgressSpinnerModule
   ],
   templateUrl: './test-publish-step.component.html',
   styleUrl: './test-publish-step.component.scss'

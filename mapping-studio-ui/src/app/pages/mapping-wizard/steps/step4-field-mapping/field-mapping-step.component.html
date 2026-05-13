@@ -72,7 +72,6 @@
                     <div class="form-field">
                       <label>JSONata Expression *</label>
                       <textarea
-                        pInputTextarea
                         [value]="rule.expression"
                         (input)="updateRule($index, 'expression', $any($event.target).value)"
                         placeholder="e.g., payload.customerName or $uppercase(name)"
@@ -99,8 +98,8 @@
           }
 
           <!-- JSONata Help -->
-          <p-accordion [multiple]="false" class="jsonata-help">
-            <p-accordionTab header="JSONata Expression Examples">
+          <details class="jsonata-help">
+            <summary>JSONata Expression Examples</summary>
               <div class="examples">
                 <div class="example">
                   <strong>Direct mapping:</strong>
@@ -124,12 +123,11 @@
                 </div>
                 <div class="example">
                   <strong>Array mapping:</strong>
-                  <code>items.{ "id": productId, "qty": quantity }</code>
+                  <code>{{ 'items.{ "id": productId, "qty": quantity }' }}</code>
                   <p>Transform array of objects</p>
                 </div>
               </div>
-            </p-accordionTab>
-          </p-accordion>
+          </details>
         </div>
       </div>
     </ng-template>
