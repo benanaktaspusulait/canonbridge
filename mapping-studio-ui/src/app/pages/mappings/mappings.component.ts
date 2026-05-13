@@ -19,6 +19,7 @@ import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { EmptyStateComponent } from '../../core/components/empty-state.component';
 import { MappingService, MappingDraft } from '../../core/services/mapping.service';
+import { PartnerService, Partner } from '../../core/services/partner.service';
 
 interface MappingVersion {
   id: string;
@@ -65,9 +66,11 @@ export class MappingsComponent implements OnInit {
   private readonly toast = inject(MessageService);
   private readonly i18n = inject(I18nService);
   private readonly mappingService = inject(MappingService);
+  private readonly partnerService = inject(PartnerService);
   private readonly router = inject(Router);
 
   readonly loading = signal(false);
+  private readonly partners = signal<Map<string, string>>(new Map());
 
   // ── Signals (reactive) ────────────────────────────────────────────────────
   readonly search = signal('');
@@ -100,7 +103,25 @@ export class MappingsComponent implements OnInit {
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
+    this.loadPartners();
     this.loadMappings();
+  }
+
+  private loadPartners(): void {
+    this.partnerService.list().subscribe({
+      next: (partners) => {
+        const map = new Map<string, string>();
+        partners.forEach(p => {
+          if (p.id) {
+            map.set(p.id, p.name || p.id);
+          }
+        });
+        this.partners.set(map);
+      },
+      error: () => {
+        this.partners.set(new Map());
+      }
+    });
   }
 
   loadMappings(): void {
@@ -125,9 +146,10 @@ export class MappingsComponent implements OnInit {
   }
 
   private draftToViewModel(d: MappingDraft): MappingVersion {
+    const partnerName = d.partner_id ? this.partners().get(d.partner_id) : undefined;
     return {
       id: d.id ?? '',
-      partner: d.partner_id ?? '',
+      partner: partnerName ?? d.partner_id ?? 'Unknown Partner',
       eventType: d.event_type ?? '',
       version: d.status === 'DRAFT' ? 'draft' : 'v1.0.0',
       status: this.mapDraftStatus(d.status),

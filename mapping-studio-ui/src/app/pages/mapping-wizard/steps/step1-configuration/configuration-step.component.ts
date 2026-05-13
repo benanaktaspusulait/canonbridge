@@ -56,6 +56,7 @@ export class ConfigurationStepComponent implements OnInit {
   availableEndpoints = signal<Array<{path: string; method: string; description: string}>>([]);
   selectedEndpointPath = signal<string | null>(null);
   loading = signal(true);
+  loadError = signal<string | null>(null);
 
   // Kafka config
   kafkaTopic = signal('');
@@ -134,6 +135,7 @@ export class ConfigurationStepComponent implements OnInit {
 
   loadExternalSystems(): void {
     this.loading.set(true);
+    this.loadError.set(null);
     this.externalSystemService.list().subscribe({
       next: (systems) => {
         // Filter systems based on selected source type
@@ -163,8 +165,23 @@ export class ConfigurationStepComponent implements OnInit {
         
         this.loading.set(false);
       },
-      error: () => {
+      error: (error) => {
+        console.error('Failed to load external systems:', error);
         this.loading.set(false);
+        
+        // Set user-friendly error message
+        let errorMessage = 'wizard.configuration.loadError';
+        if (error?.status === 0) {
+          errorMessage = 'wizard.configuration.networkError';
+        } else if (error?.status === 401 || error?.status === 403) {
+          errorMessage = 'wizard.configuration.authError';
+        } else if (error?.status >= 500) {
+          errorMessage = 'wizard.configuration.serverError';
+        } else if (error?.error?.message) {
+          errorMessage = error.error.message;
+        }
+        
+        this.loadError.set(errorMessage);
       }
     });
   }

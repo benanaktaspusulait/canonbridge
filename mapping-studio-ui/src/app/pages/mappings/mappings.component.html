@@ -67,7 +67,7 @@
     </ng-template>
     <ng-template pTemplate="body" let-m>
       <tr>
-        <td><code class="partner-code">{{ m.partner }}</code></td>
+        <td><strong>{{ m.partner }}</strong></td>
         <td><code class="event-code">{{ m.eventType }}</code></td>
         <td><span class="version-badge">{{ m.version }}</span></td>
         <td><p-tag [severity]="getSeverity(m.status)" [value]="('status.' + m.status) | i18n" /></td>
