@@ -1,4 +1,4 @@
-import { Component, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -10,16 +10,7 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { MessageService } from 'primeng/api';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
-
-interface PartnerHealth {
-  partner: string;
-  status: 'healthy' | 'degraded' | 'down';
-  throughput: string;
-  p99: string;
-  dlqRate: string;
-  lag: number;
-  uptime: string;
-}
+import { MetricsService, PartnerHealth } from '../../core/services/metrics.service';
 
 interface MetricCard {
   labelKey: string;
@@ -30,78 +21,6 @@ interface MetricCard {
   icon: string;
   color: string;
 }
-
-// Simulated snapshots per time window
-const SNAPSHOTS: Record<string, { metrics: Partial<MetricCard>[]; health: PartnerHealth[] }> = {
-  '1h': {
-    metrics: [
-      { labelKey: 'monitoring.metric.throughput.label', sloKey: 'monitoring.metric.throughput.slo', value: '1,284', unit: 'msg/sec', ok: true,  icon: 'pi-send',              color: '#dbeafe' },
-      { labelKey: 'monitoring.metric.p99.label',        sloKey: 'monitoring.metric.p99.slo',        value: '87',    unit: 'ms',      ok: true,  icon: 'pi-bolt',              color: '#dcfce7' },
-      { labelKey: 'monitoring.metric.dlq.label',        sloKey: 'monitoring.metric.dlq.slo',        value: '0.09',  unit: '%',       ok: true,  icon: 'pi-exclamation-circle', color: '#fef9c3' },
-      { labelKey: 'monitoring.metric.lag.label',        sloKey: 'monitoring.metric.lag.slo',        value: '234',   unit: 'msgs',    ok: true,  icon: 'pi-clock',             color: '#f3e8ff' },
-      { labelKey: 'monitoring.metric.error.label',      sloKey: 'monitoring.metric.error.slo',      value: '0.12',  unit: '%',       ok: true,  icon: 'pi-times-circle',      color: '#ffedd5' },
-      { labelKey: 'monitoring.metric.uptime.label',     sloKey: 'monitoring.metric.uptime.slo',     value: '99.97', unit: '%',       ok: true,  icon: 'pi-check-circle',      color: '#dcfce7' },
-    ],
-    health: [
-      { partner: 'acme-marketplace', status: 'healthy',  throughput: '3,200/hr', p99: '72ms',  dlqRate: '0.04%', lag: 12,  uptime: '99.99%' },
-      { partner: 'logistics-xpress', status: 'healthy',  throughput: '1,800/hr', p99: '91ms',  dlqRate: '0.00%', lag: 5,   uptime: '100%'   },
-      { partner: 'payment-gateway',  status: 'degraded', throughput: '900/hr',   p99: '312ms', dlqRate: '1.10%', lag: 217, uptime: '98.2%'  },
-      { partner: 'inventory-hub',    status: 'healthy',  throughput: '600/hr',   p99: '55ms',  dlqRate: '0.00%', lag: 3,   uptime: '100%'   },
-      { partner: 'crm-connect',      status: 'down',     throughput: '0/hr',     p99: '—',     dlqRate: '—',     lag: 0,   uptime: '0%'     },
-    ]
-  },
-  '6h': {
-    metrics: [
-      { labelKey: 'monitoring.metric.throughput.label', sloKey: 'monitoring.metric.throughput.slo', value: '1,102', unit: 'msg/sec', ok: true,  icon: 'pi-send',              color: '#dbeafe' },
-      { labelKey: 'monitoring.metric.p99.label',        sloKey: 'monitoring.metric.p99.slo',        value: '104',   unit: 'ms',      ok: true,  icon: 'pi-bolt',              color: '#dcfce7' },
-      { labelKey: 'monitoring.metric.dlq.label',        sloKey: 'monitoring.metric.dlq.slo',        value: '0.14',  unit: '%',       ok: false, icon: 'pi-exclamation-circle', color: '#fef9c3' },
-      { labelKey: 'monitoring.metric.lag.label',        sloKey: 'monitoring.metric.lag.slo',        value: '512',   unit: 'msgs',    ok: true,  icon: 'pi-clock',             color: '#f3e8ff' },
-      { labelKey: 'monitoring.metric.error.label',      sloKey: 'monitoring.metric.error.slo',      value: '0.21',  unit: '%',       ok: true,  icon: 'pi-times-circle',      color: '#ffedd5' },
-      { labelKey: 'monitoring.metric.uptime.label',     sloKey: 'monitoring.metric.uptime.slo',     value: '99.91', unit: '%',       ok: true,  icon: 'pi-check-circle',      color: '#dcfce7' },
-    ],
-    health: [
-      { partner: 'acme-marketplace', status: 'healthy',  throughput: '2,900/hr', p99: '88ms',  dlqRate: '0.06%', lag: 34,  uptime: '99.97%' },
-      { partner: 'logistics-xpress', status: 'healthy',  throughput: '1,600/hr', p99: '99ms',  dlqRate: '0.00%', lag: 11,  uptime: '100%'   },
-      { partner: 'payment-gateway',  status: 'degraded', throughput: '820/hr',   p99: '388ms', dlqRate: '1.40%', lag: 340, uptime: '97.8%'  },
-      { partner: 'inventory-hub',    status: 'healthy',  throughput: '580/hr',   p99: '61ms',  dlqRate: '0.00%', lag: 7,   uptime: '100%'   },
-      { partner: 'crm-connect',      status: 'down',     throughput: '0/hr',     p99: '—',     dlqRate: '—',     lag: 0,   uptime: '0%'     },
-    ]
-  },
-  '24h': {
-    metrics: [
-      { labelKey: 'monitoring.metric.throughput.label', sloKey: 'monitoring.metric.throughput.slo', value: '987',   unit: 'msg/sec', ok: true,  icon: 'pi-send',              color: '#dbeafe' },
-      { labelKey: 'monitoring.metric.p99.label',        sloKey: 'monitoring.metric.p99.slo',        value: '143',   unit: 'ms',      ok: true,  icon: 'pi-bolt',              color: '#dcfce7' },
-      { labelKey: 'monitoring.metric.dlq.label',        sloKey: 'monitoring.metric.dlq.slo',        value: '0.22',  unit: '%',       ok: false, icon: 'pi-exclamation-circle', color: '#fef9c3' },
-      { labelKey: 'monitoring.metric.lag.label',        sloKey: 'monitoring.metric.lag.slo',        value: '891',   unit: 'msgs',    ok: true,  icon: 'pi-clock',             color: '#f3e8ff' },
-      { labelKey: 'monitoring.metric.error.label',      sloKey: 'monitoring.metric.error.slo',      value: '0.48',  unit: '%',       ok: true,  icon: 'pi-times-circle',      color: '#ffedd5' },
-      { labelKey: 'monitoring.metric.uptime.label',     sloKey: 'monitoring.metric.uptime.slo',     value: '99.72', unit: '%',       ok: true,  icon: 'pi-check-circle',      color: '#dcfce7' },
-    ],
-    health: [
-      { partner: 'acme-marketplace', status: 'healthy',  throughput: '2,600/hr', p99: '95ms',  dlqRate: '0.09%', lag: 55,  uptime: '99.94%' },
-      { partner: 'logistics-xpress', status: 'healthy',  throughput: '1,400/hr', p99: '112ms', dlqRate: '0.02%', lag: 18,  uptime: '99.98%' },
-      { partner: 'payment-gateway',  status: 'degraded', throughput: '710/hr',   p99: '445ms', dlqRate: '1.80%', lag: 480, uptime: '96.5%'  },
-      { partner: 'inventory-hub',    status: 'healthy',  throughput: '540/hr',   p99: '70ms',  dlqRate: '0.00%', lag: 9,   uptime: '100%'   },
-      { partner: 'crm-connect',      status: 'down',     throughput: '0/hr',     p99: '—',     dlqRate: '—',     lag: 0,   uptime: '0%'     },
-    ]
-  },
-  '7d': {
-    metrics: [
-      { labelKey: 'monitoring.metric.throughput.label', sloKey: 'monitoring.metric.throughput.slo', value: '1,041', unit: 'msg/sec', ok: true,  icon: 'pi-send',              color: '#dbeafe' },
-      { labelKey: 'monitoring.metric.p99.label',        sloKey: 'monitoring.metric.p99.slo',        value: '161',   unit: 'ms',      ok: true,  icon: 'pi-bolt',              color: '#dcfce7' },
-      { labelKey: 'monitoring.metric.dlq.label',        sloKey: 'monitoring.metric.dlq.slo',        value: '0.31',  unit: '%',       ok: false, icon: 'pi-exclamation-circle', color: '#fef9c3' },
-      { labelKey: 'monitoring.metric.lag.label',        sloKey: 'monitoring.metric.lag.slo',        value: '1,204', unit: 'msgs',    ok: false, icon: 'pi-clock',             color: '#f3e8ff' },
-      { labelKey: 'monitoring.metric.error.label',      sloKey: 'monitoring.metric.error.slo',      value: '0.67',  unit: '%',       ok: true,  icon: 'pi-times-circle',      color: '#ffedd5' },
-      { labelKey: 'monitoring.metric.uptime.label',     sloKey: 'monitoring.metric.uptime.slo',     value: '99.61', unit: '%',       ok: true,  icon: 'pi-check-circle',      color: '#dcfce7' },
-    ],
-    health: [
-      { partner: 'acme-marketplace', status: 'healthy',  throughput: '2,400/hr', p99: '101ms', dlqRate: '0.12%', lag: 88,  uptime: '99.89%' },
-      { partner: 'logistics-xpress', status: 'healthy',  throughput: '1,300/hr', p99: '118ms', dlqRate: '0.03%', lag: 22,  uptime: '99.95%' },
-      { partner: 'payment-gateway',  status: 'degraded', throughput: '650/hr',   p99: '502ms', dlqRate: '2.10%', lag: 620, uptime: '95.1%'  },
-      { partner: 'inventory-hub',    status: 'healthy',  throughput: '510/hr',   p99: '78ms',  dlqRate: '0.01%', lag: 14,  uptime: '99.99%' },
-      { partner: 'crm-connect',      status: 'down',     throughput: '0/hr',     p99: '—',     dlqRate: '—',     lag: 0,   uptime: '0%'     },
-    ]
-  }
-};
 
 @Component({
   selector: 'app-monitoring',
@@ -116,9 +35,10 @@ const SNAPSHOTS: Record<string, { metrics: Partial<MetricCard>[]; health: Partne
   templateUrl: './monitoring.component.html',
   styleUrl: './monitoring.component.scss'
 })
-export class MonitoringComponent implements OnDestroy {
+export class MonitoringComponent implements OnInit, OnDestroy {
   private readonly toast = inject(MessageService);
   private readonly i18n = inject(I18nService);
+  private readonly metricsService = inject(MetricsService);
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -133,42 +53,62 @@ export class MonitoringComponent implements OnDestroy {
     { label: 'Last 7 days',  value: '7d'  },
   ];
 
-  readonly metrics      = signal<MetricCard[]>(SNAPSHOTS['1h'].metrics as MetricCard[]);
-  readonly partnerHealth = signal<PartnerHealth[]>(SNAPSHOTS['1h'].health);
+  readonly metrics      = signal<MetricCard[]>([]);
+  readonly partnerHealth = signal<PartnerHealth[]>([]);
+  readonly loading = signal(false);
+
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+  ngOnInit(): void {
+    this.loadMetrics();
+  }
+
+  private loadMetrics(): void {
+    this.loading.set(true);
+    
+    // Load system metrics
+    this.metricsService.getMonitoringMetrics(this.timeWindow).subscribe({
+      next: (data) => {
+        const sys = data.system;
+        this.metrics.set([
+          { labelKey: 'monitoring.metric.throughput.label', sloKey: 'monitoring.metric.throughput.slo', value: String(sys.throughput), unit: 'msg/sec', ok: true,  icon: 'pi-send',              color: '#dbeafe' },
+          { labelKey: 'monitoring.metric.p99.label',        sloKey: 'monitoring.metric.p99.slo',        value: String(sys.p99Latency),   unit: 'ms',      ok: sys.p99Latency < 200,  icon: 'pi-bolt',              color: '#dcfce7' },
+          { labelKey: 'monitoring.metric.dlq.label',        sloKey: 'monitoring.metric.dlq.slo',        value: sys.dlqRate.toFixed(2),  unit: '%',       ok: sys.dlqRate < 0.1, icon: 'pi-exclamation-circle', color: '#fef9c3' },
+          { labelKey: 'monitoring.metric.lag.label',        sloKey: 'monitoring.metric.lag.slo',        value: String(sys.consumerLag),   unit: 'msgs',    ok: sys.consumerLag < 1000,  icon: 'pi-clock',             color: '#f3e8ff' },
+          { labelKey: 'monitoring.metric.error.label',      sloKey: 'monitoring.metric.error.slo',      value: sys.errorRate.toFixed(2),  unit: '%',       ok: sys.errorRate < 1,  icon: 'pi-times-circle',      color: '#ffedd5' },
+          { labelKey: 'monitoring.metric.uptime.label',     sloKey: 'monitoring.metric.uptime.slo',     value: sys.uptime.toFixed(2), unit: '%',       ok: sys.uptime > 99.9,  icon: 'pi-check-circle',      color: '#dcfce7' },
+        ]);
+        this.lastUpdated = new Date();
+      },
+      error: (err) => {
+        console.error('Failed to load monitoring metrics:', err);
+        this.loading.set(false);
+      }
+    });
+
+    // Load partner health
+    this.metricsService.getPartnerHealth(this.timeWindow).subscribe({
+      next: (data) => {
+        this.partnerHealth.set(data.partners);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load partner health:', err);
+        this.loading.set(false);
+      }
+    });
+  }
 
   // ── Window change ─────────────────────────────────────────────────────────
 
   onWindowChange(): void {
-    const snap = SNAPSHOTS[this.timeWindow];
-    if (!snap) return;
-    this.metrics.set(snap.metrics as MetricCard[]);
-    this.partnerHealth.set(snap.health);
-    this.lastUpdated = new Date();
+    this.loadMetrics();
   }
 
   // ── Refresh ───────────────────────────────────────────────────────────────
 
   refresh(showToast = true): void {
-    // Apply snapshot for current window with slight random jitter
-    const snap = SNAPSHOTS[this.timeWindow];
-    if (!snap) return;
-
-    this.metrics.set(snap.metrics.map(m => {
-      const numVal = parseFloat(m.value?.replace(/,/g, '') ?? '0');
-      const jitter = (Math.random() - 0.5) * 0.04 * numVal;
-      const newVal = Math.max(0, numVal + jitter);
-      const formatted = Number.isInteger(numVal)
-        ? Math.round(newVal).toLocaleString()
-        : newVal.toFixed(2);
-      return { ...m, value: formatted } as MetricCard;
-    }));
-
-    this.partnerHealth.update(list => list.map(p => {
-      const lagJitter = Math.round((Math.random() - 0.5) * 40);
-      return { ...p, lag: Math.max(0, p.lag + lagJitter) };
-    }));
-
-    this.lastUpdated = new Date();
+    this.loadMetrics();
     if (showToast) {
       this.toast.add({ severity: 'success', summary: this.t('monitoring.toast.refreshed'), detail: this.lastUpdatedLabel, life: 2000 });
     }
