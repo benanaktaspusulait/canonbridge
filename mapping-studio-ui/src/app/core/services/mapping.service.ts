@@ -34,6 +34,15 @@ export interface MappingDraft {
   updated_by?: string;
 }
 
+export interface RequestPreviewRequest {
+  context: Record<string, unknown>;
+}
+
+export interface RequestPreviewResponse {
+  payload: Record<string, unknown> | null;
+  headers: Record<string, string>;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -59,6 +68,10 @@ export class MappingService {
 
   update(id: string, draft: MappingDraft): Observable<MappingDraft> {
     return this.http.put<MappingDraft>(`${this.baseUrl}/${id}`, draft);
+  }
+
+  previewRequest(id: string, request: RequestPreviewRequest): Observable<RequestPreviewResponse> {
+    return this.http.post<RequestPreviewResponse>(`${this.baseUrl}/${id}/request-preview`, request);
   }
 
   delete(id: string): Observable<void> {

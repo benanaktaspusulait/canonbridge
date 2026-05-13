@@ -4,6 +4,8 @@ import com.canonbridge.mappingstudio.domain.OutboundConnection;
 import com.canonbridge.mappingstudio.outbound.OutboundHttpRequest;
 import com.canonbridge.mappingstudio.outbound.OutboundHttpResult;
 import com.canonbridge.mappingstudio.outbound.OutboundHttpService;
+import com.canonbridge.mappingstudio.outbound.RequestTemplateService;
+import com.canonbridge.mappingstudio.repository.MappingDraftRepository;
 import com.canonbridge.mappingstudio.repository.OutboundConnectionRepository;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
@@ -37,6 +39,12 @@ public class ExternalSystemResource {
 
     @Inject
     OutboundHttpService outboundHttpService;
+
+    @Inject
+    MappingDraftRepository draftRepository;
+
+    @Inject
+    RequestTemplateService requestTemplateService;
 
     @GET
     @Operation(summary = "List all external system connections for tenant")
@@ -107,8 +115,35 @@ public class ExternalSystemResource {
                     if (connection == null) {
                         return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND).build());
                     }
-                    return outboundHttpService.execute(requiredTenantId, connection, request)
+                    return resolveRequestFromDraft(requiredTenantId, connection, request)
+                            .chain(resolvedRequest -> outboundHttpService.execute(requiredTenantId, connection, resolvedRequest))
                             .chain(result -> recordAndRespond(requiredTenantId, connectionId, result));
+                });
+    }
+
+    private Uni<OutboundHttpRequest> resolveRequestFromDraft(
+            String tenantId,
+            OutboundConnection connection,
+            OutboundHttpRequest request
+    ) {
+        if (request != null && request.payload() != null) {
+            return Uni.createFrom().item(request);
+        }
+        if (connection.draftId() == null) {
+            return Uni.createFrom().item(request);
+        }
+        return draftRepository.findById(tenantId, connection.draftId())
+                .map(draft -> {
+                    if (draft == null || draft.getSourceConfig() == null) {
+                        return request;
+                    }
+                    JsonObject sourceConfig = new JsonObject(draft.getSourceConfig());
+                    JsonObject context = request != null ? request.safeContext() : new JsonObject();
+                    JsonObject payload = requestTemplateService.renderFromSourceConfig(sourceConfig, context);
+                    JsonObject templateHeaders = requestTemplateService.renderHeadersFromSourceConfig(sourceConfig, context);
+                    JsonObject headers = request != null ? request.safeHeaders().copy() : new JsonObject();
+                    headers.mergeIn(templateHeaders, false);
+                    return new OutboundHttpRequest(payload, headers, context);
                 });
     }
 

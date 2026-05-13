@@ -1029,6 +1029,108 @@
         </div>
       </div>
     </ng-template>
+    <div class="studio-inspector-tabs-wrap studio-mapping-mode-tabs">
+      <p-tabs [value]="mappingStepTab()" (valueChange)="mappingStepTab.set($event === 'request' ? 'request' : 'response')">
+        <p-tablist>
+          <p-tab value="response">{{ 'studio.mappingTab.response' | i18n }}</p-tab>
+          <p-tab value="request">{{ 'studio.mappingTab.request' | i18n }}</p-tab>
+        </p-tablist>
+      </p-tabs>
+    </div>
+    @if (mappingStepTab() === 'request') {
+      <div class="studio-request-builder">
+        <div class="studio-request-builder__head">
+          <div>
+            <h3 class="card-title">{{ 'studio.request.title' | i18n }}</h3>
+            <p class="card-subtitle">{{ 'studio.request.subtitle' | i18n }}</p>
+          </div>
+          <div class="toolbar-row">
+            <p-button
+              [label]="'studio.request.preview' | i18n"
+              icon="pi pi-eye"
+              [loading]="requestPreviewPending()"
+              (onClick)="previewRequestTransformation()" />
+            <p-button
+              [label]="'studio.back' | i18n"
+              icon="pi pi-arrow-left"
+              variant="outlined"
+              severity="secondary"
+              (onClick)="prevStep()" />
+            <p-button [label]="'studio.next' | i18n" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextStep()" />
+          </div>
+        </div>
+
+        <div class="studio-request-mode">
+          <button type="button" [class.active]="requestMode() === 'template'" (click)="requestMode.set('template')">
+            <i class="pi pi-code" aria-hidden="true"></i>
+            <span>{{ 'studio.request.mode.template' | i18n }}</span>
+          </button>
+          <button type="button" [class.active]="requestMode() === 'jsonata'" (click)="requestMode.set('jsonata')">
+            <i class="pi pi-bolt" aria-hidden="true"></i>
+            <span>{{ 'studio.request.mode.jsonata' | i18n }}</span>
+          </button>
+        </div>
+
+        <div class="studio-request-grid">
+          <label class="studio-field-shell">
+            <span>{{ 'studio.request.canonicalSample' | i18n }}</span>
+            <textarea
+              pTextarea
+              class="w-full mono-textarea"
+              rows="11"
+              [ngModel]="canonicalSampleJson()"
+              (ngModelChange)="canonicalSampleJson.set($event)"></textarea>
+          </label>
+          <label class="studio-field-shell">
+            <span>
+              {{ requestMode() === 'jsonata'
+                ? ('studio.request.jsonata' | i18n)
+                : ('studio.request.template' | i18n) }}
+            </span>
+            @if (requestMode() === 'jsonata') {
+              <textarea
+                pTextarea
+                class="w-full mono-textarea"
+                rows="11"
+                [ngModel]="requestJsonataExpression()"
+                (ngModelChange)="requestJsonataExpression.set($event)"></textarea>
+            } @else {
+              <textarea
+                pTextarea
+                class="w-full mono-textarea"
+                rows="11"
+                [ngModel]="requestTemplateJson()"
+                (ngModelChange)="requestTemplateJson.set($event)"></textarea>
+            }
+          </label>
+        </div>
+
+        <label class="studio-field-shell mt-3">
+          <span>{{ 'studio.request.headers' | i18n }}</span>
+          <textarea
+            pTextarea
+            class="w-full mono-textarea"
+            rows="4"
+            [ngModel]="requestHeadersJson()"
+            (ngModelChange)="requestHeadersJson.set($event)"></textarea>
+        </label>
+
+        @if (requestPreviewError()) {
+          <p-message severity="error" [text]="requestPreviewError()!" styleClass="w-full mt-3" />
+        }
+
+        <div class="studio-request-preview-grid mt-3">
+          <section>
+            <h4>{{ 'studio.request.previewBody' | i18n }}</h4>
+            <pre class="studio-expression-preview">{{ requestPreviewOutput() ? (requestPreviewOutput() | json) : ('studio.request.previewEmpty' | i18n) }}</pre>
+          </section>
+          <section>
+            <h4>{{ 'studio.request.previewHeaders' | i18n }}</h4>
+            <pre class="studio-expression-preview">{{ requestPreviewHeaders() ? (requestPreviewHeaders() | json) : '{}' }}</pre>
+          </section>
+        </div>
+      </div>
+    } @else {
     <div class="toolbar-row mb-3">
       <p-button
         [label]="'studio.addRule' | i18n"
@@ -1802,9 +1904,10 @@
         }
       </div>
     </p-fieldset>
+    }
   </p-card>
 
-  @if (showExpertMode()) {
+  @if (mappingStepTab() === 'response' && showExpertMode()) {
     <app-jsonata-preview-panel
       class="mt-4 d-block"
       [rules]="rules()"

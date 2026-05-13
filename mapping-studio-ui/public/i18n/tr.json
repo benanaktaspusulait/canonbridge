@@ -720,6 +720,29 @@
       "noRuleSelected": "Seçili kural yok — yol panoya kopyalandı",
       "assignHint": "Yaprak düğüme tıklayarak → {{target}} için kaynak atayın"
     },
+    "mappingTab": {
+      "response": "Response dönüşümü",
+      "request": "Request dönüşümü"
+    },
+    "request": {
+      "title": "Request şablonu",
+      "subtitle": "Partner API çağrısından önce outbound request gövdesini canonical veriden üretin.",
+      "preview": "Request önizle",
+      "canonicalSample": "Canonical örnek",
+      "template": "Request JSON şablonu",
+      "jsonata": "Request JSONata",
+      "headers": "Header şablonu",
+      "previewBody": "Gövde önizleme",
+      "previewHeaders": "Header önizleme",
+      "previewEmpty": "Oluşan request'i görmek için önizleme çalıştırın.",
+      "previewReady": "Request önizleme hazır",
+      "previewFailed": "Request önizleme başarısız",
+      "previewObjectRequired": "Request dönüşümü bir JSON nesnesi üretmeli.",
+      "mode": {
+        "template": "Şablon",
+        "jsonata": "JSONata"
+      }
+    },
     "sourceValidation": {
       "title": "Gelen JSON kuralları",
       "subtitle": "Partner payload’u dönüşüme girmeden önce hangi alanların kabul edileceğini kod yazmadan tanımlayın.",

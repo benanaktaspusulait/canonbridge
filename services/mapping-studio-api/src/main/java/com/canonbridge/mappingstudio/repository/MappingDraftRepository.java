@@ -10,6 +10,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -67,6 +69,7 @@ public class MappingDraftRepository {
         Instant now = Instant.now();
         draft.setCreatedAt(now);
         draft.setUpdatedAt(now);
+        LocalDateTime dbNow = LocalDateTime.ofInstant(now, ZoneOffset.UTC);
 
         return client.preparedQuery(
             "INSERT INTO mapping_drafts (" +
@@ -94,10 +97,10 @@ public class MappingDraftRepository {
             draft.getGeneratedJsonata(),
             draft.getValidationRules(),
             draft.getStatus().name(),
-            draft.getLastValidatedAt(),
+            toLocalDateTime(draft.getLastValidatedAt()),
             draft.getValidationResult(),
-            draft.getCreatedAt(),
-            draft.getUpdatedAt(),
+            dbNow,
+            dbNow,
             draft.getCreatedBy(),
             draft.getUpdatedBy()
         ))
@@ -105,7 +108,8 @@ public class MappingDraftRepository {
     }
 
     public Uni<MappingDraft> update(MappingDraft draft) {
-        draft.setUpdatedAt(Instant.now());
+        Instant now = Instant.now();
+        draft.setUpdatedAt(now);
 
         return client.preparedQuery(
             "UPDATE mapping_drafts SET " +
@@ -128,9 +132,9 @@ public class MappingDraftRepository {
             draft.getGeneratedJsonata(),
             draft.getValidationRules(),
             draft.getStatus().name(),
-            draft.getLastValidatedAt(),
+            toLocalDateTime(draft.getLastValidatedAt()),
             draft.getValidationResult(),
-            draft.getUpdatedAt(),
+            LocalDateTime.ofInstant(now, ZoneOffset.UTC),
             draft.getUpdatedBy(),
             draft.getTenantId(),
             draft.getId()
@@ -200,5 +204,9 @@ public class MappingDraftRepository {
         draft.setCreatedBy(row.getString("created_by"));
         draft.setUpdatedBy(row.getString("updated_by"));
         return draft;
+    }
+
+    private LocalDateTime toLocalDateTime(Instant instant) {
+        return instant == null ? null : LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
     }
 }

@@ -114,6 +114,7 @@ type StudioConfigExport = {
   canonicalSchemaMeta: { title?: string; $id?: string } | null;
   targetFields: TargetField[];
   rules: MappingRule[];
+  requestTransformation?: RequestTransformationConfig;
   sourceValidationRules: SourceValidationRule[];
   kafka?: {
     topic: string;
@@ -154,6 +155,16 @@ type StudioConfigExport = {
     keyMasked: string;
   };
   fixtures: FixtureRow[];
+};
+
+type RequestMappingMode = 'template' | 'jsonata';
+type MappingStepTab = 'response' | 'request';
+
+type RequestTransformationConfig = {
+  mode: RequestMappingMode;
+  template: unknown;
+  jsonata: string;
+  headers: Record<string, string>;
 };
 
 type EnumMapPair = { source: string; target: string };
@@ -806,6 +817,27 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
 
   targetFields = signal<TargetField[]>([]);
   rules = signal<MappingRule[]>([]);
+  mappingStepTab = signal<MappingStepTab>('response');
+  requestMode = signal<RequestMappingMode>('template');
+  requestTemplateJson = signal(`{
+  "tracking_number": "{{canonical.trackingNumber}}",
+  "language": "tr"
+}`);
+  requestJsonataExpression = signal(`{
+  "tracking_number": canonical.trackingNumber,
+  "language": "tr"
+}`);
+  requestHeadersJson = signal(`{
+  "X-Request-Source": "CanonBridge"
+}`);
+  canonicalSampleJson = signal(`{
+  "trackingNumber": "TRK123456",
+  "customerEmail": "customer@example.com"
+}`);
+  requestPreviewOutput = signal<Record<string, unknown> | null>(null);
+  requestPreviewHeaders = signal<Record<string, unknown> | null>(null);
+  requestPreviewError = signal<string | null>(null);
+  requestPreviewPending = signal(false);
 
   selectedRule = signal<MappingRule | null>(null);
   selectedRuleIds = signal<ReadonlySet<string>>(new Set());
@@ -1288,6 +1320,10 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
         this.canonicalSchemaDoc() ||
         this.targetFields().length ||
         this.rules().length ||
+        this.requestTemplateJson().trim() ||
+        this.requestJsonataExpression().trim() ||
+        this.requestHeadersJson().trim() ||
+        this.canonicalSampleJson().trim() ||
         this.sourceValidationRules().length ||
         this.kafkaTopic().trim() ||
         this.kafkaConsumerGroup().trim() ||
@@ -1484,7 +1520,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     });
   }
 
-  testExternalApi(): void {
+  async testExternalApi(): Promise<void> {
     this.sourceType.set('externalApi');
     if (!/^https?:\/\//i.test(this.externalApiUrl().trim())) {
       this.externalApiLastTest.set(null);
@@ -1498,14 +1534,14 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     }
 
     let payload: Record<string, unknown> | null = null;
-    if (this.sourceJson().trim() && this.externalApiMethod() !== 'GET') {
+    let headers: Record<string, string> = {};
+    if (this.externalApiMethod() !== 'GET') {
       try {
-        const parsed = JSON.parse(this.sourceJson()) as unknown;
-        if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
-          payload = parsed as Record<string, unknown>;
-        }
-      } catch {
-        /* Request payload is optional for connection tests. */
+        const built = await this.buildRequestTransformationPreview();
+        payload = built.payload;
+        headers = built.headers;
+      } catch (e) {
+        this.externalApiLastError.set(e instanceof Error ? e.message : String(e));
       }
     }
 
@@ -1524,7 +1560,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
         timeout_ms: 8000
       },
       request: {
-        headers: {},
+        headers,
         payload
       }
     }).subscribe({
@@ -1826,6 +1862,127 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     }
   }
 
+  async previewRequestTransformation(): Promise<void> {
+    this.requestPreviewPending.set(true);
+    this.requestPreviewError.set(null);
+    this.requestPreviewOutput.set(null);
+    this.requestPreviewHeaders.set(null);
+
+    try {
+      const built = await this.buildRequestTransformationPreview();
+      this.requestPreviewOutput.set(built.payload);
+      this.requestPreviewHeaders.set(built.headers);
+      this.toast.add({
+        severity: 'success',
+        summary: this.i18n.translate('studio.request.previewReady'),
+        life: 2500
+      });
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : String(e);
+      this.requestPreviewError.set(detail);
+      this.toast.add({
+        severity: 'error',
+        summary: this.i18n.translate('studio.request.previewFailed'),
+        detail,
+        life: 6000
+      });
+    } finally {
+      this.requestPreviewPending.set(false);
+    }
+  }
+
+  private async buildRequestTransformationPreview(): Promise<{ payload: Record<string, unknown>; headers: Record<string, string> }> {
+    const context = this.requestPreviewContext();
+    const headers = this.parseJsonObjectField(this.requestHeadersJson(), 'headers');
+    let payload: unknown;
+
+    if (this.requestMode() === 'jsonata') {
+      const expression = mappingEngine(this.requestJsonataExpression());
+      payload = await expression.evaluate(context);
+    } else {
+      const template = this.parseJsonObjectField(this.requestTemplateJson(), 'request template');
+      payload = this.renderRequestTemplateValue(template, context);
+    }
+
+    if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
+      throw new Error(this.i18n.translate('studio.request.previewObjectRequired'));
+    }
+
+    const renderedHeaders = this.renderRequestTemplateValue(headers, context);
+    const outHeaders = renderedHeaders !== null && typeof renderedHeaders === 'object' && !Array.isArray(renderedHeaders)
+      ? Object.fromEntries(Object.entries(renderedHeaders as Record<string, unknown>).map(([key, value]) => [key, String(value)]))
+      : {};
+    return { payload: payload as Record<string, unknown>, headers: outHeaders };
+  }
+
+  private requestPreviewContext(): Record<string, unknown> {
+    const canonical = this.parseOptionalJsonObject(this.canonicalSampleJson())
+      ?? this.testOutput()
+      ?? {};
+    const source = this.parseOptionalJsonObject(this.sourceJson()) ?? {};
+    const credential = this.selectedCredential()
+      ? {
+          id: this.selectedCredential()?.id,
+          name: this.selectedCredential()?.name,
+          type: this.selectedCredential()?.type
+        }
+      : {};
+    return { canonical, source, credential };
+  }
+
+  private parseJsonObjectField(raw: string, label: string): Record<string, unknown> {
+    try {
+      const parsed = raw.trim() ? JSON.parse(raw) as unknown : {};
+      if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+    } catch (e) {
+      throw new Error(`${label}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+    throw new Error(`${label} must be a JSON object`);
+  }
+
+  private parseOptionalJsonObject(raw: string): Record<string, unknown> | null {
+    if (!raw.trim()) return null;
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
+  private renderRequestTemplateValue(value: unknown, context: Record<string, unknown>): unknown {
+    if (Array.isArray(value)) {
+      return value.map(item => this.renderRequestTemplateValue(item, context));
+    }
+    if (value !== null && typeof value === 'object') {
+      return Object.fromEntries(
+        Object.entries(value as Record<string, unknown>)
+          .map(([key, child]) => [key, this.renderRequestTemplateValue(child, context)])
+      );
+    }
+    if (typeof value !== 'string') return value;
+
+    const exact = value.match(/^\s*\{\{\s*([^}]+?)\s*}}\s*$/);
+    if (exact) {
+      return this.resolveRequestTemplatePath(exact[1], context);
+    }
+    return value.replace(/\{\{\s*([^}]+?)\s*}}/g, (_match, path: string) => {
+      const resolved = this.resolveRequestTemplatePath(path, context);
+      return resolved === null || resolved === undefined ? '' : String(resolved);
+    });
+  }
+
+  private resolveRequestTemplatePath(rawPath: string, context: Record<string, unknown>): unknown {
+    const path = rawPath.trim().replace(/^\$\.?/, '');
+    if (!path) return undefined;
+    return getByPath(context, path);
+  }
+
   private loadMappingDraft(id: string): void {
     this.mappingService.getById(id).subscribe({
       next: (draft) => this.applyMappingDraft(draft),
@@ -1987,6 +2144,30 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
       this.enrichmentFailurePolicy.set(failurePolicy);
     }
     if (typeof config['webhookKeyMasked'] === 'string') this.webhookKeyMasked.set(config['webhookKeyMasked']);
+    this.applyRequestTransformationConfig(this.parseRequestTransformation(config['requestTransformation']));
+  }
+
+  private parseRequestTransformation(value: unknown): RequestTransformationConfig | undefined {
+    if (!value || typeof value !== 'object') return undefined;
+    const record = value as Record<string, unknown>;
+    const mode: RequestMappingMode = record['mode'] === 'jsonata' ? 'jsonata' : 'template';
+    const headers = record['headers'] !== null && typeof record['headers'] === 'object' && !Array.isArray(record['headers'])
+      ? record['headers'] as Record<string, string>
+      : {};
+    return {
+      mode,
+      template: record['template'] ?? {},
+      jsonata: typeof record['jsonata'] === 'string' ? record['jsonata'] : '',
+      headers
+    };
+  }
+
+  private applyRequestTransformationConfig(config: RequestTransformationConfig | undefined): void {
+    if (!config) return;
+    this.requestMode.set(config.mode);
+    this.requestTemplateJson.set(JSON.stringify(config.template ?? {}, null, 2));
+    if (config.jsonata) this.requestJsonataExpression.set(config.jsonata);
+    this.requestHeadersJson.set(JSON.stringify(config.headers ?? {}, null, 2));
   }
 
   private sourceValidationRulesFromDraft(value: unknown): SourceValidationRule[] {
@@ -3183,6 +3364,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
         this.canonicalSchemaMeta.set(cfg.canonicalSchemaMeta ?? null);
         this.targetFields.set(cfg.targetFields);
         this.rules.set(cfg.rules);
+        this.applyRequestTransformationConfig(cfg.requestTransformation);
         this.sourceValidationRules.set(cfg.sourceValidationRules ?? []);
         this.kafkaTopic.set(cfg.kafka?.topic ?? '');
         this.kafkaConsumerGroup.set(cfg.kafka?.consumerGroup ?? '');
@@ -3363,7 +3545,17 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
     return {
       sourceType: this.sourceType(),
       sourceJson: this.sourceJson(),
-      sourceFileMeta: this.sourceFileMeta()
+      sourceFileMeta: this.sourceFileMeta(),
+      requestTransformation: this.requestTransformationSnapshot()
+    };
+  }
+
+  private requestTransformationSnapshot(): RequestTransformationConfig {
+    return {
+      mode: this.requestMode(),
+      template: this.parseOptionalJsonObject(this.requestTemplateJson()) ?? {},
+      jsonata: this.requestJsonataExpression(),
+      headers: (this.parseOptionalJsonObject(this.requestHeadersJson()) ?? {}) as Record<string, string>
     };
   }
 
@@ -3420,6 +3612,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
       canonicalSchemaMeta: this.canonicalSchemaMeta(),
       targetFields: this.targetFields(),
       rules: this.rules(),
+      requestTransformation: this.requestTransformationSnapshot(),
       sourceValidationRules: this.sourceValidationRules(),
       kafka: {
         topic: this.kafkaTopic(),

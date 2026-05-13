@@ -10,6 +10,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -69,7 +71,7 @@ public class CredentialRepository {
                           rotation_due_at, last_used_at, created_by, created_at, updated_by, updated_at
                 """;
 
-        Instant now = Instant.now();
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         return client.preparedQuery(sql)
                 .execute(Tuples.of(
                         credential.credentialId() != null ? credential.credentialId() : UUID.randomUUID(),
@@ -79,7 +81,7 @@ public class CredentialRepository {
                         credential.environment().name(),
                         credential.status().name(),
                         encryptedSecret,
-                        credential.rotationDueAt(),
+                        toOffsetDateTime(credential.rotationDueAt()),
                         credential.createdBy(),
                         now,
                         now
@@ -97,7 +99,7 @@ public class CredentialRepository {
                 """;
 
         return client.preparedQuery(sql)
-                .execute(Tuple.of(status.name(), updatedBy, Instant.now(), credentialId, tenantId))
+                .execute(Tuple.of(status.name(), updatedBy, OffsetDateTime.now(ZoneOffset.UTC), credentialId, tenantId))
                 .map(rows -> rows.iterator().hasNext() ? toCredential(rows.iterator().next()) : null);
     }
 
@@ -111,7 +113,7 @@ public class CredentialRepository {
                 """;
 
         return client.preparedQuery(sql)
-                .execute(Tuple.of(Instant.now(), credentialId, tenantId))
+                .execute(Tuple.of(OffsetDateTime.now(ZoneOffset.UTC), credentialId, tenantId))
                 .map(rows -> rows.iterator().hasNext() ? toCredential(rows.iterator().next()) : null);
     }
 
@@ -151,6 +153,10 @@ public class CredentialRepository {
                 Credential.CredentialStatus.valueOf(row.getString("status")),
                 row.getString("encrypted_secret_json")
         );
+    }
+
+    private OffsetDateTime toOffsetDateTime(Instant instant) {
+        return instant == null ? null : OffsetDateTime.ofInstant(instant, ZoneOffset.UTC);
     }
 
     public record StoredCredentialSecret(

@@ -3,8 +3,10 @@ package com.canonbridge.mappingstudio.resource;
 import com.canonbridge.mappingstudio.audit.AuditLogService;
 import com.canonbridge.mappingstudio.domain.AuditLog;
 import com.canonbridge.mappingstudio.domain.MappingDraft;
+import com.canonbridge.mappingstudio.outbound.RequestTemplateService;
 import com.canonbridge.mappingstudio.repository.MappingDraftRepository;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -26,6 +28,9 @@ public class MappingDraftResource {
 
     @Inject
     AuditLogService auditLogService;
+
+    @Inject
+    RequestTemplateService requestTemplateService;
 
     @GET
     @Operation(summary = "List all mapping drafts for tenant")
@@ -64,6 +69,29 @@ public class MappingDraftResource {
                 }
                 return Response.ok(draft).build();
             });
+    }
+
+    @POST
+    @Path("/{id}/request-preview")
+    @Operation(summary = "Render outbound request template for a mapping draft")
+    public Uni<Response> previewRequest(
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            @PathParam("id") UUID id,
+            RequestPreviewRequest request) {
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new BadRequestException("X-Tenant-Id header is required");
+        }
+        return draftRepository.findById(tenantId, id)
+                .map(draft -> {
+                    if (draft == null) {
+                        return Response.status(Response.Status.NOT_FOUND).build();
+                    }
+                    JsonObject sourceConfig = parseJsonObject(draft.getSourceConfig(), new JsonObject());
+                    JsonObject context = request != null && request.context() != null ? request.context() : new JsonObject();
+                    JsonObject body = requestTemplateService.renderFromSourceConfig(sourceConfig, context);
+                    JsonObject headers = requestTemplateService.renderHeadersFromSourceConfig(sourceConfig, context);
+                    return Response.ok(new RequestPreviewResponse(body, headers)).build();
+                });
     }
 
     @POST
@@ -133,4 +161,17 @@ public class MappingDraftResource {
                 return Response.noContent().build();
             });
     }
+
+    private JsonObject parseJsonObject(String raw, JsonObject fallback) {
+        if (raw == null || raw.isBlank()) return fallback;
+        try {
+            return new JsonObject(raw);
+        } catch (Exception e) {
+            return fallback;
+        }
+    }
+
+    public record RequestPreviewRequest(JsonObject context) {}
+
+    public record RequestPreviewResponse(JsonObject payload, JsonObject headers) {}
 }

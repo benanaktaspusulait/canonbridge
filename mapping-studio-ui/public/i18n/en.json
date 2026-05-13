@@ -685,6 +685,29 @@
       "noRuleSelected": "No rule selected — path copied to clipboard",
       "assignHint": "Click a leaf to assign it as the source for → {{target}}"
     },
+    "mappingTab": {
+      "response": "Response transformation",
+      "request": "Request transformation"
+    },
+    "request": {
+      "title": "Request template",
+      "subtitle": "Build the outbound API request body from canonical data before calling the partner.",
+      "preview": "Preview request",
+      "canonicalSample": "Canonical sample",
+      "template": "Request JSON template",
+      "jsonata": "Request JSONata",
+      "headers": "Headers template",
+      "previewBody": "Preview body",
+      "previewHeaders": "Preview headers",
+      "previewEmpty": "Run preview to see the generated request.",
+      "previewReady": "Request preview ready",
+      "previewFailed": "Request preview failed",
+      "previewObjectRequired": "Request transformation must produce a JSON object.",
+      "mode": {
+        "template": "Template",
+        "jsonata": "JSONata"
+      }
+    },
     "sourceValidation": {
       "title": "Incoming JSON rules",
       "subtitle": "Define what the partner payload must satisfy before transformation, without writing code.",
