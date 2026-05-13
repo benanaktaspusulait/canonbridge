@@ -5,7 +5,6 @@ import com.canonbridge.mappingstudio.repository.UserRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.mindrot.jbcrypt.BCrypt;
 
 @ApplicationScoped
 public class AuthService {
@@ -48,9 +47,16 @@ public class AuthService {
     }
 
     public Uni<User> validateToken(String token) {
-        // For now, just return null - we'll implement proper validation later
-        // This is a simplified version for MVP
-        return Uni.createFrom().failure(new AuthException("Token validation not implemented yet"));
+        return jwtService.validateToken(token)
+            .map(claims -> userRepository.findById(claims.userId())
+                .chain(user -> {
+                    if (user == null) {
+                        return Uni.createFrom().failure(new AuthException("Invalid token"));
+                    }
+
+                    return Uni.createFrom().item(user);
+                }))
+            .orElseGet(() -> Uni.createFrom().failure(new AuthException("Invalid or expired token")));
     }
 
     public static class AuthException extends RuntimeException {

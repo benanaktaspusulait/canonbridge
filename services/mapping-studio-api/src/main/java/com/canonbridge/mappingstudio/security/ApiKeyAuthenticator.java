@@ -1,7 +1,9 @@
 package com.canonbridge.mappingstudio.security;
 
+import com.canonbridge.mappingstudio.auth.JwtService;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.nio.charset.StandardCharsets;
@@ -17,6 +19,9 @@ public class ApiKeyAuthenticator {
     @ConfigProperty(name = "canonbridge.auth.api-keys", defaultValue = "dev-api-key")
     String configuredApiKeys;
 
+    @Inject
+    JwtService jwtService;
+
     private Set<String> acceptedApiKeys;
 
     ApiKeyAuthenticator() {
@@ -26,23 +31,60 @@ public class ApiKeyAuthenticator {
         this.acceptedApiKeys = Set.copyOf(acceptedApiKeys);
     }
 
+    ApiKeyAuthenticator(Set<String> acceptedApiKeys, JwtService jwtService) {
+        this.acceptedApiKeys = Set.copyOf(acceptedApiKeys);
+        this.jwtService = jwtService;
+    }
+
     @PostConstruct
     void init() {
         this.acceptedApiKeys = parseApiKeys(configuredApiKeys);
     }
 
     public AuthenticationResult authenticate(String authorizationHeader, String apiKeyHeader) {
-        Optional<String> presentedCredential = extractPresentedCredential(authorizationHeader, apiKeyHeader);
-        if (presentedCredential.isEmpty()) {
+        Optional<String> presentedApiKey = extractApiKeyCredential(apiKeyHeader);
+        if (presentedApiKey.isPresent()) {
+            AuthenticationResult apiKeyResult = authenticateApiKey(presentedApiKey.get());
+            if (apiKeyResult.authenticated()) {
+                return apiKeyResult;
+            }
+            if ("auth_misconfigured".equals(apiKeyResult.error())) {
+                return apiKeyResult;
+            }
+        }
+
+        Optional<String> bearerToken = extractBearerToken(authorizationHeader);
+        if (bearerToken.isPresent()) {
+            if (jwtService != null) {
+                Optional<JwtService.TokenClaims> tokenClaims = jwtService.validateToken(bearerToken.get());
+                if (tokenClaims.isPresent()) {
+                    return AuthenticationResult.authenticated("user:" + tokenClaims.get().userId());
+                }
+            }
+
+            AuthenticationResult apiKeyResult = authenticateApiKey(bearerToken.get());
+            if (apiKeyResult.authenticated()) {
+                return apiKeyResult;
+            }
+            if ("auth_misconfigured".equals(apiKeyResult.error())) {
+                return apiKeyResult;
+            }
+        }
+
+        if (presentedApiKey.isEmpty() && bearerToken.isEmpty()) {
             return AuthenticationResult.failed("missing_credentials", "Missing API credentials");
         }
 
+        return AuthenticationResult.failed("invalid_credentials", "Invalid API credentials");
+    }
+
+    private AuthenticationResult authenticateApiKey(String presentedCredential) {
         if (acceptedApiKeys == null || acceptedApiKeys.isEmpty()) {
             return AuthenticationResult.failed("auth_misconfigured", "API authentication is enabled but no API keys are configured");
         }
 
         boolean valid = acceptedApiKeys.stream()
-                .anyMatch(acceptedApiKey -> constantTimeEquals(presentedCredential.get(), acceptedApiKey));
+                .anyMatch(acceptedApiKey -> constantTimeEquals(presentedCredential, acceptedApiKey));
 
         if (!valid) {
             return AuthenticationResult.failed("invalid_credentials", "Invalid API credentials");
@@ -62,11 +104,15 @@ public class ApiKeyAuthenticator {
                 .collect(Collectors.toUnmodifiableSet());
     }
 
-    static Optional<String> extractPresentedCredential(String authorizationHeader, String apiKeyHeader) {
+    static Optional<String> extractApiKeyCredential(String apiKeyHeader) {
         if (apiKeyHeader != null && !apiKeyHeader.isBlank()) {
             return Optional.of(apiKeyHeader.trim());
         }
 
+        return Optional.empty();
+    }
+
+    static Optional<String> extractBearerToken(String authorizationHeader) {
         if (authorizationHeader == null || authorizationHeader.isBlank()) {
             return Optional.empty();
         }
