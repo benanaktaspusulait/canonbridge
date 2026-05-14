@@ -1,21 +1,31 @@
 <div class="sample-data-step">
+  <!-- Enhanced Step Header with Badge -->
   <div class="step-header">
-    <h2>{{ 'wizard.sampleData.title' | i18n }}</h2>
-    <p>{{ 'wizard.sampleData.subtitle' | i18n }}</p>
+    <div class="step-badge">
+      <i class="pi pi-file-edit"></i>
+      <span class="step-number">Step 4</span>
+    </div>
+    <div class="step-title-section">
+      <h2>{{ 'wizard.sampleData.title' | i18n }}</h2>
+      <p>{{ 'wizard.sampleData.subtitle' | i18n }}</p>
+    </div>
   </div>
 
   <div class="sample-content">
     @if (!needsPayload()) {
-      <p-card>
+      <p-card styleClass="info-card">
         <p-message 
           severity="info" 
           [text]="'wizard.sampleData.noPayloadNeeded' | i18n" />
       </p-card>
     } @else {
-      <p-card>
+      <p-card styleClass="editor-card">
         <ng-template pTemplate="header">
           <div class="card-header">
-            <h3>{{ 'wizard.sampleData.requestPayload' | i18n }}</h3>
+            <div class="header-title">
+              <i class="pi pi-code"></i>
+              <h3>{{ 'wizard.sampleData.requestPayload' | i18n }}</h3>
+            </div>
             <div class="header-actions">
               <p-button
                 [label]="'wizard.sampleData.formatJson' | i18n"
@@ -40,20 +50,42 @@
           </div>
         </ng-template>
 
-        <div class="json-editor">
-          <textarea
-            [value]="sampleJson()"
-            (input)="onJsonChange($any($event.target).value)"
-            [placeholder]="'wizard.sampleData.jsonPlaceholder' | i18n"
-            rows="15"
-            class="json-textarea"
-            [class.error]="jsonError()"></textarea>
+        <div class="json-editor-container">
+          <div class="editor-toolbar">
+            <span class="editor-label">
+              <i class="pi pi-file"></i>
+              JSON Payload
+            </span>
+            @if (sampleJson().trim() && !jsonError()) {
+              <span class="validation-badge success">
+                <i class="pi pi-check-circle"></i>
+                Valid JSON
+              </span>
+            }
+            @if (jsonError()) {
+              <span class="validation-badge error">
+                <i class="pi pi-times-circle"></i>
+                Invalid JSON
+              </span>
+            }
+          </div>
+          
+          <div class="json-editor">
+            <textarea
+              [value]="sampleJson()"
+              (input)="onJsonChange($any($event.target).value)"
+              [placeholder]="'wizard.sampleData.jsonPlaceholder' | i18n"
+              rows="15"
+              class="json-textarea"
+              [class.error]="jsonError()"
+              [class.has-content]="sampleJson().trim()"></textarea>
+          </div>
           
           @if (jsonError()) {
-            <p-message 
-              severity="error" 
-              [text]="('wizard.sampleData.invalidJson' | i18n) + ': ' + jsonError()" 
-              styleClass="json-error" />
+            <div class="error-message">
+              <i class="pi pi-exclamation-triangle"></i>
+              <span>{{ ('wizard.sampleData.invalidJson' | i18n) + ': ' + jsonError() }}</span>
+            </div>
           }
         </div>
 
