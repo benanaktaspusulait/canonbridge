@@ -1,11 +1,20 @@
-import { Component, input, output, signal, effect, computed } from '@angular/core';
+import { Component, input, output, signal, effect, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
+import { CheckboxModule } from 'primeng/checkbox';
+import { InputTextModule } from 'primeng/inputtext';
 import { I18nPipe } from '../../../../core/i18n/i18n.pipe';
 import { RequestTransformationConfig } from '../../models/mapping-wizard.models';
+
+interface FieldMapping {
+  sourcePath: string;
+  targetPath: string;
+  sourceValue?: any;
+  included: boolean;
+}
 
 @Component({
   selector: 'app-request-mapping-step',
@@ -16,12 +25,14 @@ import { RequestTransformationConfig } from '../../models/mapping-wizard.models'
     CardModule,
     ButtonModule,
     MessageModule,
+    CheckboxModule,
+    InputTextModule,
     I18nPipe
   ],
   templateUrl: './request-mapping-step.component.html',
   styleUrl: './request-mapping-step.component.scss'
 })
-export class RequestMappingStepComponent {
+export class RequestMappingStepComponent implements OnInit {
   sourceType = input.required<string>();
   method = input.required<string>();
   initialConfig = input<RequestTransformationConfig | null>(null);
@@ -33,6 +44,11 @@ export class RequestMappingStepComponent {
   
   backClicked = output<void>();
 
+  // Visual mode
+  useVisualMode = signal(true);
+  fieldMappings = signal<FieldMapping[]>([]);
+  
+  // Advanced mode (existing)
   mode = signal<'template' | 'jsonata'>('template');
   templateJson = signal('{}');
   jsonataExpression = signal('');
@@ -47,6 +63,128 @@ export class RequestMappingStepComponent {
   previewLoading = signal<boolean>(false);
 
   private previewDebounceTimer: any;
+
+  ngOnInit(): void {
+    this.extractFieldsFromSample();
+  }
+
+  extractFieldsFromSample(): void {
+    const sampleJson = this.canonicalSampleJson();
+    if (!sampleJson) return;
+
+    try {
+      const parsed = JSON.parse(sampleJson);
+      const fields = this.flattenObject(parsed);
+      
+      this.fieldMappings.set(
+        fields.map(f => ({
+          sourcePath: f.path,
+          targetPath: f.path, // Default: same name
+          sourceValue: f.value,
+          included: true // Default: include all fields
+        }))
+      );
+    } catch (error) {
+      console.error('Failed to parse sample JSON:', error);
+    }
+  }
+
+  private flattenObject(obj: any, prefix = ''): Array<{path: string; value: any}> {
+    const result: Array<{path: string; value: any}> = [];
+    
+    for (const key in obj) {
+      if (!obj.hasOwnProperty(key)) continue;
+      
+      const path = prefix ? `${prefix}.${key}` : key;
+      const value = obj[key];
+      
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        // Nested object - flatten recursively
+        result.push(...this.flattenObject(value, path));
+      } else {
+        // Primitive or array - add as is
+        result.push({ path, value });
+      }
+    }
+    
+    return result;
+  }
+
+  toggleField(index: number): void {
+    this.fieldMappings.update(mappings => {
+      const updated = [...mappings];
+      updated[index].included = !updated[index].included;
+      return updated;
+    });
+    this.generatePreviewFromFields();
+  }
+
+  updateTargetPath(index: number, newPath: string): void {
+    this.fieldMappings.update(mappings => {
+      const updated = [...mappings];
+      updated[index].targetPath = newPath;
+      return updated;
+    });
+    this.generatePreviewFromFields();
+  }
+
+  selectAll(): void {
+    this.fieldMappings.update(mappings =>
+      mappings.map(m => ({ ...m, included: true }))
+    );
+    this.generatePreviewFromFields();
+  }
+
+  deselectAll(): void {
+    this.fieldMappings.update(mappings =>
+      mappings.map(m => ({ ...m, included: false }))
+    );
+    this.generatePreviewFromFields();
+  }
+
+  generatePreviewFromFields(): void {
+    const included = this.fieldMappings().filter(f => f.included);
+    const result: any = {};
+    
+    for (const field of included) {
+      this.setNestedValue(result, field.targetPath, field.sourceValue);
+    }
+    
+    this.previewOutput.set(JSON.stringify(result, null, 2));
+  }
+
+  private setNestedValue(obj: any, path: string, value: any): void {
+    const parts = path.split('.');
+    let current = obj;
+    
+    for (let i = 0; i < parts.length - 1; i++) {
+      const part = parts[i];
+      if (!current[part]) {
+        current[part] = {};
+      }
+      current = current[part];
+    }
+    
+    current[parts[parts.length - 1]] = value;
+  }
+
+  buildTemplateFromFields(): string {
+    const included = this.fieldMappings().filter(f => f.included);
+    const template: any = {};
+    
+    for (const field of included) {
+      this.setNestedValue(template, field.targetPath, `{{${field.sourcePath}}}`);
+    }
+    
+    return JSON.stringify(template, null, 2);
+  }
+
+  formatValue(value: any): string {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  }
 
   templatePlaceholder = '{ "field": "{{canonical.fieldName}}" }';
 
@@ -159,10 +297,13 @@ export class RequestMappingStepComponent {
   }
 
   onNext(): void {
+    // Build template from visual field mappings
+    const template = this.buildTemplateFromFields();
+    
     const config: RequestTransformationConfig = {
-      mode: this.mode(),
-      template: this.parseJsonSafe(this.templateJson()),
-      jsonata: this.jsonataExpression(),
+      mode: 'template',
+      template: this.parseJsonSafe(template),
+      jsonata: '',
       headers: this.parseJsonSafe(this.headersJson()) as Record<string, string>
     };
 

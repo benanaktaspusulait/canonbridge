@@ -88,8 +88,18 @@ export class MappingWizardComponent implements OnInit {
     this.loading.set(true);
     this.mappingService.getById(mappingId).subscribe({
       next: (mapping) => {
+        console.log('=== LOADED MAPPING ===', mapping);
+        
+        // Make mapping available in console for debugging
+        (window as any).debugMapping = mapping;
+        console.log('Mapping saved to window.debugMapping - you can inspect it in console');
+        
         const sourceConfig = this.extractSourceConfig(mapping);
+        console.log('=== EXTRACTED SOURCE CONFIG ===', sourceConfig);
+        
         const externalSystemId = this.extractExternalSystemId(mapping, sourceConfig);
+        console.log('=== EXTRACTED EXTERNAL SYSTEM ID ===', externalSystemId);
+        
         const requestTransformation = this.extractRequestTransformation(sourceConfig);
         
         // Populate wizard state from existing mapping
@@ -105,6 +115,8 @@ export class MappingWizardComponent implements OnInit {
           targetSchemaJson: '',
           mappingRules: this.extractMappingRules(mapping)
         }));
+        
+        console.log('=== WIZARD STATE AFTER UPDATE ===', this.wizardState());
         
         // Start from step 2 in edit mode (skip mode and source type selection)
         this.currentStep.set(2);
@@ -144,16 +156,30 @@ export class MappingWizardComponent implements OnInit {
   }
 
   private extractExternalSystemId(mapping: any, sourceConfig: Record<string, unknown>): string | null {
+    console.log('=== CHECKING FOR EXTERNAL SYSTEM ID ===');
+    console.log('sourceConfig.externalSystemId:', sourceConfig['externalSystemId']);
+    console.log('mapping.source_connection_id:', mapping.source_connection_id);
+    console.log('mapping.external_system_id:', mapping.external_system_id);
+    
     // First check if it's in the source_config
     if (sourceConfig['externalSystemId'] && typeof sourceConfig['externalSystemId'] === 'string') {
+      console.log('Found in sourceConfig.externalSystemId');
       return sourceConfig['externalSystemId'];
     }
     
-    // Fallback to deprecated field
-    if (mapping.source_connection_id) {
+    // Check mapping.source_connection_id
+    if (mapping.source_connection_id && typeof mapping.source_connection_id === 'string') {
+      console.log('Found in mapping.source_connection_id');
       return mapping.source_connection_id;
     }
     
+    // Check mapping.external_system_id
+    if (mapping.external_system_id && typeof mapping.external_system_id === 'string') {
+      console.log('Found in mapping.external_system_id');
+      return mapping.external_system_id;
+    }
+    
+    console.log('No external system ID found');
     return null;
   }
 
