@@ -122,6 +122,11 @@ export class MappingWizardComponent implements OnInit {
   private extractSourceConfig(mapping: any): Record<string, unknown> {
     const config: Record<string, unknown> = {};
     
+    // First parse the source_config JSON if it exists
+    const sourceConfigObj = this.parseJsonObject(mapping.source_config);
+    Object.assign(config, sourceConfigObj);
+    
+    // Then add/override with direct fields from mapping
     if (mapping.kafka_topic) {
       config['topic'] = mapping.kafka_topic;
       config['consumerGroup'] = mapping.kafka_consumer_group || '';
@@ -140,8 +145,6 @@ export class MappingWizardComponent implements OnInit {
       config['url'] = mapping.external_api_url || '';
       config['schedule'] = mapping.schedule_cron;
     }
-
-    Object.assign(config, this.parseJsonObject(mapping.source_config));
     
     return config;
   }
@@ -275,10 +278,10 @@ export class MappingWizardComponent implements OnInit {
     
     const state = this.wizardState();
     const updateData: any = {
-      source_config: {
+      source_config: JSON.stringify({
         ...state.sourceConfig,
         sourceJson: state.sampleJson // Save sample JSON in source_config
-      }
+      })
     };
     
     // Add target schema if selected
@@ -288,7 +291,7 @@ export class MappingWizardComponent implements OnInit {
     
     // Add mapping rules if defined
     if (state.mappingRules && state.mappingRules.length > 0) {
-      updateData.mapping_rules = state.mappingRules;
+      updateData.mapping_rules = JSON.stringify(state.mappingRules);
     }
     
     this.mappingService.update(this.mappingId()!, updateData).subscribe({

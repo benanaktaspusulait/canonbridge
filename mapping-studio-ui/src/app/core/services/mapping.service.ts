@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export interface MappingDraft {
@@ -67,7 +68,21 @@ export class MappingService {
   }
 
   getById(id: string): Observable<MappingDraft> {
-    return this.http.get<MappingDraft>(`${this.baseUrl}/${id}`);
+    return this.http.get<MappingDraft>(`${this.baseUrl}/${id}`).pipe(
+      map(draft => {
+        // Parse source_config if it's a string
+        if (draft.source_config && typeof draft.source_config === 'string') {
+          try {
+            const parsed = JSON.parse(draft.source_config);
+            // Keep it as string but ensure it's valid JSON
+            draft.source_config = JSON.stringify(parsed);
+          } catch (e) {
+            console.warn('Failed to parse source_config:', e);
+          }
+        }
+        return draft;
+      })
+    );
   }
 
   listByPartner(partnerId: string): Observable<MappingDraft[]> {
