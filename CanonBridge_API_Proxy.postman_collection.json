@@ -17,9 +17,16 @@
       "type": "string"
     },
     {
-      "key": "mappingId",
+      "key": "mappingIdPost",
       "value": "b3bb5c80-7966-4014-a2b4-235539f36b1b",
-      "type": "string"
+      "type": "string",
+      "description": "POST mapping ID - Payment Proxy with request body"
+    },
+    {
+      "key": "mappingIdGet",
+      "value": "e87b7f54-0e6a-4606-9c43-61b0891ce2be",
+      "type": "string",
+      "description": "GET mapping ID - Payment Proxy with query params"
     }
   ],
   "item": [
@@ -27,7 +34,7 @@
       "name": "Proxy Endpoints",
       "item": [
         {
-          "name": "Execute Mapping Proxy - Detailed Format",
+          "name": "POST Proxy - Payment Query with Body",
           "request": {
             "method": "POST",
             "header": [
@@ -42,36 +49,60 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"partner_format\": \"detailed\",\n  \"customer_id\": \"CUST-12345\",\n  \"request_id\": \"REQ-001\"\n}"
+              "raw": "{\n  \"partner_format\": \"detailed\",\n  \"customer_id\": \"CUST-12345\"\n}"
             },
-            "url": "{{baseUrl}}/api/proxy/{{mappingId}}",
-            "description": "Execute a mapping as a proxy with detailed format request. This endpoint:\n1. Accepts request in original format (partner's old format)\n2. Applies request transformation (partner_format -> API query params)\n3. Calls the target API (mock payment API)\n4. Applies response transformation (complex payment object -> simple 5 fields)\n5. Returns transformed response in partner's expected format"
+            "url": "{{baseUrl}}/api/proxy/{{mappingIdPost}}",
+            "description": "POST proxy example:\n1. Accepts request body with partner_format and customer_id\n2. Transforms request body to API format (adds status, converts fields)\n3. Calls external API with POST\n4. Transforms complex response to simple 5-field format\n5. Returns: paymentId, amount, currency, status, customerEmail"
+          },
+          "response": []
+        },
+        {
+          "name": "GET Proxy - Payment Latest with Query Params",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/proxy/{{mappingIdGet}}?format=detailed",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "proxy", "{{mappingIdGet}}"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "detailed",
+                  "description": "Response format: detailed or flat"
+                }
+              ]
+            },
+            "description": "GET proxy example:\n1. Accepts query parameters (no request body)\n2. Transforms query params to API query string\n3. Calls external API with GET\n4. Transforms complex response to simple 5-field format\n5. Returns: paymentId, amount, currency, status, customerEmail"
           },
           "response": [
             {
               "name": "Success - Transformed Response",
               "originalRequest": {
-                "method": "POST",
+                "method": "GET",
                 "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
                   {
                     "key": "X-Tenant-Id",
                     "value": "tenant-acme"
                   }
                 ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"partner_format\": \"detailed\",\n  \"customer_id\": \"CUST-12345\",\n  \"request_id\": \"REQ-001\"\n}"
-                },
                 "url": {
-                  "raw": "http://localhost:8082/api/proxy/b3bb5c80-7966-4014-a2b4-235539f36b1b",
+                  "raw": "http://localhost:8082/api/proxy/e87b7f54-0e6a-4606-9c43-61b0891ce2be?format=detailed",
                   "protocol": "http",
                   "host": ["localhost"],
                   "port": "8082",
-                  "path": ["api", "proxy", "b3bb5c80-7966-4014-a2b4-235539f36b1b"]
+                  "path": ["api", "proxy", "e87b7f54-0e6a-4606-9c43-61b0891ce2be"],
+                  "query": [
+                    {
+                      "key": "format",
+                      "value": "detailed"
+                    }
+                  ]
                 }
               },
               "status": "OK",
@@ -83,12 +114,38 @@
                   "value": "application/json;charset=UTF-8"
                 }
               ],
-              "body": "{\n  \"paymentId\": \"PAY-56648FAD\",\n  \"amount\": 1250.5,\n  \"currency\": \"EUR\",\n  \"status\": \"COMPLETED\",\n  \"customerEmail\": \"john.doe@example.com\"\n}"
+              "body": "{\n  \"paymentId\": \"PAY-D4271272\",\n  \"amount\": 1250.5,\n  \"currency\": \"EUR\",\n  \"status\": \"COMPLETED\",\n  \"customerEmail\": \"john.doe@example.com\"\n}"
             }
           ]
         },
         {
-          "name": "Execute Mapping Proxy - Flat Format",
+          "name": "GET Proxy - Payment Latest (Flat Format)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/proxy/{{mappingIdGet}}?format=flat",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "proxy", "{{mappingIdGet}}"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "flat",
+                  "description": "Response format: detailed or flat"
+                }
+              ]
+            },
+            "description": "Same GET proxy but with flat format query parameter"
+          },
+          "response": []
+        },
+        {
+          "name": "POST Proxy - Different Customer",
           "request": {
             "method": "POST",
             "header": [
@@ -103,15 +160,15 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"partner_format\": \"flat\",\n  \"customer_id\": \"CUST-67890\",\n  \"request_id\": \"REQ-002\"\n}"
+              "raw": "{\n  \"partner_format\": \"flat\",\n  \"customer_id\": \"CUST-67890\"\n}"
             },
-            "url": "{{baseUrl}}/api/proxy/{{mappingId}}",
-            "description": "Same proxy endpoint but with flat format request to show different request transformation"
+            "url": "{{baseUrl}}/api/proxy/{{mappingIdPost}}",
+            "description": "POST proxy with different customer and flat format"
           },
           "response": []
         },
         {
-          "name": "Execute Mapping Proxy - Invalid Format (Validation Error)",
+          "name": "POST Proxy - Validation Error (Invalid Format)",
           "request": {
             "method": "POST",
             "header": [
@@ -128,13 +185,36 @@
               "mode": "raw",
               "raw": "{\n  \"partner_format\": \"invalid_format\",\n  \"customer_id\": \"CUST-99999\"\n}"
             },
-            "url": "{{baseUrl}}/api/proxy/{{mappingId}}",
-            "description": "Test validation - should fail because partner_format must be 'flat' or 'detailed'"
+            "url": "{{baseUrl}}/api/proxy/{{mappingIdPost}}",
+            "description": "Test validation - should return 400 error because partner_format must be 'flat' or 'detailed'"
           },
           "response": []
         },
         {
-          "name": "Get Mapping Proxy Info",
+          "name": "POST Proxy - Validation Error (Missing Required Field)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"partner_format\": \"detailed\"\n}"
+            },
+            "url": "{{baseUrl}}/api/proxy/{{mappingIdPost}}",
+            "description": "Test validation - should return 400 error because customer_id is required"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Mapping Proxy Info (POST)",
           "request": {
             "method": "GET",
             "header": [
@@ -143,8 +223,23 @@
                 "value": "{{tenantId}}"
               }
             ],
-            "url": "{{baseUrl}}/api/proxy/{{mappingId}}/info",
-            "description": "Get information about a mapping proxy endpoint"
+            "url": "{{baseUrl}}/api/proxy/{{mappingIdPost}}/info",
+            "description": "Get information about the POST mapping proxy endpoint"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Mapping Proxy Info (GET)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/proxy/{{mappingIdGet}}/info",
+            "description": "Get information about the GET mapping proxy endpoint"
           },
           "response": []
         }

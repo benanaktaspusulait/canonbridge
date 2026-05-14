@@ -46,7 +46,7 @@ public class MappingProxyResource {
     @POST
     @Path("/{mappingId}")
     @Operation(
-        summary = "Execute mapping as API proxy",
+        summary = "Execute mapping as API proxy (POST)",
         description = "Accepts request in original format, transforms it, calls target API, " +
                      "transforms response, and returns it in original format"
     )
@@ -64,7 +64,54 @@ public class MappingProxyResource {
             );
         }
 
-        LOG.infof("🔄 Proxy request for mapping %s from tenant %s", mappingId, tenantId);
+        LOG.infof("🔄 Proxy POST request for mapping %s from tenant %s", mappingId, tenantId);
+
+        return executeProxyRequest(tenantId, mappingId, headers, requestPayload);
+    }
+
+    @GET
+    @Path("/{mappingId}")
+    @Operation(
+        summary = "Execute mapping as API proxy (GET)",
+        description = "Accepts GET request with query params, transforms them, calls target API, " +
+                     "transforms response, and returns it in original format"
+    )
+    public Uni<Response> executeMappingGet(
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            @PathParam("mappingId") UUID mappingId,
+            @Context HttpHeaders headers,
+            @Context jakarta.ws.rs.core.UriInfo uriInfo) {
+
+        if (tenantId == null || tenantId.isBlank()) {
+            return Uni.createFrom().item(
+                Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErrorResponse("X-Tenant-Id header is required"))
+                    .build()
+            );
+        }
+
+        LOG.infof("🔄 Proxy GET request for mapping %s from tenant %s", mappingId, tenantId);
+
+        // Convert query params to JSON payload
+        var queryParams = uriInfo.getQueryParameters();
+        var jsonPayload = new StringBuilder("{");
+        boolean first = true;
+        for (var entry : queryParams.entrySet()) {
+            if (!first) jsonPayload.append(",");
+            jsonPayload.append("\"").append(entry.getKey()).append("\":\"")
+                      .append(entry.getValue().get(0)).append("\"");
+            first = false;
+        }
+        jsonPayload.append("}");
+
+        return executeProxyRequest(tenantId, mappingId, headers, jsonPayload.toString());
+    }
+
+    private Uni<Response> executeProxyRequest(
+            String tenantId,
+            UUID mappingId,
+            HttpHeaders headers,
+            String requestPayload) {
 
         return draftRepository.findById(tenantId, mappingId)
             .chain(draft -> {

@@ -207,6 +207,21 @@ public class MappingExecutionService {
             ? sourceConfig.get("method").asText().toUpperCase() 
             : "POST";
 
+        // Add query params from transformed request if present
+        if (requestPayload.has("queryParams")) {
+            var queryParams = requestPayload.get("queryParams");
+            var queryString = new StringBuilder();
+            queryParams.fields().forEachRemaining(entry -> {
+                if (queryString.length() > 0) {
+                    queryString.append("&");
+                }
+                queryString.append(entry.getKey()).append("=").append(entry.getValue().asText());
+            });
+            if (queryString.length() > 0) {
+                url = url + (url.contains("?") ? "&" : "?") + queryString.toString();
+            }
+        }
+
         LOG.infof("📡 Calling external API: %s %s", method, url);
 
         // Build request based on method
