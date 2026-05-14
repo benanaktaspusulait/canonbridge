@@ -110,6 +110,8 @@
   "table": {
     "partner": "Partner",
     "eventType": "Event Type",
+    "sourceType": "Source Type",
+    "method": "Method",
     "version": "Version",
     "status": "Status",
     "lastModified": "Last Modified",

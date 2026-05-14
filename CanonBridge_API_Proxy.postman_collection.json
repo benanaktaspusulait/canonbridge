@@ -26,7 +26,7 @@
       "name": "Proxy Endpoints",
       "item": [
         {
-          "name": "Execute Mapping Proxy",
+          "name": "Execute Mapping Proxy - Detailed Format",
           "request": {
             "method": "POST",
             "header": [
@@ -41,14 +41,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{}"
+              "raw": "{\n  \"partner_format\": \"detailed\",\n  \"customer_id\": \"CUST-12345\",\n  \"request_id\": \"REQ-001\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/proxy/{{mappingId}}",
               "host": ["{{baseUrl}}"],
               "path": ["api", "proxy", "{{mappingId}}"]
             },
-            "description": "Execute a mapping as a proxy. This endpoint:\n1. Accepts request in original format\n2. Applies request transformation (if configured)\n3. Calls the target API\n4. Applies response transformation (if configured)\n5. Returns transformed response"
+            "description": "Execute a mapping as a proxy with detailed format request. This endpoint:\n1. Accepts request in original format (partner's old format)\n2. Applies request transformation (partner_format -> API query params)\n3. Calls the target API (mock payment API)\n4. Applies response transformation (complex payment object -> simple 5 fields)\n5. Returns transformed response in partner's expected format"
           },
           "response": [
             {
@@ -67,7 +67,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{}"
+                  "raw": "{\n  \"partner_format\": \"detailed\",\n  \"customer_id\": \"CUST-12345\",\n  \"request_id\": \"REQ-001\"\n}"
                 },
                 "url": {
                   "raw": "http://localhost:8082/api/proxy/b3bb5c80-7966-4014-a2b4-235539f36b1b",
@@ -89,6 +89,60 @@
               "body": "{\n  \"paymentId\": \"PAY-56648FAD\",\n  \"amount\": 1250.5,\n  \"currency\": \"EUR\",\n  \"status\": \"COMPLETED\",\n  \"customerEmail\": \"john.doe@example.com\"\n}"
             }
           ]
+        },
+        {
+          "name": "Execute Mapping Proxy - Flat Format",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"partner_format\": \"flat\",\n  \"customer_id\": \"CUST-67890\",\n  \"request_id\": \"REQ-002\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/proxy/{{mappingId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "proxy", "{{mappingId}}"]
+            },
+            "description": "Same proxy endpoint but with flat format request to show different request transformation"
+          },
+          "response": []
+        },
+        {
+          "name": "Execute Mapping Proxy - Invalid Format (Validation Error)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"partner_format\": \"invalid_format\",\n  \"customer_id\": \"CUST-99999\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/proxy/{{mappingId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "proxy", "{{mappingId}}"]
+            },
+            "description": "Test validation - should fail because partner_format must be 'flat' or 'detailed'"
+          },
+          "response": []
         },
         {
           "name": "Get Mapping Proxy Info",
@@ -115,7 +169,7 @@
       "name": "Direct Mock API (for comparison)",
       "item": [
         {
-          "name": "Mock API - Get Latest Payment",
+          "name": "Mock API - Get Latest Payment (Detailed)",
           "request": {
             "method": "GET",
             "header": [
@@ -125,13 +179,75 @@
               }
             ],
             "url": {
-              "raw": "http://localhost:8085/api/payments/latest",
+              "raw": "http://localhost:8085/api/payments/latest?format=detailed",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8085",
-              "path": ["api", "payments", "latest"]
+              "path": ["api", "payments", "latest"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "detailed"
+                }
+              ]
             },
-            "description": "Direct call to mock API (without proxy) for comparison"
+            "description": "Direct call to mock API with detailed format (without proxy) for comparison. Returns full payment object with nested structures."
+          },
+          "response": []
+        },
+        {
+          "name": "Mock API - Get Latest Payment (Flat)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "demo-api-key-12345"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8085/api/payments/latest?format=flat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8085",
+              "path": ["api", "payments", "latest"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "flat"
+                }
+              ]
+            },
+            "description": "Direct call to mock API with flat format. Returns simplified payment structure."
+          },
+          "response": []
+        },
+        {
+          "name": "Mock API - Query Payments with Body",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "demo-api-key-12345"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"CUST-12345\",\n  \"status\": \"COMPLETED\",\n  \"dateFrom\": \"2024-01-01\",\n  \"dateTo\": \"2024-12-31\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8085/api/payments/query",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8085",
+              "path": ["api", "payments", "query"]
+            },
+            "description": "Query payments with filter criteria in request body"
           },
           "response": []
         }

@@ -164,6 +164,37 @@ public class MappingProxyResource {
         }
     }
 
+    private int determineErrorStatus(String error) {
+        if (error == null) {
+            return 500;
+        }
+        
+        String errorLower = error.toLowerCase();
+        
+        // Validation errors
+        if (errorLower.contains("validation") || errorLower.contains("invalid")) {
+            return 400; // Bad Request
+        }
+        
+        // Not found errors
+        if (errorLower.contains("not found") || errorLower.contains("not configured")) {
+            return 404; // Not Found
+        }
+        
+        // Timeout errors
+        if (errorLower.contains("timeout") || errorLower.contains("timed out")) {
+            return 504; // Gateway Timeout
+        }
+        
+        // External API errors
+        if (errorLower.contains("api call failed") || errorLower.contains("connection")) {
+            return 502; // Bad Gateway
+        }
+        
+        // Default to internal server error
+        return 500;
+    }
+
     public record ErrorResponse(String error) {}
     
     public record ErrorDetailResponse(

@@ -55,6 +55,8 @@
       <tr>
         <th pSortableColumn="partner">{{ 'table.partner' | i18n }} <p-sortIcon field="partner" /></th>
         <th pSortableColumn="eventType">{{ 'table.eventType' | i18n }} <p-sortIcon field="eventType" /></th>
+        <th pSortableColumn="sourceType">{{ 'table.sourceType' | i18n }} <p-sortIcon field="sourceType" /></th>
+        <th pSortableColumn="method">{{ 'table.method' | i18n }} <p-sortIcon field="method" /></th>
         <th pSortableColumn="version">{{ 'table.version' | i18n }} <p-sortIcon field="version" /></th>
         <th pSortableColumn="status">{{ 'table.status' | i18n }} <p-sortIcon field="status" /></th>
         <th pSortableColumn="transformations" style="text-align:right">
@@ -69,6 +71,12 @@
       <tr>
         <td><strong>{{ m.partner }}</strong></td>
         <td><code class="event-code">{{ m.eventType }}</code></td>
+        <td><p-tag severity="secondary" [value]="m.sourceType" /></td>
+        <td>
+          @if (m.method) {
+            <span class="method-badge method-{{ m.method.toLowerCase() }}">{{ m.method }}</span>
+          }
+        </td>
         <td><span class="version-badge">{{ m.version }}</span></td>
         <td><p-tag [severity]="getSeverity(m.status)" [value]="('status.' + m.status) | i18n" /></td>
         <td style="text-align:right" class="text-sm">{{ m.transformations | number }}</td>
@@ -111,7 +119,7 @@
     </ng-template>
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td colspan="8" class="empty-cell">{{ 'mappings.empty' | i18n }}</td>
+        <td colspan="10" class="empty-cell">{{ 'mappings.empty' | i18n }}</td>
       </tr>
     </ng-template>
   </p-table>
@@ -133,6 +141,14 @@
       <article>
         <span>{{ 'table.partner' | i18n }}</span>
         <strong>{{ m.partner }}</strong>
+      </article>
+      <article>
+        <span>{{ 'table.sourceType' | i18n }}</span>
+        <strong>{{ m.sourceType }}</strong>
+      </article>
+      <article>
+        <span>{{ 'table.method' | i18n }}</span>
+        <strong>{{ m.method || 'N/A' }}</strong>
       </article>
       <article>
         <span>{{ 'table.by' | i18n }}</span>

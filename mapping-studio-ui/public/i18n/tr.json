@@ -110,6 +110,8 @@
   "table": {
     "partner": "Ortak",
     "eventType": "Olay tipi",
+    "sourceType": "Kaynak Tipi",
+    "method": "Metod",
     "version": "Sürüm",
     "status": "Durum",
     "lastModified": "Son değişiklik",

@@ -25,6 +25,8 @@ interface MappingVersion {
   id: string;
   partner: string;
   eventType: string;
+  sourceType: string;
+  method?: string;
   version: string;
   status: 'active' | 'draft' | 'deprecated';
   createdAt: string;
@@ -94,7 +96,7 @@ export class MappingsComponent implements OnInit {
     const q = this.search().trim().toLowerCase();
     const sf = this.statusFilter();
     return this._mappings().filter(m => {
-      const matchesSearch = !q || m.partner.includes(q) || m.eventType.includes(q) || m.version.toLowerCase().includes(q);
+      const matchesSearch = !q || m.partner.includes(q) || m.eventType.includes(q) || m.version.toLowerCase().includes(q) || m.sourceType.toLowerCase().includes(q);
       const matchesStatus = sf === 'all' || m.status === sf;
       return matchesSearch && matchesStatus;
     });
@@ -151,6 +153,8 @@ export class MappingsComponent implements OnInit {
       id: d.id ?? '',
       partner: partnerName ?? d.partner_id ?? 'Unknown Partner',
       eventType: d.event_type ?? '',
+      sourceType: this.formatSourceType(d.source_type),
+      method: d.rest_api_method,
       version: d.status === 'DRAFT' ? 'draft' : 'v1.0.0',
       status: this.mapDraftStatus(d.status),
       createdAt: d.created_at ? d.created_at.slice(0, 10) : '',
@@ -160,6 +164,15 @@ export class MappingsComponent implements OnInit {
       notes: d.description ?? '',
       rules: d.mapping_rules ? this.parseRuleNames(d.mapping_rules) : []
     };
+  }
+
+  private formatSourceType(sourceType?: string): string {
+    if (!sourceType) return 'Unknown';
+    // Convert REST_API to REST API, KAFKA to Kafka, etc.
+    return sourceType
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   }
 
   private mapDraftStatus(status?: string): 'active' | 'draft' | 'deprecated' {
@@ -228,9 +241,9 @@ export class MappingsComponent implements OnInit {
   }
 
   exportCsv(): void {
-    const header = 'partner,eventType,version,status,transformations,createdAt,publishedBy';
+    const header = 'partner,eventType,sourceType,method,version,status,transformations,createdAt,publishedBy';
     const rows = this.filtered()
-      .map(m => `"${m.partner}","${m.eventType}","${m.version}","${m.status}",${m.transformations},"${m.createdAt}","${m.publishedBy}"`)
+      .map(m => `"${m.partner}","${m.eventType}","${m.sourceType}","${m.method ?? ''}","${m.version}","${m.status}",${m.transformations},"${m.createdAt}","${m.publishedBy}"`)
       .join('\n');
     const blob = new Blob([`${header}\n${rows}`], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
