@@ -552,4 +552,63 @@ export class TestPublishStepComponent implements OnInit {
       this.copyToClipboard(url);
     }
   }
+
+  openProxyInBrowser(): void {
+    const state = this.wizardState();
+    const mappingId = this.mappingId();
+    
+    if (!mappingId) {
+      console.warn('⚠️ No mapping ID available');
+      return;
+    }
+
+    // Build proxy URL with tenant ID
+    const baseUrl = window.location.origin;
+    const tenantId = 'tenant-acme'; // TODO: Get from auth service
+    
+    // Check if it's a GET mapping
+    const sourceConfig = state.sourceConfig || {};
+    const method = sourceConfig['method'] || 'POST';
+    
+    if (method.toUpperCase() === 'GET') {
+      // For GET, add sample query params
+      const sampleParams = this.buildSampleQueryParams(state);
+      const url = `${baseUrl}/api/proxy/${mappingId}?${sampleParams}&tenantId=${tenantId}`;
+      window.open(url, '_blank');
+    } else {
+      // For POST, show message that browser can't be used
+      alert('POST mapping cannot be tested in browser. Please use Postman or the test form below.');
+    }
+  }
+
+  private buildSampleQueryParams(state: WizardState): string {
+    // Try to extract sample params from input schema or sample JSON
+    const inputSchema = state.inputSchema;
+    if (inputSchema) {
+      try {
+        const schema = JSON.parse(inputSchema);
+        const properties = schema.properties || {};
+        const params: string[] = [];
+        
+        // Add sample values for each property
+        for (const [key, prop] of Object.entries(properties)) {
+          const propDef = prop as any;
+          if (propDef.enum && propDef.enum.length > 0) {
+            params.push(`${key}=${propDef.enum[0]}`);
+          } else if (propDef.type === 'string') {
+            params.push(`${key}=sample`);
+          } else if (propDef.type === 'number') {
+            params.push(`${key}=123`);
+          }
+        }
+        
+        return params.join('&');
+      } catch (e) {
+        console.warn('Could not parse input schema:', e);
+      }
+    }
+    
+    // Default sample params
+    return 'format=detailed';
+  }
 }

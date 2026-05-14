@@ -271,23 +271,51 @@ export class FieldMappingStepComponent implements OnInit {
   }
 
   extractSourceFields(): void {
+    const sampleJsonStr = this.sampleJson();
+    console.log('=== EXTRACTING SOURCE FIELDS ===');
+    console.log('sampleJson string:', sampleJsonStr);
+    console.log('sampleJson length:', sampleJsonStr?.length);
+    
+    if (!sampleJsonStr || sampleJsonStr.trim() === '') {
+      console.warn('⚠️ Sample JSON is empty');
+      this.sourceFields.set([]);
+      return;
+    }
+    
     try {
-      const sample = JSON.parse(this.sampleJson());
+      const sample = JSON.parse(sampleJsonStr);
+      console.log('✅ Parsed sample JSON:', sample);
       const fields = this.extractFieldPathsWithTypes(sample);
+      console.log('✅ Extracted source fields:', fields);
       this.sourceFields.set(fields);
     } catch (e) {
-      console.error('Failed to parse sample JSON:', e);
+      console.error('❌ Failed to parse sample JSON:', e);
+      console.error('Sample JSON value:', sampleJsonStr);
       this.sourceFields.set([]);
     }
   }
 
   extractTargetFields(): void {
+    const targetSchemaStr = this.targetSchemaJson();
+    console.log('=== EXTRACTING TARGET FIELDS ===');
+    console.log('targetSchemaJson string:', targetSchemaStr);
+    console.log('targetSchemaJson length:', targetSchemaStr?.length);
+    
+    if (!targetSchemaStr || targetSchemaStr.trim() === '') {
+      console.warn('⚠️ Target schema JSON is empty');
+      this.targetFields.set([]);
+      return;
+    }
+    
     try {
-      const schema = JSON.parse(this.targetSchemaJson());
+      const schema = JSON.parse(targetSchemaStr);
+      console.log('✅ Parsed target schema:', schema);
       const fields = this.extractSchemaFieldsWithTypes(schema);
+      console.log('✅ Extracted target fields:', fields);
       this.targetFields.set(fields);
     } catch (e) {
-      console.error('Failed to parse target schema:', e);
+      console.error('❌ Failed to parse target schema:', e);
+      console.error('Target schema value:', targetSchemaStr);
       this.targetFields.set([]);
     }
   }
@@ -578,11 +606,20 @@ export class FieldMappingStepComponent implements OnInit {
 
   async generatePreview(): Promise<void> {
     console.log('🔄 Generating preview...');
-    console.log('Sample JSON:', this.sampleJson());
+    const sampleJsonStr = this.sampleJson();
+    console.log('Sample JSON string:', sampleJsonStr);
+    console.log('Sample JSON length:', sampleJsonStr?.length);
     console.log('Mapping Rules:', this.mappingRules());
     
+    if (!sampleJsonStr || sampleJsonStr.trim() === '') {
+      console.warn('⚠️ Sample JSON is empty, cannot generate preview');
+      this.previewResult.set({});
+      this.previewError.set('No sample data available');
+      return;
+    }
+    
     try {
-      const sample = JSON.parse(this.sampleJson());
+      const sample = JSON.parse(sampleJsonStr);
       const rules = this.mappingRules();
       
       if (rules.length === 0) {
@@ -604,6 +641,7 @@ export class FieldMappingStepComponent implements OnInit {
       this.previewError.set(null);
     } catch (error: any) {
       console.error('❌ Preview generation error:', error);
+      console.error('Sample JSON value:', sampleJsonStr);
       this.previewError.set(error.message);
       this.previewResult.set(null);
     }

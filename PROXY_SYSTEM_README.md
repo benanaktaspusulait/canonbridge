@@ -1,171 +1,109 @@
-# CanonBridge API Proxy System
+# CanonBridge API Proxy System - Testing Guide
 
-## 📖 Genel Bakış
+## Overview
+This document explains how to test the API Proxy system, including the mapping wizard's request mapping step.
 
-CanonBridge API Proxy sistemi, partnerların mevcut entegrasyonlarını **kod değişikliği yapmadan** yeni API'lere geçiş yapmalarını sağlar. Sistem, eski format request'leri kabul eder, yeni API formatına çevirir, hedef API'yi çağırır ve response'u tekrar eski formata dönüştürerek döner.
+## Test URLs
 
-## 🎯 Kullanım Senaryosu
-
-**Sorun:** Partner eski API formatıyla çalışıyor, yeni API'ye geçmek için tüm kodunu değiştirmesi gerekiyor.
-
-**Çözüm:** Partner sadece URL'i değiştirir, kod değişikliği yapmaz!
-
-```bash
-# Eski
-POST https://old-api.com/payments/query
-
-# Yeni (Proxy ile)
-POST https://canonbridge.com/api/proxy/{mappingId}
+### GET Mapping Test
+```
+http://localhost:4200/wizard?mappingId=e87b7f54-0e6a-4606-9c43-61b0891ce2be
 ```
 
-## 🚀 Özellikler
-
-### 1. Request Transformation
-- Partner'ın eski formatındaki request'i yeni API formatına çevirir
-- JSONata transformation engine kullanır
-- Dinamik field mapping
-
-### 2. Response Transformation
-- Yeni API'nin karmaşık response'unu basit formata çevirir
-- Partner'ın beklediği alanları döner
-- 5 alan mapping örneği:
-  - `payment.id` → `paymentId`
-  - `payment.amount.value` → `amount`
-  - `payment.amount.currency` → `currency`
-  - `payment.status` → `status`
-  - `payer.email` → `customerEmail`
-
-### 3. Validation
-- Input schema validation
-- Required field kontrolü
-- Enum değer kontrolü
-
-### 4. Error Handling
-- Detaylı error mesajları
-- HTTP status code mapping (400, 404, 502, 504, 500)
-- Error stage tracking
-- Timestamp
-
-## 📋 API Endpoints
-
-### Execute Mapping Proxy
-```http
-POST /api/proxy/{mappingId}
-Content-Type: application/json
-X-Tenant-Id: {tenantId}
-
-{
-  "partner_format": "detailed",
-  "customer_id": "CUST-12345",
-  "request_id": "REQ-001"
-}
+### POST Mapping Test
+```
+http://localhost:4200/wizard?mappingId=b3bb5c80-7966-4014-a2b4-235539f36b1b
 ```
 
-**Response:**
-```json
-{
-  "paymentId": "PAY-E8E7155F",
-  "amount": 1250.5,
-  "currency": "EUR",
-  "status": "COMPLETED",
-  "customerEmail": "john.doe@example.com"
-}
-```
+## Recent Fixes (Step 3 - Request Mapping)
 
-### Get Mapping Info
-```http
-GET /api/proxy/{mappingId}/info
-X-Tenant-Id: {tenantId}
-```
+### Issue
+When opening a mapping in edit mode, Step 3 (Request Mapping) wasn't showing the selected endpoint configuration.
 
-**Response:**
-```json
-{
-  "mappingId": "b3bb5c80-7966-4014-a2b4-235539f36b1b",
-  "name": "Payment Mapping",
-  "proxyEndpoint": "/api/proxy/b3bb5c80-7966-4014-a2b4-235539f36b1b",
-  "sourceType": "REST_API",
-  "transformationRulesCount": 5
-}
-```
+### Root Cause
+The `requestTransformation` was being extracted from `source_config` but the component's effect wasn't properly loading it or there was an issue with the data structure.
 
-## 🧪 Test Senaryoları
+### Changes Made
 
-### Test 1: Detailed Format
-```bash
-curl -X POST http://localhost:8082/api/proxy/b3bb5c80-7966-4014-a2b4-235539f36b1b \
-  -H "Content-Type: application/json" \
-  -H "X-Tenant-Id: tenant-acme" \
-  -d '{
-    "partner_format": "detailed",
-    "customer_id": "CUST-12345",
-    "request_id": "REQ-001"
-  }'
-```
+1. **Enhanced Logging in RequestMappingStepComponent** (`request-mapping-step.component.ts`)
+   - Added console logging to the `initialConfig` effect to trace when config is loaded
+   - Logs show: mode, template, jsonata, and headers being loaded
+   - Added automatic preview generation when template is loaded
 
-### Test 2: Flat Format
-```bash
-curl -X POST http://localhost:8082/api/proxy/b3bb5c80-7966-4014-a2b4-235539f36b1b \
-  -H "Content-Type: application/json" \
-  -H "X-Tenant-Id: tenant-acme" \
-  -d '{
-    "partner_format": "flat",
-    "customer_id": "CUST-67890",
-    "request_id": "REQ-002"
-  }'
-```
+2. **Enhanced Logging in MappingWizardComponent** (`mapping-wizard.component.ts`)
+   - Added detailed logging to `extractRequestTransformation()` method
+   - Traces the sourceConfig and requestTransformation extraction process
 
-### Test 3: Validation Error
-```bash
-curl -X POST http://localhost:8082/api/proxy/b3bb5c80-7966-4014-a2b4-235539f36b1b \
-  -H "Content-Type: application/json" \
-  -H "X-Tenant-Id: tenant-acme" \
-  -d '{
-    "partner_format": "invalid_format",
-    "customer_id": "CUST-99999"
-  }'
-```
+3. **Improved Effect Handling**
+   - Better handling of null/undefined values in jsonata and headers
+   - Automatic preview generation after config is loaded
 
-**Expected Error:**
-```json
-{
-  "error": "Input validation failed: partner_format must be 'flat' or 'detailed'",
-  "stage": "validation",
-  "timestamp": 1715698765432
-}
-```
+## Testing Steps
 
-## 📊 Sistem Akışı
+1. **Open the GET Mapping**
+   - Navigate to: `http://localhost:4200/wizard?mappingId=e87b7f54-0e6a-4606-9c43-61b0891ce2be`
+   - The wizard should start at Step 2 (Configuration)
+   - Click "Next" to go to Step 3 (Sample Data)
+   - Click "Next" to go to Step 4 (Request Mapping)
+   - **Expected**: The endpoint configuration should be loaded and visible
+   - **Check Console**: Look for logs starting with "=== REQUEST MAPPING STEP: initialConfig effect triggered ==="
 
-```
-┌─────────────┐
-│   Partner   │
-│ Application │
-└──────┬──────┘
-       │ POST /api/proxy/{mappingId}
-       │ (Eski Format)
-       ▼
-┌─────────────────────────────────┐
-│   CanonBridge Proxy System      │
-│                                 │
-│  1. Input Validation            │
-│  2. Request Transformation      │
-│  3. Call Target API             │
-│  4. Response Transformation     │
-│  5. Return Result               │
-└──────┬──────────────────────────┘
-       │ GET /api/payments/latest
-       │ (Yeni Format)
-       ▼
-┌─────────────┐
-│  Target API │
-│ (Mock/Real) │
-└─────────────┘
-```
+2. **Verify the Configuration**
+   - The mode should be set (template or jsonata)
+   - If using template mode, the template JSON should be visible
+   - Headers should be loaded if they exist
+   - Preview should be generated automatically
 
-## 🔧 Konfigürasyon
+3. **Make Changes**
+   - Modify the template or add/remove fields
+   - The preview should update automatically
+   - Click "Next" to save changes
 
-### Mapping Configuration
+4. **Test the Proxy Endpoint**
+   - After saving, test the proxy endpoint using Postman
+   - GET example: `{{baseUrl}}/api/proxy/{{mappingIdGet}}?format=detailed`
+   - POST example: `{{baseUrl}}/api/proxy/{{mappingIdPost}}` with body
+
+## Debugging
+
+### Console Logs to Check
+
+1. **When Loading Mapping**:
+   ```
+   === LOADED MAPPING ===
+   === EXTRACTED SOURCE CONFIG ===
+   === EXTRACTING REQUEST TRANSFORMATION ===
+   === WIZARD STATE AFTER UPDATE ===
+   ```
+
+2. **When Entering Request Mapping Step**:
+   ```
+   === REQUEST MAPPING STEP: initialConfig effect triggered ===
+   Loading config: { mode, template, jsonata, headers }
+   ```
+
+3. **If Config is Not Loading**:
+   - Check if `requestTransformation` is null in the wizard state
+   - Check if `source_config` contains `requestTransformation` object
+   - Verify the structure matches: `{ mode, template, jsonata, headers }`
+
+### Common Issues
+
+1. **Endpoint Not Selected**
+   - Check console for "No requestTransformation found, returning null"
+   - Verify the mapping's `source_config` has a `requestTransformation` object
+
+2. **Template Not Showing**
+   - Check if `initialConfig` is null or undefined
+   - Verify the effect is being triggered (check console logs)
+
+3. **Preview Not Generating**
+   - Check if `canonicalSampleJson` is provided
+   - Verify the template has valid JSON structure
+
+## Mapping Structure
+
+### Expected source_config Structure
 ```json
 {
   "url": "http://canonbridge-mock:8080/api/payments/latest",
@@ -174,227 +112,30 @@ curl -X POST http://localhost:8082/api/proxy/b3bb5c80-7966-4014-a2b4-235539f36b1
     "X-API-Key": "demo-api-key-12345"
   },
   "requestTransformation": {
-    "mode": "jsonata",
-    "jsonata": "{\"queryParams\": {\"format\": partner_format ? partner_format : \"detailed\"}}"
-  }
-}
-```
-
-### Mapping Rules (Response Transformation)
-```json
-[
-  {
-    "id": "rule_payment_id",
-    "sourcePath": "payment.id",
-    "targetKey": "paymentId",
-    "transform": "direct"
-  },
-  {
-    "id": "rule_amount",
-    "sourcePath": "payment.amount.value",
-    "targetKey": "amount",
-    "transform": "direct"
-  },
-  {
-    "id": "rule_currency",
-    "sourcePath": "payment.amount.currency",
-    "targetKey": "currency",
-    "transform": "direct"
-  },
-  {
-    "id": "rule_status",
-    "sourcePath": "payment.status",
-    "targetKey": "status",
-    "transform": "direct"
-  },
-  {
-    "id": "rule_customer_email",
-    "sourcePath": "payer.email",
-    "targetKey": "customerEmail",
-    "transform": "direct"
-  }
-]
-```
-
-### Validation Rules
-```json
-{
-  "input": {
-    "required": false,
-    "validateSchema": true
-  },
-  "output": {
-    "required": true,
-    "validateSchema": false,
-    "requiredFields": ["paymentId", "amount", "status"]
-  }
-}
-```
-
-### Input Schema
-```json
-{
-  "type": "object",
-  "properties": {
-    "partner_format": {
-      "type": "string",
-      "enum": ["flat", "detailed"],
-      "description": "Response format preference"
+    "mode": "template",
+    "template": {
+      "customerId": "{{customer_id}}",
+      "format": "{{partner_format}}"
     },
-    "customer_id": {
-      "type": "string",
-      "description": "Customer identifier"
-    },
-    "request_id": {
-      "type": "string",
-      "description": "Request tracking ID"
-    }
-  },
-  "additionalProperties": true
+    "jsonata": "",
+    "headers": {}
+  }
 }
 ```
 
-## 📦 Postman Collection
+## Next Steps
 
-Postman collection dosyası: `CanonBridge_API_Proxy.postman_collection.json`
+1. Open the mapping in the wizard using the test URL
+2. Check the browser console for debug logs
+3. Navigate to Step 4 (Request Mapping)
+4. Verify the configuration is loaded
+5. Make changes and test
+6. Use Postman to verify the proxy endpoint works correctly
 
-### Collection İçeriği:
-1. **Execute Mapping Proxy - Detailed Format** - Detailed format ile test
-2. **Execute Mapping Proxy - Flat Format** - Flat format ile test
-3. **Execute Mapping Proxy - Invalid Format** - Validation error testi
-4. **Get Mapping Proxy Info** - Mapping bilgilerini getir
-5. **Mock API - Get Latest Payment (Detailed)** - Direkt mock API çağrısı
-6. **Mock API - Get Latest Payment (Flat)** - Direkt mock API çağrısı (flat)
-7. **Mock API - Query Payments with Body** - Body ile query
+## Related Files
 
-### Postman Variables:
-- `baseUrl`: http://localhost:8082
-- `tenantId`: tenant-acme
-- `mappingId`: b3bb5c80-7966-4014-a2b4-235539f36b1b
-
-## 🎨 UI Entegrasyonu
-
-Mapping Wizard'ın 5. adımında (Test & Publish) proxy URL otomatik gösterilir:
-
-### Özellikler:
-- ✅ Proxy URL gösterimi
-- ✅ Copy to clipboard butonu
-- ✅ cURL örneği
-- ✅ Gradient tasarım
-- ✅ Responsive
-
-### Görünüm:
-```
-┌─────────────────────────────────────────────┐
-│  🔗 API Proxy Endpoint                      │
-│                                             │
-│  http://localhost:8082/api/proxy/...       │
-│  [Copy]                                     │
-│                                             │
-│  Example cURL Command:                      │
-│  curl -X POST http://localhost:8082/...    │
-└─────────────────────────────────────────────┘
-```
-
-## 🔍 Troubleshooting
-
-### Problem: 404 Not Found
-**Çözüm:** Mapping ID'yi kontrol edin, mapping'in VALID durumda olduğundan emin olun.
-
-### Problem: 400 Bad Request
-**Çözüm:** Request body'nin input schema'ya uygun olduğunu kontrol edin.
-
-### Problem: 502 Bad Gateway
-**Çözüm:** Target API'nin erişilebilir olduğunu kontrol edin.
-
-### Problem: Empty Response
-**Çözüm:** 
-1. Backend loglarını kontrol edin
-2. Mapping rules'ın doğru olduğunu kontrol edin
-3. Target API'nin response döndüğünü kontrol edin
-
-## 📝 Geliştirme Notları
-
-### Backend Files:
-- `MappingProxyResource.java` - Proxy endpoint
-- `MappingExecutionService.java` - Execution logic
-- `WebClientProducer.java` - HTTP client
-
-### Frontend Files:
-- `test-publish-step.component.ts` - Proxy URL logic
-- `test-publish-step.component.html` - UI template
-- `test-publish-step.component.scss` - Styles
-
-### Database:
-- Table: `mapping_drafts`
-- Key fields: `source_config`, `mapping_rules`, `validation_rules`, `input_schema`
-
-## 🚀 Deployment
-
-### Local Development:
-```bash
-# Backend
-cd services/mapping-studio-api
-mvn clean package -DskipTests
-docker restart canonbridge-mapping-studio-api
-
-# Frontend
-cd mapping-studio-ui
-npm run build
-docker restart canonbridge-mapping-studio-ui
-```
-
-### Production:
-1. Update environment variables
-2. Configure proper API keys
-3. Set up SSL/TLS
-4. Configure rate limiting
-5. Enable monitoring
-
-## 📊 Metrics & Monitoring
-
-### Key Metrics:
-- Request count per mapping
-- Average response time
-- Error rate
-- Transformation success rate
-
-### Logging:
-- Request/Response logging
-- Error logging with stack traces
-- Performance metrics
-- Audit trail
-
-## 🔐 Security
-
-### Authentication:
-- X-Tenant-Id header required
-- API key validation for target APIs
-
-### Authorization:
-- Tenant-based access control
-- Mapping ownership validation
-
-### Data Protection:
-- Input validation
-- Output sanitization
-- Rate limiting (TODO)
-- Request size limits (TODO)
-
-## 📚 Kaynaklar
-
-- [JSONata Documentation](https://jsonata.org/)
-- [Quarkus Reactive](https://quarkus.io/guides/getting-started-reactive)
-- [Angular Signals](https://angular.io/guide/signals)
-- [PrimeNG Components](https://primeng.org/)
-
-## 🤝 Katkıda Bulunma
-
-1. Feature branch oluşturun
-2. Değişikliklerinizi yapın
-3. Test edin
-4. Pull request açın
-
-## 📄 License
-
-Internal use only - CanonBridge Platform
+- `mapping-studio-ui/src/app/pages/mapping-wizard/mapping-wizard.component.ts`
+- `mapping-studio-ui/src/app/pages/mapping-wizard/mapping-wizard.component.html`
+- `mapping-studio-ui/src/app/pages/mapping-wizard/steps/step2-request-mapping/request-mapping-step.component.ts`
+- `CanonBridge_API_Proxy.postman_collection.json`
+- `POSTMAN_COLLECTION_GUIDE.md`

@@ -299,10 +299,15 @@ export class MappingWizardComponent implements OnInit {
   }
 
   private extractRequestTransformation(sourceConfig: Record<string, unknown>): any {
+    console.log('=== EXTRACTING REQUEST TRANSFORMATION ===');
+    console.log('sourceConfig:', sourceConfig);
     const reqTransform = sourceConfig['requestTransformation'];
+    console.log('requestTransformation found:', reqTransform);
     if (reqTransform && typeof reqTransform === 'object') {
+      console.log('Returning requestTransformation:', reqTransform);
       return reqTransform;
     }
+    console.log('No requestTransformation found, returning null');
     return null;
   }
 
@@ -336,44 +341,65 @@ export class MappingWizardComponent implements OnInit {
   }
 
   private extractSampleJson(mapping: any): string {
+    console.log('=== EXTRACTING SAMPLE JSON ===');
+    
     // First check if there's a sample_payload field directly on the mapping
     if (mapping.sample_payload && typeof mapping.sample_payload === 'string') {
+      console.log('Found sample_payload on mapping (string)');
       return mapping.sample_payload;
+    }
+    
+    // If sample_payload is an object, stringify it
+    if (mapping.sample_payload && typeof mapping.sample_payload === 'object') {
+      console.log('Found sample_payload on mapping (object)');
+      return JSON.stringify(mapping.sample_payload, null, 2);
     }
     
     // Then check source_config
     const config = this.parseJsonObject(mapping.source_config);
+    console.log('Checking source_config for sample data:', config);
     
-    // Check various possible field names in priority order
-    if (typeof config['sourceJson'] === 'string' && config['sourceJson']) {
-      return config['sourceJson'];
-    }
-    if (typeof config['sampleJson'] === 'string' && config['sampleJson']) {
-      return config['sampleJson'];
-    }
-    if (typeof config['sample_payload'] === 'string' && config['sample_payload']) {
-      return config['sample_payload'];
-    }
-    if (typeof config['payload'] === 'string' && config['payload']) {
-      return config['payload'];
-    }
-    
-    // Check if there's a requestTransformation template
-    const reqTransform = config['requestTransformation'];
-    if (reqTransform && typeof reqTransform === 'object') {
-      const template = (reqTransform as any)['template'];
-      if (template) {
-        // If template is already a string, return it
-        if (typeof template === 'string') {
-          return template;
-        }
-        // If template is an object, stringify it
-        if (typeof template === 'object') {
-          return JSON.stringify(template, null, 2);
-        }
+    // Check sampleJson first (our new standard location)
+    if (config['sampleJson']) {
+      if (typeof config['sampleJson'] === 'string') {
+        console.log('Found sampleJson in source_config (string)');
+        return config['sampleJson'];
+      }
+      if (typeof config['sampleJson'] === 'object') {
+        console.log('Found sampleJson in source_config (object)');
+        return JSON.stringify(config['sampleJson'], null, 2);
       }
     }
     
+    // Check other possible field names
+    if (typeof config['sourceJson'] === 'string' && config['sourceJson']) {
+      console.log('Found sourceJson in source_config (string)');
+      return config['sourceJson'];
+    }
+    if (config['sourceJson'] && typeof config['sourceJson'] === 'object') {
+      console.log('Found sourceJson in source_config (object)');
+      return JSON.stringify(config['sourceJson'], null, 2);
+    }
+    
+    if (typeof config['sample_payload'] === 'string' && config['sample_payload']) {
+      console.log('Found sample_payload in source_config (string)');
+      return config['sample_payload'];
+    }
+    if (config['sample_payload'] && typeof config['sample_payload'] === 'object') {
+      console.log('Found sample_payload in source_config (object)');
+      return JSON.stringify(config['sample_payload'], null, 2);
+    }
+    
+    if (typeof config['payload'] === 'string' && config['payload']) {
+      console.log('Found payload in source_config (string)');
+      return config['payload'];
+    }
+    if (config['payload'] && typeof config['payload'] === 'object') {
+      console.log('Found payload in source_config (object)');
+      return JSON.stringify(config['payload'], null, 2);
+    }
+    
+    console.warn('⚠️ No sample JSON found in mapping');
     return '';
   }
 

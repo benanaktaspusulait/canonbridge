@@ -203,11 +203,23 @@ export class RequestMappingStepComponent implements OnInit {
     // Load initial configuration
     effect(() => {
       const config = this.initialConfig();
+      console.log('=== REQUEST MAPPING STEP: initialConfig effect triggered ===', config);
       if (config) {
+        console.log('Loading config:', {
+          mode: config.mode,
+          template: config.template,
+          jsonata: config.jsonata,
+          headers: config.headers
+        });
         this.mode.set(config.mode);
         this.templateJson.set(JSON.stringify(config.template, null, 2));
-        this.jsonataExpression.set(config.jsonata);
-        this.headersJson.set(JSON.stringify(config.headers, null, 2));
+        this.jsonataExpression.set(config.jsonata || '');
+        this.headersJson.set(JSON.stringify(config.headers || {}, null, 2));
+        
+        // If we have a template, generate preview
+        if (config.template && Object.keys(config.template).length > 0) {
+          setTimeout(() => this.previewTransformation(), 100);
+        }
       }
     });
   }
