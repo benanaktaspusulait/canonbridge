@@ -83,16 +83,20 @@ export class ConfigurationStepComponent implements OnInit {
   grpcMethod = signal('');
 
   ngOnInit(): void {
-    this.loadExternalSystems();
+    // Load initial values first
     this.loadInitialValues();
+    // Then load external systems
+    this.loadExternalSystems();
   }
 
   loadInitialValues(): void {
     const config = this.initialConfig();
     const systemId = this.initialSystemId();
     
+    // Set the selected system ID immediately
     if (systemId) {
       this.selectedSystemId.set(systemId);
+      console.log('Setting initial system ID:', systemId);
     }
     
     // Load config values based on source type
@@ -151,15 +155,28 @@ export class ConfigurationStepComponent implements OnInit {
           }))
         );
         
-        // If we have a pre-selected system, load its endpoints
-        const systemId = this.initialSystemId();
+        // After loading systems, check if we have a pre-selected system
+        const systemId = this.selectedSystemId();
         if (systemId) {
+          console.log('Looking for system with ID:', systemId);
           const system = this.externalSystems().find(s => s.id === systemId);
           if (system) {
+            console.log('Found system:', system.name);
             this.selectedSystem.set(system);
             if (system.endpoints && system.endpoints.length > 0) {
               this.availableEndpoints.set(system.endpoints);
+              
+              // If we have a path in config, try to match it with an endpoint
+              const currentPath = this.restApiPath();
+              if (currentPath) {
+                const matchingEndpoint = system.endpoints.find(e => e.path === currentPath);
+                if (matchingEndpoint) {
+                  this.selectedEndpointPath.set(currentPath);
+                }
+              }
             }
+          } else {
+            console.warn('System not found in list:', systemId);
           }
         }
         

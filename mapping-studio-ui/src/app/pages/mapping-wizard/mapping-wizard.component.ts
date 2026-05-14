@@ -80,16 +80,19 @@ export class MappingWizardComponent implements OnInit {
     this.loading.set(true);
     this.mappingService.getById(mappingId).subscribe({
       next: (mapping) => {
+        const sourceConfig = this.extractSourceConfig(mapping);
+        const externalSystemId = this.extractExternalSystemId(mapping, sourceConfig);
+        
         // Populate wizard state from existing mapping
         this.wizardState.update(state => ({
           ...state,
           sourceType: this.inferSourceType(mapping),
-          externalSystemId: mapping.source_connection_id || null,
-          sourceConfig: this.extractSourceConfig(mapping),
+          externalSystemId: externalSystemId,
+          sourceConfig: sourceConfig,
           sampleJson: mapping.sample_payload || this.extractSampleJson(mapping),
-          targetSchemaRef: mapping.target_schema_ref || null,
+          targetSchemaRef: mapping.target_schema_ref || mapping.canonical_schema_ref || null,
           targetSchemaJson: '',
-          mappingRules: mapping.transformation_rules || []
+          mappingRules: this.extractMappingRules(mapping)
         }));
         
         // Start from step 1 in edit mode (skip source type selection)
@@ -120,33 +123,56 @@ export class MappingWizardComponent implements OnInit {
   }
 
   private extractSourceConfig(mapping: any): Record<string, unknown> {
-    const config: Record<string, unknown> = {};
+    // Parse the source_config JSON if it exists
+    const config = this.parseJsonObject(mapping.source_config);
     
-    // First parse the source_config JSON if it exists
-    const sourceConfigObj = this.parseJsonObject(mapping.source_config);
-    Object.assign(config, sourceConfigObj);
-    
-    // Then add/override with direct fields from mapping
-    if (mapping.kafka_topic) {
-      config['topic'] = mapping.kafka_topic;
-      config['consumerGroup'] = mapping.kafka_consumer_group || '';
-    }
-    
-    if (mapping.webhook_path) {
-      config['endpoint'] = mapping.webhook_path;
-    }
-    
-    if (mapping.rest_api_path) {
-      config['path'] = mapping.rest_api_path;
-      config['method'] = mapping.rest_api_method || 'GET';
-    }
-    
-    if (mapping.schedule_cron) {
-      config['url'] = mapping.external_api_url || '';
-      config['schedule'] = mapping.schedule_cron;
-    }
+    // The source_config should contain all the configuration we need
+    // No need to override with direct fields since they're deprecated
     
     return config;
+  }
+
+  private extractExternalSystemId(mapping: any, sourceConfig: Record<string, unknown>): string | null {
+    // First check if it's in the source_config
+    if (sourceConfig['externalSystemId'] && typeof sourceConfig['externalSystemId'] === 'string') {
+      return sourceConfig['externalSystemId'];
+    }
+    
+    // Fallback to deprecated field
+    if (mapping.source_connection_id) {
+      return mapping.source_connection_id;
+    }
+    
+    return null;
+  }
+
+  private extractMappingRules(mapping: any): any[] {
+    // First try mapping_rules field
+    if (mapping.mapping_rules) {
+      const rules = this.parseJsonValue(mapping.mapping_rules);
+      if (Array.isArray(rules)) {
+        return rules;
+      }
+    }
+    
+    // Fallback to transformation_rules
+    if (mapping.transformation_rules) {
+      if (Array.isArray(mapping.transformation_rules)) {
+        return mapping.transformation_rules;
+      }
+    }
+    
+    return [];
+  }
+
+  private parseJsonValue(value: unknown): any {
+    if (!value) return null;
+    if (typeof value !== 'string') return value;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
+    }
   }
 
   private extractSampleJson(mapping: any): string {
@@ -277,12 +303,30 @@ export class MappingWizardComponent implements OnInit {
     if (!this.mappingId()) return;
     
     const state = this.wizardState();
-    const updateData: any = {
-      source_config: JSON.stringify({
-        ...state.sourceConfig,
-        sourceJson: state.sampleJson // Save sample JSON in source_config
-      })
+    
+    // Build the source_config with all necessary data
+    const sourceConfig: Record<string, unknown> = {
+      ...state.sourceConfig
     };
+    
+    // Add external system ID if present
+    if (state.externalSystemId) {
+      sourceConfig['externalSystemId'] = state.externalSystemId;
+    }
+    
+    // Add sample JSON if present
+    if (state.sampleJson) {
+      sourceConfig['sourceJson'] = state.sampleJson;
+    }
+    
+    const updateData: any = {
+      source_config: JSON.stringify(sourceConfig)
+    };
+    
+    // Add source_type - required by backend
+    if (state.sourceType) {
+      updateData.source_type = state.sourceType;
+    }
     
     // Add target schema if selected
     if (state.targetSchemaRef) {
