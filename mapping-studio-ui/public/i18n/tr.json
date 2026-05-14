@@ -24,6 +24,7 @@
     "mappings": "Eşlemeler",
     "partners": "Ortaklar",
     "externalSystems": "Dış Sistemler",
+    "schemas": "Şemalar",
     "dlq": "DLQ",
     "monitoring": "İzleme",
     "settings": "Ayarlar",
@@ -490,6 +491,25 @@
       "revoked": "iptal"
     },
     "revokedNow": "iptal edildi"
+  },
+  "schemas": {
+    "title": "Şemalar",
+    "subtitle": "Kanonik ve partner şemalarını yönetin",
+    "createNew": "Şema Oluştur",
+    "createSchema": "Şema Oluştur",
+    "editSchema": "Şema Düzenle",
+    "createFirst": "İlk şemanızı oluşturun",
+    "noSchemas": "Şema bulunamadı",
+    "name": "Şema Adı",
+    "description": "Açıklama",
+    "type": "Şema Tipi",
+    "subject": "Konu",
+    "version": "Sürüm",
+    "status": "Durum",
+    "createdAt": "Oluşturulma Tarihi",
+    "actions": "İşlemler",
+    "schemaJson": "Şema JSON",
+    "formatJson": "JSON Formatla"
   },
   "studio": {
     "title": "Integration Studio",

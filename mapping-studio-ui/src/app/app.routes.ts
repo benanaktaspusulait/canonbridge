@@ -49,6 +49,11 @@ export const routes: Routes = [
           import('./pages/partners/partners.component').then(m => m.PartnersComponent)
       },
       {
+        path: 'schemas',
+        loadComponent: () =>
+          import('./pages/schemas/schemas.component').then(m => m.SchemasComponent)
+      },
+      {
         path: 'external-systems',
         loadComponent: () =>
           import('./pages/external-systems/external-systems.component').then(

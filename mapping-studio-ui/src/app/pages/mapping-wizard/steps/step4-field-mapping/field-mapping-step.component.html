@@ -153,11 +153,21 @@
     <!-- Target Panel -->
     <div class="target-panel">
       <div class="panel-header">
-        <h3>
-          <i class="pi pi-box"></i>
-          Target Schema
-        </h3>
-        <span class="field-count">{{ targetFields().length }} fields</span>
+        <div class="panel-header-left">
+          <h3>
+            <i class="pi pi-box"></i>
+            Target Schema
+          </h3>
+          <span class="field-count">{{ targetFields().length }} fields</span>
+        </div>
+        <p-button
+          label="Add Custom Field"
+          icon="pi pi-plus"
+          severity="success"
+          [outlined]="true"
+          size="small"
+          (onClick)="openAddFieldDialog()"
+          pTooltip="Add a new field to target schema" />
       </div>
       
       <div class="panel-content">
@@ -801,3 +811,56 @@
       (onClick)="onNext()" />
   </div>
 </div>
+
+<!-- Add Custom Field Dialog -->
+<p-dialog 
+  header="Add Custom Field to Target Schema"
+  [(visible)]="showAddFieldDialog"
+  [modal]="true"
+  [style]="{width: '500px'}"
+  [draggable]="false"
+  [resizable]="false">
+  
+  <div class="add-field-form">
+    <div class="form-field">
+      <label for="fieldName">Field Name *</label>
+      <input 
+        pInputText 
+        id="fieldName"
+        [(ngModel)]="newFieldName"
+        placeholder="e.g., customerId" />
+    </div>
+
+    <div class="form-field">
+      <label for="fieldType">Field Type *</label>
+      <p-select 
+        id="fieldType"
+        [(ngModel)]="newFieldType"
+        [options]="fieldTypeOptions"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Select type" />
+    </div>
+
+    <div class="form-field">
+      <p-checkbox 
+        [(ngModel)]="newFieldRequired"
+        [binary]="true"
+        inputId="fieldRequired"
+        label="Required Field" />
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <p-button 
+      label="Cancel"
+      severity="secondary"
+      [text]="true"
+      (onClick)="closeAddFieldDialog()" />
+    <p-button 
+      label="Add Field"
+      icon="pi pi-plus"
+      [disabled]="!newFieldName().trim()"
+      (onClick)="addCustomField()" />
+  </ng-template>
+</p-dialog>

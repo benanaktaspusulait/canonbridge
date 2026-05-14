@@ -1,0 +1,107 @@
+.schemas-page {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+
+  h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2rem;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-color-secondary);
+  }
+}
+
+.page-content {
+  background: var(--surface-card);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.schema-name {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  strong {
+    font-weight: 600;
+  }
+
+  small {
+    color: var(--text-color-secondary);
+    font-size: 0.875rem;
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+
+  i {
+    font-size: 4rem;
+    color: var(--text-color-secondary);
+    margin-bottom: 1rem;
+  }
+
+  p {
+    color: var(--text-color-secondary);
+    margin-bottom: 1rem;
+  }
+}
+
+.schema-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  label {
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.json-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  textarea {
+    resize: vertical;
+  }
+}
+
+code {
+  background: var(--surface-100);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}

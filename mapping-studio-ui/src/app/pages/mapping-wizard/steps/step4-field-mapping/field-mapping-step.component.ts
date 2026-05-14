@@ -11,6 +11,8 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { TextareaModule } from 'primeng/textarea';
+import { DialogModule } from 'primeng/dialog';
+import { CheckboxModule } from 'primeng/checkbox';
 import mappingEngine from 'jsonata';
 import { ruleToJsonataFragment, buildCombinedMappingExpression } from './rule-to-jsonata';
 
@@ -96,7 +98,9 @@ interface TransformOption {
     TooltipModule,
     ToggleSwitchModule,
     InputNumberModule,
-    TextareaModule
+    TextareaModule,
+    DialogModule,
+    CheckboxModule
   ],
   templateUrl: './field-mapping-step.component.html',
   styleUrl: './field-mapping-step.component.scss'
@@ -119,6 +123,10 @@ export class FieldMappingStepComponent implements OnInit {
   selectedSourceField = signal<SourceField | null>(null);
   selectedTargetForPattern = signal<string | null>(null); // Track which target field is in expression mode
   expandedFields = signal<Set<string>>(new Set()); // Track which fields are expanded
+  showAddFieldDialog = signal(false);
+  newFieldName = signal('');
+  newFieldType = signal('string');
+  newFieldRequired = signal(false);
 
   // Pattern constants for complex expressions with special characters
   readonly patterns = {
@@ -744,6 +752,53 @@ export class FieldMappingStepComponent implements OnInit {
   isFieldExpanded(fieldKey: string): boolean {
     return this.expandedFields().has(fieldKey);
   }
+
+  openAddFieldDialog(): void {
+    this.newFieldName.set('');
+    this.newFieldType.set('string');
+    this.newFieldRequired.set(false);
+    this.showAddFieldDialog.set(true);
+  }
+
+  closeAddFieldDialog(): void {
+    this.showAddFieldDialog.set(false);
+  }
+
+  addCustomField(): void {
+    const name = this.newFieldName().trim();
+    if (!name) {
+      return;
+    }
+
+    // Check if field already exists
+    const exists = this.targetFields().some(f => f.key === name);
+    if (exists) {
+      alert('A field with this name already exists');
+      return;
+    }
+
+    // Add new field to target fields
+    this.targetFields.update(fields => [
+      ...fields,
+      {
+        key: name,
+        type: this.newFieldType(),
+        required: this.newFieldRequired(),
+        mapped: false
+      }
+    ]);
+
+    this.closeAddFieldDialog();
+  }
+
+  fieldTypeOptions = [
+    { label: 'String', value: 'string' },
+    { label: 'Number', value: 'number' },
+    { label: 'Boolean', value: 'boolean' },
+    { label: 'Object', value: 'object' },
+    { label: 'Array', value: 'array' },
+    { label: 'Date', value: 'date' }
+  ];
 
   // Expose for template
   Math = Math;

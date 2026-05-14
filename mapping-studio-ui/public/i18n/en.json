@@ -24,6 +24,7 @@
     "mappings": "Mappings",
     "partners": "Partners",
     "externalSystems": "External Systems",
+    "schemas": "Schemas",
     "dlq": "DLQ",
     "monitoring": "Monitoring",
     "settings": "Settings",
@@ -490,6 +491,25 @@
       "active": "active",
       "revoked": "revoked"
     }
+  },
+  "schemas": {
+    "title": "Schemas",
+    "subtitle": "Manage canonical and partner schemas",
+    "createNew": "Create Schema",
+    "createSchema": "Create Schema",
+    "editSchema": "Edit Schema",
+    "createFirst": "Create your first schema",
+    "noSchemas": "No schemas found",
+    "name": "Schema Name",
+    "description": "Description",
+    "type": "Schema Type",
+    "subject": "Subject",
+    "version": "Version",
+    "status": "Status",
+    "createdAt": "Created At",
+    "actions": "Actions",
+    "schemaJson": "Schema JSON",
+    "formatJson": "Format JSON"
   },
   "studio": {
     "title": "Integration Studio",

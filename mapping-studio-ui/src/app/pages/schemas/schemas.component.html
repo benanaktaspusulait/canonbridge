@@ -1,0 +1,194 @@
+<div class="schemas-page">
+  <div class="page-header">
+    <div>
+      <h1>{{ 'schemas.title' | i18n }}</h1>
+      <p>{{ 'schemas.subtitle' | i18n }}</p>
+    </div>
+    <p-button 
+      [label]="'schemas.createNew' | i18n"
+      icon="pi pi-plus"
+      (onClick)="openCreateDialog()" />
+  </div>
+
+  <div class="page-content">
+    <p-table 
+      [value]="schemas()" 
+      [loading]="loading()"
+      [paginator]="true"
+      [rows]="25"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} schemas"
+      styleClass="p-datatable-sm">
+      
+      <ng-template #header>
+        <tr>
+          <th>{{ 'schemas.name' | i18n }}</th>
+          <th>{{ 'schemas.type' | i18n }}</th>
+          <th>{{ 'schemas.subject' | i18n }}</th>
+          <th>{{ 'schemas.version' | i18n }}</th>
+          <th>{{ 'schemas.status' | i18n }}</th>
+          <th>{{ 'schemas.createdAt' | i18n }}</th>
+          <th style="width: 150px">{{ 'schemas.actions' | i18n }}</th>
+        </tr>
+      </ng-template>
+      
+      <ng-template #body let-schema>
+        <tr>
+          <td>
+            <div class="schema-name">
+              <strong>{{ schema.name }}</strong>
+              @if (schema.description) {
+                <small>{{ schema.description }}</small>
+              }
+            </div>
+          </td>
+          <td>
+            <p-tag 
+              [value]="schema.schema_type" 
+              [severity]="getTypeSeverity(schema.schema_type)" />
+          </td>
+          <td>
+            <code>{{ schema.subject }}</code>
+          </td>
+          <td>
+            <p-tag [value]="'v' + schema.version" severity="secondary" />
+          </td>
+          <td>
+            <p-tag 
+              [value]="schema.status" 
+              [severity]="getStatusSeverity(schema.status)" />
+          </td>
+          <td>
+            {{ schema.created_at | date:'short' }}
+          </td>
+          <td>
+            <div class="action-buttons">
+              <p-button 
+                icon="pi pi-pencil"
+                [text]="true"
+                [rounded]="true"
+                severity="secondary"
+                size="small"
+                (onClick)="openEditDialog(schema)" />
+              <p-button 
+                icon="pi pi-trash"
+                [text]="true"
+                [rounded]="true"
+                severity="danger"
+                size="small"
+                (onClick)="deleteSchema(schema.id!)" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="7" class="empty-message">
+            <div class="empty-state">
+              <i class="pi pi-inbox"></i>
+              <p>{{ 'schemas.noSchemas' | i18n }}</p>
+              <p-button 
+                [label]="'schemas.createFirst' | i18n"
+                icon="pi pi-plus"
+                (onClick)="openCreateDialog()" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog 
+  [header]="editMode() ? ('schemas.editSchema' | i18n) : ('schemas.createSchema' | i18n)"
+  [(visible)]="showDialog"
+  [modal]="true"
+  [style]="{width: '800px'}"
+  [draggable]="false"
+  [resizable]="false">
+  
+  <div class="schema-form">
+    <div class="form-field">
+      <label for="name">{{ 'schemas.name' | i18n }} *</label>
+      <input 
+        pInputText 
+        id="name"
+        [(ngModel)]="currentSchema().name"
+        placeholder="e.g., OrderCreated" />
+    </div>
+
+    <div class="form-field">
+      <label for="description">{{ 'schemas.description' | i18n }}</label>
+      <textarea 
+        pTextarea 
+        id="description"
+        [(ngModel)]="currentSchema().description"
+        [rows]="2"
+        placeholder="Brief description of this schema"></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-field">
+        <label for="type">{{ 'schemas.type' | i18n }} *</label>
+        <p-select 
+          id="type"
+          [(ngModel)]="currentSchema().schema_type"
+          [options]="schemaTypes"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select type" />
+      </div>
+
+      <div class="form-field">
+        <label for="status">{{ 'schemas.status' | i18n }} *</label>
+        <p-select 
+          id="status"
+          [(ngModel)]="currentSchema().status"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select status" />
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label for="subject">{{ 'schemas.subject' | i18n }} *</label>
+      <input 
+        pInputText 
+        id="subject"
+        [(ngModel)]="currentSchema().subject"
+        placeholder="e.g., canonical.OrderCreated" />
+    </div>
+
+    <div class="form-field">
+      <label for="schema">{{ 'schemas.schemaJson' | i18n }} *</label>
+      <div class="json-editor">
+        <textarea 
+          pTextarea 
+          id="schema"
+          [(ngModel)]="currentSchema().schema_json"
+          [rows]="15"
+          [style]="{'font-family': 'monospace', 'font-size': '13px'}"></textarea>
+        <p-button 
+          [label]="'schemas.formatJson' | i18n"
+          icon="pi pi-code"
+          [text]="true"
+          size="small"
+          (onClick)="formatJson()" />
+      </div>
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <p-button 
+      [label]="'common.cancel' | i18n"
+      severity="secondary"
+      [text]="true"
+      (onClick)="closeDialog()" />
+    <p-button 
+      [label]="'common.save' | i18n"
+      (onClick)="saveSchema()" />
+  </ng-template>
+</p-dialog>
