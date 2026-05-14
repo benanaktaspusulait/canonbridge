@@ -259,13 +259,27 @@ export class MappingWizardComponent implements OnInit {
   private extractExternalSystemId(mapping: any, sourceConfig: Record<string, unknown>): string | null {
     console.log('=== CHECKING FOR EXTERNAL SYSTEM ID ===');
     console.log('sourceConfig.externalSystemId:', sourceConfig['externalSystemId']);
+    console.log('sourceConfig.connectionId:', sourceConfig['connectionId']);
     console.log('mapping.source_connection_id:', mapping.source_connection_id);
     console.log('mapping.external_system_id:', mapping.external_system_id);
     
-    // First check if it's in the source_config
-    if (sourceConfig['externalSystemId'] && typeof sourceConfig['externalSystemId'] === 'string') {
-      console.log('Found in sourceConfig.externalSystemId');
-      return sourceConfig['externalSystemId'];
+    // First check if it's in the source_config. Older drafts used several key names.
+    const sourceConfigKeys = [
+      'externalSystemId',
+      'connectionId',
+      'sourceConnectionId',
+      'source_connection_id',
+      'systemId',
+      'external_system_id',
+      'connection_id'
+    ];
+
+    for (const key of sourceConfigKeys) {
+      const value = sourceConfig[key];
+      if (typeof value === 'string' && value.trim()) {
+        console.log(`Found in sourceConfig.${key}`);
+        return value.trim();
+      }
     }
     
     // Check mapping.source_connection_id

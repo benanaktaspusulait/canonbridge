@@ -16,6 +16,7 @@ export interface MappingDraft {
     | 'WEBHOOK'
     | 'REST_API'
     | 'SCHEDULED_API'
+    | 'GRAPHQL'
     | 'SOAP'
     | 'GRPC'
     | 'FILE_BATCH'

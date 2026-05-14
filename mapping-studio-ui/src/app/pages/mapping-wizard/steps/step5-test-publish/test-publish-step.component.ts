@@ -169,13 +169,17 @@ export class TestPublishStepComponent implements OnInit {
 
   private buildMappingData(state: WizardState): any {
     const config = state.sourceConfig;
+    const sourceConfig = this.buildSourceConfig(state);
     
     return {
       name: this.mappingName(),
       description: this.mappingDescription() || null,
       source_type: state.sourceType,
+      source_config: JSON.stringify(sourceConfig),
       source_connection_id: state.externalSystemId,
+      canonical_schema_ref: state.targetSchemaRef,
       target_schema_ref: state.targetSchemaRef,
+      mapping_rules: JSON.stringify(state.mappingRules),
       transformation_rules: state.mappingRules,
       sample_payload: state.sampleJson,
       
@@ -190,6 +194,46 @@ export class TestPublishStepComponent implements OnInit {
       
       status: 'DRAFT'
     };
+  }
+
+  private buildSourceConfig(state: WizardState): Record<string, unknown> {
+    const sourceConfig: Record<string, unknown> = {
+      ...state.sourceConfig
+    };
+
+    const sourceType = this.sourceConfigSourceType(state.sourceType);
+    if (sourceType) {
+      sourceConfig['sourceType'] = sourceType;
+    }
+
+    if (state.externalSystemId) {
+      sourceConfig['externalSystemId'] = state.externalSystemId;
+      sourceConfig['connectionId'] = state.externalSystemId;
+    }
+
+    if (state.requestTransformation) {
+      sourceConfig['requestTransformation'] = state.requestTransformation;
+    }
+
+    if (state.sampleJson) {
+      sourceConfig['sourceJson'] = state.sampleJson;
+    }
+
+    return sourceConfig;
+  }
+
+  private sourceConfigSourceType(sourceType: WizardState['sourceType']): string | null {
+    if (sourceType === 'KAFKA') return 'kafka';
+    if (sourceType === 'WEBHOOK') return 'webhook';
+    if (sourceType === 'REST_API') return 'restApi';
+    if (sourceType === 'SCHEDULED_API') return 'externalApi';
+    if (sourceType === 'GRAPHQL') return 'graphql';
+    if (sourceType === 'SOAP') return 'soap';
+    if (sourceType === 'GRPC') return 'grpc';
+    if (sourceType === 'FILE_BATCH') return 'fileBatch';
+    if (sourceType === 'API_ENRICHMENT') return 'apiEnrichment';
+    if (sourceType === 'MANUAL') return 'manual';
+    return null;
   }
 
   getSummary(): string[] {
