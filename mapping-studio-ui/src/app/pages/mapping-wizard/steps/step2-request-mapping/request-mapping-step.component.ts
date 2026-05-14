@@ -66,6 +66,12 @@ export class RequestMappingStepComponent implements OnInit {
 
   ngOnInit(): void {
     this.extractFieldsFromSample();
+    // Generate initial preview
+    setTimeout(() => {
+      if (this.fieldMappings().length > 0) {
+        this.generatePreviewFromFields();
+      }
+    }, 100);
   }
 
   extractFieldsFromSample(): void {
@@ -297,15 +303,26 @@ export class RequestMappingStepComponent implements OnInit {
   }
 
   onNext(): void {
-    // Build template from visual field mappings
-    const template = this.buildTemplateFromFields();
+    let config: RequestTransformationConfig;
     
-    const config: RequestTransformationConfig = {
-      mode: 'template',
-      template: this.parseJsonSafe(template),
-      jsonata: '',
-      headers: this.parseJsonSafe(this.headersJson()) as Record<string, string>
-    };
+    if (this.useVisualMode()) {
+      // Build template from visual field mappings
+      const template = this.buildTemplateFromFields();
+      config = {
+        mode: 'template',
+        template: this.parseJsonSafe(template),
+        jsonata: '',
+        headers: this.parseJsonSafe(this.headersJson()) as Record<string, string>
+      };
+    } else {
+      // Use advanced mode (template or jsonata)
+      config = {
+        mode: this.mode(),
+        template: this.parseJsonSafe(this.templateJson()),
+        jsonata: this.jsonataExpression(),
+        headers: this.parseJsonSafe(this.headersJson()) as Record<string, string>
+      };
+    }
 
     this.requestMappingComplete.emit({ config });
   }

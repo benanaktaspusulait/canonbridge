@@ -54,7 +54,7 @@
             <p-select
               id="schema-select"
               [options]="canonicalSchemas()"
-              [(ngModel)]="selectedSchemaId"
+              [ngModel]="selectedSchemaId()"
               (onChange)="onSchemaSelected($event.value)"
               optionLabel="name"
               optionValue="id"
