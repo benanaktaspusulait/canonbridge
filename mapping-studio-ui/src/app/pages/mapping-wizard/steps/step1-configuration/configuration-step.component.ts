@@ -70,6 +70,7 @@ export class ConfigurationStepComponent implements OnInit {
   selectedSystem = signal<ExternalSystemOption | null>(null);
   availableEndpoints = signal<EndpointOption[]>([]);
   selectedEndpointPath = signal<string | null>(null);
+  initialPathConfigured = signal(false);
   loading = signal(true);
   loadError = signal<string | null>(null);
 
@@ -129,6 +130,7 @@ export class ConfigurationStepComponent implements OnInit {
     }
     if (config['path']) {
       this.restApiPath.set(config['path'] as string);
+      this.initialPathConfigured.set(true);
       console.log('✅ Set REST API path:', config['path']);
     }
     if (config['method']) {
@@ -220,9 +222,10 @@ export class ConfigurationStepComponent implements OnInit {
   onEndpointSelected(path: string): void {
     this.selectedEndpointPath.set(path);
     this.restApiPath.set(path);
+    this.initialPathConfigured.set(false);
     
     // Set method from endpoint if available
-    const endpoint = this.availableEndpoints().find(e => e.path === path);
+    const endpoint = this.filteredEndpoints().find(e => e.path === path);
     if (endpoint) {
       this.restApiMethod.set(endpoint.method);
       if (this.sourceType() === 'GRPC') {
@@ -235,6 +238,40 @@ export class ConfigurationStepComponent implements OnInit {
         this.restApiMethod.set(endpoint.method || 'POST');
       }
     }
+  }
+
+  onRestPathChanged(path: string): void {
+    this.restApiPath.set(path);
+    this.initialPathConfigured.set(false);
+
+    const normalizedPath = this.normalizePath(path);
+    const exactEndpoint = this.filteredEndpoints().find(endpoint =>
+      this.normalizePath(endpoint.path) === normalizedPath
+    );
+    this.selectedEndpointPath.set(exactEndpoint?.path ?? null);
+  }
+
+  onRestMethodSelected(method: string): void {
+    this.restApiMethod.set(method);
+
+    const selectedPath = this.selectedEndpointPath();
+    if (selectedPath && !this.filteredEndpoints().some(endpoint => endpoint.path === selectedPath)) {
+      this.selectedEndpointPath.set(null);
+    }
+  }
+
+  filteredEndpoints(): EndpointOption[] {
+    const method = this.currentEndpointMethod();
+    if (!method) return this.availableEndpoints();
+    return this.availableEndpoints().filter(endpoint =>
+      !endpoint.method || endpoint.method.toUpperCase() === method
+    );
+  }
+
+  shouldShowEndpointSelector(): boolean {
+    return this.selectedSystemId() !== null &&
+      !this.initialPathConfigured() &&
+      this.filteredEndpoints().length > 0;
   }
 
   private filterSystemsBySourceType(systems: OutboundConnection[]): OutboundConnection[] {
@@ -460,6 +497,11 @@ export class ConfigurationStepComponent implements OnInit {
     return null;
   }
 
+  private currentEndpointMethod(): string | null {
+    const method = this.restApiMethod().trim();
+    return method ? method.toUpperCase() : null;
+  }
+
   private applySelectedSystem(system: ExternalSystemOption | null, resetEndpoint: boolean): void {
     this.selectedSystem.set(system);
     this.availableEndpoints.set(system?.endpoints ?? []);
@@ -468,6 +510,7 @@ export class ConfigurationStepComponent implements OnInit {
       if (resetEndpoint) {
         this.selectedEndpointPath.set(null);
         this.restApiPath.set('');
+        this.initialPathConfigured.set(false);
       }
       return;
     }
@@ -477,6 +520,7 @@ export class ConfigurationStepComponent implements OnInit {
     if (resetEndpoint) {
       this.selectedEndpointPath.set(null);
       this.restApiPath.set('');
+      this.initialPathConfigured.set(false);
       return;
     }
 

@@ -60,12 +60,12 @@
             </p-select>
           </div>
 
-          @if (selectedSystemId() && availableEndpoints().length > 0) {
+          @if (shouldShowEndpointSelector()) {
             <div class="form-field">
               <label for="endpoint">{{ 'wizard.configuration.selectEndpoint' | i18n }}</label>
               <p-select
                 id="endpoint"
-                [options]="availableEndpoints()"
+                [options]="filteredEndpoints()"
                 [ngModel]="selectedEndpointPath()"
                 (ngModelChange)="onEndpointSelected($event)"
                 optionLabel="description"
@@ -153,7 +153,7 @@
               pInputText 
               id="rest-path"
               [ngModel]="restApiPath()"
-              (ngModelChange)="restApiPath.set($event)"
+              (ngModelChange)="onRestPathChanged($event)"
               [placeholder]="'wizard.configuration.restApiPathPlaceholder' | i18n"
               class="w-full" />
             <small class="field-hint">{{ 'wizard.configuration.restApiPathHint' | i18n }}</small>
@@ -164,7 +164,7 @@
             <p-select
               id="rest-method"
               [ngModel]="restApiMethod()"
-              (ngModelChange)="restApiMethod.set($event)"
+              (ngModelChange)="onRestMethodSelected($event)"
               [options]="[
                 { label: 'GET', value: 'GET' },
                 { label: 'POST', value: 'POST' },
