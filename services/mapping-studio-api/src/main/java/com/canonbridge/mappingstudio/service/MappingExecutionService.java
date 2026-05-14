@@ -200,8 +200,12 @@ public class MappingExecutionService {
 
         LOG.infof("📡 Calling external API: %s %s", method, url);
 
-        var request = webClient.postAbs(url)
-            .timeout(Duration.ofSeconds(30).toMillis())
+        // Build request based on method
+        var request = "GET".equals(method) 
+            ? webClient.getAbs(url)
+            : webClient.postAbs(url);
+            
+        request.timeout(Duration.ofSeconds(30).toMillis())
             .putHeader("Content-Type", "application/json");
 
         // Add custom headers if configured
@@ -212,7 +216,12 @@ public class MappingExecutionService {
             });
         }
 
-        return request.sendJson(requestPayload.toString())
+        // Send request based on method
+        var responseFuture = "GET".equals(method)
+            ? request.send()
+            : request.sendJson(requestPayload.toString());
+            
+        return responseFuture
             .map(HttpResponse::bodyAsJsonObject)
             .map(jsonObject -> {
                 try {

@@ -2,7 +2,6 @@ package com.canonbridge.mappingstudio.config;
 
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.client.WebClientOptions;
-import io.vertx.mutiny.core.Vertx as MutinyVertx;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
@@ -23,6 +22,6 @@ public class WebClientProducer {
             .setFollowRedirects(true)
             .setMaxRedirects(5);
         
-        return WebClient.create(MutinyVertx.newInstance(vertx), options);
+        return WebClient.create(io.vertx.mutiny.core.Vertx.newInstance(vertx), options);
     }
 }
