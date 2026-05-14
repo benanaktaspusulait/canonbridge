@@ -238,25 +238,15 @@
                             <i class="pi pi-cog"></i>
                             Transformation:
                           </label>
-                          <p-select
-                            [options]="transformOptions"
-                            [ngModel]="mapping.transform"
-                            (onChange)="updateTransform(field.key, $event.value)"
-                            optionLabel="label"
-                            optionValue="value"
-                            optionGroupLabel="category"
-                            optionGroupChildren="items"
-                            [group]="true"
-                            [style]="{'width': '100%'}"
-                            placeholder="Select transformation"
-                            size="small">
-                            <ng-template let-option pTemplate="item">
-                              <div class="transform-option">
-                                <strong>{{ option.label }}</strong>
-                                <small>{{ option.description }}</small>
-                              </div>
-                            </ng-template>
-                          </p-select>
+                          <select
+                            class="transform-select"
+                            [(ngModel)]="mapping.transform"
+                            (ngModelChange)="updateTransform(field.key, $event)">
+                            <option value="" disabled>Select transformation</option>
+                            @for (opt of getTransformOptionsForField(field.key); track opt.value) {
+                              <option [value]="opt.value">{{ opt.label }}</option>
+                            }
+                          </select>
                           
                           <button
                             type="button"
@@ -374,89 +364,6 @@
                         (onClick)="removeMapping(field.key)"
                         pTooltip="Remove this field mapping" />
                     </div>
-                  </div>
-                          optionGroupLabel="category"
-                          optionGroupChildren="items"
-                          [group]="true"
-                          [style]="{'width': '100%'}"
-                          placeholder="Select transformation"
-                          size="small">
-                          <ng-template let-option pTemplate="item">
-                            <div class="transform-option">
-                              <strong>{{ option.label }}</strong>
-                              <small>{{ option.description }}</small>
-                            </div>
-                          </ng-template>
-                        </p-select>
-                      </div>
-
-                      @if (getTransformOption(mapping.transform); as transformOpt) {
-                        @if (transformOpt.params && transformOpt.params.length > 0) {
-                          <div class="transform-params">
-                            @for (param of transformOpt.params; track param.name) {
-                              <div class="param-field">
-                                <label>{{ param.label }}</label>
-                                @if (param.type === 'textarea') {
-                                  <textarea
-                                    pTextarea
-                                    [ngModel]="getParamValue(mapping, param.name)"
-                                    (ngModelChange)="updateRuleParam(field.key, param.name, $event)"
-                                    [placeholder]="param.placeholder || ''"
-                                    rows="3"
-                                    [style]="{'width': '100%'}"></textarea>
-                                } @else if (param.type === 'number') {
-                                  <p-inputNumber
-                                    [ngModel]="getParamValue(mapping, param.name)"
-                                    (ngModelChange)="updateRuleParam(field.key, param.name, $event ? $event.toString() : '')"
-                                    [placeholder]="param.placeholder || ''"
-                                    [style]="{'width': '100%'}"
-                                    size="small" />
-                                } @else if (param.type === 'select' && param.options) {
-                                  <p-select
-                                    [options]="param.options"
-                                    [ngModel]="getParamValue(mapping, param.name)"
-                                    (ngModelChange)="updateRuleParam(field.key, param.name, $event)"
-                                    optionLabel="label"
-                                    optionValue="value"
-                                    [placeholder]="param.placeholder || ''"
-                                    [style]="{'width': '100%'}"
-                                    size="small" />
-                                } @else {
-                                  <input
-                                    pInputText
-                                    type="text"
-                                    [ngModel]="getParamValue(mapping, param.name)"
-                                    (ngModelChange)="updateRuleParam(field.key, param.name, $event)"
-                                    [placeholder]="param.placeholder || ''"
-                                    [style]="{'width': '100%'}"
-                                    size="small" />
-                                }
-                              </div>
-                            }
-                          </div>
-                        }
-                      }
-                    } @else {
-                      <!-- Expression Mode: Direct JSONata -->
-                      <div class="expression-editor">
-                        <label class="expression-label">
-                          <i class="pi pi-code"></i>
-                          JSONata Expression:
-                        </label>
-                        <textarea
-                          pTextarea
-                          [ngModel]="mapping.advancedExpression || mapping.sourcePath"
-                          (ngModelChange)="updateExpression(field.key, $event)"
-                          placeholder="Write JSONata expression (e.g., $uppercase(firstName) & ' ' & lastName)"
-                          rows="4"
-                          [style]="{'width': '100%', 'font-family': 'monospace'}"
-                          class="expression-textarea"></textarea>
-                        <small class="expression-help">
-                          <i class="pi pi-info-circle"></i>
-                          Full JSONata syntax supported. Click "Show Reference" above for available functions.
-                        </small>
-                      </div>
-                    }
 
                     <div class="mapping-actions">
                       <p-button

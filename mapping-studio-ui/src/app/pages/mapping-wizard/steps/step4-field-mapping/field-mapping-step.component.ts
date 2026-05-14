@@ -258,6 +258,9 @@ export class FieldMappingStepComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    console.log('🔧 Transform Options:', this.transformOptions.length, 'items');
+    console.log('First 3 options:', this.transformOptions.slice(0, 3).map(o => ({ label: o.label, value: o.value, category: o.category })));
+    
     this.extractSourceFields();
     this.extractTargetFields();
     this.loadInitialRules();
@@ -449,6 +452,8 @@ export class FieldMappingStepComponent implements OnInit {
     this.mappingRules.update(rules => 
       rules.map(r => r.targetKey === targetKey ? { ...r, transform, paramA: '', paramB: '', paramC: '', advancedExpression: '' } : r)
     );
+    // Regenerate preview after transform change
+    this.generatePreview();
   }
 
   setMappingMode(targetKey: string, mode: MappingMode): void {
@@ -486,6 +491,8 @@ export class FieldMappingStepComponent implements OnInit {
           : r
       )
     );
+    // Regenerate preview
+    this.generatePreview();
   }
 
   removeTransform(targetKey: string): void {
@@ -497,6 +504,8 @@ export class FieldMappingStepComponent implements OnInit {
           : r
       )
     );
+    // Regenerate preview
+    this.generatePreview();
   }
 
   updateExpression(targetKey: string, expression: string): void {
@@ -539,24 +548,38 @@ export class FieldMappingStepComponent implements OnInit {
     this.mappingRules.update(rules => 
       rules.map(r => r.targetKey === targetKey ? { ...r, [key]: value } : r)
     );
+    // Regenerate preview after param change
+    this.generatePreview();
   }
 
   generatePreview(): void {
+    console.log('🔄 Generating preview...');
+    console.log('Sample JSON:', this.sampleJson());
+    console.log('Mapping Rules:', this.mappingRules());
+    
     try {
       const sample = JSON.parse(this.sampleJson());
       const rules = this.mappingRules();
       
+      if (rules.length === 0) {
+        console.log('⚠️ No rules to apply');
+        this.previewResult.set({});
+        this.previewError.set(null);
+        return;
+      }
+      
       // Use the same JSONata conversion as Integration Studio
       const jsonataExpression = buildCombinedMappingExpression(rules);
-      console.log('Generated JSONata:', jsonataExpression);
+      console.log('📝 Generated JSONata:', jsonataExpression);
       
       const expression = mappingEngine(jsonataExpression);
       const result = expression.evaluate(sample);
-
+      
+      console.log('✅ Preview result:', result);
       this.previewResult.set(result);
       this.previewError.set(null);
     } catch (error: any) {
-      console.error('Preview generation error:', error);
+      console.error('❌ Preview generation error:', error);
       this.previewError.set(error.message);
       this.previewResult.set(null);
     }
@@ -571,6 +594,50 @@ export class FieldMappingStepComponent implements OnInit {
       return mapping.advancedExpression || '';
     }
     return (mapping as any)[paramName] || '';
+  }
+
+  getTransformOptionsForField(targetKey: string): TransformOption[] {
+    const mapping = this.mappingRules().find(r => r.targetKey === targetKey);
+    if (!mapping) return this.transformOptions;
+
+    const targetField = this.targetFields().find(f => f.key === targetKey);
+    if (!targetField) return this.transformOptions;
+
+    const fieldType = targetField.type.toLowerCase();
+
+    // Filter transformations based on field type
+    return this.transformOptions.filter(opt => {
+      // Direct copy and default value work for all types
+      if (opt.value === 'direct' || opt.value === 'default_value') return true;
+
+      // String transformations
+      if (fieldType === 'string') {
+        return opt.category === 'String' || opt.category === 'Basic' || opt.category === 'Logic';
+      }
+
+      // Number transformations
+      if (fieldType === 'number' || fieldType === 'integer') {
+        return opt.category === 'Math' || opt.category === 'Type' || opt.category === 'Basic' || opt.category === 'Logic';
+      }
+
+      // Array transformations
+      if (fieldType === 'array') {
+        return opt.category === 'Array' || opt.category === 'Math' || opt.category === 'Basic';
+      }
+
+      // Boolean transformations
+      if (fieldType === 'boolean') {
+        return opt.category === 'Logic' || opt.category === 'Basic';
+      }
+
+      // Date transformations
+      if (fieldType === 'date' || fieldType === 'datetime') {
+        return opt.category === 'Date' || opt.category === 'String' || opt.category === 'Basic';
+      }
+
+      // Default: show all
+      return true;
+    });
   }
 
   getTransformOption(transform: TransformKind): TransformOption | undefined {

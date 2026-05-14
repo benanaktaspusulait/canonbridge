@@ -787,14 +787,85 @@
             font-size: 0.875rem;
             font-weight: 600;
             color: #475569;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            i {
+              color: var(--primary-color);
+            }
+          }
+
+          .transform-select {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            color: #1e293b;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+
+            &:hover {
+              border-color: #cbd5e1;
+            }
+
+            &:focus {
+              outline: none;
+              border-color: var(--primary-color);
+              box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+
+            option {
+              padding: 0.5rem;
+              font-size: 0.9375rem;
+            }
           }
 
           ::ng-deep .p-select {
             .p-select-label {
               font-size: 0.9375rem;
               font-weight: 500;
+            }
+          }
+
+          ::ng-deep .p-select-option {
+            .transform-option {
+              display: flex;
+              flex-direction: column;
+              gap: 0.25rem;
+              padding: 0.25rem 0;
+
+              .option-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.5rem;
+
+                strong {
+                  color: #1e293b;
+                  font-size: 0.875rem;
+                }
+
+                .category-badge {
+                  font-size: 0.6875rem;
+                  padding: 0.125rem 0.5rem;
+                  background: #e0e7ff;
+                  color: #4f46e5;
+                  border-radius: 4px;
+                  font-weight: 600;
+                  text-transform: uppercase;
+                  letter-spacing: 0.5px;
+                }
+              }
+
+              small {
+                color: #64748b;
+                font-size: 0.75rem;
+                line-height: 1.3;
+              }
             }
           }
         }
