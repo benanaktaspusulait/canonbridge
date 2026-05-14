@@ -35,8 +35,34 @@
       .subtitle {
         margin: 0;
         color: #64748b;
-        font-size: 1rem;
+        font-size: 0.95rem;
         font-weight: 400;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+
+        strong {
+          color: #475569;
+          font-weight: 600;
+        }
+
+        .instruction-item {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.375rem;
+          padding: 0.375rem 0.75rem;
+          background: linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%);
+          border-radius: 6px;
+          font-size: 0.875rem;
+          color: var(--primary-700);
+          font-weight: 500;
+
+          i {
+            font-size: 0.875rem;
+            color: var(--primary-500);
+          }
+        }
       }
     }
 
@@ -244,7 +270,7 @@
       background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
       border: 2px solid #e2e8f0;
       border-radius: 12px;
-      cursor: grab;
+      cursor: pointer;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
       &:hover {
@@ -252,6 +278,24 @@
         border-color: var(--primary-300);
         transform: translateX(6px);
         box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
+      }
+
+      &.selected {
+        background: linear-gradient(135deg, #ddd6fe 0%, #ede9fe 100%);
+        border-color: var(--primary-500);
+        border-width: 3px;
+        box-shadow: 0 6px 24px rgba(102, 126, 234, 0.3);
+        transform: translateX(8px) scale(1.02);
+
+        .field-icon {
+          background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
+          color: white;
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .field-path {
+          color: var(--primary-700);
+        }
       }
 
       &.cdk-drag-preview {
@@ -339,6 +383,17 @@
       border-radius: 12px;
       padding: 1.25rem;
       transition: all 0.3s ease;
+
+      &.clickable {
+        cursor: pointer;
+        
+        &:hover {
+          border-color: var(--primary-400);
+          background: linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%);
+          box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
+          transform: scale(1.02);
+        }
+      }
 
       &.mapped {
         border-style: solid;

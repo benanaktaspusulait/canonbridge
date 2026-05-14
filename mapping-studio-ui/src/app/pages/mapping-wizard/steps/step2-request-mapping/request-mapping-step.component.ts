@@ -44,6 +44,9 @@ export class RequestMappingStepComponent {
 
   previewOutput = signal<string | null>(null);
   previewError = signal<string | null>(null);
+  previewLoading = signal<boolean>(false);
+
+  private previewDebounceTimer: any;
 
   templatePlaceholder = '{ "field": "{{canonical.fieldName}}" }';
 
@@ -72,6 +75,7 @@ export class RequestMappingStepComponent {
   onTemplateChange(value: string): void {
     this.templateJson.set(value);
     this.validateJson(value, 'template');
+    this.debouncedPreview();
   }
 
   onJsonataChange(value: string): void {
@@ -190,10 +194,20 @@ export class RequestMappingStepComponent {
     }
   }
 
-  // Preview functionality (simplified - full implementation would call backend)
+  // Preview functionality with debouncing
+  private debouncedPreview(): void {
+    clearTimeout(this.previewDebounceTimer);
+    this.previewDebounceTimer = setTimeout(() => {
+      if (this.canonicalSampleJson()) {
+        this.previewTransformation();
+      }
+    }, 300); // 300ms debounce
+  }
+
   previewTransformation(): void {
     this.previewError.set(null);
     this.previewOutput.set(null);
+    this.previewLoading.set(true);
 
     try {
       if (this.mode() === 'template') {
@@ -207,6 +221,8 @@ export class RequestMappingStepComponent {
       }
     } catch (e: any) {
       this.previewError.set(e.message);
+    } finally {
+      this.previewLoading.set(false);
     }
   }
 

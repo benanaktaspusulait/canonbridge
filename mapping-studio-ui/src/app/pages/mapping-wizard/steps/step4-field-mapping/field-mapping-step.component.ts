@@ -39,11 +39,14 @@ export type TransformKind =
   | 'template_string'
   | 'custom_jsonata';
 
+export type MappingMode = 'visual' | 'expression';
+
 export interface MappingRule {
   id: string;
   targetKey: string;
   sourcePath: string;
   transform: TransformKind;
+  mode?: MappingMode; // 'visual' for dropdown, 'expression' for direct JSONata
   paramA?: string;
   paramB?: string;
   paramC?: string;
@@ -112,6 +115,7 @@ export class FieldMappingStepComponent implements OnInit {
   previewError = signal<string | null>(null);
   showJsonataReference = signal(false);
   selectedRuleForEdit = signal<MappingRule | null>(null);
+  selectedSourceField = signal<SourceField | null>(null);
   
   transformOptions: TransformOption[] = [
     // Basic
@@ -224,18 +228,21 @@ export class FieldMappingStepComponent implements OnInit {
     return total > 0 ? Math.round((this.mappedCount() / total) * 100) : 0;
   });
 
-  ngOnInit(): void {
-    this.extractSourceFields();
-    this.extractTargetFields();
-    this.loadInitialRules();
-    
+  constructor() {
     // Auto-generate preview when rules change
+    // effect() must be called in constructor (injection context)
     effect(() => {
       const rules = this.mappingRules();
       if (rules.length > 0) {
         this.generatePreview();
       }
     });
+  }
+
+  ngOnInit(): void {
+    this.extractSourceFields();
+    this.extractTargetFields();
+    this.loadInitialRules();
   }
 
   extractSourceFields(): void {
@@ -368,6 +375,25 @@ export class FieldMappingStepComponent implements OnInit {
     if (event.previousContainer !== event.container) {
       const sourceField = event.previousContainer.data[event.previousIndex] as SourceField;
       this.createMapping(sourceField.path, targetField.key);
+    }
+  }
+
+  selectSourceField(field: SourceField): void {
+    // Toggle selection
+    if (this.selectedSourceField()?.path === field.path) {
+      this.selectedSourceField.set(null);
+    } else {
+      this.selectedSourceField.set(field);
+    }
+  }
+
+  onTargetFieldClick(targetField: TargetField): void {
+    const selected = this.selectedSourceField();
+    if (selected) {
+      // Create mapping from selected source to clicked target
+      this.createMapping(selected.path, targetField.key);
+      // Clear selection after mapping
+      this.selectedSourceField.set(null);
     }
   }
 

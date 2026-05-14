@@ -93,13 +93,13 @@ export class TargetSchemaStepComponent implements OnInit {
   private loadMockSchemas(): void {
     const mockSchemas: SchemaDefinition[] = [
       {
-        id: '7f991c1a-9558-43fa-9ee1-070141c4f79b',
-        name: 'Canonical Order Schema',
+        id: '7d5f75ae-4219-42c4-a85d-9d1df02ec154',
+        name: 'OrderCreated',
         schema_type: 'CANONICAL',
-        subject: 'canonical.order.v1',
+        subject: 'canonical.OrderCreated',
         version: 1,
         status: 'ACTIVE',
-        description: 'Canonical schema for order events',
+        description: 'Canonical schema for order creation events',
         schema_json: JSON.stringify({
           type: 'object',
           properties: {
@@ -113,7 +113,7 @@ export class TargetSchemaStepComponent implements OnInit {
       },
       {
         id: '55b83ac8-e5c9-45e8-80f1-2728b51f4097',
-        name: 'Payment Processed',
+        name: 'PaymentProcessed',
         schema_type: 'CANONICAL',
         subject: 'canonical.PaymentProcessed',
         version: 1,
@@ -132,7 +132,7 @@ export class TargetSchemaStepComponent implements OnInit {
       },
       {
         id: '6e32b91f-5752-4b1c-97fc-b5b5decdfbb2',
-        name: 'Shipment Created',
+        name: 'ShipmentCreated',
         schema_type: 'CANONICAL',
         subject: 'canonical.ShipmentCreated',
         version: 1,

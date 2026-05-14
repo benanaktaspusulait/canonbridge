@@ -1,0 +1,43 @@
+<div class="mode-selector-container">
+  <h2>{{ 'wizard.mode.title' | i18n }}</h2>
+  <p class="subtitle">{{ 'wizard.mode.subtitle' | i18n }}</p>
+
+  <div class="mode-cards">
+    <p-card 
+      *ngFor="let mode of modes"
+      [class.selected]="selectedMode() === mode.id"
+      (click)="selectMode(mode.id)"
+      styleClass="mode-card">
+      <ng-template pTemplate="header">
+        <div class="mode-icon">
+          <i [class]="mode.icon"></i>
+        </div>
+      </ng-template>
+      <ng-template pTemplate="title">
+        <h3>{{ mode.titleKey | i18n }}</h3>
+      </ng-template>
+      <ng-template pTemplate="content">
+        <p>{{ mode.descriptionKey | i18n }}</p>
+      </ng-template>
+      <ng-template pTemplate="footer">
+        <p-button 
+          [label]="'wizard.mode.select' | i18n"
+          icon="pi pi-check"
+          [outlined]="selectedMode() !== mode.id"
+          [severity]="selectedMode() === mode.id ? 'primary' : 'secondary'"
+          (onClick)="selectMode(mode.id)">
+        </p-button>
+      </ng-template>
+    </p-card>
+  </div>
+
+  <div class="actions">
+    <p-button 
+      [label]="'wizard.next' | i18n"
+      icon="pi pi-arrow-right"
+      iconPos="right"
+      [disabled]="!isValid()"
+      (onClick)="onNext()">
+    </p-button>
+  </div>
+</div>

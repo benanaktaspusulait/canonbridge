@@ -5,6 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { StepsModule } from 'primeng/steps';
 import { MenuItem } from 'primeng/api';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
+import { ModeSelectorComponent } from './steps/step0-mode-selector/mode-selector.component';
 import { SourceTypeSelectionComponent } from './steps/step0-source-type/source-type-selection.component';
 import { ConfigurationStepComponent } from './steps/step1-configuration/configuration-step.component';
 import { RequestMappingStepComponent } from './steps/step2-request-mapping/request-mapping-step.component';
@@ -12,7 +13,7 @@ import { SampleDataStepComponent } from './steps/step2-sample-data/sample-data-s
 import { TargetSchemaStepComponent } from './steps/step3-target-schema/target-schema-step.component';
 import { FieldMappingStepComponent } from './steps/step4-field-mapping/field-mapping-step.component';
 import { TestPublishStepComponent } from './steps/step5-test-publish/test-publish-step.component';
-import { SourceType, WizardState } from './models/mapping-wizard.models';
+import { SourceType, WizardState, WizardMode } from './models/mapping-wizard.models';
 import { MappingService } from '../../core/services/mapping.service';
 import { SchemaService } from '../../core/services/schema.service';
 
@@ -25,6 +26,7 @@ import { SchemaService } from '../../core/services/schema.service';
     ButtonModule,
     StepsModule,
     I18nPipe,
+    ModeSelectorComponent,
     SourceTypeSelectionComponent,
     ConfigurationStepComponent,
     RequestMappingStepComponent,
@@ -48,6 +50,7 @@ export class MappingWizardComponent implements OnInit {
   targetSchemaJson = signal<string>('{}');
   
   wizardState = signal<WizardState>({
+    mode: null,
     sourceType: null,
     externalSystemId: null,
     sourceConfig: {},
@@ -59,10 +62,11 @@ export class MappingWizardComponent implements OnInit {
   });
 
   steps: MenuItem[] = [
+    { label: 'Mode Selection' },
     { label: 'Source Type' },
     { label: 'Configuration' },
-    { label: 'Request Mapping' },
     { label: 'Sample Data' },
+    { label: 'Request Mapping' },
     { label: 'Target Schema' },
     { label: 'Field Mapping' },
     { label: 'Test & Publish' }
@@ -248,7 +252,15 @@ export class MappingWizardComponent implements OnInit {
       ...state,
       sourceType
     }));
-    this.currentStep.set(1);
+    this.currentStep.set(2); // Go to Configuration step
+  }
+
+  onModeSelected(mode: WizardMode): void {
+    this.wizardState.update(state => ({
+      ...state,
+      mode
+    }));
+    this.currentStep.set(1); // Go to Source Type step
   }
 
   onConfigurationComplete(data: { externalSystemId: string | null; config: Record<string, unknown> }): void {
@@ -261,7 +273,7 @@ export class MappingWizardComponent implements OnInit {
     // Auto-save disabled for now due to backend validation issues
     // this.autoSaveMapping();
     
-    this.currentStep.set(2);
+    this.currentStep.set(3); // Go to Sample Data step
   }
 
   onRequestMappingComplete(data: { config: any }): void {

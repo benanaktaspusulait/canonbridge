@@ -1,63 +1,69 @@
 .request-mapping-step {
+  padding: 1rem;
+
   .card-header {
     padding: 1rem;
-    
+
     h3 {
       margin: 0 0 0.5rem 0;
-      color: var(--primary-color);
+      font-size: 1.5rem;
+      font-weight: 600;
     }
-    
+
     .text-muted {
       margin: 0;
       color: var(--text-color-secondary);
-      font-size: 0.9rem;
     }
   }
 
   .mode-selector {
     display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
+    gap: 1rem;
+    margin-bottom: 2rem;
   }
 
   .template-section,
   .jsonata-section,
   .headers-section {
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
 
     h4 {
       margin: 0 0 0.5rem 0;
-      color: var(--text-color);
+      font-size: 1.125rem;
+      font-weight: 600;
     }
 
     .help-text {
       margin: 0 0 1rem 0;
       color: var(--text-color-secondary);
-      font-size: 0.9rem;
+      font-size: 0.875rem;
     }
   }
 
   .json-editor {
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
 
     textarea {
       width: 100%;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9rem;
+      padding: 0.75rem;
       border: 1px solid var(--surface-border);
       border-radius: 4px;
-      padding: 0.75rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.875rem;
       resize: vertical;
-      
+      background-color: var(--surface-ground);
+      color: var(--text-color);
+
       &:focus {
         outline: none;
         border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb), 0.25);
       }
     }
 
-    p-message {
-      display: block;
+    ::ng-deep p-message {
       margin-top: 0.5rem;
+      display: block;
     }
   }
 
@@ -68,46 +74,97 @@
   }
 
   .preview-section {
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--surface-border);
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background-color: var(--surface-50);
+    border-radius: 4px;
+
+    .preview-loading {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding: 1rem;
+      background-color: var(--surface-ground);
+      border: 1px solid var(--surface-border);
+      border-radius: 4px;
+      color: var(--text-color-secondary);
+
+      i {
+        font-size: 1.25rem;
+      }
+    }
 
     .preview-output {
       margin-top: 1rem;
       padding: 1rem;
-      background: var(--surface-ground);
+      background-color: var(--surface-ground);
+      border: 1px solid var(--surface-border);
       border-radius: 4px;
 
       h5 {
         margin: 0 0 0.5rem 0;
-        color: var(--text-color);
+        font-size: 1rem;
+        font-weight: 600;
       }
 
       pre {
         margin: 0;
+        padding: 0.75rem;
+        background-color: var(--surface-100);
+        border-radius: 4px;
+        overflow-x: auto;
         font-family: 'Courier New', monospace;
-        font-size: 0.85rem;
-        white-space: pre-wrap;
-        word-wrap: break-word;
+        font-size: 0.875rem;
+        line-height: 1.5;
       }
     }
 
-    p-message {
+    ::ng-deep p-message {
+      margin-top: 1rem;
       display: block;
-      margin-top: 0.5rem;
     }
   }
 
   .button-group {
     display: flex;
     justify-content: space-between;
-    margin-top: 2rem;
+    align-items: center;
     padding-top: 1rem;
     border-top: 1px solid var(--surface-border);
 
     .right-buttons {
       display: flex;
       gap: 0.5rem;
+    }
+  }
+
+  ::ng-deep p-message {
+    margin-bottom: 1rem;
+    display: block;
+  }
+}
+
+@media (max-width: 768px) {
+  .request-mapping-step {
+    padding: 0.5rem;
+
+    .mode-selector {
+      flex-direction: column;
+    }
+
+    .button-group {
+      flex-direction: column;
+      gap: 0.5rem;
+
+      .right-buttons {
+        width: 100%;
+        flex-direction: column;
+
+        ::ng-deep button {
+          width: 100%;
+        }
+      }
     }
   }
 }

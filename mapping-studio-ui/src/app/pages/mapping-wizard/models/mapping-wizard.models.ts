@@ -10,6 +10,10 @@ export type SourceType =
   | 'API_ENRICHMENT'
   | 'MANUAL';
 
+export type WizardMode = 'api-gateway' | 'integration-hub';
+
+export type TransformationMode = 'template' | 'jsonata';
+
 export interface SourceTypeOption {
   id: SourceType;
   icon: string;
@@ -18,6 +22,7 @@ export interface SourceTypeOption {
 }
 
 export interface WizardState {
+  mode: WizardMode | null;
   sourceType: SourceType | null;
   externalSystemId: string | null;
   sourceConfig: Record<string, unknown>;
@@ -35,7 +40,7 @@ export interface MappingRule {
 }
 
 export interface RequestTransformationConfig {
-  mode: 'template' | 'jsonata';
+  mode: TransformationMode;
   template: Record<string, unknown>;
   jsonata: string;
   headers: Record<string, string>;

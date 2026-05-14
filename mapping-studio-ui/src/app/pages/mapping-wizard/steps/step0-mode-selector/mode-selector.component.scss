@@ -1,0 +1,86 @@
+.mode-selector-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  h2 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+  }
+
+  .subtitle {
+    font-size: 1rem;
+    color: var(--text-color-secondary);
+    margin-bottom: 2rem;
+  }
+
+  .mode-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+
+    ::ng-deep .mode-card {
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      }
+
+      &.selected {
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.2);
+      }
+
+      .mode-icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem 0;
+        background: linear-gradient(135deg, var(--primary-color-light), var(--primary-color));
+
+        i {
+          font-size: 3rem;
+          color: white;
+        }
+      }
+
+      h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--text-color);
+      }
+
+      p {
+        font-size: 0.95rem;
+        color: var(--text-color-secondary);
+        line-height: 1.6;
+        margin: 0;
+      }
+    }
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    border-top: 1px solid var(--surface-border);
+  }
+}
+
+@media (max-width: 768px) {
+  .mode-selector-container {
+    padding: 1rem;
+
+    .mode-cards {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+}

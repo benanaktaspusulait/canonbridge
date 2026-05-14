@@ -138,10 +138,18 @@
             label="{{ 'wizard.requestMapping.preview' | i18n }}"
             icon="pi pi-eye"
             severity="info"
+            [loading]="previewLoading()"
             (onClick)="previewTransformation()">
           </p-button>
 
-          @if (previewOutput()) {
+          @if (previewLoading()) {
+            <div class="preview-loading">
+              <i class="pi pi-spin pi-spinner"></i>
+              <span>{{ 'wizard.requestMapping.generating' | i18n }}</span>
+            </div>
+          }
+
+          @if (previewOutput() && !previewLoading()) {
             <div class="preview-output">
               <h5>{{ 'wizard.requestMapping.previewResult' | i18n }}</h5>
               <pre>{{ previewOutput() }}</pre>

@@ -3,7 +3,12 @@
   <div class="step-header">
     <div class="header-content">
       <h2><i class="pi pi-sitemap"></i> Visual Field Mapping</h2>
-      <p class="subtitle">Drag source fields to target fields and configure transformations visually - no coding required</p>
+      <p class="subtitle">
+        <strong>How to map:</strong> 
+        <span class="instruction-item"><i class="pi pi-hand-pointer"></i> Click a source field to select it</span>
+        <span class="instruction-item"><i class="pi pi-arrow-right"></i> Then click a target field to create mapping</span>
+        <span class="instruction-item"><i class="pi pi-arrows-h"></i> Or drag & drop source to target</span>
+      </p>
     </div>
     <div class="header-actions">
       <p-button
@@ -87,14 +92,17 @@
             cdkDropList
             #sourceList="cdkDropList"
             [cdkDropListData]="sourceFields()"
+            [cdkDropListConnectedTo]="[targetList]"
             cdkDropListSortingDisabled>
             @for (field of sourceFields(); track field.path) {
               <div 
                 class="source-field"
                 cdkDrag
                 [cdkDragData]="field"
-                [pTooltip]="'Type: ' + field.type + (field.sample !== undefined ? '\nSample: ' + JSON.stringify(field.sample) : '')"
-                tooltipPosition="right">
+                [pTooltip]="'Type: ' + field.type + (field.sample !== undefined ? '\nSample: ' + JSON.stringify(field.sample) : '') + '\n\nClick to select, then click a target field to map'"
+                tooltipPosition="right"
+                [class.selected]="selectedSourceField()?.path === field.path"
+                (click)="selectSourceField(field)">
                 <div class="field-icon">
                   <i [class]="getFieldIcon(field.type)"></i>
                 </div>
@@ -141,9 +149,11 @@
                 class="target-field"
                 [class.mapped]="field.mapped"
                 [class.required]="field.required"
+                [class.clickable]="selectedSourceField() !== null"
                 cdkDropList
                 [cdkDropListData]="[field]"
-                (cdkDropListDropped)="onSourceFieldDrop($event, field)">
+                (cdkDropListDropped)="onSourceFieldDrop($event, field)"
+                (click)="onTargetFieldClick(field)">
                 
                 <div class="field-header">
                   <div class="field-icon">
