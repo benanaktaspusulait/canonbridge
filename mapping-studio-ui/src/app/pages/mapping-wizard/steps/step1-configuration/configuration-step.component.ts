@@ -269,9 +269,7 @@ export class ConfigurationStepComponent implements OnInit {
   }
 
   shouldShowEndpointSelector(): boolean {
-    return this.selectedSystemId() !== null &&
-      !this.initialPathConfigured() &&
-      this.filteredEndpoints().length > 0;
+    return this.selectedSystemId() !== null && this.filteredEndpoints().length > 0;
   }
 
   private filterSystemsBySourceType(systems: OutboundConnection[]): OutboundConnection[] {

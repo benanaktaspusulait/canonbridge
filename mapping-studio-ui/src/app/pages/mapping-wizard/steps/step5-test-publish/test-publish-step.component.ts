@@ -568,7 +568,7 @@ export class TestPublishStepComponent implements OnInit {
     
     // Check if it's a GET mapping
     const sourceConfig = state.sourceConfig || {};
-    const method = sourceConfig['method'] || 'POST';
+    const method = typeof sourceConfig['method'] === 'string' ? sourceConfig['method'] : 'POST';
     
     if (method.toUpperCase() === 'GET') {
       // For GET, add sample query params
