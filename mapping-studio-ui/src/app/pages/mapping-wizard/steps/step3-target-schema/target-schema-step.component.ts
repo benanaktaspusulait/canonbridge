@@ -62,6 +62,8 @@ export class TargetSchemaStepComponent implements OnInit {
           if (schema) {
             console.log('Found schema:', schema.name);
             this.selectedSchema.set(schema);
+            // Force update the signal to trigger change detection
+            this.selectedSchemaId.set(selectedId);
           } else {
             console.warn('Schema not found in list:', selectedId);
           }
@@ -160,6 +162,8 @@ export class TargetSchemaStepComponent implements OnInit {
       if (schema) {
         console.log('Found schema in mock data:', schema.name);
         this.selectedSchema.set(schema);
+        // Force update the signal to trigger change detection
+        this.selectedSchemaId.set(selectedId);
       } else {
         console.warn('Schema not found in mock data:', selectedId);
       }

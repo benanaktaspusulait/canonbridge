@@ -1,4 +1,35 @@
 <div class="step-container">
+  <!-- Top Navigation -->
+  <div class="top-navigation">
+    <p-button
+      label="Back"
+      icon="pi pi-arrow-left"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="onBack()" />
+    
+    <div class="nav-info">
+      @if (!isValid()) {
+        <p-message 
+          severity="warn" 
+          text="Please select a canonical schema" 
+          [closable]="false" />
+      } @else {
+        <p-message 
+          severity="success" 
+          text="Schema selected! Ready to proceed." 
+          [closable]="false" />
+      }
+    </div>
+
+    <p-button
+      label="Next"
+      icon="pi pi-arrow-right"
+      iconPos="right"
+      [disabled]="!isValid()"
+      (onClick)="onNext()" />
+  </div>
+
   <p-card>
     <ng-template pTemplate="header">
       <div class="card-header">
@@ -23,8 +54,8 @@
             <p-select
               id="schema-select"
               [options]="canonicalSchemas()"
-              [ngModel]="selectedSchemaId()"
-              (ngModelChange)="onSchemaSelected($event)"
+              [(ngModel)]="selectedSchemaId"
+              (onChange)="onSchemaSelected($event.value)"
               optionLabel="name"
               optionValue="id"
               placeholder="Select a canonical schema"

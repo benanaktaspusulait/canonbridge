@@ -1,4 +1,4 @@
-import type { MappingRule } from './integration-studio.models';
+import type { MappingRule } from './field-mapping-step.component';
 
 type EnumMapPair = { source: string; target: string };
 
@@ -55,7 +55,7 @@ function parseEnumMap(s: string): Record<string, string> {
 
 /** Build JSONata sub-expression for one rule (visual or explicit JSONata). */
 export function ruleToJsonataFragment(rule: MappingRule): string {
-  const explicit = rule.jsonataExpression?.trim() || rule.advancedExpression?.trim();
+  const explicit = rule.advancedExpression?.trim();
   if (explicit) {
     return explicit;
   }
@@ -75,16 +75,16 @@ export function ruleToJsonataFragment(rule: MappingRule): string {
     case 'string_trim':
       return `$trim($string(${base}))`;
     case 'string_substring': {
-      const start = Math.max(0, parseInt(rule.paramA, 10) || 0);
-      const len = parseInt(rule.paramB, 10);
+      const start = Math.max(0, parseInt(rule.paramA || '0', 10) || 0);
+      const len = parseInt(rule.paramB || '', 10);
       if (Number.isNaN(len)) {
         return `$substring($string(${base}), ${start})`;
       }
       return `$substring($string(${base}), ${start}, ${len})`;
     }
     case 'string_replace': {
-      const find = escapeSingleQuoted(rule.paramA);
-      const rep = escapeSingleQuoted(rule.paramB);
+      const find = escapeSingleQuoted(rule.paramA || '');
+      const rep = escapeSingleQuoted(rule.paramB || '');
       return `$replace($string(${base}), '${find}', '${rep}')`;
     }
     case 'array_join': {
@@ -96,21 +96,21 @@ export function ruleToJsonataFragment(rule: MappingRule): string {
     case 'array_last':
       return `${base}[$count(${base}) - 1]`;
     case 'array_element': {
-      const uiIndex = Math.max(1, parseInt(rule.paramA, 10) || 1);
+      const uiIndex = Math.max(1, parseInt(rule.paramA || '1', 10) || 1);
       return `${base}[${uiIndex - 1}]`;
     }
     case 'array_count':
       return `$count(${base})`;
     case 'array_filter_equals': {
       const field = jqPath(rule.paramA || '').replace(/^\$?\./, '');
-      const value = jsonataStringLiteral(rule.paramB);
+      const value = jsonataStringLiteral(rule.paramB || '');
       if (!field) {
         return `${base}[$string($) = ${value}]`;
       }
       return `${base}[${field} = ${value}]`;
     }
     case 'default_value': {
-      const fb = escapeSingleQuoted(rule.paramA);
+      const fb = escapeSingleQuoted(rule.paramA || '');
       return `$exists(${base}) and ${base} != null and $string(${base}) != '' ? ${base} : '${fb}'`;
     }
     case 'math_sum':
@@ -122,22 +122,22 @@ export function ruleToJsonataFragment(rule: MappingRule): string {
     case 'math_max':
       return `$max(${base})`;
     case 'combine': {
-      const p2 = jqPath(rule.paramA);
+      const p2 = jqPath(rule.paramA || '');
       const sep = escapeSingleQuoted(rule.paramB || ' ');
       const b = p2 || '$';
       return `$join([${base}, ${b}][$boolean($) and $string($) != ''], '${sep}')`;
     }
     case 'enum_map': {
-      const map = parseEnumMap(rule.paramA);
+      const map = parseEnumMap(rule.paramA || '');
       const pairs = Object.entries(map)
         .map(([k, v]) => `'${escapeSingleQuoted(k)}': '${escapeSingleQuoted(v)}'`)
         .join(', ');
       return `$lookup({${pairs}}, $string(${base}))`;
     }
     case 'conditional_value': {
-      const when = escapeSingleQuoted(rule.paramA);
-      const thenV = escapeSingleQuoted(rule.paramB);
-      const elseV = escapeSingleQuoted(rule.paramC);
+      const when = escapeSingleQuoted(rule.paramA || '');
+      const thenV = escapeSingleQuoted(rule.paramB || '');
+      const elseV = escapeSingleQuoted(rule.paramC || '');
       return `$string(${base}) = '${when}' ? '${thenV}' : '${elseV}'`;
     }
     case 'date_format':
@@ -147,7 +147,7 @@ export function ruleToJsonataFragment(rule: MappingRule): string {
       }
       return `$string(${base})`;
     case 'template_string': {
-      const tpl = rule.paramA;
+      const tpl = rule.paramA || '';
       if (!tpl) return "''";
       const chunks: string[] = [];
       const re = /\{\{\s*([^}]+?)\s*\}\}/g;

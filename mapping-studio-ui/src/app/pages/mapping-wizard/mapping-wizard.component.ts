@@ -66,9 +66,9 @@ export class MappingWizardComponent implements OnInit {
     { label: 'Source Type' },
     { label: 'Configuration' },
     { label: 'Sample Data' },
-    { label: 'Request Mapping' },
+    { label: 'API Request' }, // Changed from 'Request Mapping' - this is for preparing the outgoing API request
     { label: 'Target Schema' },
-    { label: 'Field Mapping' },
+    { label: 'Field Mapping' }, // This is where actual field mapping happens
     { label: 'Test & Publish' }
   ];
 
@@ -452,7 +452,7 @@ export class MappingWizardComponent implements OnInit {
       return 'Target Schema';
     }
     
-    return this.steps[stepIndex].label;
+    return this.steps[stepIndex]?.label || '';
   }
 
   getConfigMethod(): string {

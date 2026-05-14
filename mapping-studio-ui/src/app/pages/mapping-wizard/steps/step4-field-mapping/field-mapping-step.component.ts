@@ -118,6 +118,22 @@ export class FieldMappingStepComponent implements OnInit {
   selectedRuleForEdit = signal<MappingRule | null>(null);
   selectedSourceField = signal<SourceField | null>(null);
   selectedTargetForPattern = signal<string | null>(null); // Track which target field is in expression mode
+
+  // Pattern constants for complex expressions with special characters
+  readonly patterns = {
+    concatenate: 'firstName & " " & lastName',
+    conditional: 'status = "A" ? "ACTIVE" : "INACTIVE"',
+    defaultValue: 'email ? email : "no-reply@example.com"',
+    arrayTransform: 'items.($uppercase(productName))',
+    filterExtract: '$filter(orders, function($v) { $v.status = "completed" }).orderId',
+    nestedField: 'customer.address.city',
+    arrayElement: 'items[0].name',
+    stringChain: '$uppercase($trim(name))',
+    sumArray: '$sum(items.price)',
+    filterCondition: 'items[price > 100]',
+    countFiltered: '$count(items[status="active"])',
+    joinArray: '$join(tags, ", ")'
+  };
   
   transformOptions: TransformOption[] = [
     // Basic
