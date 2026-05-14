@@ -155,12 +155,15 @@ export class MappingWizardComponent implements OnInit {
     // Then check source_config
     const config = this.parseJsonObject(mapping.source_config);
     
-    // Check various possible field names
+    // Check various possible field names in priority order
     if (typeof config['sourceJson'] === 'string' && config['sourceJson']) {
       return config['sourceJson'];
     }
     if (typeof config['sampleJson'] === 'string' && config['sampleJson']) {
       return config['sampleJson'];
+    }
+    if (typeof config['sample_payload'] === 'string' && config['sample_payload']) {
+      return config['sample_payload'];
     }
     if (typeof config['payload'] === 'string' && config['payload']) {
       return config['payload'];
@@ -170,8 +173,15 @@ export class MappingWizardComponent implements OnInit {
     const reqTransform = config['requestTransformation'];
     if (reqTransform && typeof reqTransform === 'object') {
       const template = (reqTransform as any)['template'];
-      if (template && typeof template === 'object') {
-        return JSON.stringify(template, null, 2);
+      if (template) {
+        // If template is already a string, return it
+        if (typeof template === 'string') {
+          return template;
+        }
+        // If template is an object, stringify it
+        if (typeof template === 'object') {
+          return JSON.stringify(template, null, 2);
+        }
       }
     }
     
@@ -204,6 +214,10 @@ export class MappingWizardComponent implements OnInit {
       externalSystemId: data.externalSystemId,
       sourceConfig: data.config
     }));
+    
+    // Auto-save after configuration
+    this.autoSaveMapping();
+    
     this.currentStep.set(2);
   }
 
@@ -212,6 +226,10 @@ export class MappingWizardComponent implements OnInit {
       ...state,
       sampleJson: data.sampleJson
     }));
+    
+    // Auto-save after sample data
+    this.autoSaveMapping();
+    
     this.currentStep.set(3);
   }
 
@@ -220,6 +238,9 @@ export class MappingWizardComponent implements OnInit {
       ...state,
       targetSchemaRef: data.schemaRef
     }));
+    
+    // Auto-save after schema selection
+    this.autoSaveMapping();
     
     // Load schema JSON for field mapping
     this.schemaService.getById(data.schemaRef).subscribe({
@@ -242,7 +263,42 @@ export class MappingWizardComponent implements OnInit {
       ...state,
       mappingRules: data.rules
     }));
+    
+    // Auto-save after field mapping
+    this.autoSaveMapping();
+    
     this.currentStep.set(5);
+  }
+
+  private autoSaveMapping(): void {
+    if (!this.mappingId()) return;
+    
+    const state = this.wizardState();
+    const updateData: any = {
+      source_config: {
+        ...state.sourceConfig,
+        sourceJson: state.sampleJson // Save sample JSON in source_config
+      }
+    };
+    
+    // Add target schema if selected
+    if (state.targetSchemaRef) {
+      updateData.canonical_schema_ref = state.targetSchemaRef;
+    }
+    
+    // Add mapping rules if defined
+    if (state.mappingRules && state.mappingRules.length > 0) {
+      updateData.mapping_rules = state.mappingRules;
+    }
+    
+    this.mappingService.update(this.mappingId()!, updateData).subscribe({
+      next: () => {
+        console.log('Mapping auto-saved successfully');
+      },
+      error: (err) => {
+        console.error('Failed to auto-save mapping:', err);
+      }
+    });
   }
 
   goBack(): void {
