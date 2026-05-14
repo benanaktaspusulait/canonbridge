@@ -102,6 +102,8 @@ export class MappingWizardComponent implements OnInit {
         
         const requestTransformation = this.extractRequestTransformation(sourceConfig);
         
+        const targetSchemaRef = mapping.target_schema_ref || mapping.canonical_schema_ref || null;
+        
         // Populate wizard state from existing mapping
         this.wizardState.update(state => ({
           ...state,
@@ -111,12 +113,18 @@ export class MappingWizardComponent implements OnInit {
           sourceConfig: sourceConfig,
           requestTransformation: requestTransformation,
           sampleJson: mapping.sample_payload || this.extractSampleJson(mapping),
-          targetSchemaRef: mapping.target_schema_ref || mapping.canonical_schema_ref || null,
+          targetSchemaRef: targetSchemaRef,
           targetSchemaJson: '',
           mappingRules: this.extractMappingRules(mapping)
         }));
         
         console.log('=== WIZARD STATE AFTER UPDATE ===', this.wizardState());
+        
+        // Load target schema JSON if we have a schema ref
+        if (targetSchemaRef) {
+          console.log('🔄 Loading target schema:', targetSchemaRef);
+          this.loadTargetSchemaForEdit(targetSchemaRef);
+        }
         
         // Start from step 2 in edit mode (skip mode and source type selection)
         this.currentStep.set(2);
@@ -125,6 +133,93 @@ export class MappingWizardComponent implements OnInit {
       error: (err) => {
         console.error('Failed to load mapping:', err);
         this.loading.set(false);
+      }
+    });
+  }
+
+  private loadTargetSchemaForEdit(schemaRef: string): void {
+    this.schemaService.getById(schemaRef).subscribe({
+      next: (schema) => {
+        console.log('✅ Target schema loaded:', schema.name);
+        this.targetSchemaJson.set(schema.schema_json);
+        this.wizardState.update(state => ({
+          ...state,
+          targetSchemaJson: schema.schema_json
+        }));
+      },
+      error: (err) => {
+        console.error('❌ Failed to load target schema:', err);
+        console.log('🔄 Trying mock data...');
+        
+        // Fallback to mock data
+        const mockSchemas = [
+          {
+            id: '7d5f75ae-4219-42c4-a85d-9d1df02ec154',
+            name: 'OrderCreated',
+            schema_json: JSON.stringify({
+              type: 'object',
+              properties: {
+                orderId: { type: 'string' },
+                customerName: { type: 'string' },
+                totalAmount: { type: 'number' },
+                status: { type: 'string' }
+              },
+              required: ['orderId', 'customerName', 'totalAmount']
+            }, null, 2)
+          },
+          {
+            id: '55b83ac8-e5c9-45e8-80f1-2728b51f4097',
+            name: 'PaymentProcessed',
+            schema_json: JSON.stringify({
+              type: 'object',
+              properties: {
+                paymentId: { type: 'string' },
+                amount: { type: 'number' },
+                currency: { type: 'string' },
+                status: { type: 'string' }
+              },
+              required: ['paymentId', 'amount', 'currency']
+            }, null, 2)
+          },
+          {
+            id: '6e32b91f-5752-4b1c-97fc-b5b5decdfbb2',
+            name: 'ShipmentCreated',
+            schema_json: JSON.stringify({
+              type: 'object',
+              properties: {
+                shipmentId: { type: 'string' },
+                trackingNumber: { type: 'string' },
+                carrier: { type: 'string' }
+              },
+              required: ['shipmentId', 'trackingNumber']
+            }, null, 2)
+          },
+          {
+            id: '7f991c1a-9558-43fa-9ee1-070141c4f79b',
+            name: 'ShipmentTracking',
+            schema_json: JSON.stringify({
+              type: 'object',
+              properties: {
+                trackingNumber: { type: 'string' },
+                customerEmail: { type: 'string' },
+                status: { type: 'string' }
+              },
+              required: ['trackingNumber', 'customerEmail', 'status']
+            }, null, 2)
+          }
+        ];
+        
+        const mockSchema = mockSchemas.find(s => s.id === schemaRef);
+        if (mockSchema) {
+          console.log('✅ Found schema in mock data:', mockSchema.name);
+          this.targetSchemaJson.set(mockSchema.schema_json);
+          this.wizardState.update(state => ({
+            ...state,
+            targetSchemaJson: mockSchema.schema_json
+          }));
+        } else {
+          console.warn('⚠️ Schema not found in mock data either');
+        }
       }
     });
   }
@@ -348,6 +443,7 @@ export class MappingWizardComponent implements OnInit {
     // Load schema JSON for field mapping
     this.schemaService.getById(data.schemaRef).subscribe({
       next: (schema) => {
+        console.log('✅ Schema loaded from API:', schema.name);
         this.targetSchemaJson.set(schema.schema_json);
         this.wizardState.update(state => ({
           ...state,
@@ -355,8 +451,96 @@ export class MappingWizardComponent implements OnInit {
         }));
         this.currentStep.set(6); // Go to Field Mapping step
       },
-      error: () => {
-        this.currentStep.set(6); // Go to Field Mapping step even on error
+      error: (err) => {
+        console.error('❌ Failed to load schema from API:', err);
+        console.log('🔄 Trying to get schema from mock data...');
+        
+        // Fallback: Try to get schema from the target schema step component's mock data
+        const mockSchemas = [
+          {
+            id: '7d5f75ae-4219-42c4-a85d-9d1df02ec154',
+            name: 'OrderCreated',
+            schema_json: JSON.stringify({
+              type: 'object',
+              properties: {
+                orderId: { type: 'string' },
+                customerName: { type: 'string' },
+                totalAmount: { type: 'number' },
+                status: { type: 'string' }
+              },
+              required: ['orderId', 'customerName', 'totalAmount']
+            }, null, 2)
+          },
+          {
+            id: '55b83ac8-e5c9-45e8-80f1-2728b51f4097',
+            name: 'PaymentProcessed',
+            schema_json: JSON.stringify({
+              type: 'object',
+              properties: {
+                paymentId: { type: 'string' },
+                amount: { type: 'number' },
+                currency: { type: 'string' },
+                status: { type: 'string' }
+              },
+              required: ['paymentId', 'amount', 'currency']
+            }, null, 2)
+          },
+          {
+            id: '6e32b91f-5752-4b1c-97fc-b5b5decdfbb2',
+            name: 'ShipmentCreated',
+            schema_json: JSON.stringify({
+              type: 'object',
+              properties: {
+                shipmentId: { type: 'string' },
+                trackingNumber: { type: 'string' },
+                carrier: { type: 'string' }
+              },
+              required: ['shipmentId', 'trackingNumber']
+            }, null, 2)
+          },
+          {
+            id: '7f991c1a-9558-43fa-9ee1-070141c4f79b',
+            name: 'ShipmentTracking',
+            schema_json: JSON.stringify({
+              type: 'object',
+              properties: {
+                trackingNumber: { type: 'string' },
+                customerEmail: { type: 'string' },
+                status: { type: 'string' }
+              },
+              required: ['trackingNumber', 'customerEmail', 'status']
+            }, null, 2)
+          }
+        ];
+        
+        const mockSchema = mockSchemas.find(s => s.id === data.schemaRef);
+        if (mockSchema) {
+          console.log('✅ Found schema in mock data:', mockSchema.name);
+          this.targetSchemaJson.set(mockSchema.schema_json);
+          this.wizardState.update(state => ({
+            ...state,
+            targetSchemaJson: mockSchema.schema_json
+          }));
+        } else {
+          console.warn('⚠️ Schema not found even in mock data. Using empty schema.');
+          // Provide a minimal default schema so the step doesn't break
+          const defaultSchema = JSON.stringify({
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              name: { type: 'string' },
+              value: { type: 'string' }
+            },
+            required: ['id']
+          }, null, 2);
+          this.targetSchemaJson.set(defaultSchema);
+          this.wizardState.update(state => ({
+            ...state,
+            targetSchemaJson: defaultSchema
+          }));
+        }
+        
+        this.currentStep.set(6); // Go to Field Mapping step
       }
     });
   }

@@ -210,44 +210,171 @@
                   <div class="mapping-details">
                     <div class="mapping-source">
                       <i class="pi pi-arrow-right"></i>
+                      <span class="source-label">Mapped from:</span>
                       <code>{{ mapping.sourcePath }}</code>
                     </div>
                     
-                    <!-- Mode Toggle -->
-                    <div class="mapping-mode-toggle">
-                      <label class="mode-label">Mapping Mode:</label>
-                      <div class="mode-buttons">
-                        <button
-                          type="button"
-                          class="mode-button"
-                          [class.active]="(mapping.mode || 'visual') === 'visual'"
-                          (click)="setMappingMode(field.key, 'visual')"
-                          pTooltip="Use visual transformation builder">
-                          <i class="pi pi-sliders-h"></i>
-                          <span>Visual</span>
-                        </button>
-                        <button
-                          type="button"
-                          class="mode-button"
-                          [class.active]="(mapping.mode || 'visual') === 'expression'"
-                          (click)="setMappingMode(field.key, 'expression')"
-                          pTooltip="Write JSONata expression directly">
+                    @if ((mapping.mode || 'visual') === 'visual') {
+                      <!-- Visual Mode: Simple by default, show transform options if needed -->
+                      
+                      @if (mapping.transform === 'direct' || !mapping.transform) {
+                        <!-- Simple direct mapping - just show it's mapped -->
+                        <div class="simple-mapping-info">
+                          <i class="pi pi-check-circle"></i>
+                          <span>Direct copy (no transformation)</span>
+                          <button
+                            type="button"
+                            class="add-transform-button"
+                            (click)="showTransformOptions(field.key)"
+                            pTooltip="Add transformation (uppercase, lowercase, format, etc.)">
+                            <i class="pi pi-plus-circle"></i>
+                            Add Transformation
+                          </button>
+                        </div>
+                      } @else {
+                        <!-- User has selected a transformation - show the dropdown -->
+                        <div class="mapping-transform">
+                          <label class="transform-label">
+                            <i class="pi pi-cog"></i>
+                            Transformation:
+                          </label>
+                          <p-select
+                            [options]="transformOptions"
+                            [ngModel]="mapping.transform"
+                            (onChange)="updateTransform(field.key, $event.value)"
+                            optionLabel="label"
+                            optionValue="value"
+                            optionGroupLabel="category"
+                            optionGroupChildren="items"
+                            [group]="true"
+                            [style]="{'width': '100%'}"
+                            placeholder="Select transformation"
+                            size="small">
+                            <ng-template let-option pTemplate="item">
+                              <div class="transform-option">
+                                <strong>{{ option.label }}</strong>
+                                <small>{{ option.description }}</small>
+                              </div>
+                            </ng-template>
+                          </p-select>
+                          
+                          <button
+                            type="button"
+                            class="remove-transform-button"
+                            (click)="removeTransform(field.key)"
+                            pTooltip="Remove transformation (back to direct copy)">
+                            <i class="pi pi-times"></i>
+                            Remove Transformation
+                          </button>
+                        </div>
+
+                        @if (getTransformOption(mapping.transform); as transformOpt) {
+                          @if (transformOpt.params && transformOpt.params.length > 0) {
+                            <div class="transform-params">
+                              @for (param of transformOpt.params; track param.name) {
+                                <div class="param-field">
+                                  <label>{{ param.label }}</label>
+                                  @if (param.type === 'textarea') {
+                                    <textarea
+                                      pTextarea
+                                      [ngModel]="getParamValue(mapping, param.name)"
+                                      (ngModelChange)="updateRuleParam(field.key, param.name, $event)"
+                                      [placeholder]="param.placeholder || ''"
+                                      rows="3"
+                                      [style]="{'width': '100%'}"></textarea>
+                                  } @else if (param.type === 'number') {
+                                    <p-inputNumber
+                                      [ngModel]="getParamValue(mapping, param.name)"
+                                      (ngModelChange)="updateRuleParam(field.key, param.name, $event ? $event.toString() : '')"
+                                      [placeholder]="param.placeholder || ''"
+                                      [style]="{'width': '100%'}"
+                                      size="small" />
+                                  } @else if (param.type === 'select' && param.options) {
+                                    <p-select
+                                      [options]="param.options"
+                                      [ngModel]="getParamValue(mapping, param.name)"
+                                      (ngModelChange)="updateRuleParam(field.key, param.name, $event)"
+                                      optionLabel="label"
+                                      optionValue="value"
+                                      [placeholder]="param.placeholder || ''"
+                                      [style]="{'width': '100%'}"
+                                      size="small" />
+                                  } @else {
+                                    <input
+                                      pInputText
+                                      type="text"
+                                      [ngModel]="getParamValue(mapping, param.name)"
+                                      (ngModelChange)="updateRuleParam(field.key, param.name, $event)"
+                                      [placeholder]="param.placeholder || ''"
+                                      [style]="{'width': '100%'}"
+                                      size="small" />
+                                  }
+                                </div>
+                              }
+                            </div>
+                          }
+                        }
+                      }
+                      
+                      <!-- Advanced mode toggle - hidden by default -->
+                      <details class="advanced-mode-toggle">
+                        <summary>
                           <i class="pi pi-code"></i>
-                          <span>Expression</span>
+                          Advanced: Switch to Expression Mode
+                        </summary>
+                        <div class="advanced-mode-info">
+                          <p>Expression mode allows you to write custom JSONata expressions for complex transformations.</p>
+                          <button
+                            type="button"
+                            class="switch-mode-button"
+                            (click)="setMappingMode(field.key, 'expression')">
+                            <i class="pi pi-arrow-right"></i>
+                            Switch to Expression Mode
+                          </button>
+                        </div>
+                      </details>
+                      
+                    } @else {
+                      <!-- Expression Mode: Direct JSONata -->
+                      <div class="expression-editor">
+                        <label class="expression-label">
+                          <i class="pi pi-code"></i>
+                          JSONata Expression:
+                        </label>
+                        <textarea
+                          pTextarea
+                          [ngModel]="mapping.advancedExpression || mapping.sourcePath"
+                          (ngModelChange)="updateExpression(field.key, $event)"
+                          placeholder="Write JSONata expression (e.g., $uppercase(firstName) & ' ' & lastName)"
+                          rows="4"
+                          [style]="{'width': '100%', 'font-family': 'monospace'}"
+                          class="expression-textarea"></textarea>
+                        <small class="expression-help">
+                          <i class="pi pi-info-circle"></i>
+                          Full JSONata syntax supported. Click "Show Reference" above for available functions.
+                        </small>
+                        
+                        <button
+                          type="button"
+                          class="switch-mode-button"
+                          (click)="setMappingMode(field.key, 'visual')">
+                          <i class="pi pi-arrow-left"></i>
+                          Back to Visual Mode
                         </button>
                       </div>
-                    </div>
+                    }
 
-                    @if ((mapping.mode || 'visual') === 'visual') {
-                      <!-- Visual Mode: Dropdown + Parameters -->
-                      <div class="mapping-transform">
-                        <label class="transform-label">Transformation:</label>
-                        <p-select
-                          [options]="transformOptions"
-                          [(ngModel)]="mapping.transform"
-                          (onChange)="updateTransform(field.key, $event.value)"
-                          optionLabel="label"
-                          optionValue="value"
+                    <div class="mapping-actions">
+                      <p-button
+                        icon="pi pi-trash"
+                        label="Remove Mapping"
+                        severity="danger"
+                        [text]="true"
+                        size="small"
+                        (onClick)="removeMapping(field.key)"
+                        pTooltip="Remove this field mapping" />
+                    </div>
+                  </div>
                           optionGroupLabel="category"
                           optionGroupChildren="items"
                           [group]="true"

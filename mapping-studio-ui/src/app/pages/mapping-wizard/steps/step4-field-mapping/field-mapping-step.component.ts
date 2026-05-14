@@ -477,6 +477,28 @@ export class FieldMappingStepComponent implements OnInit {
     );
   }
 
+  showTransformOptions(targetKey: string): void {
+    // Change transform from 'direct' to first available transform option
+    this.mappingRules.update(rules => 
+      rules.map(r => 
+        r.targetKey === targetKey 
+          ? { ...r, transform: 'string_uppercase' } // Default to uppercase as first option
+          : r
+      )
+    );
+  }
+
+  removeTransform(targetKey: string): void {
+    // Reset back to direct copy
+    this.mappingRules.update(rules => 
+      rules.map(r => 
+        r.targetKey === targetKey 
+          ? { ...r, transform: 'direct', paramA: '', paramB: '', paramC: '' }
+          : r
+      )
+    );
+  }
+
   updateExpression(targetKey: string, expression: string): void {
     this.mappingRules.update(rules => 
       rules.map(r => r.targetKey === targetKey ? { ...r, advancedExpression: expression, transform: 'custom_jsonata' } : r)
