@@ -14,6 +14,7 @@ import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -131,21 +132,38 @@ public class MappingDraftResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @HeaderParam("X-User-Id") String userId,
             @PathParam("id") UUID id,
-            MappingDraft draft) {
+            JsonObject request) {
         if (tenantId == null || tenantId.isBlank()) {
             throw new BadRequestException("X-Tenant-Id header is required");
         }
-        
-        draft.setId(id);
-        draft.setTenantId(tenantId);
-        draft.setUpdatedBy(userId);
-        
-        return draftRepository.update(draft)
-            .map(updated -> {
-                if (updated == null) {
-                    return Response.status(Response.Status.NOT_FOUND).build();
+
+        if (request == null) {
+            throw new BadRequestException("Request body is required");
+        }
+
+        return draftRepository.findById(tenantId, id)
+            .chain(existing -> {
+                if (existing == null) {
+                    return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND).build());
                 }
-                return Response.ok(updated).build();
+
+                try {
+                    applyDraftUpdate(existing, request);
+                } catch (IllegalArgumentException e) {
+                    return Uni.createFrom().failure(new BadRequestException("Invalid mapping draft update: " + e.getMessage()));
+                }
+
+                existing.setId(id);
+                existing.setTenantId(tenantId);
+                existing.setUpdatedBy(userId);
+
+                return draftRepository.update(existing)
+                    .map(updated -> {
+                        if (updated == null) {
+                            return Response.status(Response.Status.NOT_FOUND).build();
+                        }
+                        return Response.ok(updated).build();
+                    });
             });
     }
 
@@ -175,6 +193,85 @@ public class MappingDraftResource {
         } catch (Exception e) {
             return fallback;
         }
+    }
+
+    private void applyDraftUpdate(MappingDraft draft, JsonObject request) {
+        if (request.containsKey("partner_id")) {
+            draft.setPartnerId(parseUuid(request.getValue("partner_id"), "partner_id"));
+        }
+        if (request.containsKey("event_type")) {
+            draft.setEventType(request.getString("event_type"));
+        }
+        if (request.containsKey("name")) {
+            draft.setName(request.getString("name"));
+        }
+        if (request.containsKey("description")) {
+            draft.setDescription(request.getString("description"));
+        }
+        if (request.containsKey("source_type")) {
+            String sourceType = request.getString("source_type");
+            if (sourceType != null && !sourceType.isBlank()) {
+                draft.setSourceType(MappingDraft.SourceType.valueOf(sourceType));
+            }
+        }
+        if (request.containsKey("source_config")) {
+            draft.setSourceConfig(jsonValueAsString(request.getValue("source_config")));
+        }
+        if (request.containsKey("input_schema")) {
+            draft.setInputSchema(jsonValueAsString(request.getValue("input_schema")));
+        }
+        if (request.containsKey("canonical_schema_ref")) {
+            draft.setCanonicalSchemaRef(request.getString("canonical_schema_ref"));
+        } else if (request.containsKey("target_schema_ref")) {
+            draft.setCanonicalSchemaRef(request.getString("target_schema_ref"));
+        }
+        if (request.containsKey("mapping_rules")) {
+            draft.setMappingRules(jsonValueAsString(request.getValue("mapping_rules")));
+        } else if (request.containsKey("transformation_rules")) {
+            draft.setMappingRules(jsonValueAsString(request.getValue("transformation_rules")));
+        }
+        if (request.containsKey("generated_jsonata")) {
+            draft.setGeneratedJsonata(request.getString("generated_jsonata"));
+        }
+        if (request.containsKey("validation_rules")) {
+            draft.setValidationRules(jsonValueAsString(request.getValue("validation_rules")));
+        }
+        if (request.containsKey("status")) {
+            String status = request.getString("status");
+            if (status != null && !status.isBlank()) {
+                draft.setStatus(MappingDraft.DraftStatus.valueOf(status));
+            }
+        }
+        if (request.containsKey("last_validated_at")) {
+            String lastValidatedAt = request.getString("last_validated_at");
+            draft.setLastValidatedAt(
+                    lastValidatedAt == null || lastValidatedAt.isBlank() ? null : Instant.parse(lastValidatedAt)
+            );
+        }
+        if (request.containsKey("validation_result")) {
+            draft.setValidationResult(jsonValueAsString(request.getValue("validation_result")));
+        }
+    }
+
+    private UUID parseUuid(Object value, String fieldName) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return UUID.fromString(String.valueOf(value));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(fieldName + " must be a valid UUID");
+        }
+    }
+
+    private String jsonValueAsString(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof JsonObject jsonObject) {
+            return jsonObject.encode();
+        }
+        return String.valueOf(value);
     }
 
     public record RequestPreviewResponse(Map<String, Object> payload, Map<String, Object> headers) {}
