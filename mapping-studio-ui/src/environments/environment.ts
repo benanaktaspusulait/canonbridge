@@ -11,7 +11,7 @@ export const environment = {
   
   // API Configuration
   api: {
-    baseUrl: '/api',
+    baseUrl: 'http://localhost:8082/api',
     timeout: 30000, // 30 seconds
     retryAttempts: 3,
   },

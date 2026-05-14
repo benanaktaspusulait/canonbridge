@@ -6,9 +6,8 @@ import { environment } from '../../../environments/environment';
 /**
  * Default tenant ID for development when no user is logged in
  * This allows testing API endpoints without authentication
- * Using 'tenant-acme' which has test data in the database
  */
-const DEV_DEFAULT_TENANT_ID = 'tenant-acme';
+const DEV_DEFAULT_TENANT_ID = 'default-tenant';
 const DEV_DEFAULT_USER_ID = 'dev-user';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
