@@ -43,6 +43,16 @@
     </div>
     <div class="header-actions">
       <p-button
+        label="Source Validation"
+        icon="pi pi-shield"
+        severity="info"
+        [outlined]="true"
+        [badge]="sourceValidationRules().length.toString()"
+        badgeClass="p-badge-info"
+        size="small"
+        (onClick)="openSourceValidationDialog()"
+        pTooltip="Add validation rules for incoming API response" />
+      <p-button
         label="Auto Map"
         icon="pi pi-bolt"
         severity="secondary"
@@ -1004,5 +1014,161 @@
       icon="pi pi-plus"
       [disabled]="!newFieldName().trim()"
       (onClick)="addCustomField()" />
+  </ng-template>
+</p-dialog>
+
+<!-- Source Validation Dialog -->
+<p-dialog 
+  header="Source Validation Rules"
+  [(visible)]="showSourceValidationDialog"
+  [modal]="true"
+  [style]="{width: '800px', maxHeight: '90vh'}"
+  [draggable]="false"
+  [resizable]="false">
+  
+  <div class="source-validation-container">
+    <div class="validation-info">
+      <i class="pi pi-info-circle"></i>
+      <p>Define validation rules to check incoming API responses before transformation. Invalid data will be rejected.</p>
+    </div>
+
+    <!-- Existing Rules List -->
+    @if (sourceValidationRules().length > 0) {
+      <div class="validation-rules-list">
+        <h4><i class="pi pi-list"></i> Active Rules ({{ sourceValidationRules().length }})</h4>
+        
+        @for (rule of sourceValidationRules(); track rule.id) {
+          <div class="validation-rule-card" [class.disabled]="!rule.enabled">
+            <div class="rule-header">
+              <div class="rule-info">
+                <span class="rule-path"><i class="pi pi-code"></i> {{ rule.path }}</span>
+                <span class="rule-kind-badge">{{ getValidationKindLabel(rule.kind) }}</span>
+              </div>
+              <div class="rule-actions">
+                <button 
+                  type="button"
+                  class="rule-action-btn"
+                  (click)="toggleValidationRule(rule.id)"
+                  [pTooltip]="rule.enabled ? 'Disable' : 'Enable'">
+                  <i [class]="rule.enabled ? 'pi pi-eye' : 'pi pi-eye-slash'"></i>
+                </button>
+                <button 
+                  type="button"
+                  class="rule-action-btn"
+                  (click)="editSourceValidationRule(rule)"
+                  pTooltip="Edit">
+                  <i class="pi pi-pencil"></i>
+                </button>
+                <button 
+                  type="button"
+                  class="rule-action-btn danger"
+                  (click)="removeSourceValidationRule(rule.id)"
+                  pTooltip="Delete">
+                  <i class="pi pi-trash"></i>
+                </button>
+              </div>
+            </div>
+            <div class="rule-description">
+              {{ getValidationRuleDescription(rule) }}
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Add/Edit Rule Form -->
+    <div class="validation-form">
+      <h4>
+        <i class="pi pi-plus-circle"></i> 
+        {{ editingValidationId() ? 'Edit Rule' : 'Add New Rule' }}
+      </h4>
+      
+      <div class="form-field">
+        <label for="validationPath">Source Field Path *</label>
+        <p-select 
+          id="validationPath"
+          [(ngModel)]="newValidationPath"
+          [options]="sourceFields()"
+          optionLabel="path"
+          optionValue="path"
+          placeholder="Select source field"
+          [filter]="true"
+          filterPlaceholder="Search fields..." />
+        <small>Select the field from incoming API response to validate</small>
+      </div>
+
+      <div class="form-field">
+        <label for="validationKind">Validation Rule *</label>
+        <p-select 
+          id="validationKind"
+          [(ngModel)]="newValidationKind"
+          [options]="validationKindOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select validation type" />
+      </div>
+
+      @if (needsParamA(newValidationKind())) {
+        <div class="form-field">
+          <label for="validationParamA">{{ getParamALabel(newValidationKind()) }} *</label>
+          @if (newValidationKind() === 'type') {
+            <p-select 
+              id="validationParamA"
+              [(ngModel)]="newValidationParamA"
+              [options]="validationTypeOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select expected type" />
+          } @else {
+            <input 
+              pInputText 
+              id="validationParamA"
+              [(ngModel)]="newValidationParamA"
+              [placeholder]="getParamAPlaceholder(newValidationKind())" />
+          }
+          
+          @if (newValidationKind() === 'regex') {
+            <small>Common patterns:</small>
+            <div class="pattern-examples">
+              @for (example of patternExamples; track example.value) {
+                <button 
+                  type="button"
+                  class="pattern-btn"
+                  (click)="newValidationParamA.set(example.value)">
+                  {{ example.label }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <div class="form-actions">
+        @if (editingValidationId()) {
+          <p-button 
+            label="Cancel Edit"
+            severity="secondary"
+            [text]="true"
+            (onClick)="editingValidationId.set(null); resetValidationForm()" />
+          <p-button 
+            label="Update Rule"
+            icon="pi pi-check"
+            (onClick)="updateSourceValidationRule()" />
+        } @else {
+          <p-button 
+            label="Add Rule"
+            icon="pi pi-plus"
+            [disabled]="!newValidationPath().trim()"
+            (onClick)="addSourceValidationRule()" />
+        }
+      </div>
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <p-button 
+      label="Close"
+      severity="secondary"
+      (onClick)="closeSourceValidationDialog()" />
   </ng-template>
 </p-dialog>

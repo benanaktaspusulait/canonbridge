@@ -1509,3 +1509,181 @@
     padding: 1.5rem;
   }
 }
+
+
+// Source Validation Dialog
+.source-validation-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+
+  .validation-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    color: #1e40af;
+
+    i {
+      font-size: 1.25rem;
+      margin-top: 0.125rem;
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+  }
+
+  .validation-rules-list {
+    h4 {
+      margin: 0 0 1rem 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1a202c;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      i {
+        color: var(--primary-color);
+      }
+    }
+
+    .validation-rule-card {
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      transition: all 0.2s;
+
+      &:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      &.disabled {
+        opacity: 0.5;
+        background: #f8fafc;
+      }
+
+      .rule-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+
+        .rule-info {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          flex: 1;
+
+          .rule-path {
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #1a202c;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+
+            i {
+              color: #64748b;
+            }
+          }
+
+          .rule-kind-badge {
+            padding: 0.25rem 0.625rem;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+          }
+        }
+
+        .rule-actions {
+          display: flex;
+          gap: 0.375rem;
+
+          .rule-action-btn {
+            padding: 0.375rem 0.5rem;
+            background: transparent;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &:hover {
+              background: #f1f5f9;
+              border-color: #94a3b8;
+            }
+
+            &.danger:hover {
+              background: #fee2e2;
+              border-color: #ef4444;
+              color: #ef4444;
+            }
+
+            i {
+              font-size: 0.875rem;
+            }
+          }
+        }
+      }
+
+      .rule-description {
+        font-size: 0.875rem;
+        color: #64748b;
+        padding-left: 1.5rem;
+      }
+    }
+  }
+
+  .validation-form {
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.25rem;
+
+    h4 {
+      margin: 0 0 1rem 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1a202c;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      i {
+        color: var(--primary-color);
+      }
+    }
+
+    .form-field {
+      margin-bottom: 1rem;
+
+      &:last-of-type {
+        margin-bottom: 1.5rem;
+      }
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid #e2e8f0;
+    }
+  }
+}

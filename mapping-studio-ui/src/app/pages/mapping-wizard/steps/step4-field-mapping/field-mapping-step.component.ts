@@ -44,6 +44,25 @@ export type TransformKind =
 
 export type MappingMode = 'visual' | 'expression';
 
+export type SourceValidationKind =
+  | 'required'
+  | 'type'
+  | 'enum'
+  | 'min'
+  | 'max'
+  | 'min_length'
+  | 'max_length'
+  | 'regex';
+
+export interface SourceValidationRule {
+  id: string;
+  path: string;
+  kind: SourceValidationKind;
+  paramA: string;
+  paramB: string;
+  enabled: boolean;
+}
+
 export interface MappingRule {
   id: string;
   targetKey: string;
@@ -135,6 +154,15 @@ export class FieldMappingStepComponent implements OnInit {
   newFieldPattern = signal('');
   newFieldEnum = signal('');
   newFieldDefault = signal('');
+  
+  // Source Validation
+  showSourceValidationDialog = signal(false);
+  sourceValidationRules = signal<SourceValidationRule[]>([]);
+  newValidationPath = signal('');
+  newValidationKind = signal<SourceValidationKind>('required');
+  newValidationParamA = signal('');
+  newValidationParamB = signal('');
+  editingValidationId = signal<string | null>(null);
 
   // Pattern constants for complex expressions with special characters
   readonly patterns = {
@@ -869,6 +897,25 @@ export class FieldMappingStepComponent implements OnInit {
     { label: 'Numbers Only', value: '^[0-9]+$' }
   ];
 
+  validationKindOptions = [
+    { label: 'Required Field', value: 'required' as SourceValidationKind },
+    { label: 'Type Check', value: 'type' as SourceValidationKind },
+    { label: 'Allowed Values (Enum)', value: 'enum' as SourceValidationKind },
+    { label: 'Minimum Number', value: 'min' as SourceValidationKind },
+    { label: 'Maximum Number', value: 'max' as SourceValidationKind },
+    { label: 'Minimum Length', value: 'min_length' as SourceValidationKind },
+    { label: 'Maximum Length', value: 'max_length' as SourceValidationKind },
+    { label: 'Text Pattern (Regex)', value: 'regex' as SourceValidationKind }
+  ];
+
+  validationTypeOptions = [
+    { label: 'String', value: 'string' },
+    { label: 'Number', value: 'number' },
+    { label: 'Boolean', value: 'boolean' },
+    { label: 'Object', value: 'object' },
+    { label: 'Array', value: 'array' }
+  ];
+
   // Expose for template
   Math = Math;
   JSON = JSON;
@@ -887,5 +934,160 @@ export class FieldMappingStepComponent implements OnInit {
 
   onBack(): void {
     this.backClicked.emit();
+  }
+
+  // Source Validation Methods
+  openSourceValidationDialog(): void {
+    this.showSourceValidationDialog.set(true);
+  }
+
+  closeSourceValidationDialog(): void {
+    this.showSourceValidationDialog.set(false);
+    this.editingValidationId.set(null);
+    this.resetValidationForm();
+  }
+
+  resetValidationForm(): void {
+    this.newValidationPath.set('');
+    this.newValidationKind.set('required');
+    this.newValidationParamA.set('');
+    this.newValidationParamB.set('');
+  }
+
+  addSourceValidationRule(): void {
+    const path = this.newValidationPath().trim();
+    if (!path) {
+      alert('Please select a source field path');
+      return;
+    }
+
+    const newRule: SourceValidationRule = {
+      id: `validation_${Date.now()}`,
+      path,
+      kind: this.newValidationKind(),
+      paramA: this.newValidationParamA(),
+      paramB: this.newValidationParamB(),
+      enabled: true
+    };
+
+    this.sourceValidationRules.update(rules => [...rules, newRule]);
+    this.resetValidationForm();
+    console.log('✅ Added source validation rule:', newRule);
+  }
+
+  editSourceValidationRule(rule: SourceValidationRule): void {
+    this.editingValidationId.set(rule.id);
+    this.newValidationPath.set(rule.path);
+    this.newValidationKind.set(rule.kind);
+    this.newValidationParamA.set(rule.paramA);
+    this.newValidationParamB.set(rule.paramB);
+  }
+
+  updateSourceValidationRule(): void {
+    const id = this.editingValidationId();
+    if (!id) return;
+
+    this.sourceValidationRules.update(rules =>
+      rules.map(rule =>
+        rule.id === id
+          ? {
+              ...rule,
+              path: this.newValidationPath(),
+              kind: this.newValidationKind(),
+              paramA: this.newValidationParamA(),
+              paramB: this.newValidationParamB()
+            }
+          : rule
+      )
+    );
+
+    this.editingValidationId.set(null);
+    this.resetValidationForm();
+  }
+
+  removeSourceValidationRule(id: string): void {
+    this.sourceValidationRules.update(rules => rules.filter(r => r.id !== id));
+  }
+
+  toggleValidationRule(id: string): void {
+    this.sourceValidationRules.update(rules =>
+      rules.map(rule => (rule.id === id ? { ...rule, enabled: !rule.enabled } : rule))
+    );
+  }
+
+  getValidationKindLabel(kind: SourceValidationKind): string {
+    const option = this.validationKindOptions.find(o => o.value === kind);
+    return option?.label || kind;
+  }
+
+  getValidationRuleDescription(rule: SourceValidationRule): string {
+    switch (rule.kind) {
+      case 'required':
+        return 'Field must not be empty or null';
+      case 'type':
+        return `Must be type: ${rule.paramA}`;
+      case 'enum':
+        return `Must be one of: ${rule.paramA}`;
+      case 'min':
+        return `Minimum value: ${rule.paramA}`;
+      case 'max':
+        return `Maximum value: ${rule.paramA}`;
+      case 'min_length':
+        return `Minimum length: ${rule.paramA} characters`;
+      case 'max_length':
+        return `Maximum length: ${rule.paramA} characters`;
+      case 'regex':
+        return `Must match pattern: ${rule.paramA}`;
+      default:
+        return '';
+    }
+  }
+
+  needsParamA(kind: SourceValidationKind): boolean {
+    return kind !== 'required';
+  }
+
+  needsParamB(kind: SourceValidationKind): boolean {
+    return false; // Currently no validation rules need paramB
+  }
+
+  getParamALabel(kind: SourceValidationKind): string {
+    switch (kind) {
+      case 'type':
+        return 'Expected Type';
+      case 'enum':
+        return 'Allowed Values (comma-separated)';
+      case 'min':
+        return 'Minimum Value';
+      case 'max':
+        return 'Maximum Value';
+      case 'min_length':
+        return 'Minimum Length';
+      case 'max_length':
+        return 'Maximum Length';
+      case 'regex':
+        return 'Pattern (Regex)';
+      default:
+        return 'Parameter';
+    }
+  }
+
+  getParamAPlaceholder(kind: SourceValidationKind): string {
+    switch (kind) {
+      case 'type':
+        return 'e.g., string, number, boolean';
+      case 'enum':
+        return 'e.g., ACTIVE, INACTIVE, PENDING';
+      case 'min':
+      case 'max':
+        return 'e.g., 0, 100, 999';
+      case 'min_length':
+      case 'max_length':
+        return 'e.g., 2, 50, 255';
+      case 'regex':
+        return 'e.g., ^[A-Z0-9-]+$';
+      default:
+        return '';
+    }
   }
 }
