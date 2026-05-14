@@ -88,19 +88,28 @@
               (backClicked)="goBack()" />
           }
           @case (2) {
+            <app-request-mapping-step
+              [sourceType]="wizardState().sourceType!"
+              [method]="getConfigMethod()"
+              [initialConfig]="wizardState().requestTransformation"
+              [canonicalSampleJson]="wizardState().sampleJson"
+              (requestMappingComplete)="onRequestMappingComplete($event)"
+              (backClicked)="goBack()" />
+          }
+          @case (3) {
             <app-sample-data-step
               [method]="getConfigMethod()"
               [initialSampleJson]="wizardState().sampleJson"
               (sampleDataComplete)="onSampleDataComplete($event)"
               (backClicked)="goBack()" />
           }
-          @case (3) {
+          @case (4) {
             <app-target-schema-step
               [initialSchemaRef]="wizardState().targetSchemaRef"
               (schemaSelected)="onTargetSchemaSelected($event)"
               (backClicked)="goBack()" />
           }
-          @case (4) {
+          @case (5) {
             <app-field-mapping-step
               [sampleJson]="wizardState().sampleJson"
               [targetSchemaJson]="targetSchemaJson()"
@@ -108,7 +117,7 @@
               (mappingComplete)="onFieldMappingComplete($event)"
               (backClicked)="goBack()" />
           }
-          @case (5) {
+          @case (6) {
             <app-test-publish-step
               [wizardState]="wizardState()"
               [mappingId]="mappingId()"

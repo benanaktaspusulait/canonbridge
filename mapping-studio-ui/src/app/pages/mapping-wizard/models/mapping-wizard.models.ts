@@ -21,6 +21,7 @@ export interface WizardState {
   sourceType: SourceType | null;
   externalSystemId: string | null;
   sourceConfig: Record<string, unknown>;
+  requestTransformation: RequestTransformationConfig | null;
   sampleJson: string;
   targetSchemaRef: string | null;
   targetSchemaJson: string;
@@ -31,4 +32,11 @@ export interface MappingRule {
   targetField: string;
   expression: string;
   description?: string;
+}
+
+export interface RequestTransformationConfig {
+  mode: 'template' | 'jsonata';
+  template: Record<string, unknown>;
+  jsonata: string;
+  headers: Record<string, string>;
 }

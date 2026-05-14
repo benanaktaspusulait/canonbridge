@@ -2,6 +2,13 @@
   "app": {
     "title": "CanonBridge — Mapping Studio"
   },
+  "common": {
+    "back": "Back",
+    "next": "Next",
+    "skip": "Skip",
+    "format": "Format",
+    "loadFile": "Load File"
+  },
   "layout": {
     "demoBanner": {
       "strong": "Demo environment",
@@ -1220,6 +1227,22 @@
       "jsonPlaceholder": "{\n  \"orderId\": \"12345\",\n  \"customerId\": \"67890\",\n  \"items\": [\n    {\n      \"productId\": \"ABC\",\n      \"quantity\": 2\n    }\n  ]\n}",
       "invalidJson": "Invalid JSON",
       "hint": "Paste a sample request payload or upload a JSON file. This will be used to map fields to the canonical schema."
+    },
+    "requestMapping": {
+      "title": "Request Payload Mapping",
+      "description": "Define how canonical data is transformed into the outbound request payload",
+      "notNeeded": "This HTTP method doesn't require a request payload. Click Next to continue.",
+      "templateMode": "Template Mode",
+      "jsonataMode": "JSONata Mode",
+      "requestTemplate": "Request Template",
+      "templateHelp": "Use {{canonical.fieldName}} syntax to reference canonical fields. Example: {\"orderId\": \"{{canonical.order.id}}\"}",
+      "jsonataExpression": "JSONata Expression",
+      "jsonataHelp": "Write a JSONata expression to transform canonical data. Example: { \"orderId\": canonical.order.id }",
+      "headers": "Request Headers",
+      "headersHelp": "Define HTTP headers for the request. You can use {{canonical.fieldName}} placeholders.",
+      "preview": "Preview Transformation",
+      "previewResult": "Preview Result",
+      "previewObjectRequired": "Request transformation must produce a JSON object"
     },
     "configuration": {
       "title": "Configuration",

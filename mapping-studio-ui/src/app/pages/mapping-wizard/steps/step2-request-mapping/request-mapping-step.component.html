@@ -1,0 +1,182 @@
+<div class="request-mapping-step">
+  <p-card>
+    <ng-template pTemplate="header">
+      <div class="card-header">
+        <h3>{{ 'wizard.requestMapping.title' | i18n }}</h3>
+        <p class="text-muted">{{ 'wizard.requestMapping.description' | i18n }}</p>
+      </div>
+    </ng-template>
+
+    @if (!needsRequestPayload()) {
+      <p-message severity="info" [text]="'wizard.requestMapping.notNeeded' | i18n"></p-message>
+      
+      <div class="button-group">
+        <p-button 
+          label="{{ 'common.back' | i18n }}" 
+          icon="pi pi-arrow-left"
+          severity="secondary"
+          (onClick)="onBack()">
+        </p-button>
+        <p-button 
+          label="{{ 'common.next' | i18n }}" 
+          icon="pi pi-arrow-right"
+          iconPos="right"
+          (onClick)="onSkip()">
+        </p-button>
+      </div>
+    } @else {
+      <div class="mode-selector">
+        <p-button 
+          [label]="'wizard.requestMapping.templateMode' | i18n"
+          [severity]="mode() === 'template' ? 'primary' : 'secondary'"
+          [outlined]="mode() !== 'template'"
+          (onClick)="onModeChange('template')">
+        </p-button>
+        <p-button 
+          [label]="'wizard.requestMapping.jsonataMode' | i18n"
+          [severity]="mode() === 'jsonata' ? 'primary' : 'secondary'"
+          [outlined]="mode() !== 'jsonata'"
+          (onClick)="onModeChange('jsonata')">
+        </p-button>
+      </div>
+
+      @if (mode() === 'template') {
+        <div class="template-section">
+          <h4>{{ 'wizard.requestMapping.requestTemplate' | i18n }}</h4>
+          <p class="help-text">{{ 'wizard.requestMapping.templateHelp' | i18n }}</p>
+          
+          <div class="json-editor">
+            <textarea 
+              [rows]="15"
+              [value]="templateJson()"
+              (input)="onTemplateChange($any($event.target).value)"
+              [placeholder]="templatePlaceholder"
+              class="w-full font-mono">
+            </textarea>
+            
+            @if (templateError()) {
+              <p-message severity="error" [text]="templateError()!"></p-message>
+            }
+          </div>
+
+          <div class="action-buttons">
+            <p-button 
+              label="{{ 'common.format' | i18n }}"
+              icon="pi pi-align-justify"
+              severity="secondary"
+              size="small"
+              (onClick)="formatJson('template')">
+            </p-button>
+            <p-button 
+              label="{{ 'common.loadFile' | i18n }}"
+              icon="pi pi-upload"
+              severity="secondary"
+              size="small"
+              (onClick)="fileInput.click()">
+            </p-button>
+            <input 
+              #fileInput 
+              type="file" 
+              accept=".json"
+              style="display: none"
+              (change)="loadTemplateFile($event)">
+          </div>
+        </div>
+      } @else {
+        <div class="jsonata-section">
+          <h4>{{ 'wizard.requestMapping.jsonataExpression' | i18n }}</h4>
+          <p class="help-text">{{ 'wizard.requestMapping.jsonataHelp' | i18n }}</p>
+          
+          <div class="json-editor">
+            <textarea 
+              [rows]="15"
+              [value]="jsonataExpression()"
+              (input)="onJsonataChange($any($event.target).value)"
+              placeholder='{ "field": canonical.fieldName }'
+              class="w-full font-mono">
+            </textarea>
+            
+            @if (jsonataError()) {
+              <p-message severity="error" [text]="jsonataError()!"></p-message>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="headers-section">
+        <h4>{{ 'wizard.requestMapping.headers' | i18n }}</h4>
+        <p class="help-text">{{ 'wizard.requestMapping.headersHelp' | i18n }}</p>
+        
+        <div class="json-editor">
+          <textarea 
+            [rows]="5"
+            [value]="headersJson()"
+            (input)="onHeadersChange($any($event.target).value)"
+            placeholder='{ "Content-Type": "application/json" }'
+            class="w-full font-mono">
+          </textarea>
+          
+          @if (headersError()) {
+            <p-message severity="error" [text]="headersError()!"></p-message>
+          }
+        </div>
+
+        <div class="action-buttons">
+          <p-button 
+            label="{{ 'common.format' | i18n }}"
+            icon="pi pi-align-justify"
+            severity="secondary"
+            size="small"
+            (onClick)="formatJson('headers')">
+          </p-button>
+        </div>
+      </div>
+
+      @if (canonicalSampleJson()) {
+        <div class="preview-section">
+          <p-button 
+            label="{{ 'wizard.requestMapping.preview' | i18n }}"
+            icon="pi pi-eye"
+            severity="info"
+            (onClick)="previewTransformation()">
+          </p-button>
+
+          @if (previewOutput()) {
+            <div class="preview-output">
+              <h5>{{ 'wizard.requestMapping.previewResult' | i18n }}</h5>
+              <pre>{{ previewOutput() }}</pre>
+            </div>
+          }
+
+          @if (previewError()) {
+            <p-message severity="error" [text]="previewError()!"></p-message>
+          }
+        </div>
+      }
+
+      <div class="button-group">
+        <p-button 
+          label="{{ 'common.back' | i18n }}" 
+          icon="pi pi-arrow-left"
+          severity="secondary"
+          (onClick)="onBack()">
+        </p-button>
+        <div class="right-buttons">
+          <p-button 
+            label="{{ 'common.skip' | i18n }}"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onSkip()">
+          </p-button>
+          <p-button 
+            label="{{ 'common.next' | i18n }}" 
+            icon="pi pi-arrow-right"
+            iconPos="right"
+            [disabled]="!isValid()"
+            (onClick)="onNext()">
+          </p-button>
+        </div>
+      </div>
+    }
+  </p-card>
+</div>

@@ -2,6 +2,13 @@
   "app": {
     "title": "CanonBridge — Mapping Studio"
   },
+  "common": {
+    "back": "Geri",
+    "next": "İleri",
+    "skip": "Atla",
+    "format": "Formatla",
+    "loadFile": "Dosya Yükle"
+  },
   "layout": {
     "demoBanner": {
       "strong": "Demo ortamı",
@@ -1279,6 +1286,22 @@
       "jsonPlaceholder": "{\n  \"orderId\": \"12345\",\n  \"customerId\": \"67890\",\n  \"items\": [\n    {\n      \"productId\": \"ABC\",\n      \"quantity\": 2\n    }\n  ]\n}",
       "invalidJson": "Geçersiz JSON",
       "hint": "Örnek request payload yapıştırın veya JSON dosyası yükleyin. Bu, alanları canonical schema'ya eşlemek için kullanılacak."
+    },
+    "requestMapping": {
+      "title": "Request Payload Mapping",
+      "description": "Canonical verinin giden request payload'a nasıl dönüştürüleceğini tanımlayın",
+      "notNeeded": "Bu HTTP metodu request payload gerektirmez. Devam etmek için İleri'ye tıklayın.",
+      "templateMode": "Template Modu",
+      "jsonataMode": "JSONata Modu",
+      "requestTemplate": "Request Template",
+      "templateHelp": "Canonical alanlarına referans vermek için {{canonical.fieldName}} sözdizimini kullanın. Örnek: {\"orderId\": \"{{canonical.order.id}}\"}",
+      "jsonataExpression": "JSONata İfadesi",
+      "jsonataHelp": "Canonical veriyi dönüştürmek için JSONata ifadesi yazın. Örnek: { \"orderId\": canonical.order.id }",
+      "headers": "Request Headers",
+      "headersHelp": "Request için HTTP header'ları tanımlayın. {{canonical.fieldName}} placeholder'ları kullanabilirsiniz.",
+      "preview": "Dönüşümü Önizle",
+      "previewResult": "Önizleme Sonucu",
+      "previewObjectRequired": "Request dönüşümü bir JSON objesi üretmelidir"
     },
     "configuration": {
       "title": "Yapılandırma",

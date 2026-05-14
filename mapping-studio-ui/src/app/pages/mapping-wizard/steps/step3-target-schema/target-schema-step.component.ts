@@ -35,12 +35,15 @@ export class TargetSchemaStepComponent implements OnInit {
   loading = signal(true);
 
   ngOnInit(): void {
-    this.loadCanonicalSchemas();
-    
+    // First set the initial schema ID
     const initialRef = this.initialSchemaRef();
     if (initialRef) {
       this.selectedSchemaId.set(initialRef);
+      console.log('Setting initial schema ref:', initialRef);
     }
+    
+    // Then load schemas
+    this.loadCanonicalSchemas();
   }
 
   loadCanonicalSchemas(): void {
@@ -51,12 +54,16 @@ export class TargetSchemaStepComponent implements OnInit {
         const activeSchemas = schemas.filter(s => s.status === 'ACTIVE');
         this.canonicalSchemas.set(activeSchemas);
         
-        // If we have a pre-selected schema, find and set it
-        const initialRef = this.initialSchemaRef();
-        if (initialRef) {
-          const schema = activeSchemas.find(s => s.id === initialRef);
+        // After schemas are loaded, check if we have a pre-selected schema
+        const selectedId = this.selectedSchemaId();
+        if (selectedId) {
+          console.log('Looking for schema with ID:', selectedId);
+          const schema = activeSchemas.find(s => s.id === selectedId);
           if (schema) {
+            console.log('Found schema:', schema.name);
             this.selectedSchema.set(schema);
+          } else {
+            console.warn('Schema not found in list:', selectedId);
           }
         }
         
@@ -64,7 +71,19 @@ export class TargetSchemaStepComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load canonical schemas:', err);
+        
+        // Check if it's an authentication issue
+        if (err.status === 400 || err.status === 401 || err.status === 403) {
+          console.warn('Authentication issue detected. User may not be logged in or session expired.');
+          console.warn('Error details:', {
+            status: err.status,
+            statusText: err.statusText,
+            message: err.message
+          });
+        }
+        
         // Fallback to mock data if API fails
+        console.log('Falling back to mock data');
         this.loadMockSchemas();
         this.loading.set(false);
       }
@@ -74,13 +93,13 @@ export class TargetSchemaStepComponent implements OnInit {
   private loadMockSchemas(): void {
     const mockSchemas: SchemaDefinition[] = [
       {
-        id: '7d5f75ae-4219-42c4-a85d-9d1df02ec154',
-        name: 'Order Created',
+        id: '7f991c1a-9558-43fa-9ee1-070141c4f79b',
+        name: 'Canonical Order Schema',
         schema_type: 'CANONICAL',
-        subject: 'canonical.OrderCreated',
+        subject: 'canonical.order.v1',
         version: 1,
         status: 'ACTIVE',
-        description: 'Canonical schema for order creation events',
+        description: 'Canonical schema for order events',
         schema_json: JSON.stringify({
           type: 'object',
           properties: {
@@ -132,6 +151,20 @@ export class TargetSchemaStepComponent implements OnInit {
     ];
     
     this.canonicalSchemas.set(mockSchemas);
+    
+    // After mock schemas are loaded, check if we have a pre-selected schema
+    const selectedId = this.selectedSchemaId();
+    if (selectedId) {
+      console.log('Looking for schema in mock data with ID:', selectedId);
+      const schema = mockSchemas.find(s => s.id === selectedId);
+      if (schema) {
+        console.log('Found schema in mock data:', schema.name);
+        this.selectedSchema.set(schema);
+      } else {
+        console.warn('Schema not found in mock data:', selectedId);
+      }
+    }
+    
     console.log('Loaded mock canonical schemas');
   }
 

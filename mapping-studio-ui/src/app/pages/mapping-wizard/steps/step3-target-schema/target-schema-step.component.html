@@ -25,7 +25,6 @@
               [options]="canonicalSchemas()"
               [ngModel]="selectedSchemaId()"
               (ngModelChange)="onSchemaSelected($event)"
-              (onChange)="onSchemaSelected($event.value)"
               optionLabel="name"
               optionValue="id"
               placeholder="Select a canonical schema"

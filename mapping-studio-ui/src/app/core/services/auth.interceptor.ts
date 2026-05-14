@@ -20,7 +20,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   if (!user || !token) {
+    console.warn('[AuthInterceptor] No user or token found for request:', req.url);
+    console.warn('[AuthInterceptor] User:', user, 'Token:', token ? 'present' : 'missing');
     return next(req);
+  }
+
+  if (!user.tenantId) {
+    console.error('[AuthInterceptor] User has no tenantId:', user);
   }
 
   const cloned = req.clone({

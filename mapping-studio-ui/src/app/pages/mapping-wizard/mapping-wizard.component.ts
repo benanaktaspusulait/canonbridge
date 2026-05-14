@@ -7,6 +7,7 @@ import { MenuItem } from 'primeng/api';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { SourceTypeSelectionComponent } from './steps/step0-source-type/source-type-selection.component';
 import { ConfigurationStepComponent } from './steps/step1-configuration/configuration-step.component';
+import { RequestMappingStepComponent } from './steps/step2-request-mapping/request-mapping-step.component';
 import { SampleDataStepComponent } from './steps/step2-sample-data/sample-data-step.component';
 import { TargetSchemaStepComponent } from './steps/step3-target-schema/target-schema-step.component';
 import { FieldMappingStepComponent } from './steps/step4-field-mapping/field-mapping-step.component';
@@ -26,6 +27,7 @@ import { SchemaService } from '../../core/services/schema.service';
     I18nPipe,
     SourceTypeSelectionComponent,
     ConfigurationStepComponent,
+    RequestMappingStepComponent,
     SampleDataStepComponent,
     TargetSchemaStepComponent,
     FieldMappingStepComponent,
@@ -49,6 +51,7 @@ export class MappingWizardComponent implements OnInit {
     sourceType: null,
     externalSystemId: null,
     sourceConfig: {},
+    requestTransformation: null,
     sampleJson: '',
     targetSchemaRef: null,
     targetSchemaJson: '',
@@ -58,6 +61,7 @@ export class MappingWizardComponent implements OnInit {
   steps: MenuItem[] = [
     { label: 'Source Type' },
     { label: 'Configuration' },
+    { label: 'Request Mapping' },
     { label: 'Sample Data' },
     { label: 'Target Schema' },
     { label: 'Field Mapping' },
@@ -82,6 +86,7 @@ export class MappingWizardComponent implements OnInit {
       next: (mapping) => {
         const sourceConfig = this.extractSourceConfig(mapping);
         const externalSystemId = this.extractExternalSystemId(mapping, sourceConfig);
+        const requestTransformation = this.extractRequestTransformation(sourceConfig);
         
         // Populate wizard state from existing mapping
         this.wizardState.update(state => ({
@@ -89,6 +94,7 @@ export class MappingWizardComponent implements OnInit {
           sourceType: this.inferSourceType(mapping),
           externalSystemId: externalSystemId,
           sourceConfig: sourceConfig,
+          requestTransformation: requestTransformation,
           sampleJson: mapping.sample_payload || this.extractSampleJson(mapping),
           targetSchemaRef: mapping.target_schema_ref || mapping.canonical_schema_ref || null,
           targetSchemaJson: '',
@@ -143,6 +149,14 @@ export class MappingWizardComponent implements OnInit {
       return mapping.source_connection_id;
     }
     
+    return null;
+  }
+
+  private extractRequestTransformation(sourceConfig: Record<string, unknown>): any {
+    const reqTransform = sourceConfig['requestTransformation'];
+    if (reqTransform && typeof reqTransform === 'object') {
+      return reqTransform;
+    }
     return null;
   }
 
@@ -244,10 +258,22 @@ export class MappingWizardComponent implements OnInit {
       sourceConfig: data.config
     }));
     
-    // Auto-save after configuration
-    this.autoSaveMapping();
+    // Auto-save disabled for now due to backend validation issues
+    // this.autoSaveMapping();
     
     this.currentStep.set(2);
+  }
+
+  onRequestMappingComplete(data: { config: any }): void {
+    this.wizardState.update(state => ({
+      ...state,
+      requestTransformation: data.config
+    }));
+    
+    // Auto-save disabled for now due to backend validation issues
+    // this.autoSaveMapping();
+    
+    this.currentStep.set(3);
   }
 
   onSampleDataComplete(data: { sampleJson: string }): void {
@@ -256,10 +282,10 @@ export class MappingWizardComponent implements OnInit {
       sampleJson: data.sampleJson
     }));
     
-    // Auto-save after sample data
-    this.autoSaveMapping();
+    // Auto-save disabled for now due to backend validation issues
+    // this.autoSaveMapping();
     
-    this.currentStep.set(3);
+    this.currentStep.set(4);
   }
 
   onTargetSchemaSelected(data: { schemaRef: string }): void {
@@ -268,8 +294,8 @@ export class MappingWizardComponent implements OnInit {
       targetSchemaRef: data.schemaRef
     }));
     
-    // Auto-save after schema selection
-    this.autoSaveMapping();
+    // Auto-save disabled for now due to backend validation issues
+    // this.autoSaveMapping();
     
     // Load schema JSON for field mapping
     this.schemaService.getById(data.schemaRef).subscribe({
@@ -279,10 +305,10 @@ export class MappingWizardComponent implements OnInit {
           ...state,
           targetSchemaJson: schema.schema_json
         }));
-        this.currentStep.set(4);
+        this.currentStep.set(5);
       },
       error: () => {
-        this.currentStep.set(4);
+        this.currentStep.set(5);
       }
     });
   }
@@ -293,10 +319,10 @@ export class MappingWizardComponent implements OnInit {
       mappingRules: data.rules
     }));
     
-    // Auto-save after field mapping
-    this.autoSaveMapping();
+    // Auto-save disabled for now due to backend validation issues
+    // this.autoSaveMapping();
     
-    this.currentStep.set(5);
+    this.currentStep.set(6);
   }
 
   private autoSaveMapping(): void {
@@ -312,6 +338,11 @@ export class MappingWizardComponent implements OnInit {
     // Add external system ID if present
     if (state.externalSystemId) {
       sourceConfig['externalSystemId'] = state.externalSystemId;
+    }
+    
+    // Add request transformation if present
+    if (state.requestTransformation) {
+      sourceConfig['requestTransformation'] = state.requestTransformation;
     }
     
     // Add sample JSON if present

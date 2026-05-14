@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, input, output, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
@@ -34,11 +34,14 @@ export class SampleDataStepComponent {
   jsonError = signal<string | null>(null);
 
   constructor() {
-    // Load initial value when component initializes
-    const initial = this.initialSampleJson();
-    if (initial) {
-      this.sampleJson.set(initial);
-    }
+    // Use effect to load initial value when input changes
+    effect(() => {
+      const initial = this.initialSampleJson();
+      if (initial && !this.sampleJson()) {
+        this.sampleJson.set(initial);
+        console.log('Loaded initial sample JSON:', initial.substring(0, 100));
+      }
+    });
   }
 
   needsPayload(): boolean {
