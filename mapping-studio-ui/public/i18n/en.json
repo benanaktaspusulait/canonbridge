@@ -1245,8 +1245,8 @@
     }
   },
   "wizard": {
-    "title": "New Mapping Wizard",
-    "subtitle": "Step-by-step guide to create a new mapping",
+    "title": "Mapping Wizard",
+    "subtitle": "Step-by-step guide to create a mapping",
     "backToList": "Back to Mappings",
     "back": "Back",
     "next": "Next",

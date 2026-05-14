@@ -45,8 +45,8 @@
             <p-select
               id="external-system"
               [options]="externalSystems()"
-              [ngModel]="selectedSystemId()"
-              (ngModelChange)="onSystemSelected($event)"
+              [(ngModel)]="selectedSystemId"
+              (onChange)="onSystemSelected($event.value)"
               optionLabel="name"
               optionValue="id"
               [placeholder]="'wizard.configuration.selectSystemPlaceholder' | i18n"
@@ -66,8 +66,8 @@
               <p-select
                 id="endpoint"
                 [options]="availableEndpoints()"
-                [ngModel]="selectedEndpointPath()"
-                (ngModelChange)="onEndpointSelected($event)"
+                [(ngModel)]="selectedEndpointPath"
+                (onChange)="onEndpointSelected($event.value)"
                 optionLabel="description"
                 optionValue="path"
                 [placeholder]="'wizard.configuration.selectEndpointPlaceholder' | i18n"

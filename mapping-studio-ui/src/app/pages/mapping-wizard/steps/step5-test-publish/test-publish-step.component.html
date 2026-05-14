@@ -1,4 +1,51 @@
 <div class="step-container">
+  <!-- Top Navigation -->
+  <div class="top-navigation">
+    <p-button
+      label="Back"
+      icon="pi pi-arrow-left"
+      severity="secondary"
+      [outlined]="true"
+      [disabled]="saving()"
+      (onClick)="onBack()" />
+    
+    <div class="nav-info">
+      @if (!mappingName().trim()) {
+        <p-message 
+          severity="warn" 
+          text="Please enter a mapping name" 
+          [closable]="false" />
+      } @else if (!testSuccess()) {
+        <p-message 
+          severity="info" 
+          text="Run a test before publishing" 
+          [closable]="false" />
+      } @else {
+        <p-message 
+          severity="success" 
+          text="Ready to publish!" 
+          [closable]="false" />
+      }
+    </div>
+
+    <div class="nav-actions">
+      <p-button
+        label="Save as Draft"
+        icon="pi pi-save"
+        severity="secondary"
+        [outlined]="true"
+        [loading]="saving()"
+        [disabled]="!mappingName().trim()"
+        (onClick)="saveMapping()" />
+      <p-button
+        label="Publish"
+        icon="pi pi-check"
+        [loading]="saving()"
+        [disabled]="!mappingName().trim() || !testSuccess()"
+        (onClick)="saveMapping()" />
+    </div>
+  </div>
+
   <p-card>
     <ng-template pTemplate="header">
       <div class="card-header">

@@ -163,6 +163,9 @@ export class ConfigurationStepComponent implements OnInit {
           if (system) {
             console.log('Found system:', system.name);
             this.selectedSystem.set(system);
+            // Force update the signal to trigger change detection
+            this.selectedSystemId.set(systemId);
+            
             if (system.endpoints && system.endpoints.length > 0) {
               this.availableEndpoints.set(system.endpoints);
               

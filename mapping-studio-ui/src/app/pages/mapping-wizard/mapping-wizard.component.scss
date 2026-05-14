@@ -23,15 +23,17 @@
         font-size: 2rem;
         font-weight: 600;
         margin: 0 0 0.5rem 0;
+        color: white !important;
       }
 
       p {
         margin: 0;
         opacity: 0.9;
+        color: white !important;
       }
 
       .back-link {
-        color: white;
+        color: white !important;
         text-decoration: none;
         display: flex;
         align-items: center;
