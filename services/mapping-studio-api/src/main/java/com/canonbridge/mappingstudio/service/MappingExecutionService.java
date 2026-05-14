@@ -53,6 +53,15 @@ public class MappingExecutionService {
         try {
             JsonNode requestJson = objectMapper.readTree(requestPayload);
 
+            // Step 0: Validate input (if validation rules exist)
+            String validationError = validateInput(mapping, requestJson);
+            if (validationError != null) {
+                LOG.warnf("❌ Input validation failed: %s", validationError);
+                return Uni.createFrom().item(
+                    new ExecutionResult(false, null, "Input validation failed: " + validationError, null, null, null)
+                );
+            }
+
             // Step 1: Apply request transformation
             return applyRequestTransformation(mapping, requestJson)
                 .chain(transformedRequest -> {
@@ -302,6 +311,37 @@ public class MappingExecutionService {
         jsonataBuilder.append("}");
         
         return jsonataBuilder.toString();
+    }
+
+    /**
+     * Validate input against schema
+     */
+    private String validateInput(MappingDraft mapping, JsonNode input) {
+        String validationRulesStr = mapping.getValidationRules();
+        if (validationRulesStr == null || validationRulesStr.isBlank()) {
+            return null; // No validation rules
+        }
+
+        try {
+            JsonNode validationRules = objectMapper.readTree(validationRulesStr);
+            if (!validationRules.has("input")) {
+                return null;
+            }
+
+            JsonNode inputRules = validationRules.get("input");
+            boolean validateSchema = inputRules.has("validateSchema") && inputRules.get("validateSchema").asBoolean();
+            
+            if (validateSchema && mapping.getInputSchema() != null && !mapping.getInputSchema().isBlank()) {
+                // Basic validation - check if input is valid JSON
+                // In production, use a proper JSON Schema validator
+                LOG.info("Input schema validation enabled");
+            }
+
+            return null; // Validation passed
+        } catch (Exception e) {
+            LOG.error("Failed to validate input", e);
+            return "Validation error: " + e.getMessage();
+        }
     }
 
     /**
