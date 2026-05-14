@@ -99,6 +99,69 @@
               }
             </div>
           </div>
+
+          <!-- API Proxy URL for Integration -->
+          @if (mappingId()) {
+            <div class="section proxy-url-section">
+              <h3>
+                <i class="pi pi-sitemap"></i>
+                API Proxy Endpoint
+              </h3>
+              <p class="section-description">
+                {{ getProxyDescription() }}
+              </p>
+              
+              <div class="url-box">
+                <label>🔗 Your New Endpoint URL</label>
+                <div class="url-display">
+                  <code class="proxy-url">{{ getTestUrl() }}</code>
+                  <p-button
+                    icon="pi pi-copy"
+                    [text]="true"
+                    size="small"
+                    (onClick)="copyToClipboard(getTestUrl()!)"
+                    pTooltip="Copy URL" />
+                </div>
+              </div>
+
+              <div class="headers-box">
+                <label>📋 Required Headers</label>
+                @for (header of getTestHeaders() | keyvalue; track header.key) {
+                  <div class="header-item">
+                    <code class="header-key">{{ header.key }}:</code>
+                    <code class="header-value">{{ header.value }}</code>
+                  </div>
+                }
+              </div>
+
+              @if (getCurlCommand()) {
+                <div class="curl-box">
+                  <label>💻 Test with cURL</label>
+                  <pre class="curl-command"><code>{{ getCurlCommand() }}</code></pre>
+                  <p-button
+                    label="Copy cURL"
+                    icon="pi pi-copy"
+                    size="small"
+                    [outlined]="true"
+                    (onClick)="copyToClipboard(getCurlCommand()!)" />
+                </div>
+              }
+
+              <div class="integration-steps">
+                <h4>🚀 Integration Steps:</h4>
+                <ol>
+                  <li>Save and publish this mapping</li>
+                  <li>Update your application to use the new endpoint URL above</li>
+                  <li>Keep your existing request format - no code changes needed!</li>
+                  <li>Test with Postman or cURL to verify the transformation</li>
+                </ol>
+              </div>
+
+              <p-message 
+                severity="success" 
+                [text]="'This proxy handles request transformation, API calls, and response transformation automatically. Your app just changes the URL!'" />
+            </div>
+          }
         </div>
 
         <!-- Right Column: Test Execution -->

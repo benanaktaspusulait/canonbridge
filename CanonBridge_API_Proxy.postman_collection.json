@@ -1,0 +1,324 @@
+{
+	"info": {
+		"_postman_id": "canonbridge-proxy-collection",
+		"name": "CanonBridge API Proxy",
+		"description": "Test collection for CanonBridge API Proxy endpoints.\n\nThis collection demonstrates how to use the dynamic API proxy to transform requests and responses without changing your application code.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Mapping Proxy",
+			"item": [
+				{
+					"name": "Execute Mapping (Sample)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has transformed data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('trackingNumber');",
+									"    pm.expect(jsonData).to.have.property('customerEmail');",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"});",
+									"",
+									"pm.test(\"Tracking number is correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.trackingNumber).to.eql('TRK123456');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Tenant-Id",
+								"value": "tenant-acme",
+								"type": "text",
+								"description": "Tenant identifier"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tracking_number\": \"TRK123456\",\n  \"customer_email\": \"customer@example.com\",\n  \"status\": \"delivered\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8082/api/proxy/b3bb5c80-7966-4014-a2b4-235539f36b1b",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8082",
+							"path": [
+								"api",
+								"proxy",
+								"b3bb5c80-7966-4014-a2b4-235539f36b1b"
+							]
+						},
+						"description": "Execute the mapping proxy with sample data.\n\n**Flow:**\n1. Accepts request in original format (snake_case)\n2. Applies request transformation\n3. Calls external API\n4. Applies response transformation\n5. Returns response in original format\n\n**Expected Response:**\n```json\n{\n  \"trackingNumber\": \"TRK123456\",\n  \"customerEmail\": \"customer@example.com\",\n  \"status\": \"delivered\"\n}\n```"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-Tenant-Id",
+										"value": "tenant-acme"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"tracking_number\": \"TRK123456\",\n  \"customer_email\": \"customer@example.com\",\n  \"status\": \"delivered\"\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8082/api/proxy/b3bb5c80-7966-4014-a2b4-235539f36b1b",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8082",
+									"path": [
+										"api",
+										"proxy",
+										"b3bb5c80-7966-4014-a2b4-235539f36b1b"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"trackingNumber\": \"TRK123456\",\n  \"customerEmail\": \"customer@example.com\",\n  \"status\": \"delivered\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Mapping Info",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has mapping info\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('mappingId');",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData).to.have.property('proxyEndpoint');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Tenant-Id",
+								"value": "tenant-acme",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8082/api/proxy/b3bb5c80-7966-4014-a2b4-235539f36b1b/info",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8082",
+							"path": [
+								"api",
+								"proxy",
+								"b3bb5c80-7966-4014-a2b4-235539f36b1b",
+								"info"
+							]
+						},
+						"description": "Get information about the mapping proxy endpoint.\n\n**Response includes:**\n- Mapping ID\n- Name and description\n- Proxy endpoint URL\n- Source type\n- Target schema\n- Number of transformation rules"
+					},
+					"response": []
+				},
+				{
+					"name": "Execute Mapping (Different Data)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Tenant-Id",
+								"value": "tenant-acme"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tracking_number\": \"TRK999888\",\n  \"customer_email\": \"john.doe@example.com\",\n  \"status\": \"in_transit\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8082/api/proxy/b3bb5c80-7966-4014-a2b4-235539f36b1b",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8082",
+							"path": [
+								"api",
+								"proxy",
+								"b3bb5c80-7966-4014-a2b4-235539f36b1b"
+							]
+						},
+						"description": "Test with different tracking data"
+					},
+					"response": []
+				},
+				{
+					"name": "Execute Mapping (Error - Missing Tenant)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Error message is correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.error).to.include('X-Tenant-Id');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tracking_number\": \"TRK123456\",\n  \"customer_email\": \"customer@example.com\",\n  \"status\": \"delivered\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8082/api/proxy/b3bb5c80-7966-4014-a2b4-235539f36b1b",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8082",
+							"path": [
+								"api",
+								"proxy",
+								"b3bb5c80-7966-4014-a2b4-235539f36b1b"
+							]
+						},
+						"description": "Test error handling when X-Tenant-Id header is missing"
+					},
+					"response": []
+				}
+			],
+			"description": "Dynamic API proxy endpoints that transform requests and responses"
+		},
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "API Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8082/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8082",
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check if the mapping-studio-api service is healthy"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8082",
+			"type": "string"
+		},
+		{
+			"key": "mappingId",
+			"value": "b3bb5c80-7966-4014-a2b4-235539f36b1b",
+			"type": "string"
+		},
+		{
+			"key": "tenantId",
+			"value": "tenant-acme",
+			"type": "string"
+		}
+	]
+}
