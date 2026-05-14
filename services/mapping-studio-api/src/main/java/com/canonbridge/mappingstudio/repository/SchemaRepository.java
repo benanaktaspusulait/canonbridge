@@ -157,6 +157,17 @@ public class SchemaRepository {
     }
 
     private SchemaDefinition toSchema(Row row) {
+        // schema_json is JSONB type, need to handle it properly
+        Object schemaJsonObj = row.getValue("schema_json");
+        String schemaJson;
+        if (schemaJsonObj instanceof io.vertx.core.json.JsonObject) {
+            schemaJson = ((io.vertx.core.json.JsonObject) schemaJsonObj).encode();
+        } else if (schemaJsonObj instanceof io.vertx.core.json.JsonArray) {
+            schemaJson = ((io.vertx.core.json.JsonArray) schemaJsonObj).encode();
+        } else {
+            schemaJson = schemaJsonObj != null ? schemaJsonObj.toString() : "{}";
+        }
+        
         return new SchemaDefinition(
                 row.getUUID("id"),
                 row.getString("tenant_id"),
@@ -164,7 +175,7 @@ public class SchemaRepository {
                 SchemaDefinition.SchemaType.valueOf(row.getString("schema_type")),
                 row.getString("subject"),
                 row.getInteger("version"),
-                row.getString("schema_json"),
+                schemaJson,
                 SchemaDefinition.CompatibilityMode.valueOf(row.getString("compatibility_mode")),
                 SchemaDefinition.SchemaStatus.valueOf(row.getString("status")),
                 row.getString("description"), // Can be null

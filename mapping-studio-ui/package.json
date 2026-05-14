@@ -35,7 +35,7 @@
     "ajv-formats": "^3.0.1",
     "canvas-confetti": "^1.9.4",
     "highlight.js": "^11.11.1",
-    "jsonata": "^2.1.0",
+    "jsonata": "^2.1.1",
     "primeflex": "^4.0.0",
     "primeicons": "^7.0.0",
     "primeng": "^21.1.6",

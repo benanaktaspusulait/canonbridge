@@ -1,151 +1,626 @@
-<div class="step-container">
-  <p-card>
-    <ng-template pTemplate="header">
-      <div class="card-header">
-        <h2>Field Mapping</h2>
-        <p class="subtitle">Map source fields to target canonical schema fields using JSONata expressions</p>
-      </div>
-    </ng-template>
+<div class="field-mapping-step">
+  <!-- Header -->
+  <div class="step-header">
+    <div class="header-content">
+      <h2><i class="pi pi-sitemap"></i> Visual Field Mapping</h2>
+      <p class="subtitle">Drag source fields to target fields and configure transformations visually - no coding required</p>
+    </div>
+    <div class="header-actions">
+      <p-button
+        label="Auto Map"
+        icon="pi pi-bolt"
+        severity="secondary"
+        [outlined]="true"
+        size="small"
+        (onClick)="autoMapFields()"
+        pTooltip="Automatically map matching fields" />
+      <p-button
+        label="Clear All"
+        icon="pi pi-times"
+        severity="danger"
+        [outlined]="true"
+        size="small"
+        (onClick)="clearAllMappings()"
+        pTooltip="Remove all mappings" />
+      <p-button
+        [label]="showJsonataReference() ? 'Hide Reference' : 'Show Reference'"
+        [icon]="showJsonataReference() ? 'pi pi-eye-slash' : 'pi pi-book'"
+        severity="info"
+        [outlined]="true"
+        size="small"
+        (onClick)="toggleJsonataReference()"
+        pTooltip="Toggle JSONata functions reference" />
+    </div>
+  </div>
 
-    <ng-template pTemplate="content">
-      <div class="mapping-container">
-        <!-- Source Fields Reference -->
-        <div class="reference-panel">
-          <h3>Available Source Fields</h3>
-          <div class="field-list">
-            @if (sourceFields().length === 0) {
-              <p-message severity="info" text="No source fields detected" />
-            } @else {
-              @for (field of sourceFields(); track field) {
-                <div class="field-item" [title]="field">
-                  <i class="pi pi-tag"></i>
-                  <span>{{ field }}</span>
-                </div>
-              }
-            }
-          </div>
+  <!-- Mapping Progress -->
+  <div class="mapping-progress">
+    <div class="progress-stats">
+      <div class="stat stat-mapped">
+        <i class="pi pi-check-circle"></i>
+        <div class="stat-content">
+          <span class="stat-value">{{ mappedCount() }}</span>
+          <span class="stat-label">Fields Mapped</span>
         </div>
+      </div>
+      <div class="stat stat-required" [class.stat-warning]="requiredMissingCount() > 0">
+        <i class="pi pi-exclamation-triangle"></i>
+        <div class="stat-content">
+          <span class="stat-value">{{ requiredMissingCount() }}</span>
+          <span class="stat-label">Required Missing</span>
+        </div>
+      </div>
+      <div class="stat stat-completion">
+        <i class="pi pi-chart-pie"></i>
+        <div class="stat-content">
+          <span class="stat-value">{{ completionPercentage() }}%</span>
+          <span class="stat-label">Complete</span>
+        </div>
+      </div>
+    </div>
+    <div class="progress-bar-container">
+      <div class="progress-bar" [style.width.%]="completionPercentage()"></div>
+    </div>
+  </div>
 
-        <!-- Mapping Rules -->
-        <div class="mapping-rules">
-          <div class="rules-header">
-            <h3>Mapping Rules</h3>
-            <p-button
-              label="Add Rule"
-              icon="pi pi-plus"
-              size="small"
-              (onClick)="addMappingRule()" />
+  <!-- Main Mapping Area -->
+  <div class="mapping-workspace">
+    <!-- Source Panel -->
+    <div class="source-panel">
+      <div class="panel-header">
+        <h3>
+          <i class="pi pi-database"></i>
+          Source Fields
+        </h3>
+        <span class="field-count">{{ sourceFields().length }} fields</span>
+      </div>
+      
+      <div class="panel-content">
+        @if (sourceFields().length === 0) {
+          <div class="empty-state">
+            <i class="pi pi-inbox"></i>
+            <p>No source fields detected</p>
           </div>
-
-          @if (mappingRules().length === 0) {
-            <p-message severity="info" text="No mapping rules defined. Click 'Add Rule' to create one." />
-          } @else {
-            <div class="rules-list">
-              @for (rule of mappingRules(); track $index) {
-                <div class="rule-card">
-                  <div class="rule-header">
-                    <span class="rule-number">#{{ $index + 1 }}</span>
-                    <p-button
-                      icon="pi pi-trash"
-                      severity="danger"
-                      [text]="true"
-                      [rounded]="true"
-                      size="small"
-                      (onClick)="removeMappingRule($index)" />
-                  </div>
-
-                  <div class="rule-fields">
-                    <!-- Target Field -->
-                    <div class="form-field">
-                      <label>Target Field *</label>
-                      <input
-                        pInputText
-                        type="text"
-                        [value]="rule.targetField"
-                        (input)="updateRule($index, 'targetField', $any($event.target).value)"
-                        placeholder="e.g., customer.name"
-                        [style]="{'width': '100%'}" />
-                      <small class="field-help">Target field in canonical schema</small>
-                    </div>
-
-                    <!-- JSONata Expression -->
-                    <div class="form-field">
-                      <label>JSONata Expression *</label>
-                      <textarea
-                        [value]="rule.expression"
-                        (input)="updateRule($index, 'expression', $any($event.target).value)"
-                        placeholder="e.g., payload.customerName or $uppercase(name)"
-                        [rows]="3"
-                        [style]="{'width': '100%'}"></textarea>
-                      <small class="field-help">JSONata expression to transform source data</small>
-                    </div>
-
-                    <!-- Description (Optional) -->
-                    <div class="form-field">
-                      <label>Description</label>
-                      <input
-                        pInputText
-                        type="text"
-                        [value]="rule.description || ''"
-                        (input)="updateRule($index, 'description', $any($event.target).value)"
-                        placeholder="Optional description"
-                        [style]="{'width': '100%'}" />
-                    </div>
-                  </div>
+        } @else {
+          <div 
+            class="field-list"
+            cdkDropList
+            #sourceList="cdkDropList"
+            [cdkDropListData]="sourceFields()"
+            cdkDropListSortingDisabled>
+            @for (field of sourceFields(); track field.path) {
+              <div 
+                class="source-field"
+                cdkDrag
+                [cdkDragData]="field"
+                [pTooltip]="'Type: ' + field.type + (field.sample !== undefined ? '\nSample: ' + JSON.stringify(field.sample) : '')"
+                tooltipPosition="right">
+                <div class="field-icon">
+                  <i [class]="getFieldIcon(field.type)"></i>
                 </div>
-              }
-            </div>
-          }
-
-          <!-- JSONata Help -->
-          <details class="jsonata-help">
-            <summary>JSONata Expression Examples</summary>
-              <div class="examples">
-                <div class="example">
-                  <strong>Direct mapping:</strong>
-                  <code>payload.customerName</code>
-                  <p>Maps source field directly to target</p>
+                <div class="field-info">
+                  <span class="field-path">{{ field.path }}</span>
+                  <span class="field-type-badge" [attr.data-type]="field.type">{{ field.type }}</span>
                 </div>
-                <div class="example">
-                  <strong>String transformation:</strong>
-                  <code>$uppercase(name)</code>
-                  <p>Converts string to uppercase</p>
-                </div>
-                <div class="example">
-                  <strong>Concatenation:</strong>
-                  <code>firstName & " " & lastName</code>
-                  <p>Combines multiple fields</p>
-                </div>
-                <div class="example">
-                  <strong>Conditional:</strong>
-                  <code>status = "active" ? "ACTIVE" : "INACTIVE"</code>
-                  <p>Conditional transformation</p>
-                </div>
-                <div class="example">
-                  <strong>Array mapping:</strong>
-                  <code>{{ 'items.{ "id": productId, "qty": quantity }' }}</code>
-                  <p>Transform array of objects</p>
+                <div class="drag-handle" cdkDragHandle>
+                  <i class="pi pi-bars"></i>
                 </div>
               </div>
-          </details>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Target Panel -->
+    <div class="target-panel">
+      <div class="panel-header">
+        <h3>
+          <i class="pi pi-box"></i>
+          Target Schema
+        </h3>
+        <span class="field-count">{{ targetFields().length }} fields</span>
+      </div>
+      
+      <div class="panel-content">
+        @if (targetFields().length === 0) {
+          <div class="empty-state">
+            <i class="pi pi-inbox"></i>
+            <p>No target fields detected</p>
+          </div>
+        } @else {
+          <div 
+            class="field-list"
+            cdkDropList
+            #targetList="cdkDropList"
+            [cdkDropListData]="targetFields()"
+            (cdkDropListDropped)="onSourceFieldDrop($event, targetFields()[$event.currentIndex])"
+            cdkDropListSortingDisabled>
+            @for (field of targetFields(); track field.key) {
+              <div 
+                class="target-field"
+                [class.mapped]="field.mapped"
+                [class.required]="field.required"
+                cdkDropList
+                [cdkDropListData]="[field]"
+                (cdkDropListDropped)="onSourceFieldDrop($event, field)">
+                
+                <div class="field-header">
+                  <div class="field-icon">
+                    <i [class]="getFieldIcon(field.type)"></i>
+                  </div>
+                  <div class="field-info">
+                    <span class="field-key">
+                      {{ field.key }}
+                      @if (field.required) {
+                        <span class="required-badge" pTooltip="Required field">*</span>
+                      }
+                    </span>
+                    <span class="field-type-badge" [attr.data-type]="field.type">{{ field.type }}</span>
+                  </div>
+                  @if (field.mapped) {
+                    <div class="mapped-indicator" pTooltip="Field is mapped">
+                      <i class="pi pi-check-circle"></i>
+                    </div>
+                  }
+                </div>
+
+                @if (getMappingForTarget(field.key); as mapping) {
+                  <div class="mapping-details">
+                    <div class="mapping-source">
+                      <i class="pi pi-arrow-right"></i>
+                      <code>{{ mapping.sourcePath }}</code>
+                    </div>
+                    
+                    <div class="mapping-transform">
+                      <label class="transform-label">Transformation:</label>
+                      <p-select
+                        [options]="transformOptions"
+                        [(ngModel)]="mapping.transform"
+                        (onChange)="updateTransform(field.key, $event.value)"
+                        optionLabel="label"
+                        optionValue="value"
+                        optionGroupLabel="category"
+                        optionGroupChildren="items"
+                        [group]="true"
+                        [style]="{'width': '100%'}"
+                        placeholder="Select transformation"
+                        size="small">
+                        <ng-template let-option pTemplate="item">
+                          <div class="transform-option">
+                            <strong>{{ option.label }}</strong>
+                            <small>{{ option.description }}</small>
+                          </div>
+                        </ng-template>
+                      </p-select>
+                    </div>
+
+                    @if (getTransformOption(mapping.transform); as transformOpt) {
+                      @if (transformOpt.params && transformOpt.params.length > 0) {
+                        <div class="transform-params">
+                          @for (param of transformOpt.params; track param.name) {
+                            <div class="param-field">
+                              <label>{{ param.label }}</label>
+                              @if (param.type === 'textarea') {
+                                <textarea
+                                  pTextarea
+                                  [ngModel]="getParamValue(mapping, param.name)"
+                                  (ngModelChange)="updateRuleParam(field.key, param.name, $event)"
+                                  [placeholder]="param.placeholder || ''"
+                                  rows="3"
+                                  [style]="{'width': '100%'}"></textarea>
+                              } @else if (param.type === 'number') {
+                                <p-inputNumber
+                                  [ngModel]="getParamValue(mapping, param.name)"
+                                  (ngModelChange)="updateRuleParam(field.key, param.name, $event ? $event.toString() : '')"
+                                  [placeholder]="param.placeholder || ''"
+                                  [style]="{'width': '100%'}"
+                                  size="small" />
+                              } @else if (param.type === 'select' && param.options) {
+                                <p-select
+                                  [options]="param.options"
+                                  [ngModel]="getParamValue(mapping, param.name)"
+                                  (ngModelChange)="updateRuleParam(field.key, param.name, $event)"
+                                  optionLabel="label"
+                                  optionValue="value"
+                                  [placeholder]="param.placeholder || ''"
+                                  [style]="{'width': '100%'}"
+                                  size="small" />
+                              } @else {
+                                <input
+                                  pInputText
+                                  type="text"
+                                  [ngModel]="getParamValue(mapping, param.name)"
+                                  (ngModelChange)="updateRuleParam(field.key, param.name, $event)"
+                                  [placeholder]="param.placeholder || ''"
+                                  [style]="{'width': '100%'}"
+                                  size="small" />
+                              }
+                            </div>
+                          }
+                          @if (mapping.transform === 'custom_jsonata') {
+                            <small class="help-text">
+                              <i class="pi pi-info-circle"></i>
+                              Use JSONata syntax. Click "Show Reference" above for available functions.
+                            </small>
+                          }
+                        </div>
+                      }
+                    }
+
+                    <div class="mapping-actions">
+                      <p-button
+                        icon="pi pi-trash"
+                        severity="danger"
+                        [text]="true"
+                        size="small"
+                        (onClick)="removeMapping(field.key)"
+                        pTooltip="Remove mapping" />
+                    </div>
+                  </div>
+                } @else {
+                  <div class="drop-zone">
+                    <i class="pi pi-download"></i>
+                    <span>Drag & drop source field here</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Preview Panel -->
+  @if (mappingRules().length > 0) {
+    <div class="preview-panel">
+      <div class="preview-header">
+        <h3>
+          <i class="pi pi-eye"></i>
+          Live Preview
+        </h3>
+        <p-button
+          label="Refresh"
+          icon="pi pi-refresh"
+          size="small"
+          [outlined]="true"
+          (onClick)="generatePreview()" />
+      </div>
+      
+      <div class="preview-content">
+        <div class="preview-section">
+          <h4><i class="pi pi-file"></i> Source Data</h4>
+          <pre class="json-preview source">{{ sampleJson() }}</pre>
+        </div>
+        
+        <div class="preview-arrow">
+          <i class="pi pi-arrow-right"></i>
+          <span>Transform</span>
+        </div>
+        
+        <div class="preview-section">
+          <h4><i class="pi pi-check-square"></i> Transformed Result</h4>
+          @if (previewError()) {
+            <p-message 
+              severity="error" 
+              [text]="previewError()!" 
+              styleClass="preview-error" />
+          } @else if (previewResult()) {
+            <pre class="json-preview result">{{ JSON.stringify(previewResult(), null, 2) }}</pre>
+          } @else {
+            <div class="preview-placeholder">
+              <i class="pi pi-info-circle"></i>
+              <p>Preview will appear here after mapping</p>
+            </div>
+          }
         </div>
       </div>
-    </ng-template>
+    </div>
+  }
 
-    <ng-template pTemplate="footer">
-      <div class="button-group">
-        <p-button
-          label="Back"
-          icon="pi pi-arrow-left"
-          severity="secondary"
-          (onClick)="onBack()" />
-        <p-button
-          label="Next"
-          icon="pi pi-arrow-right"
-          iconPos="right"
-          [disabled]="!isValid()"
-          (onClick)="onNext()" />
+  <!-- JSONata Functions Reference (Collapsible) -->
+  @if (showJsonataReference()) {
+    <div class="jsonata-reference">
+      <div class="reference-header">
+        <h3><i class="pi pi-book"></i> JSONata Functions Reference</h3>
+        <p>Complete reference for all available transformation functions</p>
       </div>
-    </ng-template>
-  </p-card>
+      
+      <div class="reference-content">
+        <details open>
+          <summary>String Functions</summary>
+          <div class="function-grid">
+            <div class="function-card">
+              <code>$uppercase(str)</code>
+              <p>Convert string to UPPERCASE</p>
+              <span class="example">Example: $uppercase("hello") → "HELLO"</span>
+            </div>
+            <div class="function-card">
+              <code>$lowercase(str)</code>
+              <p>Convert string to lowercase</p>
+              <span class="example">Example: $lowercase("HELLO") → "hello"</span>
+            </div>
+            <div class="function-card">
+              <code>$trim(str)</code>
+              <p>Remove leading/trailing whitespace</p>
+              <span class="example">Example: $trim("  hello  ") → "hello"</span>
+            </div>
+            <div class="function-card">
+              <code>$substring(str, start, length)</code>
+              <p>Extract substring from position</p>
+              <span class="example">Example: $substring("hello", 1, 3) → "ell"</span>
+            </div>
+            <div class="function-card">
+              <code>$replace(str, pattern, replacement)</code>
+              <p>Replace text pattern</p>
+              <span class="example">Example: $replace("hello", "l", "r") → "herro"</span>
+            </div>
+            <div class="function-card">
+              <code>$split(str, separator)</code>
+              <p>Split string into array</p>
+              <span class="example">Example: $split("a,b,c", ",") → ["a","b","c"]</span>
+            </div>
+            <div class="function-card">
+              <code>$join(array, separator)</code>
+              <p>Join array elements to string</p>
+              <span class="example">Example: $join(["a","b"], ",") → "a,b"</span>
+            </div>
+            <div class="function-card">
+              <code>$length(str)</code>
+              <p>Get string length</p>
+              <span class="example">Example: $length("hello") → 5</span>
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary>Numeric Functions</summary>
+          <div class="function-grid">
+            <div class="function-card">
+              <code>$number(str)</code>
+              <p>Convert to number</p>
+              <span class="example">Example: $number("42") → 42</span>
+            </div>
+            <div class="function-card">
+              <code>$round(num, precision)</code>
+              <p>Round to decimal places</p>
+              <span class="example">Example: $round(3.14159, 2) → 3.14</span>
+            </div>
+            <div class="function-card">
+              <code>$floor(num)</code>
+              <p>Round down to integer</p>
+              <span class="example">Example: $floor(3.7) → 3</span>
+            </div>
+            <div class="function-card">
+              <code>$ceil(num)</code>
+              <p>Round up to integer</p>
+              <span class="example">Example: $ceil(3.2) → 4</span>
+            </div>
+            <div class="function-card">
+              <code>$abs(num)</code>
+              <p>Absolute value</p>
+              <span class="example">Example: $abs(-5) → 5</span>
+            </div>
+            <div class="function-card">
+              <code>$sum(array)</code>
+              <p>Sum of array numbers</p>
+              <span class="example">Example: $sum([1,2,3]) → 6</span>
+            </div>
+            <div class="function-card">
+              <code>$max(array)</code>
+              <p>Maximum value</p>
+              <span class="example">Example: $max([1,5,3]) → 5</span>
+            </div>
+            <div class="function-card">
+              <code>$min(array)</code>
+              <p>Minimum value</p>
+              <span class="example">Example: $min([1,5,3]) → 1</span>
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary>Array Functions</summary>
+          <div class="function-grid">
+            <div class="function-card">
+              <code>$count(array)</code>
+              <p>Count array elements</p>
+              <span class="example">Example: $count([1,2,3]) → 3</span>
+            </div>
+            <div class="function-card">
+              <code>$append(array, value)</code>
+              <p>Add element to array</p>
+              <span class="example">Example: $append([1,2], 3) → [1,2,3]</span>
+            </div>
+            <div class="function-card">
+              <code>$sort(array)</code>
+              <p>Sort array ascending</p>
+              <span class="example">Example: $sort([3,1,2]) → [1,2,3]</span>
+            </div>
+            <div class="function-card">
+              <code>$reverse(array)</code>
+              <p>Reverse array order</p>
+              <span class="example">Example: $reverse([1,2,3]) → [3,2,1]</span>
+            </div>
+            <div class="function-card">
+              <code>$distinct(array)</code>
+              <p>Get unique values</p>
+              <span class="example">Example: $distinct([1,2,2,3]) → [1,2,3]</span>
+            </div>
+            <div class="function-card">
+              <code>$map(array, function)</code>
+              <p>Transform each element</p>
+              <span class="example">Example: $map([1,2], function($v) $v*2) → [2,4]</span>
+            </div>
+            <div class="function-card">
+              <code>$filter(array, function)</code>
+              <p>Filter elements by condition</p>
+              <span class="example">Example: $filter([1,2,3], function($v) $v>1) → [2,3]</span>
+            </div>
+            <div class="function-card">
+              <code>$reduce(array, function, init)</code>
+              <p>Reduce array to single value</p>
+              <span class="example">Example: $reduce([1,2,3], function($a,$b) $a+$b, 0) → 6</span>
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary>Date/Time Functions</summary>
+          <div class="function-grid">
+            <div class="function-card">
+              <code>$now()</code>
+              <p>Current timestamp (ISO 8601)</p>
+              <span class="example">Example: $now() → "2024-01-15T10:30:00.000Z"</span>
+            </div>
+            <div class="function-card">
+              <code>$fromMillis(num)</code>
+              <p>Convert milliseconds to timestamp</p>
+              <span class="example">Example: $fromMillis(1609459200000)</span>
+            </div>
+            <div class="function-card">
+              <code>$toMillis(timestamp)</code>
+              <p>Convert timestamp to milliseconds</p>
+              <span class="example">Example: $toMillis("2021-01-01T00:00:00Z")</span>
+            </div>
+            <div class="function-card">
+              <code>$millis()</code>
+              <p>Current time in milliseconds</p>
+              <span class="example">Example: $millis() → 1705318200000</span>
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary>Object Functions</summary>
+          <div class="function-grid">
+            <div class="function-card">
+              <code>$keys(object)</code>
+              <p>Get object keys as array</p>
+              <span class="example">Example: $keys(obj) → ["a","b"]</span>
+            </div>
+            <div class="function-card">
+              <code>$lookup(object, key)</code>
+              <p>Get value by key</p>
+              <span class="example">Example: $lookup(obj, "a") → 1</span>
+            </div>
+            <div class="function-card">
+              <code>$merge(array)</code>
+              <p>Merge objects in array</p>
+              <span class="example">Example: $merge([obj1, obj2]) → merged object</span>
+            </div>
+            <div class="function-card">
+              <code>$spread(object)</code>
+              <p>Convert object to key-value pairs</p>
+              <span class="example">Example: $spread(obj) → array of key-value pairs</span>
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary>Boolean & Logic Functions</summary>
+          <div class="function-grid">
+            <div class="function-card">
+              <code>$boolean(value)</code>
+              <p>Convert to boolean</p>
+              <span class="example">Example: $boolean("true") → true</span>
+            </div>
+            <div class="function-card">
+              <code>$not(value)</code>
+              <p>Logical NOT</p>
+              <span class="example">Example: $not(true) → false</span>
+            </div>
+            <div class="function-card">
+              <code>$exists(value)</code>
+              <p>Check if value exists</p>
+              <span class="example">Example: $exists(null) → false</span>
+            </div>
+            <div class="function-card">
+              <code>condition ? then : else</code>
+              <p>Ternary conditional</p>
+              <span class="example">Example: status="A" ? "Active" : "Inactive"</span>
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary>Common Patterns & Examples</summary>
+          <div class="example-patterns">
+            <div class="pattern-card">
+              <h5>Concatenate with Space</h5>
+              <code>firstName & " " & lastName</code>
+              <p>Combines two fields with a space separator</p>
+            </div>
+            <div class="pattern-card">
+              <h5>Conditional Mapping</h5>
+              <code>status = "A" ? "ACTIVE" : "INACTIVE"</code>
+              <p>Map values based on condition</p>
+            </div>
+            <div class="pattern-card">
+              <h5>Default Value</h5>
+              <code>email ? email : "no-reply@example.com"</code>
+              <p>Use default if field is empty</p>
+            </div>
+            <div class="pattern-card">
+              <h5>Transform Array of Objects</h5>
+              <code>items.(productId & ": " & $uppercase(productName))</code>
+              <p>Map and transform each array element</p>
+            </div>
+            <div class="pattern-card">
+              <h5>Filter and Extract</h5>
+              <code>$filter(orders, function($v) $v.status = "completed").orderId</code>
+              <p>Filter array and extract specific field</p>
+            </div>
+            <div class="pattern-card">
+              <h5>Nested Field Access</h5>
+              <code>customer.address.city</code>
+              <p>Access deeply nested fields</p>
+            </div>
+            <div class="pattern-card">
+              <h5>Array Element by Index</h5>
+              <code>items[0].name</code>
+              <p>Get first element's field</p>
+            </div>
+            <div class="pattern-card">
+              <h5>String Manipulation Chain</h5>
+              <code>$uppercase($trim(name))</code>
+              <p>Chain multiple functions</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  }
+
+  <!-- Footer Actions -->
+  <div class="step-footer">
+    <p-button
+      label="Back"
+      icon="pi pi-arrow-left"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="onBack()" />
+    
+    <div class="footer-info">
+      @if (!isValid()) {
+        <p-message 
+          severity="warn" 
+          text="Please map all required fields (marked with *)" 
+          [closable]="false" />
+      } @else {
+        <p-message 
+          severity="success" 
+          text="All required fields are mapped! Ready to proceed." 
+          [closable]="false" />
+      }
+    </div>
+
+    <p-button
+      label="Next: Test & Publish"
+      icon="pi pi-arrow-right"
+      iconPos="right"
+      [disabled]="!isValid()"
+      (onClick)="onNext()" />
+  </div>
 </div>
