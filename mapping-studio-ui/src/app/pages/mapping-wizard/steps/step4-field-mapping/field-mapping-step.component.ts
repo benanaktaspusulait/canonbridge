@@ -12,6 +12,7 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { TextareaModule } from 'primeng/textarea';
 import mappingEngine from 'jsonata';
+import { ruleToJsonataFragment, buildCombinedMappingExpression } from './rule-to-jsonata';
 
 export type TransformKind =
   | 'direct'
@@ -413,7 +414,8 @@ export class FieldMappingStepComponent implements OnInit {
           id: `rule_${Date.now()}`,
           targetKey,
           sourcePath,
-          transform: 'direct'
+          transform: 'direct',
+          mode: 'visual' // Default to visual mode
         }
       ]);
     }
@@ -429,6 +431,38 @@ export class FieldMappingStepComponent implements OnInit {
   updateTransform(targetKey: string, transform: TransformKind): void {
     this.mappingRules.update(rules => 
       rules.map(r => r.targetKey === targetKey ? { ...r, transform, paramA: '', paramB: '', paramC: '', advancedExpression: '' } : r)
+    );
+  }
+
+  setMappingMode(targetKey: string, mode: MappingMode): void {
+    this.mappingRules.update(rules => 
+      rules.map(r => {
+        if (r.targetKey === targetKey) {
+          if (mode === 'expression') {
+            // Switching to expression mode - set advancedExpression to sourcePath if empty
+            return { 
+              ...r, 
+              mode, 
+              advancedExpression: r.advancedExpression || r.sourcePath,
+              transform: 'custom_jsonata'
+            };
+          } else {
+            // Switching to visual mode - reset to direct if was custom_jsonata
+            return { 
+              ...r, 
+              mode,
+              transform: r.transform === 'custom_jsonata' ? 'direct' : r.transform
+            };
+          }
+        }
+        return r;
+      })
+    );
+  }
+
+  updateExpression(targetKey: string, expression: string): void {
+    this.mappingRules.update(rules => 
+      rules.map(r => r.targetKey === targetKey ? { ...r, advancedExpression: expression, transform: 'custom_jsonata' } : r)
     );
   }
 

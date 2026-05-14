@@ -95,6 +95,7 @@ export class MappingWizardComponent implements OnInit {
         // Populate wizard state from existing mapping
         this.wizardState.update(state => ({
           ...state,
+          mode: 'api-gateway', // Default to API Gateway for existing mappings
           sourceType: this.inferSourceType(mapping),
           externalSystemId: externalSystemId,
           sourceConfig: sourceConfig,
@@ -105,8 +106,8 @@ export class MappingWizardComponent implements OnInit {
           mappingRules: this.extractMappingRules(mapping)
         }));
         
-        // Start from step 1 in edit mode (skip source type selection)
-        this.currentStep.set(1);
+        // Start from step 2 in edit mode (skip mode and source type selection)
+        this.currentStep.set(2);
         this.loading.set(false);
       },
       error: (err) => {
@@ -285,7 +286,7 @@ export class MappingWizardComponent implements OnInit {
     // Auto-save disabled for now due to backend validation issues
     // this.autoSaveMapping();
     
-    this.currentStep.set(3);
+    this.currentStep.set(5); // Go to Target Schema step
   }
 
   onSampleDataComplete(data: { sampleJson: string }): void {
@@ -297,7 +298,16 @@ export class MappingWizardComponent implements OnInit {
     // Auto-save disabled for now due to backend validation issues
     // this.autoSaveMapping();
     
-    this.currentStep.set(4);
+    // Go to Request Mapping (step 4) for API Gateway, or Target Schema (step 5) for Integration Hub
+    const nextStep = this.getNextStepAfterSampleData();
+    this.currentStep.set(nextStep);
+  }
+
+  private getNextStepAfterSampleData(): number {
+    const mode = this.wizardState().mode;
+    // If API Gateway mode, go to Request Mapping (step 4)
+    // If Integration Hub mode, skip to Target Schema (step 5)
+    return mode === 'api-gateway' ? 4 : 5;
   }
 
   onTargetSchemaSelected(data: { schemaRef: string }): void {
@@ -317,10 +327,10 @@ export class MappingWizardComponent implements OnInit {
           ...state,
           targetSchemaJson: schema.schema_json
         }));
-        this.currentStep.set(5);
+        this.currentStep.set(6); // Go to Field Mapping step
       },
       error: () => {
-        this.currentStep.set(5);
+        this.currentStep.set(6); // Go to Field Mapping step even on error
       }
     });
   }
@@ -334,7 +344,7 @@ export class MappingWizardComponent implements OnInit {
     // Auto-save disabled for now due to backend validation issues
     // this.autoSaveMapping();
     
-    this.currentStep.set(6);
+    this.currentStep.set(7); // Go to Test & Publish step
   }
 
   private autoSaveMapping(): void {
@@ -394,14 +404,55 @@ export class MappingWizardComponent implements OnInit {
   goBack(): void {
     const minStep = this.isEditMode() ? 0 : 0;
     if (this.currentStep() > minStep) {
-      this.currentStep.update(step => step - 1);
+      const previousStep = this.getPreviousStep(this.currentStep());
+      this.currentStep.set(previousStep);
     }
   }
 
   goNext(): void {
     if (this.currentStep() < this.steps.length - 1) {
-      this.currentStep.update(step => step + 1);
+      const nextStep = this.getNextStep(this.currentStep());
+      this.currentStep.set(nextStep);
     }
+  }
+
+  private getNextStep(currentStep: number): number {
+    const mode = this.wizardState().mode;
+    
+    // Step 3 (Sample Data) → Step 4 or 5 depending on mode
+    if (currentStep === 3) {
+      return mode === 'api-gateway' ? 4 : 5; // Include or skip Request Mapping
+    }
+    
+    // All other steps proceed sequentially
+    return currentStep + 1;
+  }
+
+  private getPreviousStep(currentStep: number): number {
+    const mode = this.wizardState().mode;
+    
+    // Step 5 (Target Schema) → Step 4 or 3 depending on mode
+    if (currentStep === 5) {
+      return mode === 'api-gateway' ? 4 : 3; // Go back to Request Mapping or Sample Data
+    }
+    
+    // All other steps go back sequentially
+    return currentStep - 1;
+  }
+
+  getStepLabel(stepIndex: number): string {
+    const mode = this.wizardState().mode;
+    
+    // Change "Target Schema" to "Request Schema" for API Gateway mode
+    if (stepIndex === 5 && mode === 'api-gateway') {
+      return 'Request Schema';
+    }
+    
+    if (stepIndex === 5 && mode === 'integration-hub') {
+      return 'Target Schema';
+    }
+    
+    return this.steps[stepIndex].label;
   }
 
   getConfigMethod(): string {

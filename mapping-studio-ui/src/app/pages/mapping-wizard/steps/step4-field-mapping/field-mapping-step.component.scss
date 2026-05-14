@@ -550,6 +550,123 @@
           }
         }
 
+        .mapping-mode-toggle {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+
+          .mode-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+
+          .mode-buttons {
+            display: flex;
+            gap: 0.5rem;
+            background: #f1f5f9;
+            padding: 0.25rem;
+            border-radius: 8px;
+
+            .mode-button {
+              flex: 1;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 0.5rem;
+              padding: 0.625rem 1rem;
+              background: transparent;
+              border: 2px solid transparent;
+              border-radius: 6px;
+              font-size: 0.9375rem;
+              font-weight: 600;
+              color: #64748b;
+              cursor: pointer;
+              transition: all 0.2s ease;
+
+              i {
+                font-size: 1rem;
+              }
+
+              &:hover {
+                background: white;
+                color: var(--primary-600);
+              }
+
+              &.active {
+                background: white;
+                color: var(--primary-700);
+                border-color: var(--primary-500);
+                box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+              }
+            }
+          }
+        }
+
+        .expression-editor {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          padding: 1rem;
+          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          border-radius: 10px;
+          border: 2px solid #fbbf24;
+
+          .expression-label {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #92400e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            i {
+              font-size: 1rem;
+              color: #f59e0b;
+            }
+          }
+
+          .expression-textarea {
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace !important;
+            font-size: 0.9375rem !important;
+            background: #1e293b !important;
+            color: #e2e8f0 !important;
+            border: 2px solid #475569 !important;
+            border-radius: 8px !important;
+            padding: 0.875rem !important;
+            line-height: 1.6 !important;
+
+            &:focus {
+              border-color: var(--primary-500) !important;
+              box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+            }
+
+            &::placeholder {
+              color: #94a3b8 !important;
+            }
+          }
+
+          .expression-help {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8125rem;
+            color: #92400e;
+            padding: 0.5rem;
+            background: white;
+            border-radius: 6px;
+
+            i {
+              color: #f59e0b;
+              font-size: 1rem;
+            }
+          }
+        }
+
         .mapping-transform {
           display: flex;
           flex-direction: column;

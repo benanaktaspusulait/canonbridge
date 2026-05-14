@@ -31,10 +31,30 @@
         @switch (currentStep()) {
           @case (0) {
             @if (!isEditMode()) {
+              <app-mode-selector 
+                (modeSelected)="onModeSelected($event)" />
+            } @else {
+              <div class="edit-mode-step0">
+                <div class="selected-mode">
+                  <h2>{{ 'wizard.mode.selected' | i18n }}</h2>
+                  <p>{{ wizardState().mode === 'api-gateway' ? ('wizard.mode.apiGateway' | i18n) : ('wizard.mode.integrationHub' | i18n) }}</p>
+                  <div class="actions">
+                    <p-button 
+                      [label]="'wizard.next' | i18n" 
+                      icon="pi pi-arrow-right"
+                      iconPos="right"
+                      (onClick)="goNext()" />
+                  </div>
+                </div>
+              </div>
+            }
+          }
+          @case (1) {
+            @if (!isEditMode()) {
               <app-source-type-selection 
                 (sourceTypeSelected)="onSourceTypeSelected($event)" />
             } @else {
-              <div class="edit-mode-step0">
+              <div class="edit-mode-step1">
                 <div class="selected-source-type">
                   <h2>{{ 'wizard.sourceType.selected' | i18n }}</h2>
                   <div class="source-type-display">
@@ -79,21 +99,12 @@
               </div>
             }
           }
-          @case (1) {
+          @case (2) {
             <app-configuration-step
               [sourceType]="wizardState().sourceType!"
               [initialConfig]="wizardState().sourceConfig"
               [initialSystemId]="wizardState().externalSystemId"
               (configurationComplete)="onConfigurationComplete($event)"
-              (backClicked)="goBack()" />
-          }
-          @case (2) {
-            <app-request-mapping-step
-              [sourceType]="wizardState().sourceType!"
-              [method]="getConfigMethod()"
-              [initialConfig]="wizardState().requestTransformation"
-              [canonicalSampleJson]="wizardState().sampleJson"
-              (requestMappingComplete)="onRequestMappingComplete($event)"
               (backClicked)="goBack()" />
           }
           @case (3) {
@@ -104,12 +115,23 @@
               (backClicked)="goBack()" />
           }
           @case (4) {
+            @if (wizardState().mode === 'api-gateway') {
+              <app-request-mapping-step
+                [sourceType]="wizardState().sourceType!"
+                [method]="getConfigMethod()"
+                [initialConfig]="wizardState().requestTransformation"
+                [canonicalSampleJson]="wizardState().sampleJson"
+                (requestMappingComplete)="onRequestMappingComplete($event)"
+                (backClicked)="goBack()" />
+            }
+          }
+          @case (5) {
             <app-target-schema-step
               [initialSchemaRef]="wizardState().targetSchemaRef"
               (schemaSelected)="onTargetSchemaSelected($event)"
               (backClicked)="goBack()" />
           }
-          @case (5) {
+          @case (6) {
             <app-field-mapping-step
               [sampleJson]="wizardState().sampleJson"
               [targetSchemaJson]="targetSchemaJson()"
@@ -117,7 +139,7 @@
               (mappingComplete)="onFieldMappingComplete($event)"
               (backClicked)="goBack()" />
           }
-          @case (6) {
+          @case (7) {
             <app-test-publish-step
               [wizardState]="wizardState()"
               [mappingId]="mappingId()"
