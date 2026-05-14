@@ -511,6 +511,31 @@
             animation: checkmark 0.4s cubic-bezier(0.4, 0, 0.2, 1);
           }
         }
+
+        .collapse-toggle {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          background: transparent;
+          border: 2px solid #e2e8f0;
+          border-radius: 6px;
+          color: #64748b;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          margin-left: 0.5rem;
+
+          &:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #475569;
+          }
+
+          i {
+            font-size: 0.875rem;
+          }
+        }
       }
 
       .drop-zone {

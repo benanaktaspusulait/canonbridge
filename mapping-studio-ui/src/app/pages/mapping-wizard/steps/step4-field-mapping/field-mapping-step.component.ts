@@ -118,6 +118,7 @@ export class FieldMappingStepComponent implements OnInit {
   selectedRuleForEdit = signal<MappingRule | null>(null);
   selectedSourceField = signal<SourceField | null>(null);
   selectedTargetForPattern = signal<string | null>(null); // Track which target field is in expression mode
+  expandedFields = signal<Set<string>>(new Set()); // Track which fields are expanded
 
   // Pattern constants for complex expressions with special characters
   readonly patterns = {
@@ -260,6 +261,9 @@ export class FieldMappingStepComponent implements OnInit {
   ngOnInit(): void {
     console.log('🔧 Transform Options:', this.transformOptions.length, 'items');
     console.log('First 3 options:', this.transformOptions.slice(0, 3).map(o => ({ label: o.label, value: o.value, category: o.category })));
+    console.log('📥 Initial rules input:', this.initialRules());
+    console.log('📥 Sample JSON input:', this.sampleJson());
+    console.log('📥 Target schema JSON input:', this.targetSchemaJson());
     
     this.extractSourceFields();
     this.extractTargetFields();
@@ -338,20 +342,25 @@ export class FieldMappingStepComponent implements OnInit {
 
   private loadInitialRules(): void {
     const initial = this.initialRules();
+    console.log('🔍 Loading initial rules:', initial);
+    
     if (initial && initial.length > 0) {
       const rules = initial.map((r: any, index: number) => ({
         id: r.id || `rule_${index}`,
         targetKey: r.targetKey || r.targetField || '',
         sourcePath: r.sourcePath || r.expression || '',
         transform: r.transform || 'direct',
+        mode: r.mode || 'visual',
         paramA: r.paramA || '',
         paramB: r.paramB || '',
         paramC: r.paramC || '',
         advancedExpression: r.advancedExpression || ''
       }));
+      console.log('✅ Loaded rules:', rules);
       this.mappingRules.set(rules);
       this.updateMappedStatus();
     } else {
+      console.log('ℹ️ No initial rules, auto-mapping fields...');
       this.autoMapFields();
     }
   }
@@ -361,6 +370,10 @@ export class FieldMappingStepComponent implements OnInit {
     const targets = this.targetFields();
     const rules: MappingRule[] = [];
     
+    console.log('🔄 Auto-mapping fields...');
+    console.log('Source fields:', sources.map(s => s.path));
+    console.log('Target fields:', targets.map(t => t.key));
+    
     targets.forEach((target, index) => {
       const matchingSource = sources.find(s => 
         s.path.toLowerCase() === target.key.toLowerCase() ||
@@ -369,15 +382,18 @@ export class FieldMappingStepComponent implements OnInit {
       );
       
       if (matchingSource) {
+        console.log(`✅ Auto-mapped: ${matchingSource.path} → ${target.key}`);
         rules.push({
           id: `rule_${index}`,
           targetKey: target.key,
           sourcePath: matchingSource.path,
-          transform: 'direct'
+          transform: 'direct',
+          mode: 'visual'
         });
       }
     });
     
+    console.log('📋 Total auto-mapped rules:', rules.length);
     this.mappingRules.set(rules);
     this.updateMappedStatus();
   }
@@ -438,6 +454,13 @@ export class FieldMappingStepComponent implements OnInit {
           mode: 'visual' // Default to visual mode
         }
       ]);
+      
+      // Auto-expand the newly mapped field
+      this.expandedFields.update(set => {
+        const newSet = new Set(set);
+        newSet.add(targetKey);
+        return newSet;
+      });
     }
     
     this.updateMappedStatus();
@@ -449,11 +472,12 @@ export class FieldMappingStepComponent implements OnInit {
   }
 
   updateTransform(targetKey: string, transform: TransformKind): void {
+    console.log('🔧 updateTransform called:', targetKey, transform);
     this.mappingRules.update(rules => 
       rules.map(r => r.targetKey === targetKey ? { ...r, transform, paramA: '', paramB: '', paramC: '', advancedExpression: '' } : r)
     );
     // Regenerate preview after transform change
-    this.generatePreview();
+    setTimeout(() => this.generatePreview(), 0);
   }
 
   setMappingMode(targetKey: string, mode: MappingMode): void {
@@ -552,7 +576,7 @@ export class FieldMappingStepComponent implements OnInit {
     this.generatePreview();
   }
 
-  generatePreview(): void {
+  async generatePreview(): Promise<void> {
     console.log('🔄 Generating preview...');
     console.log('Sample JSON:', this.sampleJson());
     console.log('Mapping Rules:', this.mappingRules());
@@ -573,10 +597,10 @@ export class FieldMappingStepComponent implements OnInit {
       console.log('📝 Generated JSONata:', jsonataExpression);
       
       const expression = mappingEngine(jsonataExpression);
-      const result = expression.evaluate(sample);
+      const result = await expression.evaluate(sample);
       
-      console.log('✅ Preview result:', result);
-      this.previewResult.set(result);
+      console.log('✅ Preview result:', JSON.stringify(result, null, 2));
+      this.previewResult.set(result || {});
       this.previewError.set(null);
     } catch (error: any) {
       console.error('❌ Preview generation error:', error);
@@ -664,6 +688,23 @@ export class FieldMappingStepComponent implements OnInit {
 
   toggleJsonataReference(): void {
     this.showJsonataReference.update(v => !v);
+  }
+
+  toggleFieldExpanded(fieldKey: string, event: Event): void {
+    event.stopPropagation(); // Prevent field click
+    this.expandedFields.update(set => {
+      const newSet = new Set(set);
+      if (newSet.has(fieldKey)) {
+        newSet.delete(fieldKey);
+      } else {
+        newSet.add(fieldKey);
+      }
+      return newSet;
+    });
+  }
+
+  isFieldExpanded(fieldKey: string): boolean {
+    return this.expandedFields().has(fieldKey);
   }
 
   // Expose for template

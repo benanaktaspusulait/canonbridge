@@ -180,6 +180,7 @@
                 [class.mapped]="field.mapped"
                 [class.required]="field.required"
                 [class.clickable]="selectedSourceField() !== null"
+                [class.expanded]="isFieldExpanded(field.key)"
                 [attr.data-target-key]="field.key"
                 cdkDropList
                 [cdkDropListData]="[field]"
@@ -203,11 +204,19 @@
                     <div class="mapped-indicator" pTooltip="Field is mapped">
                       <i class="pi pi-check-circle"></i>
                     </div>
+                    <button
+                      type="button"
+                      class="collapse-toggle"
+                      (click)="toggleFieldExpanded(field.key, $event)"
+                      [pTooltip]="isFieldExpanded(field.key) ? 'Collapse' : 'Expand'">
+                      <i [class]="isFieldExpanded(field.key) ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
+                    </button>
                   }
                 </div>
 
                 @if (getMappingForTarget(field.key); as mapping) {
-                  <div class="mapping-details">
+                  @if (isFieldExpanded(field.key)) {
+                    <div class="mapping-details">
                     <div class="mapping-source">
                       <i class="pi pi-arrow-right"></i>
                       <span class="source-label">Mapped from:</span>
@@ -364,17 +373,8 @@
                         (onClick)="removeMapping(field.key)"
                         pTooltip="Remove this field mapping" />
                     </div>
-
-                    <div class="mapping-actions">
-                      <p-button
-                        icon="pi pi-trash"
-                        severity="danger"
-                        [text]="true"
-                        size="small"
-                        (onClick)="removeMapping(field.key)"
-                        pTooltip="Remove mapping" />
-                    </div>
                   </div>
+                  }
                 } @else {
                   <div class="drop-zone">
                     <i class="pi pi-download"></i>
