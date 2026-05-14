@@ -1,5 +1,6 @@
 {
   "info": {
+    "_postman_id": "7f7f9a8e-2f1e-4c99-9c9d-6f0c0d2fd7b1",
     "name": "CanonBridge API Proxy",
     "description": "Test collection for CanonBridge dynamic API proxy system",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -43,11 +44,7 @@
               "mode": "raw",
               "raw": "{\n  \"partner_format\": \"detailed\",\n  \"customer_id\": \"CUST-12345\",\n  \"request_id\": \"REQ-001\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/proxy/{{mappingId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "proxy", "{{mappingId}}"]
-            },
+            "url": "{{baseUrl}}/api/proxy/{{mappingId}}",
             "description": "Execute a mapping as a proxy with detailed format request. This endpoint:\n1. Accepts request in original format (partner's old format)\n2. Applies request transformation (partner_format -> API query params)\n3. Calls the target API (mock payment API)\n4. Applies response transformation (complex payment object -> simple 5 fields)\n5. Returns transformed response in partner's expected format"
           },
           "response": [
@@ -108,11 +105,7 @@
               "mode": "raw",
               "raw": "{\n  \"partner_format\": \"flat\",\n  \"customer_id\": \"CUST-67890\",\n  \"request_id\": \"REQ-002\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/proxy/{{mappingId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "proxy", "{{mappingId}}"]
-            },
+            "url": "{{baseUrl}}/api/proxy/{{mappingId}}",
             "description": "Same proxy endpoint but with flat format request to show different request transformation"
           },
           "response": []
@@ -135,11 +128,7 @@
               "mode": "raw",
               "raw": "{\n  \"partner_format\": \"invalid_format\",\n  \"customer_id\": \"CUST-99999\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/proxy/{{mappingId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "proxy", "{{mappingId}}"]
-            },
+            "url": "{{baseUrl}}/api/proxy/{{mappingId}}",
             "description": "Test validation - should fail because partner_format must be 'flat' or 'detailed'"
           },
           "response": []
@@ -154,11 +143,7 @@
                 "value": "{{tenantId}}"
               }
             ],
-            "url": {
-              "raw": "{{baseUrl}}/api/proxy/{{mappingId}}/info",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "proxy", "{{mappingId}}", "info"]
-            },
+            "url": "{{baseUrl}}/api/proxy/{{mappingId}}/info",
             "description": "Get information about a mapping proxy endpoint"
           },
           "response": []

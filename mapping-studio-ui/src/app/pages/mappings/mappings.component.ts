@@ -158,7 +158,7 @@ export class MappingsComponent implements OnInit {
       version: d.status === 'DRAFT' ? 'draft' : 'v1.0.0',
       status: this.mapDraftStatus(d.status),
       createdAt: d.created_at ? d.created_at.slice(0, 10) : '',
-      publishedBy: d.created_by ?? '',
+      publishedBy: this.formatUserName(d.created_by),
       transformations: 0,
       checksum: d.id ? `draft:${d.id.slice(0, 7)}` : '',
       notes: d.description ?? '',
@@ -173,6 +173,23 @@ export class MappingsComponent implements OnInit {
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
+  }
+
+  private formatUserName(email?: string): string {
+    if (!email) return 'Unknown';
+    
+    // If it's an email, extract the name part before @
+    if (email.includes('@')) {
+      const namePart = email.split('@')[0];
+      // Convert john.doe or john_doe to John Doe
+      return namePart
+        .split(/[._-]/)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+    }
+    
+    // If it's already a name, just return it
+    return email;
   }
 
   private mapDraftStatus(status?: string): 'active' | 'draft' | 'deprecated' {
