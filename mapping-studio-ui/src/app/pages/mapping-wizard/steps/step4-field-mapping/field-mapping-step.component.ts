@@ -477,182 +477,21 @@ export class FieldMappingStepComponent implements OnInit {
     try {
       const sample = JSON.parse(this.sampleJson());
       const rules = this.mappingRules();
-      const result: any = {};
-
-      rules.forEach(rule => {
-        try {
-          const value = this.evaluateRule(rule, sample);
-          this.setNestedValue(result, rule.targetKey, value);
-        } catch (error: any) {
-          console.error(`Error evaluating rule for ${rule.targetKey}:`, error);
-        }
-      });
+      
+      // Use the same JSONata conversion as Integration Studio
+      const jsonataExpression = buildCombinedMappingExpression(rules);
+      console.log('Generated JSONata:', jsonataExpression);
+      
+      const expression = mappingEngine(jsonataExpression);
+      const result = expression.evaluate(sample);
 
       this.previewResult.set(result);
       this.previewError.set(null);
     } catch (error: any) {
+      console.error('Preview generation error:', error);
       this.previewError.set(error.message);
       this.previewResult.set(null);
     }
-  }
-
-  private evaluateRule(rule: MappingRule, sample: any): any {
-    const sourceValue = this.getNestedValue(sample, rule.sourcePath);
-
-    // If custom JSONata, evaluate it
-    if (rule.transform === 'custom_jsonata' && rule.advancedExpression) {
-      try {
-        const expression = mappingEngine(rule.advancedExpression);
-        return expression.evaluate(sample);
-      } catch (error) {
-        console.error('JSONata evaluation error:', error);
-        return sourceValue;
-      }
-    }
-
-    // Apply visual transformations
-    switch (rule.transform) {
-      case 'direct':
-        return sourceValue;
-      
-      // String transformations
-      case 'string_uppercase':
-        return typeof sourceValue === 'string' ? sourceValue.toUpperCase() : sourceValue;
-      case 'string_lowercase':
-        return typeof sourceValue === 'string' ? sourceValue.toLowerCase() : sourceValue;
-      case 'string_trim':
-        return typeof sourceValue === 'string' ? sourceValue.trim() : sourceValue;
-      case 'string_substring': {
-        const str = String(sourceValue || '');
-        const start = parseInt(rule.paramA || '0', 10);
-        const length = rule.paramB ? parseInt(rule.paramB, 10) : undefined;
-        return length !== undefined ? str.substring(start, start + length) : str.substring(start);
-      }
-      case 'string_replace': {
-        const str = String(sourceValue || '');
-        const find = rule.paramA || '';
-        const replace = rule.paramB || '';
-        return str.split(find).join(replace);
-      }
-      case 'combine': {
-        const secondValue = this.getNestedValue(sample, rule.paramA || '');
-        const separator = rule.paramB || '';
-        return `${sourceValue || ''}${separator}${secondValue || ''}`;
-      }
-      case 'template_string': {
-        const template = rule.paramA || '';
-        return template.replace(/\{\{([^}]+)\}\}/g, (_, path) => {
-          const value = this.getNestedValue(sample, path.trim());
-          return value !== null && value !== undefined ? String(value) : '';
-        });
-      }
-      
-      // Array transformations
-      case 'array_join':
-        return Array.isArray(sourceValue) ? sourceValue.join(rule.paramA || ',') : sourceValue;
-      case 'array_first':
-        return Array.isArray(sourceValue) ? sourceValue[0] : undefined;
-      case 'array_last':
-        return Array.isArray(sourceValue) ? sourceValue[sourceValue.length - 1] : undefined;
-      case 'array_element': {
-        const index = parseInt(rule.paramA || '1', 10) - 1;
-        return Array.isArray(sourceValue) ? sourceValue[index] : undefined;
-      }
-      case 'array_count':
-        return Array.isArray(sourceValue) ? sourceValue.length : 0;
-      case 'array_filter_equals': {
-        if (!Array.isArray(sourceValue)) return [];
-        const fieldPath = rule.paramA || '';
-        const matchValue = rule.paramB || '';
-        return sourceValue.filter(item => 
-          String(this.getNestedValue(item, fieldPath) || '') === matchValue
-        );
-      }
-      
-      // Math transformations
-      case 'math_sum': {
-        const numbers = this.asNumberArray(sourceValue);
-        return numbers.reduce((sum, n) => sum + n, 0);
-      }
-      case 'math_average': {
-        const numbers = this.asNumberArray(sourceValue);
-        return numbers.length > 0 ? numbers.reduce((sum, n) => sum + n, 0) / numbers.length : null;
-      }
-      case 'math_min': {
-        const numbers = this.asNumberArray(sourceValue);
-        return numbers.length > 0 ? Math.min(...numbers) : null;
-      }
-      case 'math_max': {
-        const numbers = this.asNumberArray(sourceValue);
-        return numbers.length > 0 ? Math.max(...numbers) : null;
-      }
-      
-      // Type conversions
-      case 'number_coerce':
-        return sourceValue === null || sourceValue === undefined || sourceValue === '' ? null : Number(sourceValue);
-      
-      // Date transformations
-      case 'date_format': {
-        const inputFormat = rule.paramA || 'yyyy-MM-dd';
-        const outputFormat = rule.paramB || 'dd/MM/yyyy';
-        if (typeof sourceValue !== 'string') return sourceValue;
-        
-        // Simple date format conversion (extend as needed)
-        if (inputFormat === 'yyyy-MM-dd' && outputFormat === 'dd/MM/yyyy') {
-          const [y, m, d] = sourceValue.split('-');
-          return `${d}/${m}/${y}`;
-        }
-        return sourceValue;
-      }
-      
-      // Conditional
-      case 'conditional_value': {
-        const condition = rule.paramA || '';
-        const thenValue = rule.paramB || '';
-        const elseValue = rule.paramC || '';
-        return String(sourceValue || '') === condition ? thenValue : elseValue;
-      }
-      case 'enum_map': {
-        try {
-          const mapping = JSON.parse(rule.paramA || '[]');
-          const key = String(sourceValue || '');
-          const found = mapping.find((m: any) => m.source === key);
-          return found ? found.target : sourceValue;
-        } catch {
-          return sourceValue;
-        }
-      }
-      
-      // Default value
-      case 'default_value':
-        return sourceValue === null || sourceValue === undefined || sourceValue === '' ? rule.paramA : sourceValue;
-      
-      default:
-        return sourceValue;
-    }
-  }
-
-  private asNumberArray(value: unknown): number[] {
-    if (!Array.isArray(value)) {
-      const n = Number(value);
-      return Number.isFinite(n) ? [n] : [];
-    }
-    return value.map(item => Number(item)).filter(n => Number.isFinite(n));
-  }
-
-  private getNestedValue(obj: any, path: string): any {
-    if (!path) return obj;
-    return path.split('.').reduce((current, key) => current?.[key], obj);
-  }
-
-  private setNestedValue(obj: any, path: string, value: any): void {
-    const keys = path.split('.');
-    const lastKey = keys.pop()!;
-    const target = keys.reduce((current, key) => {
-      if (!current[key]) current[key] = {};
-      return current[key];
-    }, obj);
-    target[lastKey] = value;
   }
 
   getMappingForTarget(targetKey: string): MappingRule | undefined {

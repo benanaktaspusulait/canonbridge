@@ -8,8 +8,8 @@ The implementation follows Angular 18+ standalone component architecture with si
 
 ## Tasks
 
-- [ ] 1. Create core data models and interfaces
-  - [ ] 1.1 Create RequestTransformationConfig interface and related types
+- [x] 1. Create core data models and interfaces
+  - [x] 1.1 Create RequestTransformationConfig interface and related types
     - Define `RequestTransformationConfig` interface with mode, template, jsonata, and headers fields
     - Define `WizardMode` type as union of 'api-gateway' | 'integration-hub'
     - Define `TransformationMode` type as union of 'template' | 'jsonata'
@@ -20,8 +20,8 @@ The implementation follows Angular 18+ standalone component architecture with si
     - **Property 6: Request transformation serialization round-trip**
     - **Validates: Requirements 4.6, 4.7, 12.2**
 
-- [ ] 2. Implement ModeSelectorComponent
-  - [ ] 2.1 Create ModeSelectorComponent with PrimeNG Card components
+- [x] 2. Implement ModeSelectorComponent
+  - [x] 2.1 Create ModeSelectorComponent with PrimeNG Card components
     - Create standalone component using Angular 18+ syntax
     - Add signal for `selectedMode` state
     - Implement two PrimeNG Card components for API Gateway and Integration Hub modes
@@ -37,8 +37,8 @@ The implementation follows Angular 18+ standalone component architecture with si
     - Test validation prevents navigation without selection
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 3. Implement RequestMappingStepComponent
-  - [ ] 3.1 Create RequestMappingStepComponent with template and JSONata modes
+- [x] 3. Implement RequestMappingStepComponent
+  - [x] 3.1 Create RequestMappingStepComponent with template and JSONata modes
     - Create standalone component using Angular 18+ syntax
     - Add signals for mode, templateJson, jsonataExpression, headersJson, and error states
     - Implement mode toggle between template and JSONata
@@ -49,7 +49,7 @@ The implementation follows Angular 18+ standalone component architecture with si
     - Emit `requestMappingComplete` event with configuration
     - _Requirements: 3.1, 3.2, 3.3, 4.2, 4.3, 4.4, 4.5, 10.4, 10.5_
 
-  - [ ] 3.2 Implement real-time preview panel for RequestMappingStepComponent
+  - [x] 3.2 Implement real-time preview panel for RequestMappingStepComponent
     - Add preview panel using PrimeNG Card component
     - Implement preview evaluation logic using sample data
     - Add debounced preview updates (300ms)
@@ -74,8 +74,8 @@ The implementation follows Angular 18+ standalone component architecture with si
 - [ ] 4. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Update MappingWizardComponent for mode-based workflow
-  - [ ] 5.1 Add mode selection step and update wizard state management
+- [x] 5. Update MappingWizardComponent for mode-based workflow
+  - [x] 5.1 Add mode selection step and update wizard state management
     - Add ModeSelectorComponent as Step 0 in wizard
     - Update `WizardState` signal to include mode and requestTransformation fields
     - Implement `getNextStep()` logic to skip Request Mapping for Integration Hub mode
@@ -84,7 +84,7 @@ The implementation follows Angular 18+ standalone component architecture with si
     - Update step navigation handlers to use new logic
     - _Requirements: 1.3, 1.4, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6_
 
-  - [ ] 5.2 Integrate RequestMappingStepComponent into wizard flow
+  - [x] 5.2 Integrate RequestMappingStepComponent into wizard flow
     - Add RequestMappingStepComponent as Step 4 in wizard
     - Wire up `requestMappingComplete` event handler
     - Pass sourceType, method, initialConfig, and canonicalSampleJson as inputs
@@ -103,22 +103,22 @@ The implementation follows Angular 18+ standalone component architecture with si
     - Test navigation logic with skipped steps
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6_
 
-- [ ] 6. Reorganize wizard step sequence
-  - [ ] 6.1 Move SampleDataStepComponent to Step 3
+- [x] 6. Reorganize wizard step sequence
+  - [x] 6.1 Move SampleDataStepComponent to Step 3
     - Update step index from current position to Step 3
     - Update step navigation logic to reflect new position
     - Ensure sample data is available for Request Mapping and Field Mapping steps
     - _Requirements: 2.2, 2.3, 2.4, 7.1, 7.5, 7.6, 7.7, 7.8_
 
-  - [ ] 6.2 Move TargetSchemaStepComponent to Step 5
+  - [x] 6.2 Move TargetSchemaStepComponent to Step 5
     - Update step index from current position to Step 5
     - Update step navigation logic to reflect new position
     - Ensure target schema is loaded before Field Mapping step
     - _Requirements: 2.2, 2.5, 2.6, 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8_
 
-  - [ ] 6.3 Update progress indicator and step labels
+  - [x] 6.3 Update progress indicator and step labels
     - Update PrimeNG Steps component with new step sequence
-    - Display current step and total steps (7)
+    - Display current step and total steps (8)
     - Update step labels to reflect reorganized flow
     - _Requirements: 2.9_
 
@@ -128,8 +128,8 @@ The implementation follows Angular 18+ standalone component architecture with si
     - Test progress indicator displays correct step numbers
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8_
 
-- [ ] 7. Enhance SampleDataStepComponent
-  - [ ] 7.1 Add JSON validation and file upload support
+- [x] 7. Enhance SampleDataStepComponent
+  - [x] 7.1 Add JSON validation and file upload support
     - Implement JSON validation using `JSON.parse()`
     - Display validation error messages inline
     - Add file upload button for JSON files

@@ -81,12 +81,30 @@
     "recentSubtitle": "Latest mapping activity across all partners",
     "viewAll": "View All",
     "stat": {
-      "msgProcessed": { "label": "Messages Processed", "change": "Total processed" },
-      "activeMappings": { "label": "Active Mappings", "change": "Currently active" },
-      "dlq": { "label": "DLQ Messages", "change": "Needs attention" },
-      "lag": { "label": "Consumer Lag", "change": "Current queue lag" },
-      "p99": { "label": "Transformation p99", "change": "Latest latency" },
-      "partners": { "label": "Active Partners", "change": "Currently connected" }
+      "msgProcessed": {
+        "label": "Messages Processed",
+        "change": "Total processed"
+      },
+      "activeMappings": {
+        "label": "Active Mappings",
+        "change": "Currently active"
+      },
+      "dlq": {
+        "label": "DLQ Messages",
+        "change": "Needs attention"
+      },
+      "lag": {
+        "label": "Consumer Lag",
+        "change": "Current queue lag"
+      },
+      "p99": {
+        "label": "Transformation p99",
+        "change": "Latest latency"
+      },
+      "partners": {
+        "label": "Active Partners",
+        "change": "Currently connected"
+      }
     }
   },
   "table": {
@@ -303,7 +321,6 @@
       "sampleJson": "Demo sample JSON"
     },
     "save": "Save connection",
-    "cancel": "Cancel",
     "justNow": "just now",
     "toast": {
       "invalidTitle": "Missing connection details",
@@ -386,12 +403,30 @@
     "colLag": "Lag",
     "colUptime": "Uptime",
     "metric": {
-      "throughput": { "label": "Throughput", "slo": "SLO: > 100/sec" },
-      "p99": { "label": "p99 Latency", "slo": "SLO: < 200ms" },
-      "dlq": { "label": "DLQ Rate", "slo": "SLO: < 0.1%" },
-      "lag": { "label": "Consumer Lag", "slo": "SLO: < 1,000" },
-      "error": { "label": "Error Rate", "slo": "SLO: < 1%" },
-      "uptime": { "label": "Uptime", "slo": "SLO: > 99.9%" }
+      "throughput": {
+        "label": "Throughput",
+        "slo": "SLO: > 100/sec"
+      },
+      "p99": {
+        "label": "p99 Latency",
+        "slo": "SLO: < 200ms"
+      },
+      "dlq": {
+        "label": "DLQ Rate",
+        "slo": "SLO: < 0.1%"
+      },
+      "lag": {
+        "label": "Consumer Lag",
+        "slo": "SLO: < 1,000"
+      },
+      "error": {
+        "label": "Error Rate",
+        "slo": "SLO: < 1%"
+      },
+      "uptime": {
+        "label": "Uptime",
+        "slo": "SLO: > 99.9%"
+      }
     },
     "healthStatus": {
       "healthy": "healthy",
@@ -933,14 +968,38 @@
     },
     "noCode": {
       "title": "No-code transformation coverage",
-      "paths": { "title": "Field selection", "text": "Choose values from the source tree, including nested fields and single targets." },
-      "arrays": { "title": "Arrays", "text": "First, last, item by position, filter, count, and join." },
-      "strings": { "title": "Text", "text": "Uppercase, lowercase, trim, replace, slice, and template." },
-      "numbers": { "title": "Numbers", "text": "Coerce to number, sum, average, minimum, and maximum." },
-      "dates": { "title": "Dates", "text": "Pick input and output formats to reshape dates." },
-      "logic": { "title": "Conditions", "text": "Build if/else rules for business logic." },
-      "defaults": { "title": "Defaults", "text": "Fill safe values when source data is empty." },
-      "validation": { "title": "Validation", "text": "Preview as you work and run schema gates in the final step." }
+      "paths": {
+        "title": "Field selection",
+        "text": "Choose values from the source tree, including nested fields and single targets."
+      },
+      "arrays": {
+        "title": "Arrays",
+        "text": "First, last, item by position, filter, count, and join."
+      },
+      "strings": {
+        "title": "Text",
+        "text": "Uppercase, lowercase, trim, replace, slice, and template."
+      },
+      "numbers": {
+        "title": "Numbers",
+        "text": "Coerce to number, sum, average, minimum, and maximum."
+      },
+      "dates": {
+        "title": "Dates",
+        "text": "Pick input and output formats to reshape dates."
+      },
+      "logic": {
+        "title": "Conditions",
+        "text": "Build if/else rules for business logic."
+      },
+      "defaults": {
+        "title": "Defaults",
+        "text": "Fill safe values when source data is empty."
+      },
+      "validation": {
+        "title": "Validation",
+        "text": "Preview as you work and run schema gates in the final step."
+      }
     },
     "cheat": {
       "title": "Mapping tips",
@@ -1237,12 +1296,13 @@
       "requestTemplate": "Request Template",
       "templateHelp": "Use {{canonical.fieldName}} syntax to reference canonical fields. Example: {\"orderId\": \"{{canonical.order.id}}\"}",
       "jsonataExpression": "JSONata Expression",
-      "jsonataHelp": "Write a JSONata expression to transform canonical data. Example: { \"orderId\": canonical.order.id }",
+      "jsonataHelp": "Write a JSONata expression to transform canonical data",
       "headers": "Request Headers",
-      "headersHelp": "Define HTTP headers for the request. You can use {{canonical.fieldName}} placeholders.",
+      "headersHelp": "Optional headers to include in the request",
       "preview": "Preview Transformation",
       "previewResult": "Preview Result",
-      "previewObjectRequired": "Request transformation must produce a JSON object"
+      "previewObjectRequired": "Request transformation must produce a JSON object",
+      "generating": "Generating preview..."
     },
     "configuration": {
       "title": "Configuration",
@@ -1288,6 +1348,16 @@
       "grpcMethodPlaceholder": "e.g. GetCustomer",
       "grpcHint": "You can select from known RPC endpoints above or enter service and method manually",
       "noConfigNeeded": "No additional configuration needed for this source type."
+    },
+    "mode": {
+      "title": "Select Wizard Mode",
+      "subtitle": "Choose the workflow that best fits your integration needs",
+      "select": "Select",
+      "selected": "Selected Mode",
+      "apiGateway": "API Gateway Mode",
+      "apiGatewayDesc": "Transform user requests to external API format. Best for simple proxy scenarios where you want to simplify the API contract for your users.",
+      "integrationHub": "Integration Hub Mode",
+      "integrationHubDesc": "Transform partner data to canonical schema. Best for complex integrations where you need a central data model and multiple downstream consumers."
     }
   },
   "shortcuts": {
