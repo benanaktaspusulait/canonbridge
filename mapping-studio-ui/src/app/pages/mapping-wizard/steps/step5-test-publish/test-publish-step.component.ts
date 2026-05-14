@@ -1,4 +1,4 @@
-import { Component, input, output, signal, inject } from '@angular/core';
+import { Component, input, output, signal, inject, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -9,6 +9,8 @@ import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { MappingService } from '../../../../core/services/mapping.service';
 import { WizardState } from '../../models/mapping-wizard.models';
+import mappingEngine from 'jsonata';
+import { buildCombinedMappingExpression } from '../step4-field-mapping/rule-to-jsonata';
 
 @Component({
   selector: 'app-test-publish-step',
@@ -25,9 +27,11 @@ import { WizardState } from '../../models/mapping-wizard.models';
   templateUrl: './test-publish-step.component.html',
   styleUrl: './test-publish-step.component.scss'
 })
-export class TestPublishStepComponent {
+export class TestPublishStepComponent implements OnInit {
   wizardState = input.required<WizardState>();
   mappingId = input<string | null>(null);
+  existingMappingName = input<string>('');
+  existingMappingDescription = input<string>('');
   
   backClicked = output<void>();
 
@@ -44,7 +48,44 @@ export class TestPublishStepComponent {
   saving = signal(false);
   testSuccess = signal(false);
 
-  runTest(): void {
+  constructor() {
+    // Auto-populate test input when wizard state changes
+    effect(() => {
+      const state = this.wizardState();
+      if (state.sampleJson && !this.testInput()) {
+        console.log('📥 Auto-populating test input from sample JSON');
+        this.testInput.set(state.sampleJson);
+      }
+    });
+
+    // Auto-populate mapping name in edit mode
+    effect(() => {
+      const existingName = this.existingMappingName();
+      if (existingName && !this.mappingName()) {
+        console.log('📥 Auto-populating mapping name from existing mapping:', existingName);
+        this.mappingName.set(existingName);
+      }
+    });
+
+    // Auto-populate mapping description in edit mode
+    effect(() => {
+      const existingDesc = this.existingMappingDescription();
+      if (existingDesc && !this.mappingDescription()) {
+        console.log('📥 Auto-populating mapping description from existing mapping');
+        this.mappingDescription.set(existingDesc);
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    console.log('🔧 Test & Publish step initialized');
+    console.log('Wizard State:', this.wizardState());
+    console.log('Mapping ID:', this.mappingId());
+    console.log('Existing Name:', this.existingMappingName());
+    console.log('Existing Description:', this.existingMappingDescription());
+  }
+
+  async runTest(): Promise<void> {
     const input = this.testInput();
     if (!input.trim()) {
       this.testError.set('Please provide test input JSON');
@@ -52,8 +93,9 @@ export class TestPublishStepComponent {
     }
 
     // Validate JSON
+    let inputJson: any;
     try {
-      JSON.parse(input);
+      inputJson = JSON.parse(input);
     } catch (e) {
       this.testError.set('Invalid JSON format');
       return;
@@ -64,26 +106,35 @@ export class TestPublishStepComponent {
     this.testOutput.set('');
     this.testSuccess.set(false);
 
-    // Simulate test execution (in real implementation, call backend API)
-    setTimeout(() => {
-      try {
-        // Mock transformation result
-        const result = {
-          status: 'success',
-          transformed: {
-            message: 'Transformation successful',
-            data: JSON.parse(input)
-          }
-        };
-        
-        this.testOutput.set(JSON.stringify(result, null, 2));
-        this.testSuccess.set(true);
-        this.testing.set(false);
-      } catch (e) {
-        this.testError.set('Test execution failed');
-        this.testing.set(false);
-      }
-    }, 1500);
+    try {
+      const state = this.wizardState();
+      
+      // Apply the transformation using JSONata (same as Field Mapping preview)
+      const jsonataExpression = buildCombinedMappingExpression(state.mappingRules);
+      console.log('🔄 Testing with JSONata expression:', jsonataExpression);
+      
+      const expression = mappingEngine(jsonataExpression);
+      const transformedResult = await expression.evaluate(inputJson);
+      
+      console.log('✅ Transformation result:', transformedResult);
+      
+      // Format the output
+      const result = {
+        status: 'success',
+        message: 'Transformation completed successfully',
+        input: inputJson,
+        output: transformedResult,
+        mappingRulesApplied: state.mappingRules.length
+      };
+      
+      this.testOutput.set(JSON.stringify(result, null, 2));
+      this.testSuccess.set(true);
+      this.testing.set(false);
+    } catch (error: any) {
+      console.error('❌ Test execution failed:', error);
+      this.testError.set('Test execution failed: ' + error.message);
+      this.testing.set(false);
+    }
   }
 
   saveMapping(): void {

@@ -48,6 +48,8 @@ export class MappingWizardComponent implements OnInit {
   isEditMode = signal(false);
   loading = signal(false);
   targetSchemaJson = signal<string>('{}');
+  existingMappingName = signal<string>('');
+  existingMappingDescription = signal<string>('');
   
   wizardState = signal<WizardState>({
     mode: null,
@@ -89,6 +91,10 @@ export class MappingWizardComponent implements OnInit {
     this.mappingService.getById(mappingId).subscribe({
       next: (mapping) => {
         console.log('=== LOADED MAPPING ===', mapping);
+        
+        // Store mapping name and description
+        this.existingMappingName.set(mapping.name || '');
+        this.existingMappingDescription.set(mapping.description || '');
         
         // Make mapping available in console for debugging
         (window as any).debugMapping = mapping;

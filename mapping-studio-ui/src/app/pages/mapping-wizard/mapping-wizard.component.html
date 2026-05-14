@@ -143,6 +143,8 @@
             <app-test-publish-step
               [wizardState]="wizardState()"
               [mappingId]="mappingId()"
+              [existingMappingName]="existingMappingName()"
+              [existingMappingDescription]="existingMappingDescription()"
               (backClicked)="goBack()" />
           }
           @default {
