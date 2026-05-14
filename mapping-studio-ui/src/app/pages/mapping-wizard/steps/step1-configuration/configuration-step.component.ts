@@ -96,10 +96,13 @@ export class ConfigurationStepComponent implements OnInit {
     // Set the selected system ID immediately
     if (systemId) {
       this.selectedSystemId.set(systemId);
-      console.log('Setting initial system ID:', systemId);
+      console.log('✅ Setting initial system ID:', systemId);
+    } else {
+      console.log('ℹ️ No initial system ID - will load from config');
     }
     
     // Load config values based on source type
+    console.log('📥 Loading config values:', config);
     if (config['topic']) {
       this.kafkaTopic.set(config['topic'] as string);
     }
@@ -111,9 +114,11 @@ export class ConfigurationStepComponent implements OnInit {
     }
     if (config['path']) {
       this.restApiPath.set(config['path'] as string);
+      console.log('✅ Set REST API path:', config['path']);
     }
     if (config['method']) {
       this.restApiMethod.set(config['method'] as string);
+      console.log('✅ Set REST API method:', config['method']);
     }
     if (config['url']) {
       this.externalApiUrl.set(config['url'] as string);
@@ -157,6 +162,9 @@ export class ConfigurationStepComponent implements OnInit {
         
         // After loading systems, check if we have a pre-selected system
         const systemId = this.selectedSystemId();
+        console.log('🔍 After loading systems, checking for pre-selected system ID:', systemId);
+        console.log('📋 Available systems:', this.externalSystems().map(s => ({ id: s.id, name: s.name })));
+        
         if (systemId) {
           console.log('🔍 Looking for system with ID:', systemId);
           const system = this.externalSystems().find(s => s.id === systemId);
@@ -166,21 +174,25 @@ export class ConfigurationStepComponent implements OnInit {
             
             if (system.endpoints && system.endpoints.length > 0) {
               this.availableEndpoints.set(system.endpoints);
+              console.log('📋 Available endpoints:', system.endpoints.length);
               
               // If we have a path in config, try to match it with an endpoint
               const currentPath = this.restApiPath();
+              console.log('🔍 Current path from config:', currentPath);
               if (currentPath) {
                 const matchingEndpoint = system.endpoints.find(e => e.path === currentPath);
                 if (matchingEndpoint) {
+                  console.log('✅ Found matching endpoint:', matchingEndpoint.path);
                   this.selectedEndpointPath.set(currentPath);
+                } else {
+                  console.warn('⚠️ No matching endpoint found for path:', currentPath);
                 }
               }
             }
           } else {
             console.warn('⚠️ System ID not found in available systems:', systemId);
             console.log('Available system IDs:', this.externalSystems().map(s => s.id));
-            // Clear the invalid system ID so user can select a valid one
-            this.selectedSystemId.set(null);
+            // Don't clear - keep the ID so user can see what was expected
           }
         } else {
           console.log('ℹ️ No external system ID provided - user needs to select one');
