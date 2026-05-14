@@ -158,13 +158,11 @@ export class ConfigurationStepComponent implements OnInit {
         // After loading systems, check if we have a pre-selected system
         const systemId = this.selectedSystemId();
         if (systemId) {
-          console.log('Looking for system with ID:', systemId);
+          console.log('🔍 Looking for system with ID:', systemId);
           const system = this.externalSystems().find(s => s.id === systemId);
           if (system) {
-            console.log('Found system:', system.name);
+            console.log('✅ Found system:', system.name);
             this.selectedSystem.set(system);
-            // Force update the signal to trigger change detection
-            this.selectedSystemId.set(systemId);
             
             if (system.endpoints && system.endpoints.length > 0) {
               this.availableEndpoints.set(system.endpoints);
@@ -179,8 +177,13 @@ export class ConfigurationStepComponent implements OnInit {
               }
             }
           } else {
-            console.warn('System not found in list:', systemId);
+            console.warn('⚠️ System ID not found in available systems:', systemId);
+            console.log('Available system IDs:', this.externalSystems().map(s => s.id));
+            // Clear the invalid system ID so user can select a valid one
+            this.selectedSystemId.set(null);
           }
+        } else {
+          console.log('ℹ️ No external system ID provided - user needs to select one');
         }
         
         this.loading.set(false);

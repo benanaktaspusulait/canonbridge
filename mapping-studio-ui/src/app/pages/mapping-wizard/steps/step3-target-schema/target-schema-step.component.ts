@@ -57,16 +57,19 @@ export class TargetSchemaStepComponent implements OnInit {
         // After schemas are loaded, check if we have a pre-selected schema
         const selectedId = this.selectedSchemaId();
         if (selectedId) {
-          console.log('Looking for schema with ID:', selectedId);
+          console.log('🔍 Looking for schema with ID:', selectedId);
           const schema = activeSchemas.find(s => s.id === selectedId);
           if (schema) {
-            console.log('Found schema:', schema.name);
+            console.log('✅ Found schema:', schema.name);
             this.selectedSchema.set(schema);
-            // Force update the signal to trigger change detection
-            this.selectedSchemaId.set(selectedId);
           } else {
-            console.warn('Schema not found in list:', selectedId);
+            console.warn('⚠️ Schema ID not found in available schemas:', selectedId);
+            console.log('Available schema IDs:', activeSchemas.map(s => s.id));
+            // Clear the invalid schema ID so user can select a valid one
+            this.selectedSchemaId.set(null);
           }
+        } else {
+          console.log('ℹ️ No schema ID provided - user needs to select one');
         }
         
         this.loading.set(false);
@@ -149,6 +152,25 @@ export class TargetSchemaStepComponent implements OnInit {
           },
           required: ['shipmentId', 'trackingNumber']
         }, null, 2)
+      },
+      // ADD THE MISSING SCHEMA that the mapping references
+      {
+        id: '7f991c1a-9558-43fa-9ee1-070141c4f79b',
+        name: 'ShipmentTracking',
+        schema_type: 'CANONICAL',
+        subject: 'canonical.ShipmentTracking',
+        version: 1,
+        status: 'ACTIVE',
+        description: 'Canonical schema for shipment tracking events',
+        schema_json: JSON.stringify({
+          type: 'object',
+          properties: {
+            trackingNumber: { type: 'string' },
+            customerEmail: { type: 'string' },
+            status: { type: 'string' }
+          },
+          required: ['trackingNumber', 'customerEmail', 'status']
+        }, null, 2)
       }
     ];
     
@@ -157,15 +179,15 @@ export class TargetSchemaStepComponent implements OnInit {
     // After mock schemas are loaded, check if we have a pre-selected schema
     const selectedId = this.selectedSchemaId();
     if (selectedId) {
-      console.log('Looking for schema in mock data with ID:', selectedId);
+      console.log('🔍 Looking for schema in mock data with ID:', selectedId);
       const schema = mockSchemas.find(s => s.id === selectedId);
       if (schema) {
-        console.log('Found schema in mock data:', schema.name);
+        console.log('✅ Found schema in mock data:', schema.name);
         this.selectedSchema.set(schema);
-        // Force update the signal to trigger change detection
-        this.selectedSchemaId.set(selectedId);
       } else {
-        console.warn('Schema not found in mock data:', selectedId);
+        console.warn('⚠️ Schema not found even in mock data:', selectedId);
+        // Clear the invalid schema ID
+        this.selectedSchemaId.set(null);
       }
     }
     
