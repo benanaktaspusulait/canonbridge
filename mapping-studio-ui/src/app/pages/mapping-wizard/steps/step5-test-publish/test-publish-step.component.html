@@ -55,6 +55,40 @@
     </ng-template>
 
     <ng-template pTemplate="content">
+      <!-- Proxy URL Section -->
+      @if (proxyUrl()) {
+        <div class="proxy-section">
+          <h3>
+            <i class="pi pi-link"></i>
+            API Proxy Endpoint
+          </h3>
+          <p class="proxy-description">
+            Use this endpoint to call your mapping as a proxy. It will transform requests, call the target API, and transform responses automatically.
+          </p>
+          
+          <div class="proxy-url-container">
+            <div class="proxy-url">
+              <code>{{ proxyUrl() }}</code>
+            </div>
+            <p-button
+              icon="pi pi-copy"
+              [text]="true"
+              [rounded]="true"
+              severity="secondary"
+              pTooltip="Copy URL"
+              (onClick)="copyProxyUrl()" />
+          </div>
+
+          <div class="curl-example">
+            <h4>Example cURL Command:</h4>
+            <pre><code>curl -X POST {{ proxyUrl() }} \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-Id: your-tenant-id" \
+  -d '{}'</code></pre>
+          </div>
+        </div>
+      }
+
       <div class="content-grid">
         <!-- Left Column: Mapping Details & Summary -->
         <div class="left-column">

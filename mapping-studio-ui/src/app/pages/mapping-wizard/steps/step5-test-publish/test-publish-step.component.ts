@@ -8,6 +8,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { TooltipModule } from 'primeng/tooltip';
 import { MappingService } from '../../../../core/services/mapping.service';
 import { WizardState } from '../../models/mapping-wizard.models';
 import mappingEngine from 'jsonata';
@@ -24,7 +25,8 @@ import { firstValueFrom } from 'rxjs';
     ButtonModule,
     InputTextModule,
     MessageModule,
-    ProgressSpinnerModule
+    ProgressSpinnerModule,
+    TooltipModule
   ],
   templateUrl: './test-publish-step.component.html',
   styleUrl: './test-publish-step.component.scss'
@@ -46,6 +48,8 @@ export class TestPublishStepComponent implements OnInit {
   testInput = signal('');
   testOutput = signal('');
   testError = signal('');
+  proxyUrl = signal('');
+  proxyInfo = signal<any>(null);
   
   testing = signal(false);
   saving = signal(false);
@@ -86,6 +90,29 @@ export class TestPublishStepComponent implements OnInit {
     console.log('Mapping ID:', this.mappingId());
     console.log('Existing Name:', this.existingMappingName());
     console.log('Existing Description:', this.existingMappingDescription());
+    
+    // Load proxy URL if mapping exists
+    const mappingId = this.mappingId();
+    if (mappingId) {
+      this.loadProxyInfo(mappingId);
+    }
+  }
+
+  async loadProxyInfo(mappingId: string): Promise<void> {
+    try {
+      const baseUrl = window.location.origin;
+      const proxyEndpoint = `${baseUrl}/api/proxy/${mappingId}`;
+      this.proxyUrl.set(proxyEndpoint);
+      
+      // Try to load proxy info
+      const info = await firstValueFrom(
+        this.http.get<any>(`/api/proxy/${mappingId}/info`)
+      );
+      this.proxyInfo.set(info);
+      console.log('✅ Proxy info loaded:', info);
+    } catch (error) {
+      console.warn('⚠️ Could not load proxy info:', error);
+    }
   }
 
   async runTest(): Promise<void> {
@@ -517,5 +544,12 @@ export class TestPublishStepComponent implements OnInit {
     }).catch(err => {
       console.error('❌ Failed to copy:', err);
     });
+  }
+
+  copyProxyUrl(): void {
+    const url = this.proxyUrl();
+    if (url) {
+      this.copyToClipboard(url);
+    }
   }
 }

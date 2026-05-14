@@ -85,15 +85,27 @@ public class MappingProxyResource {
                             return Response.ok(result.transformedResponse()).build();
                         } else {
                             LOG.errorf("❌ Mapping %s execution failed: %s", mappingId, result.error());
-                            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                                .entity(new ErrorResponse(result.error()))
+                            
+                            // Determine HTTP status based on error stage
+                            int statusCode = determineErrorStatus(result.error());
+                            
+                            return Response.status(statusCode)
+                                .entity(new ErrorDetailResponse(
+                                    result.error(),
+                                    "execution",
+                                    result.error()
+                                ))
                                 .build();
                         }
                     })
                     .onFailure().recoverWithItem(throwable -> {
                         LOG.errorf(throwable, "❌ Unexpected error executing mapping %s", mappingId);
                         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                            .entity(new ErrorResponse("Mapping execution failed: " + throwable.getMessage()))
+                            .entity(new ErrorDetailResponse(
+                                "Mapping execution failed",
+                                "system",
+                                throwable.getMessage()
+                            ))
                             .build();
                     });
             });
@@ -153,6 +165,17 @@ public class MappingProxyResource {
     }
 
     public record ErrorResponse(String error) {}
+    
+    public record ErrorDetailResponse(
+        String error,
+        String stage,
+        String details,
+        long timestamp
+    ) {
+        public ErrorDetailResponse(String error, String stage, String details) {
+            this(error, stage, details, System.currentTimeMillis());
+        }
+    }
     
     public record MappingProxyInfo(
         String mappingId,
