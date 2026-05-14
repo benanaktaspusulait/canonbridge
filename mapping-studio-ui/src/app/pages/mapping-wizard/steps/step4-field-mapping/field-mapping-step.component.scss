@@ -913,6 +913,41 @@
         color: #64748b;
         font-size: 0.9375rem;
       }
+
+      .pattern-usage-hint {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 1rem;
+        padding: 1rem 1.25rem;
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border-radius: 10px;
+        border: 2px solid #fbbf24;
+        font-size: 0.9375rem;
+        color: #92400e;
+
+        i {
+          font-size: 1.5rem;
+          color: #f59e0b;
+          animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        strong {
+          font-weight: 700;
+          color: #78350f;
+        }
+      }
+
+      @keyframes pulse-glow {
+        0%, 100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.8;
+          transform: scale(1.1);
+        }
+      }
     }
 
     ::ng-deep .p-accordion {
@@ -1004,10 +1039,23 @@
         border-left: 5px solid var(--primary-color);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
 
         &:hover {
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-          transform: translateX(4px);
+          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+          transform: translateX(8px) scale(1.02);
+          background: linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%);
+          border-left-color: var(--primary-600);
+
+          .insert-button {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        &:active {
+          transform: translateX(8px) scale(0.98);
         }
 
         h5 {
@@ -1015,6 +1063,14 @@
           color: #1a202c;
           font-size: 1.0625rem;
           font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+
+          &::before {
+            content: '✨';
+            font-size: 1.25rem;
+          }
         }
 
         code {
@@ -1027,12 +1083,55 @@
           border-radius: 8px;
           margin: 0.75rem 0;
           overflow-x: auto;
+          border: 2px solid var(--primary-200);
+          transition: all 0.2s ease;
+        }
+
+        &:hover code {
+          background: white;
+          border-color: var(--primary-400);
+          box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
         }
 
         p {
           margin: 0;
           font-size: 0.9375rem;
           color: #64748b;
+        }
+
+        .insert-button {
+          position: absolute;
+          top: 1rem;
+          right: 1rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem 1rem;
+          background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 0.875rem;
+          font-weight: 600;
+          cursor: pointer;
+          opacity: 0;
+          transform: translateY(-5px);
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+
+          i {
+            font-size: 0.875rem;
+          }
+
+          &:hover {
+            background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+            transform: translateY(0) scale(1.05);
+          }
+
+          &:active {
+            transform: translateY(0) scale(0.95);
+          }
         }
       }
     }

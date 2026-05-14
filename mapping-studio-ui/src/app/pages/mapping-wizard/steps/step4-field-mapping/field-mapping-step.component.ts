@@ -117,6 +117,7 @@ export class FieldMappingStepComponent implements OnInit {
   showJsonataReference = signal(false);
   selectedRuleForEdit = signal<MappingRule | null>(null);
   selectedSourceField = signal<SourceField | null>(null);
+  selectedTargetForPattern = signal<string | null>(null); // Track which target field is in expression mode
   
   transformOptions: TransformOption[] = [
     // Basic
@@ -464,6 +465,35 @@ export class FieldMappingStepComponent implements OnInit {
     this.mappingRules.update(rules => 
       rules.map(r => r.targetKey === targetKey ? { ...r, advancedExpression: expression, transform: 'custom_jsonata' } : r)
     );
+    // Track which field is being edited for pattern insertion
+    this.selectedTargetForPattern.set(targetKey);
+  }
+
+  insertPattern(pattern: string): void {
+    const targetKey = this.selectedTargetForPattern();
+    if (!targetKey) {
+      // If no field is selected, show a message
+      console.warn('Please select a target field in expression mode first');
+      return;
+    }
+
+    // Get current expression
+    const currentRule = this.mappingRules().find(r => r.targetKey === targetKey);
+    const currentExpression = currentRule?.advancedExpression || currentRule?.sourcePath || '';
+
+    // If current expression is empty or just the source path, replace it
+    // Otherwise, append the pattern
+    const newExpression = !currentExpression || currentExpression === currentRule?.sourcePath
+      ? pattern
+      : currentExpression + '\n' + pattern;
+
+    this.updateExpression(targetKey, newExpression);
+    
+    // Scroll to the target field
+    setTimeout(() => {
+      const element = document.querySelector(`[data-target-key="${targetKey}"]`);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
   }
 
   updateRuleParam(targetKey: string, paramName: string, value: string): void {

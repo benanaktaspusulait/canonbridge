@@ -150,6 +150,7 @@
                 [class.mapped]="field.mapped"
                 [class.required]="field.required"
                 [class.clickable]="selectedSourceField() !== null"
+                [attr.data-target-key]="field.key"
                 cdkDropList
                 [cdkDropListData]="[field]"
                 (cdkDropListDropped)="onSourceFieldDrop($event, field)"
@@ -377,6 +378,10 @@
       <div class="reference-header">
         <h3><i class="pi pi-book"></i> JSONata Functions Reference</h3>
         <p>Complete reference for all available transformation functions</p>
+        <div class="pattern-usage-hint">
+          <i class="pi pi-lightbulb"></i>
+          <strong>Tip:</strong> Switch a field to Expression mode, then click any pattern below to insert it!
+        </div>
       </div>
       
       <div class="reference-content">
@@ -599,45 +604,101 @@
         <details>
           <summary>Common Patterns & Examples</summary>
           <div class="example-patterns">
-            <div class="pattern-card">
+            <div class="pattern-card" (click)="insertPattern('firstName & \" \" & lastName')">
               <h5>Concatenate with Space</h5>
               <code>firstName & " " & lastName</code>
               <p>Combines two fields with a space separator</p>
+              <button type="button" class="insert-button" pTooltip="Click to use this pattern">
+                <i class="pi pi-plus"></i> Use Pattern
+              </button>
             </div>
-            <div class="pattern-card">
+            <div class="pattern-card" (click)="insertPattern('status = \"A\" ? \"ACTIVE\" : \"INACTIVE\"')">
               <h5>Conditional Mapping</h5>
               <code>status = "A" ? "ACTIVE" : "INACTIVE"</code>
               <p>Map values based on condition</p>
+              <button type="button" class="insert-button" pTooltip="Click to use this pattern">
+                <i class="pi pi-plus"></i> Use Pattern
+              </button>
             </div>
-            <div class="pattern-card">
+            <div class="pattern-card" (click)="insertPattern('email ? email : \"no-reply@example.com\"')">
               <h5>Default Value</h5>
               <code>email ? email : "no-reply@example.com"</code>
               <p>Use default if field is empty</p>
+              <button type="button" class="insert-button" pTooltip="Click to use this pattern">
+                <i class="pi pi-plus"></i> Use Pattern
+              </button>
             </div>
-            <div class="pattern-card">
+            <div class="pattern-card" (click)="insertPattern('items.($uppercase(productName))')">
               <h5>Transform Array of Objects</h5>
-              <code>items.(productId & ": " & $uppercase(productName))</code>
+              <code>items.($uppercase(productName))</code>
               <p>Map and transform each array element</p>
+              <button type="button" class="insert-button" pTooltip="Click to use this pattern">
+                <i class="pi pi-plus"></i> Use Pattern
+              </button>
             </div>
-            <div class="pattern-card">
+            <div class="pattern-card" (click)="insertPattern('$filter(orders, function($v) { $v.status = \"completed\" }).orderId')">
               <h5>Filter and Extract</h5>
-              <code>$filter(orders, function($v) $v.status = "completed").orderId</code>
+              <code>$filter(orders, function($v) { $v.status = "completed" }).orderId</code>
               <p>Filter array and extract specific field</p>
+              <button type="button" class="insert-button" pTooltip="Click to use this pattern">
+                <i class="pi pi-plus"></i> Use Pattern
+              </button>
             </div>
-            <div class="pattern-card">
+            <div class="pattern-card" (click)="insertPattern('customer.address.city')">
               <h5>Nested Field Access</h5>
               <code>customer.address.city</code>
               <p>Access deeply nested fields</p>
+              <button type="button" class="insert-button" pTooltip="Click to use this pattern">
+                <i class="pi pi-plus"></i> Use Pattern
+              </button>
             </div>
-            <div class="pattern-card">
+            <div class="pattern-card" (click)="insertPattern('items[0].name')">
               <h5>Array Element by Index</h5>
               <code>items[0].name</code>
               <p>Get first element's field</p>
+              <button type="button" class="insert-button" pTooltip="Click to use this pattern">
+                <i class="pi pi-plus"></i> Use Pattern
+              </button>
             </div>
-            <div class="pattern-card">
+            <div class="pattern-card" (click)="insertPattern('$uppercase($trim(name))')">
               <h5>String Manipulation Chain</h5>
               <code>$uppercase($trim(name))</code>
               <p>Chain multiple functions</p>
+              <button type="button" class="insert-button" pTooltip="Click to use this pattern">
+                <i class="pi pi-plus"></i> Use Pattern
+              </button>
+            </div>
+            <div class="pattern-card" (click)="insertPattern('$sum(items.price)')">
+              <h5>Sum Array Field</h5>
+              <code>$sum(items.price)</code>
+              <p>Calculate sum of array field values</p>
+              <button type="button" class="insert-button" pTooltip="Click to use this pattern">
+                <i class="pi pi-plus"></i> Use Pattern
+              </button>
+            </div>
+            <div class="pattern-card" (click)="insertPattern('items[price > 100]')">
+              <h5>Filter by Condition</h5>
+              <code>items[price > 100]</code>
+              <p>Filter array elements by predicate</p>
+              <button type="button" class="insert-button" pTooltip="Click to use this pattern">
+                <i class="pi pi-plus"></i> Use Pattern
+              </button>
+            </div>
+            <div class="pattern-card" (click)="insertPattern('$count(items[status=\"active\"])')">
+              <h5>Count Filtered Items</h5>
+              <code>$count(items[status="active"])</code>
+              <p>Count items matching condition</p>
+              <button type="button" class="insert-button" pTooltip="Click to use this pattern">
+                <i class="pi pi-plus"></i> Use Pattern
+              </button>
+            </div>
+            <div class="pattern-card" (click)="insertPattern('$join(tags, \", \")')">
+              <h5>Join Array to String</h5>
+              <code>$join(tags, ", ")</code>
+              <p>Concatenate array elements with separator</p>
+              <button type="button" class="insert-button" pTooltip="Click to use this pattern">
+                <i class="pi pi-plus"></i> Use Pattern
+              </button>
             </div>
           </div>
         </details>
