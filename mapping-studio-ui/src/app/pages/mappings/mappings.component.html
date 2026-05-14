@@ -26,6 +26,13 @@
         [ngModel]="statusFilter()"
         (ngModelChange)="statusFilter.set($event)"
         styleClass="status-filter-select" />
+      <p-select
+        [options]="sourceTypeFilterOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="sourceTypeFilter()"
+        (ngModelChange)="sourceTypeFilter.set($event)"
+        styleClass="status-filter-select" />
     </div>
     <div class="toolbar-right">
       <span class="result-count">{{ filtered().length }} {{ 'mappings.results' | i18n }}</span>

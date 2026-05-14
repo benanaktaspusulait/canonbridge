@@ -77,6 +77,7 @@ export class MappingsComponent implements OnInit {
   // ── Signals (reactive) ────────────────────────────────────────────────────
   readonly search = signal('');
   readonly statusFilter = signal<string>('all');
+  readonly sourceTypeFilter = signal<string>('all');
   detailVisible = false;
   readonly selectedMapping = signal<MappingVersion | null>(null);
 
@@ -87,6 +88,10 @@ export class MappingsComponent implements OnInit {
     { label: 'Deprecated',   value: 'deprecated' },
   ];
 
+  readonly sourceTypeFilterOptions = signal<Array<{ label: string; value: string }>>([
+    { label: 'All types', value: 'all' }
+  ]);
+
   private readonly _mappings = signal<MappingVersion[]>([]);
 
   readonly mappings = this._mappings.asReadonly();
@@ -95,10 +100,12 @@ export class MappingsComponent implements OnInit {
   readonly filtered = computed(() => {
     const q = this.search().trim().toLowerCase();
     const sf = this.statusFilter();
+    const stf = this.sourceTypeFilter();
     return this._mappings().filter(m => {
       const matchesSearch = !q || m.partner.includes(q) || m.eventType.includes(q) || m.version.toLowerCase().includes(q) || m.sourceType.toLowerCase().includes(q);
       const matchesStatus = sf === 'all' || m.status === sf;
-      return matchesSearch && matchesStatus;
+      const matchesSourceType = stf === 'all' || m.sourceType === stf;
+      return matchesSearch && matchesStatus && matchesSourceType;
     });
   });
 
@@ -106,7 +113,6 @@ export class MappingsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadPartners();
-    this.loadMappings();
   }
 
   private loadPartners(): void {
@@ -119,9 +125,13 @@ export class MappingsComponent implements OnInit {
           }
         });
         this.partners.set(map);
+        // Load mappings after partners are loaded
+        this.loadMappings();
       },
       error: () => {
         this.partners.set(new Map());
+        // Load mappings even if partners fail
+        this.loadMappings();
       }
     });
   }
@@ -138,6 +148,15 @@ export class MappingsComponent implements OnInit {
         const mappings = Array.isArray(drafts) ? drafts : [];
         const mapped = mappings.map(d => this.draftToViewModel(d));
         this._mappings.set(mapped);
+        
+        // Build source type filter options from unique source types
+        const uniqueSourceTypes = new Set(mapped.map(m => m.sourceType).filter(Boolean));
+        const sourceTypeOptions = [
+          { label: 'All types', value: 'all' },
+          ...Array.from(uniqueSourceTypes).sort().map(type => ({ label: type, value: type }))
+        ];
+        this.sourceTypeFilterOptions.set(sourceTypeOptions);
+        
         this.loading.set(false);
       },
       error: () => {
@@ -149,12 +168,24 @@ export class MappingsComponent implements OnInit {
 
   private draftToViewModel(d: MappingDraft): MappingVersion {
     const partnerName = d.partner_id ? this.partners().get(d.partner_id) : undefined;
+    
+    // Extract method from source_config if rest_api_method is not set
+    let method = d.rest_api_method;
+    if (!method && d.source_config) {
+      try {
+        const sourceConfig = JSON.parse(d.source_config);
+        method = sourceConfig.method;
+      } catch {
+        // Ignore parse errors
+      }
+    }
+    
     return {
       id: d.id ?? '',
       partner: partnerName ?? d.partner_id ?? 'Unknown Partner',
       eventType: d.event_type ?? '',
       sourceType: this.formatSourceType(d.source_type),
-      method: d.rest_api_method,
+      method: method,
       version: d.status === 'DRAFT' ? 'draft' : 'v1.0.0',
       status: this.mapDraftStatus(d.status),
       createdAt: d.created_at ? d.created_at.slice(0, 10) : '',
@@ -175,12 +206,17 @@ export class MappingsComponent implements OnInit {
       .join(' ');
   }
 
-  private formatUserName(email?: string): string {
-    if (!email) return 'Unknown';
+  private formatUserName(userId?: string): string {
+    if (!userId) return 'Unknown';
+    
+    // If it's a UUID (contains dashes and is 36 chars), return "System"
+    if (userId.includes('-') && userId.length === 36) {
+      return 'System';
+    }
     
     // If it's an email, extract the name part before @
-    if (email.includes('@')) {
-      const namePart = email.split('@')[0];
+    if (userId.includes('@')) {
+      const namePart = userId.split('@')[0];
       // Convert john.doe or john_doe to John Doe
       return namePart
         .split(/[._-]/)
@@ -189,7 +225,7 @@ export class MappingsComponent implements OnInit {
     }
     
     // If it's already a name, just return it
-    return email;
+    return userId;
   }
 
   private mapDraftStatus(status?: string): 'active' | 'draft' | 'deprecated' {
