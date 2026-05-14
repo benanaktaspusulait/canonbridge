@@ -127,6 +127,14 @@ export class FieldMappingStepComponent implements OnInit {
   newFieldName = signal('');
   newFieldType = signal('string');
   newFieldRequired = signal(false);
+  newFieldDescription = signal('');
+  newFieldMinLength = signal<number | null>(null);
+  newFieldMaxLength = signal<number | null>(null);
+  newFieldMin = signal<number | null>(null);
+  newFieldMax = signal<number | null>(null);
+  newFieldPattern = signal('');
+  newFieldEnum = signal('');
+  newFieldDefault = signal('');
 
   // Pattern constants for complex expressions with special characters
   readonly patterns = {
@@ -757,6 +765,14 @@ export class FieldMappingStepComponent implements OnInit {
     this.newFieldName.set('');
     this.newFieldType.set('string');
     this.newFieldRequired.set(false);
+    this.newFieldDescription.set('');
+    this.newFieldMinLength.set(null);
+    this.newFieldMaxLength.set(null);
+    this.newFieldMin.set(null);
+    this.newFieldMax.set(null);
+    this.newFieldPattern.set('');
+    this.newFieldEnum.set('');
+    this.newFieldDefault.set('');
     this.showAddFieldDialog.set(true);
   }
 
@@ -777,27 +793,80 @@ export class FieldMappingStepComponent implements OnInit {
       return;
     }
 
-    // Add new field to target fields
+    // Build validation rules for the new field
+    const validationRules: any = {
+      type: this.newFieldType(),
+      required: this.newFieldRequired()
+    };
+
+    if (this.newFieldDescription()) {
+      validationRules.description = this.newFieldDescription();
+    }
+
+    if (this.newFieldDefault()) {
+      validationRules.default = this.newFieldDefault();
+    }
+
+    // String validations
+    if (this.newFieldType() === 'string') {
+      if (this.newFieldMinLength() !== null) {
+        validationRules.minLength = this.newFieldMinLength();
+      }
+      if (this.newFieldMaxLength() !== null) {
+        validationRules.maxLength = this.newFieldMaxLength();
+      }
+      if (this.newFieldPattern()) {
+        validationRules.pattern = this.newFieldPattern();
+      }
+      if (this.newFieldEnum()) {
+        validationRules.enum = this.newFieldEnum().split(',').map(v => v.trim()).filter(v => v);
+      }
+    }
+
+    // Number validations
+    if (this.newFieldType() === 'number' || this.newFieldType() === 'integer') {
+      if (this.newFieldMin() !== null) {
+        validationRules.minimum = this.newFieldMin();
+      }
+      if (this.newFieldMax() !== null) {
+        validationRules.maximum = this.newFieldMax();
+      }
+    }
+
+    // Add new field to target fields with validation metadata
     this.targetFields.update(fields => [
       ...fields,
       {
         key: name,
         type: this.newFieldType(),
         required: this.newFieldRequired(),
-        mapped: false
-      }
+        mapped: false,
+        validationRules // Store validation rules for later use
+      } as any
     ]);
 
+    console.log('✅ Added custom field:', name, 'with validation rules:', validationRules);
     this.closeAddFieldDialog();
   }
 
   fieldTypeOptions = [
     { label: 'String', value: 'string' },
     { label: 'Number', value: 'number' },
+    { label: 'Integer', value: 'integer' },
     { label: 'Boolean', value: 'boolean' },
     { label: 'Object', value: 'object' },
     { label: 'Array', value: 'array' },
     { label: 'Date', value: 'date' }
+  ];
+
+  patternExamples = [
+    { label: 'Email', value: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' },
+    { label: 'Phone (US)', value: '^\\+?1?\\d{10}$' },
+    { label: 'URL', value: '^https?:\\/\\/.+' },
+    { label: 'UUID', value: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' },
+    { label: 'Alphanumeric', value: '^[a-zA-Z0-9]+$' },
+    { label: 'Letters Only', value: '^[a-zA-Z]+$' },
+    { label: 'Numbers Only', value: '^[0-9]+$' }
   ];
 
   // Expose for template

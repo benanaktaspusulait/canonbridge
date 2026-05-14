@@ -817,38 +817,180 @@
   header="Add Custom Field to Target Schema"
   [(visible)]="showAddFieldDialog"
   [modal]="true"
-  [style]="{width: '500px'}"
+  [style]="{width: '650px', maxHeight: '90vh'}"
   [draggable]="false"
   [resizable]="false">
   
   <div class="add-field-form">
-    <div class="form-field">
-      <label for="fieldName">Field Name *</label>
-      <input 
-        pInputText 
-        id="fieldName"
-        [(ngModel)]="newFieldName"
-        placeholder="e.g., customerId" />
+    <!-- Basic Information -->
+    <div class="form-section">
+      <h4><i class="pi pi-info-circle"></i> Basic Information</h4>
+      
+      <div class="form-field">
+        <label for="fieldName">Field Name *</label>
+        <input 
+          pInputText 
+          id="fieldName"
+          [(ngModel)]="newFieldName"
+          placeholder="e.g., customerId, orderTotal" />
+        <small>Use camelCase or snake_case for field names</small>
+      </div>
+
+      <div class="form-field">
+        <label for="fieldType">Field Type *</label>
+        <p-select 
+          id="fieldType"
+          [(ngModel)]="newFieldType"
+          [options]="fieldTypeOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select type" />
+      </div>
+
+      <div class="form-field">
+        <label for="fieldDescription">Description</label>
+        <textarea 
+          pTextarea 
+          id="fieldDescription"
+          [(ngModel)]="newFieldDescription"
+          [rows]="2"
+          placeholder="Brief description of this field"></textarea>
+      </div>
+
+      <div class="form-field">
+        <p-checkbox 
+          [(ngModel)]="newFieldRequired"
+          [binary]="true"
+          inputId="fieldRequired"
+          label="Required Field" />
+        <small>If checked, this field must be mapped and cannot be null</small>
+      </div>
     </div>
 
-    <div class="form-field">
-      <label for="fieldType">Field Type *</label>
-      <p-select 
-        id="fieldType"
-        [(ngModel)]="newFieldType"
-        [options]="fieldTypeOptions"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Select type" />
-    </div>
+    <!-- String Validations -->
+    @if (newFieldType() === 'string') {
+      <div class="form-section">
+        <h4><i class="pi pi-align-left"></i> String Validations</h4>
+        
+        <div class="form-row">
+          <div class="form-field">
+            <label for="minLength">Minimum Length</label>
+            <input 
+              pInputText 
+              type="number"
+              id="minLength"
+              [(ngModel)]="newFieldMinLength"
+              placeholder="e.g., 2" />
+          </div>
 
-    <div class="form-field">
-      <p-checkbox 
-        [(ngModel)]="newFieldRequired"
-        [binary]="true"
-        inputId="fieldRequired"
-        label="Required Field" />
-    </div>
+          <div class="form-field">
+            <label for="maxLength">Maximum Length</label>
+            <input 
+              pInputText 
+              type="number"
+              id="maxLength"
+              [(ngModel)]="newFieldMaxLength"
+              placeholder="e.g., 100" />
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="pattern">Pattern (Regex)</label>
+          <input 
+            pInputText 
+            id="pattern"
+            [(ngModel)]="newFieldPattern"
+            placeholder="e.g., ^[A-Z0-9-]+$" />
+          <small>Common patterns:</small>
+          <div class="pattern-examples">
+            @for (example of patternExamples; track example.value) {
+              <button 
+                type="button"
+                class="pattern-btn"
+                (click)="newFieldPattern.set(example.value)">
+                {{ example.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="enumValues">Allowed Values (Enum)</label>
+          <input 
+            pInputText 
+            id="enumValues"
+            [(ngModel)]="newFieldEnum"
+            placeholder="e.g., ACTIVE, INACTIVE, PENDING" />
+          <small>Comma-separated list of allowed values</small>
+        </div>
+
+        <div class="form-field">
+          <label for="defaultValue">Default Value</label>
+          <input 
+            pInputText 
+            id="defaultValue"
+            [(ngModel)]="newFieldDefault"
+            placeholder="Default value if not provided" />
+        </div>
+      </div>
+    }
+
+    <!-- Number Validations -->
+    @if (newFieldType() === 'number' || newFieldType() === 'integer') {
+      <div class="form-section">
+        <h4><i class="pi pi-hashtag"></i> Number Validations</h4>
+        
+        <div class="form-row">
+          <div class="form-field">
+            <label for="minValue">Minimum Value</label>
+            <input 
+              pInputText 
+              type="number"
+              id="minValue"
+              [(ngModel)]="newFieldMin"
+              placeholder="e.g., 0" />
+          </div>
+
+          <div class="form-field">
+            <label for="maxValue">Maximum Value</label>
+            <input 
+              pInputText 
+              type="number"
+              id="maxValue"
+              [(ngModel)]="newFieldMax"
+              placeholder="e.g., 999999" />
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="defaultNumber">Default Value</label>
+          <input 
+            pInputText 
+            type="number"
+            id="defaultNumber"
+            [(ngModel)]="newFieldDefault"
+            placeholder="Default value if not provided" />
+        </div>
+      </div>
+    }
+
+    <!-- Boolean Validations -->
+    @if (newFieldType() === 'boolean') {
+      <div class="form-section">
+        <h4><i class="pi pi-check-square"></i> Boolean Options</h4>
+        
+        <div class="form-field">
+          <label for="defaultBoolean">Default Value</label>
+          <p-select 
+            id="defaultBoolean"
+            [(ngModel)]="newFieldDefault"
+            [options]="[{label: 'True', value: 'true'}, {label: 'False', value: 'false'}, {label: 'None', value: ''}]"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Select default value" />
+        </div>
+      </div>
+    }
   </div>
 
   <ng-template #footer>
