@@ -10,6 +10,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -78,7 +80,7 @@ public class WebhookEndpointRepository {
             .addString(endpoint.getSecretHash())
             .addString(endpoint.getTargetTopic())
             .addString(endpoint.getStatus().name())
-            .addValue(now)
+            .addValue(LocalDateTime.ofInstant(now, ZoneOffset.UTC))
             .addString(endpoint.getCreatedBy());
             
         return client.preparedQuery(sql)
@@ -97,7 +99,7 @@ public class WebhookEndpointRepository {
             
         Tuple tuple = Tuple.tuple()
             .addString(status.name())
-            .addValue(Instant.now())
+            .addValue(LocalDateTime.ofInstant(Instant.now(), ZoneOffset.UTC))
             .addString(tenantId)
             .addUUID(id);
             
@@ -120,7 +122,7 @@ public class WebhookEndpointRepository {
             WHERE id = $2
             """;
         return client.preparedQuery(sql)
-            .execute(Tuple.of(Instant.now(), id))
+            .execute(Tuple.of(LocalDateTime.ofInstant(Instant.now(), ZoneOffset.UTC), id))
             .replaceWithVoid();
     }
 

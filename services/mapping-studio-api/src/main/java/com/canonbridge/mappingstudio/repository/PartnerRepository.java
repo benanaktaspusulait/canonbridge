@@ -10,6 +10,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -65,7 +67,7 @@ public class PartnerRepository {
             "VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11) " +
             "RETURNING *"
         )
-        .execute(Tuples.of(
+        .execute(Tuple.of(
             partner.getId(),
             partner.getTenantId(),
             partner.getExternalId(),
@@ -73,8 +75,8 @@ public class PartnerRepository {
             partner.getDescription(),
             partner.getStatus().name(),
             partner.getMetadata(),
-            partner.getCreatedAt(),
-            partner.getUpdatedAt(),
+            LocalDateTime.ofInstant(partner.getCreatedAt(), ZoneOffset.UTC),
+            LocalDateTime.ofInstant(partner.getUpdatedAt(), ZoneOffset.UTC),
             partner.getCreatedBy(),
             partner.getUpdatedBy()
         ))
@@ -91,13 +93,13 @@ public class PartnerRepository {
             "WHERE tenant_id = $8 AND id = $9 " +
             "RETURNING *"
         )
-        .execute(Tuples.of(
+        .execute(Tuple.of(
             partner.getExternalId(),
             partner.getName(),
             partner.getDescription(),
             partner.getStatus().name(),
             partner.getMetadata(),
-            partner.getUpdatedAt(),
+            LocalDateTime.ofInstant(partner.getUpdatedAt(), ZoneOffset.UTC),
             partner.getUpdatedBy(),
             partner.getTenantId(),
             partner.getId()

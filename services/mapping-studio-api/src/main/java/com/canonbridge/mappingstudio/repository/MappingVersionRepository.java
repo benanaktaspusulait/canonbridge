@@ -11,6 +11,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -123,7 +125,7 @@ public class MappingVersionRepository {
             "WHERE tenant_id = $2 AND id = $3 " +
             "RETURNING *"
         )
-        .execute(Tuple.of(Instant.now(), tenantId, id))
+        .execute(Tuple.of(LocalDateTime.ofInstant(Instant.now(), ZoneOffset.UTC), tenantId, id))
         .map(rowSet -> {
             if (rowSet.size() == 0) {
                 return null;
