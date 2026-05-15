@@ -56,6 +56,7 @@ export interface WizardState {
   sourceConfig: Record<string, unknown>;
   requestTransformation: RequestTransformationConfig | null;
   sampleJson: string;
+  fieldMappingSampleJson?: string;
   inputSchema?: string;
   targetSchemaRef: string | null;
   targetSchemaJson: string;

@@ -58,6 +58,7 @@ export class MappingWizardComponent implements OnInit {
     sourceConfig: {},
     requestTransformation: null,
     sampleJson: '',
+    fieldMappingSampleJson: '',
     targetSchemaRef: null,
     targetSchemaJson: '',
     mappingRules: []
@@ -108,6 +109,8 @@ export class MappingWizardComponent implements OnInit {
         
         const requestTransformation = this.extractRequestTransformation(sourceConfig);
         const mappingRules = this.extractMappingRules(mapping);
+        const sampleJson = this.extractRequestSampleJson(mapping, sourceConfig, requestTransformation);
+        const fieldMappingSampleJson = this.extractFieldMappingSampleJson(mapping, sourceConfig, mappingRules);
         
         const targetSchemaRef = mapping.target_schema_ref || mapping.canonical_schema_ref || null;
         
@@ -119,7 +122,8 @@ export class MappingWizardComponent implements OnInit {
           externalSystemId: externalSystemId,
           sourceConfig: sourceConfig,
           requestTransformation: requestTransformation,
-          sampleJson: this.extractSampleJson(mapping, mappingRules),
+          sampleJson,
+          fieldMappingSampleJson,
           inputSchema: mapping.input_schema || '',
           targetSchemaRef: targetSchemaRef,
           targetSchemaJson: '',
@@ -355,73 +359,119 @@ export class MappingWizardComponent implements OnInit {
     }
   }
 
-  private extractSampleJson(mapping: any, mappingRules: MappingRule[] = []): string {
-    console.log('=== EXTRACTING SAMPLE JSON ===');
-    
-    // First check if there's a sample_payload field directly on the mapping
-    if (typeof mapping.sample_payload === 'string' && mapping.sample_payload.trim()) {
-      console.log('Found sample_payload on mapping (string)');
-      return mapping.sample_payload;
+  private extractRequestSampleJson(
+    mapping: any,
+    sourceConfig: Record<string, unknown>,
+    requestTransformation: unknown
+  ): string {
+    console.log('=== EXTRACTING REQUEST SAMPLE JSON ===');
+
+    const explicitRequestSample = this.firstJsonText(
+      sourceConfig['requestSampleJson'],
+      sourceConfig['requestJson'],
+      sourceConfig['requestPayload'],
+      sourceConfig['sampleRequestJson'],
+      mapping.request_sample_payload
+    );
+    if (explicitRequestSample) {
+      console.log('Found explicit request sample');
+      return explicitRequestSample;
     }
-    
-    // If sample_payload is an object, stringify it
-    if (mapping.sample_payload && typeof mapping.sample_payload === 'object') {
-      console.log('Found sample_payload on mapping (object)');
-      return JSON.stringify(mapping.sample_payload, null, 2);
+
+    const requestSample = this.buildSampleFromRequestTransformation(
+      requestTransformation || sourceConfig['requestTransformation']
+    );
+    if (requestSample) {
+      console.log('Built request sample JSON from request transformation');
+      return requestSample;
     }
-    
-    // Then check source_config
-    const config = this.parseJsonObject(mapping.source_config);
-    console.log('Checking source_config for sample data:', config);
-    
-    // Check sampleJson first (our new standard location)
-    if (config['sampleJson']) {
-      if (typeof config['sampleJson'] === 'string' && config['sampleJson'].trim()) {
-        console.log('Found sampleJson in source_config (string)');
-        return config['sampleJson'];
-      }
-      if (typeof config['sampleJson'] === 'object') {
-        console.log('Found sampleJson in source_config (object)');
-        return JSON.stringify(config['sampleJson'], null, 2);
-      }
+
+    const legacySample = this.firstJsonText(
+      mapping.sample_payload,
+      sourceConfig['sampleJson'],
+      sourceConfig['sample_payload'],
+      sourceConfig['payload']
+    );
+    if (legacySample) {
+      console.log('Found legacy request sample');
+      return legacySample;
     }
-    
-    // Check other possible field names
-    if (typeof config['sourceJson'] === 'string' && config['sourceJson'].trim()) {
-      console.log('Found sourceJson in source_config (string)');
-      return config['sourceJson'];
+
+    console.warn('⚠️ No request sample JSON found in mapping');
+    return '';
+  }
+
+  private extractFieldMappingSampleJson(
+    mapping: any,
+    sourceConfig: Record<string, unknown>,
+    mappingRules: MappingRule[] = []
+  ): string {
+    console.log('=== EXTRACTING FIELD MAPPING SAMPLE JSON ===');
+
+    const explicitSourceSample = this.firstJsonText(
+      sourceConfig['responseJson'],
+      sourceConfig['responseSampleJson'],
+      sourceConfig['sourceJson'],
+      sourceConfig['sampleJson'],
+      mapping.sample_payload,
+      sourceConfig['sample_payload'],
+      sourceConfig['payload']
+    );
+    if (explicitSourceSample) {
+      console.log('Found explicit field mapping source sample');
+      return explicitSourceSample;
     }
-    if (config['sourceJson'] && typeof config['sourceJson'] === 'object') {
-      console.log('Found sourceJson in source_config (object)');
-      return JSON.stringify(config['sourceJson'], null, 2);
-    }
-    
-    if (typeof config['sample_payload'] === 'string' && config['sample_payload'].trim()) {
-      console.log('Found sample_payload in source_config (string)');
-      return config['sample_payload'];
-    }
-    if (config['sample_payload'] && typeof config['sample_payload'] === 'object') {
-      console.log('Found sample_payload in source_config (object)');
-      return JSON.stringify(config['sample_payload'], null, 2);
-    }
-    
-    if (typeof config['payload'] === 'string' && config['payload'].trim()) {
-      console.log('Found payload in source_config (string)');
-      return config['payload'];
-    }
-    if (config['payload'] && typeof config['payload'] === 'object') {
-      console.log('Found payload in source_config (object)');
-      return JSON.stringify(config['payload'], null, 2);
-    }
-    
+
     const fallbackSample = this.buildSampleFromMappingRules(mappingRules);
     if (fallbackSample) {
-      console.log('Built sample JSON from mapping rules');
+      console.log('Built field mapping sample JSON from mapping rules');
       return fallbackSample;
     }
 
-    console.warn('⚠️ No sample JSON found in mapping');
+    console.warn('⚠️ No field mapping sample JSON found in mapping');
     return '';
+  }
+
+  private buildSampleFromRequestTransformation(requestTransformation: unknown): string {
+    if (!requestTransformation || typeof requestTransformation !== 'object') {
+      return '';
+    }
+
+    const template = (requestTransformation as { template?: unknown }).template;
+    if (!template || typeof template !== 'object') {
+      return '';
+    }
+
+    const sample: Record<string, unknown> = {};
+    const placeholders = this.extractTemplatePlaceholders(template);
+
+    placeholders.forEach(path => {
+      const sourcePath = this.simpleSourcePath(path);
+      if (!sourcePath) return;
+      this.setByPath(sample, sourcePath, this.sampleValueForPath(sourcePath));
+    });
+
+    return placeholders.length > 0 && Object.keys(sample).length > 0
+      ? JSON.stringify(sample)
+      : '';
+  }
+
+  private extractTemplatePlaceholders(value: unknown): string[] {
+    if (typeof value === 'string') {
+      return Array.from(value.matchAll(/\{\{([^}]+)\}\}/g))
+        .map(match => match[1]?.trim())
+        .filter((path): path is string => !!path);
+    }
+
+    if (Array.isArray(value)) {
+      return value.flatMap(item => this.extractTemplatePlaceholders(item));
+    }
+
+    if (value && typeof value === 'object') {
+      return Object.values(value).flatMap(item => this.extractTemplatePlaceholders(item));
+    }
+
+    return [];
   }
 
   private buildSampleFromMappingRules(rules: MappingRule[]): string {
@@ -481,8 +531,33 @@ export class MappingWizardComponent implements OnInit {
     return `${this.lastPathSegment(rule.targetKey || rule.sourcePath)} sample`;
   }
 
+  private sampleValueForPath(path: string): unknown {
+    const key = path.toLowerCase();
+
+    if (key.includes('amount') || key.includes('total') || key.includes('price')) return 1250.5;
+    if (key.includes('currency')) return 'EUR';
+    if (key.includes('status')) return 'COMPLETED';
+    if (key.includes('email')) return 'john.doe@example.com';
+    if (key.includes('date') || key.includes('time')) return '2026-05-14T10:00:00Z';
+    if (key.includes('id')) return `${this.lastPathSegment(path).toUpperCase()}-001`;
+
+    return `${this.lastPathSegment(path)} sample`;
+  }
+
   private lastPathSegment(value: string): string {
     return value.replace(/\[(\d+)\]/g, '.$1').split('.').filter(Boolean).pop() || 'value';
+  }
+
+  private firstJsonText(...values: unknown[]): string | null {
+    for (const value of values) {
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim();
+      }
+      if (value && typeof value === 'object') {
+        return JSON.stringify(value, null, 2);
+      }
+    }
+    return null;
   }
 
   private firstString(...values: unknown[]): string | null {

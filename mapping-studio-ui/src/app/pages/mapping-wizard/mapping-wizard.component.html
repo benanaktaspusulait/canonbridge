@@ -134,7 +134,7 @@
           }
           @case (6) {
             <app-field-mapping-step
-              [sampleJson]="wizardState().sampleJson"
+              [sampleJson]="wizardState().fieldMappingSampleJson || wizardState().sampleJson"
               [targetSchemaJson]="targetSchemaJson()"
               [initialRules]="wizardState().mappingRules"
               (mappingComplete)="onFieldMappingComplete($event)"
