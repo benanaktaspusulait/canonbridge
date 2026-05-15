@@ -745,11 +745,8 @@ export class MappingWizardComponent implements OnInit {
     this.wizardState.update(state => ({
       ...state,
       externalSystemId: data.externalSystemId,
-      sourceConfig: data.config
+      sourceConfig: { ...state.sourceConfig, ...data.config }
     }));
-    
-    // Auto-save disabled for now due to backend validation issues
-    // this.autoSaveMapping();
     
     this.currentStep.set(3); // Go to Sample Data step
   }

@@ -22,12 +22,21 @@
       }
     </div>
 
-    <p-button
-      label="Next: Test & Publish"
-      icon="pi pi-arrow-right"
-      iconPos="right"
-      [disabled]="!isValid()"
-      (onClick)="onNext()" />
+    <div class="nav-actions">
+      <p-button
+        label="Save"
+        icon="pi pi-save"
+        severity="secondary"
+        [outlined]="true"
+        [loading]="savingRules()"
+        (onClick)="saveRules()" />
+      <p-button
+        label="Next: Test & Publish"
+        icon="pi pi-arrow-right"
+        iconPos="right"
+        [disabled]="!isValid()"
+        (onClick)="onNext()" />
+    </div>
   </div>
 
   <!-- Header -->
@@ -110,41 +119,81 @@
           <i class="pi pi-database"></i>
           Source Fields
         </h3>
-        <span class="field-count">{{ sourceFields().length }} fields</span>
+        <div class="panel-header-actions">
+          <button type="button" class="icon-btn" (click)="expandAllGroups()" pTooltip="Expand all">
+            <i class="pi pi-angle-double-down"></i>
+          </button>
+          <button type="button" class="icon-btn" (click)="collapseAllGroups()" pTooltip="Collapse all">
+            <i class="pi pi-angle-double-up"></i>
+          </button>
+          <span class="field-count">{{ filteredSourceFields().length }}/{{ sourceFields().length }}</span>
+        </div>
+      </div>
+
+      <div class="panel-filter">
+        <input
+          pInputText
+          type="text"
+          [ngModel]="sourceFieldFilter()"
+          (ngModelChange)="sourceFieldFilter.set($event)"
+          placeholder="🔍 Filter fields..."
+          class="w-full filter-input" />
       </div>
       
-      <div class="panel-content">
-        @if (sourceFields().length === 0) {
+      <div class="panel-content panel-scrollable">
+        @if (filteredSourceFields().length === 0) {
           <div class="empty-state">
             <i class="pi pi-inbox"></i>
-            <p>No source fields detected</p>
+            <p>{{ sourceFields().length === 0 ? 'No source fields detected' : 'No fields match filter' }}</p>
           </div>
         } @else {
           <div 
             class="field-list"
             cdkDropList
             #sourceList="cdkDropList"
-            [cdkDropListData]="sourceFields()"
+            [cdkDropListData]="filteredSourceFields()"
             cdkDropListSortingDisabled>
-            @for (field of sourceFields(); track field.path) {
-              <div 
-                class="source-field"
-                cdkDrag
-                [cdkDragData]="field"
-                [pTooltip]="'Type: ' + field.type + (field.sample !== undefined ? '\nSample: ' + JSON.stringify(field.sample) : '') + '\n\nClick to select, then click a target field to map'"
-                tooltipPosition="right"
-                [class.selected]="selectedSourceField()?.path === field.path"
-                (click)="selectSourceField(field)">
-                <div class="field-icon">
-                  <i [class]="getFieldIcon(field.type)"></i>
+            @for (item of groupedSourceFields(); track $any(item).key) {
+              <!-- Group (all items are groups now) -->
+              <div class="source-group">
+                <div 
+                  class="source-group-header"
+                  (click)="toggleSourceGroup($any(item).key)">
+                  <i [class]="$any(item).collapsed ? 'pi pi-chevron-right' : 'pi pi-chevron-down'"></i>
+                  <i [class]="$any(item).key === '_root' ? 'pi pi-home' : getFieldIcon($any(item).type)"></i>
+                  <span class="group-name">{{ $any(item).key === '_root' ? 'Main Fields' : $any(item).key }}</span>
+                  <span class="field-type-badge" [attr.data-type]="$any(item).type">{{ $any(item).key === '_root' ? 'root' : $any(item).type }}</span>
+                  <span class="group-count">{{ $any(item).children.length }}</span>
                 </div>
-                <div class="field-info">
-                  <span class="field-path">{{ field.path }}</span>
-                  <span class="field-type-badge" [attr.data-type]="field.type">{{ field.type }}</span>
-                </div>
-                <div class="drag-handle" cdkDragHandle>
-                  <i class="pi pi-bars"></i>
-                </div>
+                @if (!$any(item).collapsed) {
+                  <div class="source-group-children">
+                    @for (field of $any(item).children; track field.path) {
+                      <div 
+                        class="source-field nested"
+                        cdkDrag
+                        [cdkDragData]="field"
+                        [pTooltip]="'Type: ' + field.type + (field.sample !== undefined ? '\nSample: ' + JSON.stringify(field.sample) : '')"
+                        tooltipPosition="right"
+                        [class.selected]="selectedSourceField()?.path === field.path"
+                        [class.used]="isSourceFieldUsed(field.path)"
+                        (click)="selectSourceField(field)">
+                        <div class="field-icon">
+                          <i [class]="getFieldIcon(field.type)"></i>
+                        </div>
+                        <div class="field-info">
+                          <span class="field-path">{{ $any(item).key === '_root' ? field.path : field.path.substring(field.path.indexOf('.') + 1) }}</span>
+                          <span class="field-type-badge" [attr.data-type]="field.type">{{ field.type }}</span>
+                        </div>
+                        @if (isSourceFieldUsed(field.path)) {
+                          <span class="used-badge" pTooltip="Used in mapping">✓</span>
+                        }
+                        <div class="drag-handle" cdkDragHandle>
+                          <i class="pi pi-bars"></i>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
               </div>
             }
           </div>
@@ -172,7 +221,7 @@
           pTooltip="Add a new field to target schema" />
       </div>
       
-      <div class="panel-content">
+      <div class="panel-content panel-scrollable">
         @if (targetFields().length === 0) {
           <div class="empty-state">
             <i class="pi pi-inbox"></i>
@@ -186,7 +235,7 @@
             [cdkDropListData]="targetFields()"
             (cdkDropListDropped)="onSourceFieldDrop($event, targetFields()[$event.currentIndex])"
             cdkDropListSortingDisabled>
-            @for (field of targetFields(); track field.key) {
+            @for (field of sortedTargetFields(); track field.key) {
               <div 
                 class="target-field"
                 [class.mapped]="field.mapped"
@@ -412,6 +461,15 @@
                   <div class="drop-zone">
                     <i class="pi pi-download"></i>
                     <span>Drag & drop source field here</span>
+                    @if (!field.required) {
+                      <button
+                        type="button"
+                        class="remove-field-btn"
+                        (click)="removeTargetField(field.key); $event.stopPropagation()"
+                        pTooltip="Remove this field from target schema">
+                        <i class="pi pi-times"></i>
+                      </button>
+                    }
                   </div>
                 }
               </div>

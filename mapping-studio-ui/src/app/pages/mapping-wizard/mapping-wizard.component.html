@@ -137,6 +137,7 @@
               [sampleJson]="wizardState().fieldMappingSampleJson || wizardState().sampleJson"
               [targetSchemaJson]="targetSchemaJson()"
               [inputSchema]="wizardState().inputSchema || ''"
+              [mappingId]="mappingId()"
               [initialRules]="wizardState().mappingRules"
               (mappingComplete)="onFieldMappingComplete($event)"
               (backClicked)="goBack()" />

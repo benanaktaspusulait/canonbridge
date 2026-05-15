@@ -1,4 +1,4 @@
-import { Component, input, output, signal, OnInit, computed, effect } from '@angular/core';
+import { Component, input, output, signal, OnInit, computed, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
@@ -15,6 +15,7 @@ import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
 import mappingEngine from 'jsonata';
 import { ruleToJsonataFragment, buildCombinedMappingExpression } from './rule-to-jsonata';
+import { MappingService } from '../../../../core/services/mapping.service';
 
 export type TransformKind =
   | 'direct'
@@ -128,14 +129,92 @@ export class FieldMappingStepComponent implements OnInit {
   sampleJson = input.required<string>();
   targetSchemaJson = input.required<string>();
   inputSchema = input<string>('');
+  mappingId = input<string | null>(null);
   initialRules = input<any[]>([]);
   
   mappingComplete = output<{ rules: any[] }>();
   backClicked = output<void>();
 
+  private readonly mappingService = inject(MappingService);
+
   mappingRules = signal<MappingRule[]>([]);
   sourceFields = signal<SourceField[]>([]);
   targetFields = signal<TargetField[]>([]);
+  sourceFieldFilter = signal('');
+  collapsedGroups = signal<Set<string>>(new Set());
+  savingRules = signal(false);
+  
+  filteredSourceFields = computed(() => {
+    const filter = this.sourceFieldFilter().toLowerCase().trim();
+    const fields = this.sourceFields();
+    if (!filter) return fields;
+    return fields.filter(f => f.path.toLowerCase().includes(filter) || f.type.toLowerCase().includes(filter));
+  });
+
+  groupedSourceFields = computed(() => {
+    const fields = this.filteredSourceFields();
+    const collapsed = this.collapsedGroups();
+    
+    interface SourceGroup {
+      key: string;
+      type: string;
+      collapsed: boolean;
+      children: SourceField[];
+    }
+    
+    const groups: SourceGroup[] = [];
+    const rootFields: SourceField[] = [];
+    const childMap = new Map<string, SourceField[]>();
+    
+    // Separate root fields from nested fields
+    for (const field of fields) {
+      const dotIndex = field.path.indexOf('.');
+      if (dotIndex === -1) {
+        // Root level field
+        if (field.type === 'object' || field.type === 'array') {
+          // This is a parent group
+          if (!childMap.has(field.path)) {
+            childMap.set(field.path, []);
+          }
+        } else {
+          rootFields.push(field);
+        }
+      } else {
+        // Nested field - group by first segment
+        const parent = field.path.substring(0, dotIndex);
+        if (!childMap.has(parent)) {
+          childMap.set(parent, []);
+        }
+        childMap.get(parent)!.push(field);
+      }
+    }
+    
+    // Build result: root fields as "main" group first, then object/array groups
+    const result: Array<SourceField | SourceGroup> = [];
+    
+    // Root fields go into a "main" group
+    if (rootFields.length > 0) {
+      result.push({
+        key: '_root',
+        type: 'main',
+        collapsed: collapsed.has('_root'),
+        children: rootFields
+      });
+    }
+    
+    for (const [key, children] of childMap) {
+      const parentField = fields.find(f => f.path === key);
+      const type = parentField?.type || 'object';
+      result.push({
+        key,
+        type,
+        collapsed: collapsed.has(key),
+        children
+      });
+    }
+    
+    return result;
+  });
   previewResult = signal<any>(null);
   previewError = signal<string | null>(null);
   copiedPreviewTarget = signal<'source' | 'result' | null>(null);
@@ -598,6 +677,53 @@ export class FieldMappingStepComponent implements OnInit {
       this.selectedSourceField.set(field);
     }
   }
+
+  toggleSourceGroup(groupKey: string): void {
+    this.collapsedGroups.update(set => {
+      const newSet = new Set(set);
+      if (newSet.has(groupKey)) {
+        newSet.delete(groupKey);
+      } else {
+        newSet.add(groupKey);
+      }
+      return newSet;
+    });
+  }
+
+  expandAllGroups(): void {
+    this.collapsedGroups.set(new Set());
+  }
+
+  collapseAllGroups(): void {
+    const allKeys = this.groupedSourceFields().map((g: any) => g.key);
+    this.collapsedGroups.set(new Set(allKeys));
+  }
+
+  isSourceGroup(item: any): boolean {
+    return item && 'children' in item && 'key' in item;
+  }
+
+  isSourceFieldUsed(path: string): boolean {
+    return this.mappingRules().some(r => r.sourcePath === path);
+  }
+
+  sortedTargetFields = computed(() => {
+    const fields = this.targetFields();
+    const rules = this.mappingRules();
+    
+    const unmapped = fields.filter(f => !rules.some(r => r.targetKey === f.key));
+    const mapped = fields.filter(f => rules.some(r => r.targetKey === f.key));
+    
+    // Unmapped first (required first within unmapped), then mapped alphabetically
+    unmapped.sort((a, b) => {
+      if (a.required && !b.required) return -1;
+      if (!a.required && b.required) return 1;
+      return a.key.localeCompare(b.key);
+    });
+    mapped.sort((a, b) => a.key.localeCompare(b.key));
+    
+    return [...unmapped, ...mapped];
+  });
 
   onTargetFieldClick(targetField: TargetField): void {
     const selected = this.selectedSourceField();
@@ -1184,6 +1310,30 @@ export class FieldMappingStepComponent implements OnInit {
     this.mappingRules.set(cleanedRules);
     
     this.mappingComplete.emit({ rules: cleanedRules });
+  }
+
+  saveRules(): void {
+    const id = this.mappingId();
+    if (!id) return;
+
+    const validTargetKeys = new Set(this.targetFields().map(f => f.key));
+    const cleanedRules = this.mappingRules().filter(r => validTargetKeys.has(r.targetKey));
+    const generatedJsonata = cleanedRules.length > 0 ? buildCombinedMappingExpression(cleanedRules) : '';
+
+    this.savingRules.set(true);
+    this.mappingService.update(id, {
+      mapping_rules: JSON.stringify(cleanedRules),
+      generated_jsonata: generatedJsonata
+    } as any).subscribe({
+      next: () => {
+        this.savingRules.set(false);
+        console.log('✅ Mapping rules saved');
+      },
+      error: (err) => {
+        this.savingRules.set(false);
+        console.error('❌ Failed to save rules:', err);
+      }
+    });
   }
 
   onBack(): void {
