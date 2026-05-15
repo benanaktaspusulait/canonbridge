@@ -103,8 +103,16 @@
               </div>
               
               <div class="schema-json">
-                <h4>Schema Structure</h4>
-                <pre><code>{{ getSchemaPreview() }}</code></pre>
+                <div class="schema-json-header">
+                  <h4>Schema Structure</h4>
+                  <p-button
+                    icon="pi pi-copy"
+                    pTooltip="Copy"
+                    [text]="true"
+                    size="small"
+                    (onClick)="copySchema()" />
+                </div>
+                <pre class="json-code-block"><code>{{ getSchemaPreview() }}</code></pre>
               </div>
             </div>
           }

@@ -799,15 +799,21 @@ export class MappingWizardComponent implements OnInit {
   }
 
   onTargetSchemaSelected(data: { schemaRef: string }): void {
+    const currentState = this.wizardState();
+    const schemaChanged = currentState.targetSchemaRef !== data.schemaRef;
+    
     this.wizardState.update(state => ({
       ...state,
       targetSchemaRef: data.schemaRef
     }));
     
-    // Auto-save disabled for now due to backend validation issues
-    // this.autoSaveMapping();
+    // If schema didn't change and we already have a custom target_schema_json, keep it
+    if (!schemaChanged && currentState.targetSchemaJson) {
+      this.currentStep.set(6);
+      return;
+    }
     
-    // Load schema JSON for field mapping
+    // Schema changed or no custom schema yet — load from registry
     this.schemaService.getById(data.schemaRef).subscribe({
       next: (schema) => {
         console.log('✅ Schema loaded from API:', schema.name);

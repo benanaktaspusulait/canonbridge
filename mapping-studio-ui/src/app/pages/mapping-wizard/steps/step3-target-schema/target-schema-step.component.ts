@@ -251,6 +251,13 @@ export class TargetSchemaStepComponent implements OnInit {
     }
   }
 
+  copySchema(): void {
+    const preview = this.getSchemaPreview();
+    if (preview) {
+      navigator.clipboard.writeText(preview);
+    }
+  }
+
   isValid(): boolean {
     return this.selectedSchemaId() !== null;
   }

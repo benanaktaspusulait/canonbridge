@@ -144,7 +144,7 @@
             [cdkDropListData]="filteredSourceFields()"
             cdkDropListSortingDisabled>
             @for (item of groupedSourceFields(); track $any(item).key) {
-              <!-- Group (all items are groups now) -->
+              <!-- Group -->
               <div class="source-group">
                 <div 
                   class="source-group-header"
@@ -154,6 +154,16 @@
                   <span class="group-name">{{ $any(item).key === '_root' ? 'Main Fields' : $any(item).key }}</span>
                   <span class="field-type-badge" [attr.data-type]="$any(item).type">{{ $any(item).key === '_root' ? 'root' : $any(item).type }}</span>
                   <span class="group-count">{{ $any(item).children.length }}</span>
+                  @if ($any(item).key !== '_root') {
+                    <button
+                      type="button"
+                      class="group-map-btn"
+                      [class.selected]="selectedSourceField()?.path === $any(item).key"
+                      (click)="selectSourceFieldByPath($any(item).key, $any(item).type); $event.stopPropagation()"
+                      pTooltip="Select this field for mapping">
+                      <i class="pi pi-arrow-right"></i>
+                    </button>
+                  }
                 </div>
                 @if (!$any(item).collapsed) {
                   <div class="source-group-children">

@@ -159,19 +159,44 @@
 }
 
 .schema-json {
-  pre {
-    background: var(--surface-card);
-    border: 1px solid var(--surface-border);
-    border-radius: 4px;
-    padding: 1rem;
-    overflow-x: auto;
-    max-height: 400px;
+  .schema-json-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+
+    h4 {
+      margin: 0;
+    }
+  }
+
+  .json-code-block {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 1.25rem;
+    overflow: auto;
+    max-height: 350px;
     
     code {
-      font-family: 'Courier New', Courier, monospace;
-      font-size: 0.85rem;
-      color: var(--text-color);
-      line-height: 1.5;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.8125rem;
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+
+    &::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 4px;
     }
   }
 }
