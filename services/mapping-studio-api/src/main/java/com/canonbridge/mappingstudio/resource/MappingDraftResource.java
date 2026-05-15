@@ -331,6 +331,26 @@ public class MappingDraftResource {
         if (value instanceof JsonObject jsonObject) {
             return jsonObject.encode();
         }
+        if (value instanceof io.vertx.core.json.JsonArray jsonArray) {
+            return jsonArray.encode();
+        }
+        if (value instanceof String str) {
+            // If string is JSON-encoded (object/array), parse and re-encode to ensure valid JSON
+            String trimmed = str.trim();
+            if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+                try {
+                    if (trimmed.startsWith("{")) {
+                        return new JsonObject(trimmed).encode();
+                    } else {
+                        return new io.vertx.core.json.JsonArray(trimmed).encode();
+                    }
+                } catch (Exception e) {
+                    // Not valid JSON, return as-is
+                    return str;
+                }
+            }
+            return str;
+        }
         return String.valueOf(value);
     }
 
