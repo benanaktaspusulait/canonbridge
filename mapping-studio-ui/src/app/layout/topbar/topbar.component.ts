@@ -54,7 +54,6 @@ export class TopbarComponent {
       this.i18n.translations();
       this.userMenuItems = [
         { label: this.i18n.translate('topbar.profile'), icon: 'pi pi-user', command: () => {} },
-        { label: this.i18n.translate('topbar.apiKeys'), icon: 'pi pi-key', command: () => {} },
         { separator: true },
         {
           label: this.i18n.translate('topbar.signOut'),

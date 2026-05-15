@@ -49,24 +49,6 @@
           [attr.aria-label]="'topbar.language' | i18n" />
       </div>
 
-      <p-button
-        icon="pi pi-bell"
-        [rounded]="true"
-        [text]="true"
-        severity="secondary"
-        [pTooltip]="'topbar.notifications' | i18n"
-        tooltipPosition="bottom"
-        [attr.aria-label]="'topbar.notifications' | i18n" />
-
-      <p-button
-        icon="pi pi-question-circle"
-        [rounded]="true"
-        [text]="true"
-        severity="secondary"
-        [pTooltip]="'topbar.documentation' | i18n"
-        tooltipPosition="bottom"
-        [attr.aria-label]="'topbar.documentation' | i18n" />
-
       <div class="user-menu-trigger flex align-items-center gap-2" 
            (click)="userMenu.toggle($event)"
            (keydown.enter)="userMenu.toggle($event)"
