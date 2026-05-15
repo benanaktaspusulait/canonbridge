@@ -137,24 +137,28 @@ export class RequestMappingStepComponent implements OnInit {
   ]);
 
   ngOnInit(): void {
-    // If we have an initial config (editing existing mapping), use it
+    // Wait for initialConfig to be set via effect (for editing existing mappings)
+    // Only extract from sample if we don't have a mappingId (new mapping)
     const initial = this.initialConfig();
-    console.log('🔍 [Request Mapping] ngOnInit - initialConfig:', initial);
-    console.log('🔍 [Request Mapping] template:', initial?.template);
-    console.log('🔍 [Request Mapping] template keys:', initial?.template ? Object.keys(initial.template) : 'none');
+    const hasMappingId = !!this.mappingId();
+    
+    console.log('🔍 [Request Mapping] ngOnInit');
+    console.log('🔍 mappingId:', this.mappingId());
+    console.log('🔍 initialConfig:', initial);
     
     if (initial && initial.template && Object.keys(initial.template).length > 0) {
-      console.log('✅ [Request Mapping] Loading from initial config');
+      console.log('✅ [Request Mapping] Loading from initial config in ngOnInit');
       this.loadFromInitialConfig(initial);
-    } else {
-      console.log('⚠️ [Request Mapping] No initial config, extracting from sample');
-      // Otherwise, extract fields from sample (new mapping)
+    } else if (!hasMappingId) {
+      console.log('⚠️ [Request Mapping] New mapping - extracting from sample');
       this.extractFieldsFromSample();
+    } else {
+      console.log('⏳ [Request Mapping] Waiting for initialConfig to load via effect');
+      // Will be loaded via effect when initialConfig is set
     }
     
     setTimeout(() => {
       if (this.fieldMappings().length > 0) {
-        console.log('🔄 [Request Mapping] Generating preview from', this.fieldMappings().length, 'fields');
         this.generatePreviewFromFields();
       }
     }, 100);
@@ -560,13 +564,18 @@ export class RequestMappingStepComponent implements OnInit {
     effect(() => {
       const config = this.initialConfig();
       if (config) {
+        console.log('🔄 [Request Mapping] effect triggered with config:', config);
         this.mode.set(config.mode);
         this.templateJson.set(JSON.stringify(config.template, null, 2));
         this.jsonataExpression.set(config.jsonata || '');
         this.headersJson.set(JSON.stringify(config.headers || {}, null, 2));
 
         if (config.template && Object.keys(config.template).length > 0) {
-          setTimeout(() => this.previewTransformation(), 100);
+          // Load fields from template (not from sample)
+          this.loadFromInitialConfig(config);
+          setTimeout(() => {
+            this.generatePreviewFromFields();
+          }, 100);
         }
       }
     });
