@@ -137,12 +137,86 @@ export class RequestMappingStepComponent implements OnInit {
   ]);
 
   ngOnInit(): void {
-    this.extractFieldsFromSample();
+    // If we have an initial config (editing existing mapping), use it
+    const initial = this.initialConfig();
+    if (initial && initial.template && Object.keys(initial.template).length > 0) {
+      this.loadFromInitialConfig(initial);
+    } else {
+      // Otherwise, extract fields from sample (new mapping)
+      this.extractFieldsFromSample();
+    }
+    
     setTimeout(() => {
       if (this.fieldMappings().length > 0) {
         this.generatePreviewFromFields();
       }
     }, 100);
+  }
+
+  loadFromInitialConfig(config: RequestTransformationConfig): void {
+    // Load the template and extract fields from it
+    const template = config.template;
+    const fields: FieldMapping[] = [];
+    
+    // Get all fields from canonical sample for reference
+    const sampleJson = this.canonicalSampleJson();
+    let sampleFields: Map<string, any> = new Map();
+    
+    if (sampleJson) {
+      try {
+        const parsed = JSON.parse(sampleJson);
+        const flatFields = this.flattenObject(parsed);
+        flatFields.forEach(f => sampleFields.set(f.path, f.value));
+      } catch (e) {
+        console.error('Failed to parse sample JSON:', e);
+      }
+    }
+    
+    // Extract fields from template
+    this.extractFieldsFromTemplate(template, '', fields, sampleFields);
+    
+    this.fieldMappings.set(fields);
+    
+    // Load headers if present
+    if (config.headers && Object.keys(config.headers).length > 0) {
+      this.headersJson.set(JSON.stringify(config.headers, null, 2));
+    }
+  }
+
+  private extractFieldsFromTemplate(
+    obj: any, 
+    prefix: string, 
+    fields: FieldMapping[], 
+    sampleFields: Map<string, any>
+  ): void {
+    if (!obj || typeof obj !== 'object') return;
+    
+    for (const key in obj) {
+      if (!obj.hasOwnProperty(key)) continue;
+      
+      const path = prefix ? `${prefix}.${key}` : key;
+      const value = obj[key];
+      
+      if (typeof value === 'string' && value.startsWith('{{') && value.endsWith('}}')) {
+        // This is a template placeholder like {{transactionId}}
+        const sourcePath = value.slice(2, -2).trim();
+        const sourceValue = sampleFields.get(sourcePath);
+        
+        fields.push({
+          sourcePath: sourcePath,
+          targetPath: path,
+          sourceValue: sourceValue,
+          included: true,
+          required: false,
+          fieldType: this.inferFieldType(sourceValue),
+          validationRules: {},
+          showConstraints: false
+        });
+      } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+        // Nested object
+        this.extractFieldsFromTemplate(value, path, fields, sampleFields);
+      }
+    }
   }
 
   extractFieldsFromSample(): void {
