@@ -1,39 +1,18 @@
 "use client";
 
 import { motion } from "framer-motion";
-
-const tiers = [
-  {
-    label: "Startup",
-    events: "1K",
-    unit: "events/sec",
-    partners: "5 partners",
-    description: "Single instance, minimal footprint",
-  },
-  {
-    label: "Growth",
-    events: "10K",
-    unit: "events/sec",
-    partners: "50 partners",
-    description: "Horizontal scaling kicks in",
-  },
-  {
-    label: "Enterprise",
-    events: "100K",
-    unit: "events/sec",
-    partners: "500 partners",
-    description: "Multi-region, full redundancy",
-  },
-  {
-    label: "Hyperscale",
-    events: "1M+",
-    unit: "events/sec",
-    partners: "Unlimited",
-    description: "Partition expansion, auto-scaling",
-  },
-];
+import { useLocale } from "@/lib/LocaleContext";
 
 export default function Scalability() {
+  const { t } = useLocale();
+
+  const tiers = [
+    { events: "1K", unit: "events/sec", ...t.scalability.tiers[0] },
+    { events: "10K", unit: "events/sec", ...t.scalability.tiers[1] },
+    { events: "100K", unit: "events/sec", ...t.scalability.tiers[2] },
+    { events: "1M+", unit: "events/sec", ...t.scalability.tiers[3] },
+  ];
+
   return (
     <section className="relative py-24 md:py-32 overflow-hidden">
       {/* Background */}
@@ -50,11 +29,10 @@ export default function Scalability() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Scales With Your Business
+            {t.scalability.title}
           </h2>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            From 5 partners to 5,000. From 1,000 events per second to millions.
-            The architecture grows with you — no re-platforming, no ceiling.
+            {t.scalability.subtitle}
           </p>
         </motion.div>
 
@@ -79,7 +57,7 @@ export default function Scalability() {
               <div className="text-sm text-gray-300 font-medium mb-1">
                 {tier.partners}
               </div>
-              <div className="text-xs text-gray-500">{tier.description}</div>
+              <div className="text-xs text-gray-500">{tier.desc}</div>
 
               {/* Progress bar */}
               <div className="mt-4 h-1 rounded-full bg-white/5 overflow-hidden">
@@ -109,9 +87,9 @@ export default function Scalability() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
               </svg>
             </div>
-            <h3 className="text-white font-semibold mb-2">Horizontal Scaling</h3>
+            <h3 className="text-white font-semibold mb-2">{t.scalability.horizontal}</h3>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Add more instances as load grows. Partition-based distribution ensures linear throughput increase with each node.
+              {t.scalability.horizontalDesc}
             </p>
           </div>
 
@@ -121,9 +99,9 @@ export default function Scalability() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
             </div>
-            <h3 className="text-white font-semibold mb-2">Auto-Scaling</h3>
+            <h3 className="text-white font-semibold mb-2">{t.scalability.autoScaling}</h3>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Consumer lag-driven autoscaling on Kubernetes. The platform detects backpressure and scales up automatically — scales down when quiet.
+              {t.scalability.autoScalingDesc}
             </p>
           </div>
 
@@ -133,9 +111,9 @@ export default function Scalability() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
             </div>
-            <h3 className="text-white font-semibold mb-2">Resource Isolation</h3>
+            <h3 className="text-white font-semibold mb-2">{t.scalability.isolation}</h3>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Worker pools isolate CPU-heavy transformations from I/O. One slow partner can never block another. Per-tenant rate limits protect shared resources.
+              {t.scalability.isolationDesc}
             </p>
           </div>
         </motion.div>
@@ -149,8 +127,7 @@ export default function Scalability() {
           transition={{ delay: 0.4 }}
         >
           <p className="text-gray-500 text-sm max-w-xl mx-auto">
-            No matter how many partners you onboard or how much traffic they
-            send — CanonBridge handles it. Start small, grow without limits.
+            {t.scalability.bottom}
           </p>
         </motion.div>
       </div>

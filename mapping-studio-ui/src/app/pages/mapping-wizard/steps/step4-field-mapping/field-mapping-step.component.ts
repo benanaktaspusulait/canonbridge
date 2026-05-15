@@ -862,7 +862,7 @@ export class FieldMappingStepComponent implements OnInit {
     
     if (childFields.length > 0) return childFields;
     
-    // If source is an array with sample data, extract keys from sample
+    // If source is an array with sample data, extract keys from first item
     const sourceField = this.sourceFields().find(f => f.path === sourcePath);
     if (sourceField && sourceField.type === 'array' && Array.isArray(sourceField.sample) && sourceField.sample.length > 0) {
       const firstItem = sourceField.sample[0];
@@ -871,7 +871,59 @@ export class FieldMappingStepComponent implements OnInit {
       }
     }
     
+    // Fallback: look in sampleJson for nested array items
+    const sampleJsonStr = this.sampleJson();
+    if (sampleJsonStr) {
+      try {
+        const sample = JSON.parse(sampleJsonStr);
+        const value = this.getNestedValue(sample, sourcePath);
+        if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') {
+          return Object.keys(value[0]).map(key => ({ label: key, value: key }));
+        }
+      } catch { /* ignore */ }
+    }
+
+    // Fallback: look in targetSchemaJson or inputSchema for array items properties
+    const schemaStr = this.inputSchema() || this.targetSchemaJson();
+    if (schemaStr) {
+      try {
+        const schema = JSON.parse(schemaStr);
+        const fieldSchema = this.getSchemaForPath(schema, sourcePath);
+        if (fieldSchema) {
+          const itemsSchema = fieldSchema.type === 'array' ? fieldSchema.items : fieldSchema;
+          if (itemsSchema && itemsSchema.properties) {
+            return Object.keys(itemsSchema.properties).map(key => ({ label: key, value: key }));
+          }
+        }
+      } catch { /* ignore */ }
+    }
+    
     return [];
+  }
+
+  private getNestedValue(obj: any, path: string): any {
+    return path.split('.').reduce((current, key) => {
+      if (current === undefined || current === null) return undefined;
+      return current[key];
+    }, obj);
+  }
+
+  private getSchemaForPath(schema: any, path: string): any {
+    const parts = path.split('.');
+    let current = schema;
+    
+    for (const part of parts) {
+      if (!current) return null;
+      if (current.type === 'object' && current.properties) {
+        current = current.properties[part];
+      } else if (current.properties) {
+        current = current.properties[part];
+      } else {
+        return null;
+      }
+    }
+    
+    return current;
   }
 
   getParamValue(mapping: MappingRule, paramName: string): string {
@@ -889,15 +941,24 @@ export class FieldMappingStepComponent implements OnInit {
     if (!targetField) return this.transformOptions;
 
     const fieldType = targetField.type.toLowerCase();
+    
+    // Check source field type - if source is array, always show array transforms
+    const sourceField = this.sourceFields().find(f => f.path === mapping.sourcePath);
+    const sourceIsArray = sourceField?.type === 'array';
 
     // Filter transformations based on field type
     return this.transformOptions.filter(opt => {
       // Direct copy and default value work for all types
       if (opt.value === 'direct' || opt.value === 'default_value') return true;
 
+      // If source is array, always show Array and Math transforms (they produce numbers/strings from arrays)
+      if (sourceIsArray) {
+        if (opt.category === 'Array' || opt.category === 'Math') return true;
+      }
+
       // String transformations
       if (fieldType === 'string') {
-        return opt.category === 'String' || opt.category === 'Basic' || opt.category === 'Logic';
+        return opt.category === 'String' || opt.category === 'Basic' || opt.category === 'Logic' || opt.category === 'Array';
       }
 
       // Number transformations

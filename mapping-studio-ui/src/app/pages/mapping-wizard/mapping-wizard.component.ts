@@ -267,9 +267,20 @@ export class MappingWizardComponent implements OnInit {
       config['path'] = path;
     }
 
-    const method = this.firstString(config['method'], mapping.rest_api_method);
-    if (method && !config['method']) {
-      config['method'] = method;
+    // For gRPC, the "method" field is the RPC method name, not HTTP method.
+    // Use httpMethod if available, otherwise default to POST for gRPC/SOAP.
+    const sourceType = mapping.source_type;
+    if (sourceType === 'GRPC' || sourceType === 'SOAP') {
+      const httpMethod = this.firstString(config['httpMethod'], mapping.rest_api_method) || 'POST';
+      config['httpMethod'] = httpMethod;
+      if (!config['method'] || config['method'] === config['service'] || !['GET','POST','PUT','DELETE','PATCH'].includes((config['method'] as string).toUpperCase())) {
+        config['method'] = httpMethod;
+      }
+    } else {
+      const method = this.firstString(config['method'], mapping.rest_api_method);
+      if (method && !config['method']) {
+        config['method'] = method;
+      }
     }
     
     return config;
@@ -897,10 +908,25 @@ export class MappingWizardComponent implements OnInit {
   }
 
   onFieldMappingComplete(data: { rules: any[] }): void {
-    this.wizardState.update(state => ({
-      ...state,
-      mappingRules: data.rules
-    }));
+    this.wizardState.update(state => {
+      const updated = {
+        ...state,
+        mappingRules: data.rules
+      };
+      
+      // If no sample data exists, generate from inputSchema or targetSchemaJson
+      if (!updated.fieldMappingSampleJson && !updated.sampleJson) {
+        const schemaStr = updated.inputSchema || updated.targetSchemaJson;
+        if (schemaStr) {
+          const generated = this.buildSampleFromInputSchema(schemaStr);
+          if (generated) {
+            updated.fieldMappingSampleJson = generated;
+          }
+        }
+      }
+      
+      return updated;
+    });
     
     // Auto-save disabled for now due to backend validation issues
     // this.autoSaveMapping();

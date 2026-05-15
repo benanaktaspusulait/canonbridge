@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useLocale } from "@/lib/LocaleContext";
 
 const features = [
   {
@@ -87,6 +88,8 @@ const features = [
 ];
 
 export default function Features() {
+  const { t } = useLocale();
+
   return (
     <section id="features" className="relative py-24 md:py-32">
       <div className="max-w-7xl mx-auto px-6">
@@ -98,11 +101,10 @@ export default function Features() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Enterprise Capabilities
+            {t.features.title}
           </h2>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Everything you need to run partner integrations at scale — security,
-            governance, observability, and reliability built in.
+            {t.features.subtitle}
           </p>
         </motion.div>
 

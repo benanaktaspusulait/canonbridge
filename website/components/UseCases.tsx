@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLocale } from "@/lib/LocaleContext";
 
 const useCases = [
   {
@@ -81,6 +82,7 @@ const useCases = [
 export default function UseCases() {
   const [active, setActive] = useState("ecommerce");
   const activeCase = useCases.find((uc) => uc.id === active)!;
+  const { t } = useLocale();
 
   return (
     <section className="relative py-24 md:py-32">
@@ -93,11 +95,10 @@ export default function UseCases() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Built for Every Industry
+            {t.useCases.title}
           </h2>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Wherever there are multiple partners sending different formats,
-            CanonBridge eliminates the integration tax.
+            {t.useCases.subtitle}
           </p>
         </motion.div>
 

@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from "react";
 import { motion, useInView } from "framer-motion";
+import { useLocale } from "@/lib/LocaleContext";
 
 interface MetricProps {
   value: number;
@@ -48,6 +49,8 @@ function AnimatedMetric({ value, suffix, label, duration = 2 }: MetricProps) {
 }
 
 export default function Metrics() {
+  const { t } = useLocale();
+
   return (
     <section className="relative py-24 md:py-32 overflow-hidden">
       {/* Background glow */}
@@ -64,10 +67,10 @@ export default function Metrics() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Built for Enterprise Scale
+            {t.metrics.title}
           </h2>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Performance that doesn&apos;t compromise on reliability.
+            {t.metrics.subtitle}
           </p>
         </motion.div>
 
@@ -75,22 +78,22 @@ export default function Metrics() {
           <AnimatedMetric
             value={10000}
             suffix="+"
-            label="Events per second"
+            label={t.metrics.eventsPerSec}
           />
           <AnimatedMetric
             value={200}
             suffix="ms"
-            label="p99 latency"
+            label={t.metrics.latency}
           />
           <AnimatedMetric
             value={99}
             suffix=".9%"
-            label="Uptime SLA"
+            label={t.metrics.uptime}
           />
           <AnimatedMetric
             value={60}
             suffix="%"
-            label="Cost reduction"
+            label={t.metrics.costReduction}
           />
         </div>
 
@@ -103,21 +106,9 @@ export default function Metrics() {
           transition={{ duration: 0.6, delay: 0.3 }}
         >
           {[
-            {
-              icon: "⚡",
-              stat: "Minutes, not weeks",
-              desc: "New partner onboarding time",
-            },
-            {
-              icon: "🔄",
-              stat: "3-tier retry",
-              desc: "1m → 5m → 30m before DLQ",
-            },
-            {
-              icon: "🛡️",
-              stat: "Zero data loss",
-              desc: "At-least-once with idempotency",
-            },
+            { icon: "⚡", stat: t.metrics.stat1, desc: t.metrics.stat1desc },
+            { icon: "🔄", stat: t.metrics.stat2, desc: t.metrics.stat2desc },
+            { icon: "🛡️", stat: t.metrics.stat3, desc: t.metrics.stat3desc },
           ].map((item, i) => (
             <div
               key={i}

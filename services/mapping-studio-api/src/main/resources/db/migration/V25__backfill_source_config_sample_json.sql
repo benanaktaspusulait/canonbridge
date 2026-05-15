@@ -1,6 +1,14 @@
 -- Backfill source_config with sourceJson for mapping drafts that are missing sample data.
 -- Without sourceJson in source_config, the wizard field mapping step cannot display source fields.
 
+-- Fix gRPC mapping: add explicit path and httpMethod so wizard endpoint selector works correctly.
+-- The "method" field in source_config was the gRPC method name, not HTTP method.
+UPDATE mapping_drafts
+SET source_config = source_config || '{"path": "/grpc/customer.ProfileService/GetCustomer", "httpMethod": "POST"}'::jsonb,
+    updated_at = NOW()
+WHERE id = 'cdcdcdcd-cdcd-cdcd-cdcd-cdcdcdcdcdcd'
+  AND NOT source_config ? 'path';
+
 -- PayFlex Payment Webhook Mapping
 UPDATE mapping_drafts
 SET source_config = source_config || '{"sourceJson": "{\"transactionId\":\"TXN-PAY-001\",\"merchantId\":\"MERCH-001\",\"amount\":1250.50,\"currency\":\"EUR\",\"status\":\"COMPLETED\",\"paymentMethod\":\"CREDIT_CARD\",\"cardLast4\":\"4242\",\"cardBrand\":\"VISA\",\"customerEmail\":\"john.doe@example.com\",\"customerName\":\"John Doe\",\"billingAddress\":{\"street\":\"123 Main St\",\"city\":\"Istanbul\",\"country\":\"TR\"},\"metadata\":{\"orderId\":\"ORD-001\"},\"timestamp\":\"2026-05-14T10:00:00Z\"}"}'::jsonb,

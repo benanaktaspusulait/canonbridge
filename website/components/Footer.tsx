@@ -1,8 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useLocale } from "@/lib/LocaleContext";
 
 export default function Footer() {
+  const { t } = useLocale();
+
   return (
     <>
       {/* CTA Section with Contact Form */}
@@ -20,13 +23,12 @@ export default function Footer() {
           >
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-5xl font-bold mb-6">
-                Ready to Eliminate Your
+                {t.footer.ctaTitle1}
                 <br />
-                <span className="gradient-text">Integration Tax?</span>
+                <span className="gradient-text">{t.footer.ctaTitle2}</span>
               </h2>
               <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-                See how CanonBridge can replace months of custom adapter code
-                with minutes of visual configuration.
+                {t.footer.ctaSubtitle}
               </p>
             </div>
 
@@ -45,7 +47,7 @@ export default function Footer() {
                       htmlFor="name"
                       className="block text-sm text-gray-400 mb-1.5"
                     >
-                      Name
+                      {t.footer.formName}
                     </label>
                     <input
                       type="text"
@@ -53,7 +55,7 @@ export default function Footer() {
                       name="name"
                       required
                       className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-accent-blue/50 focus:ring-1 focus:ring-accent-blue/25 transition-all"
-                      placeholder="Your name"
+                      placeholder={t.footer.formNamePlaceholder}
                     />
                   </div>
                   <div>
@@ -61,7 +63,7 @@ export default function Footer() {
                       htmlFor="company"
                       className="block text-sm text-gray-400 mb-1.5"
                     >
-                      Company
+                      {t.footer.formCompany}
                     </label>
                     <input
                       type="text"
@@ -69,7 +71,7 @@ export default function Footer() {
                       name="company"
                       required
                       className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-accent-blue/50 focus:ring-1 focus:ring-accent-blue/25 transition-all"
-                      placeholder="Company name"
+                      placeholder={t.footer.formCompanyPlaceholder}
                     />
                   </div>
                 </div>
@@ -79,7 +81,7 @@ export default function Footer() {
                     htmlFor="email"
                     className="block text-sm text-gray-400 mb-1.5"
                   >
-                    Work Email
+                    {t.footer.formEmail}
                   </label>
                   <input
                     type="email"
@@ -87,7 +89,7 @@ export default function Footer() {
                     name="email"
                     required
                     className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-accent-blue/50 focus:ring-1 focus:ring-accent-blue/25 transition-all"
-                    placeholder="you@company.com"
+                    placeholder={t.footer.formEmailPlaceholder}
                   />
                 </div>
 
@@ -96,18 +98,18 @@ export default function Footer() {
                     htmlFor="partners"
                     className="block text-sm text-gray-400 mb-1.5"
                   >
-                    How many partner integrations do you manage?
+                    {t.footer.formPartners}
                   </label>
                   <select
                     id="partners"
                     name="partners"
                     className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-gray-300 focus:outline-none focus:border-accent-blue/50 focus:ring-1 focus:ring-accent-blue/25 transition-all appearance-none"
                   >
-                    <option value="" className="bg-navy-900">Select range</option>
-                    <option value="1-5" className="bg-navy-900">1–5 partners</option>
-                    <option value="5-20" className="bg-navy-900">5–20 partners</option>
-                    <option value="20-50" className="bg-navy-900">20–50 partners</option>
-                    <option value="50+" className="bg-navy-900">50+ partners</option>
+                    {t.footer.formPartnersOptions.map((opt, i) => (
+                      <option key={i} value={i === 0 ? "" : opt} className="bg-navy-900">
+                        {opt}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -116,14 +118,14 @@ export default function Footer() {
                     htmlFor="message"
                     className="block text-sm text-gray-400 mb-1.5"
                   >
-                    Tell us about your integration challenges
+                    {t.footer.formMessage}
                   </label>
                   <textarea
                     id="message"
                     name="message"
                     rows={4}
                     className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-accent-blue/50 focus:ring-1 focus:ring-accent-blue/25 transition-all resize-none"
-                    placeholder="What sources do you connect? What problems are you facing?"
+                    placeholder={t.footer.formMessagePlaceholder}
                   />
                 </div>
 
@@ -133,11 +135,11 @@ export default function Footer() {
                   whileTap={{ scale: 0.99 }}
                   className="w-full px-8 py-4 bg-gradient-to-r from-accent-blue to-accent-cyan text-white font-semibold rounded-xl shadow-lg shadow-accent-blue/25 hover:shadow-accent-blue/40 transition-shadow"
                 >
-                  Request a Demo
+                  {t.footer.formSubmit}
                 </motion.button>
 
                 <p className="text-center text-gray-600 text-xs">
-                  We&apos;ll get back to you within 24 hours.
+                  {t.footer.formNote}
                 </p>
               </form>
             </div>
@@ -189,7 +191,7 @@ export default function Footer() {
 
             {/* Copyright */}
             <div className="text-sm text-gray-600">
-              © 2026 CanonBridge. All rights reserved.
+              {t.footer.copyright}
             </div>
           </div>
         </div>

@@ -10,6 +10,7 @@ import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { MappingService } from '../../../../core/services/mapping.service';
 import { WizardState } from '../../models/mapping-wizard.models';
+import { buildCombinedMappingExpression } from '../step4-field-mapping/rule-to-jsonata';
 import mappingEngine from 'jsonata';
 import { firstValueFrom } from 'rxjs';
 
@@ -59,9 +60,10 @@ export class TestPublishStepComponent implements OnInit {
     // Auto-populate test input when wizard state changes
     effect(() => {
       const state = this.wizardState();
-      if (state.sampleJson && !this.testInput()) {
+      const sample = state.fieldMappingSampleJson || state.sampleJson;
+      if (sample && !this.testInput()) {
         console.log('📥 Auto-populating test input from sample JSON');
-        this.testInput.set(state.sampleJson);
+        this.testInput.set(sample);
       }
     });
 
@@ -164,6 +166,11 @@ export class TestPublishStepComponent implements OnInit {
       throw new Error('Save this mapping as a draft before running the generated proxy test.');
     }
 
+    // Generate JSONata expression from mapping rules
+    const generatedJsonata = state.mappingRules && state.mappingRules.length > 0
+      ? buildCombinedMappingExpression(state.mappingRules)
+      : '';
+
     await firstValueFrom(this.mappingService.update(mappingId, {
       source_type: state.sourceType,
       source_config: JSON.stringify(this.buildSourceConfig(state)),
@@ -171,6 +178,7 @@ export class TestPublishStepComponent implements OnInit {
       target_schema_ref: state.targetSchemaRef,
       mapping_rules: JSON.stringify(state.mappingRules),
       transformation_rules: state.mappingRules,
+      generated_jsonata: generatedJsonata,
       sample_payload: state.fieldMappingSampleJson || state.sampleJson
     } as any));
   }
@@ -305,6 +313,11 @@ export class TestPublishStepComponent implements OnInit {
       schedule_cron: config['schedule'] || null,
       external_api_url: config['url'] || null,
       
+      // Generated JSONata expression from mapping rules
+      generated_jsonata: state.mappingRules && state.mappingRules.length > 0
+        ? buildCombinedMappingExpression(state.mappingRules)
+        : null,
+
       status: status
     };
   }

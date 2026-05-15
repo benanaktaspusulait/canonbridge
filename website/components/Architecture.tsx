@@ -1,8 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useLocale } from "@/lib/LocaleContext";
 
 export default function Architecture() {
+  const { t } = useLocale();
+
   return (
     <section id="architecture" className="relative py-24 md:py-32 overflow-hidden">
       {/* Background */}
@@ -20,10 +23,10 @@ export default function Architecture() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Architecture That Scales
+            {t.architecture.title}
           </h2>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Event-driven, horizontally scalable, and fault-tolerant by design.
+            {t.architecture.subtitle}
           </p>
         </motion.div>
 
