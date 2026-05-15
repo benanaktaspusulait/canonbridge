@@ -127,6 +127,7 @@ interface TransformOption {
 export class FieldMappingStepComponent implements OnInit {
   sampleJson = input.required<string>();
   targetSchemaJson = input.required<string>();
+  inputSchema = input<string>('');
   initialRules = input<any[]>([]);
   
   mappingComplete = output<{ rules: any[] }>();
@@ -321,23 +322,55 @@ export class FieldMappingStepComponent implements OnInit {
     console.log('sampleJson string:', sampleJsonStr);
     console.log('sampleJson length:', sampleJsonStr?.length);
     
-    if (!sampleJsonStr || sampleJsonStr.trim() === '') {
-      console.warn('⚠️ Sample JSON is empty');
-      this.sourceFields.set([]);
-      return;
+    if (sampleJsonStr && sampleJsonStr.trim() !== '') {
+      try {
+        const sample = JSON.parse(sampleJsonStr);
+        console.log('✅ Parsed sample JSON:', sample);
+        const fields = this.extractFieldPathsWithTypes(sample);
+        console.log('✅ Extracted source fields:', fields);
+        this.sourceFields.set(fields);
+        return;
+      } catch (e) {
+        console.error('❌ Failed to parse sample JSON:', e);
+      }
     }
-    
-    try {
-      const sample = JSON.parse(sampleJsonStr);
-      console.log('✅ Parsed sample JSON:', sample);
-      const fields = this.extractFieldPathsWithTypes(sample);
-      console.log('✅ Extracted source fields:', fields);
-      this.sourceFields.set(fields);
-    } catch (e) {
-      console.error('❌ Failed to parse sample JSON:', e);
-      console.error('Sample JSON value:', sampleJsonStr);
-      this.sourceFields.set([]);
+
+    // Fallback: generate source fields from inputSchema
+    const inputSchemaStr = this.inputSchema();
+    if (inputSchemaStr && inputSchemaStr.trim() !== '') {
+      try {
+        const schema = JSON.parse(inputSchemaStr);
+        console.log('📋 Generating source fields from input schema');
+        const fields = this.extractFieldsFromSchema(schema);
+        if (fields.length > 0) {
+          console.log('✅ Generated source fields from schema:', fields);
+          this.sourceFields.set(fields);
+          return;
+        }
+      } catch (e) {
+        console.error('❌ Failed to parse input schema:', e);
+      }
     }
+
+    // Last fallback: generate source fields from targetSchemaJson (same structure)
+    const targetSchemaStr = this.targetSchemaJson();
+    if (targetSchemaStr && targetSchemaStr.trim() !== '') {
+      try {
+        const schema = JSON.parse(targetSchemaStr);
+        console.log('📋 Generating source fields from target schema as fallback');
+        const fields = this.extractFieldsFromSchema(schema);
+        if (fields.length > 0) {
+          console.log('✅ Generated source fields from target schema:', fields);
+          this.sourceFields.set(fields);
+          return;
+        }
+      } catch (e) {
+        console.error('❌ Failed to parse target schema for source fields:', e);
+      }
+    }
+
+    console.warn('⚠️ No source for generating source fields');
+    this.sourceFields.set([]);
   }
 
   extractTargetFields(): void {
@@ -385,6 +418,53 @@ export class FieldMappingStepComponent implements OnInit {
     }
     
     return fields;
+  }
+
+  private extractFieldsFromSchema(schema: any, prefix = ''): SourceField[] {
+    const fields: SourceField[] = [];
+    
+    if (schema.type === 'object' && schema.properties) {
+      for (const key in schema.properties) {
+        const path = prefix ? `${prefix}.${key}` : key;
+        const prop = schema.properties[key];
+        const type = prop.type || 'string';
+        
+        fields.push({ path, type, sample: this.generateSampleValue(key, prop) });
+        
+        if (type === 'object' && prop.properties) {
+          fields.push(...this.extractFieldsFromSchema(prop, path));
+        }
+      }
+    }
+    
+    return fields;
+  }
+
+  private generateSampleValue(key: string, prop: any): any {
+    const type = prop.type || 'string';
+    const keyLower = key.toLowerCase();
+    
+    if (type === 'number' || type === 'integer') {
+      if (keyLower.includes('amount') || keyLower.includes('total') || keyLower.includes('price')) return 1250.50;
+      if (keyLower.includes('score')) return 0.85;
+      if (prop.minimum !== undefined) return prop.minimum;
+      return 42;
+    }
+    if (type === 'boolean') return true;
+    if (type === 'array') return [];
+    if (type === 'object') return {};
+    
+    // String type
+    if (prop.enum && prop.enum.length > 0) return prop.enum[0];
+    if (keyLower.includes('email')) return 'john.doe@example.com';
+    if (keyLower.includes('date') || keyLower.includes('time') || prop.format === 'date-time') return '2026-05-14T10:00:00Z';
+    if (keyLower.includes('id')) return `${key.toUpperCase()}-001`;
+    if (keyLower.includes('status')) return 'ACTIVE';
+    if (keyLower.includes('currency')) return 'USD';
+    if (keyLower.includes('name')) return 'Sample Name';
+    if (prop.default !== undefined) return prop.default;
+    
+    return `sample_${key}`;
   }
 
   private extractSchemaFieldsWithTypes(schema: any, prefix = ''): TargetField[] {

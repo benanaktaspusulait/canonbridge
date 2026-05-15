@@ -334,6 +334,8 @@ export class TestPublishStepComponent implements OnInit {
 
     if (state.fieldMappingSampleJson) {
       sourceConfig['sourceJson'] = state.fieldMappingSampleJson;
+    } else if (state.sampleJson) {
+      sourceConfig['sourceJson'] = state.sampleJson;
     }
 
     return sourceConfig;

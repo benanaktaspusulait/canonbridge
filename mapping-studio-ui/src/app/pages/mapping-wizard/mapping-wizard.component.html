@@ -136,6 +136,7 @@
             <app-field-mapping-step
               [sampleJson]="wizardState().fieldMappingSampleJson || wizardState().sampleJson"
               [targetSchemaJson]="targetSchemaJson()"
+              [inputSchema]="wizardState().inputSchema || ''"
               [initialRules]="wizardState().mappingRules"
               (mappingComplete)="onFieldMappingComplete($event)"
               (backClicked)="goBack()" />
