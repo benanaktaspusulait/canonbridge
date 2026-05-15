@@ -63,10 +63,21 @@ export class TestPublishStepComponent implements OnInit {
     // Auto-populate test input when wizard state changes
     effect(() => {
       const state = this.wizardState();
-      const sample = state.fieldMappingSampleJson || state.sampleJson;
-      if (sample && !this.testInput()) {
-        console.log('📥 Auto-populating test input from sample JSON');
+      if (this.testInput()) return; // Already has input
+      
+      // For GET requests, use empty object - proxy fetches data itself
+      const method = (state.sourceConfig['method'] as string || '').toUpperCase();
+      if (method === 'GET') {
+        this.testInput.set('{}');
+        return;
+      }
+      
+      // For POST/PUT, use sample request payload (sampleJson = request sample)
+      const sample = state.sampleJson;
+      if (sample) {
         this.testInput.set(sample);
+      } else {
+        this.testInput.set('{}');
       }
     });
 
@@ -462,9 +473,13 @@ export class TestPublishStepComponent implements OnInit {
       .map(([key, value]) => `-H "${key}: ${value}"`)
       .join(' \\\n  ');
     
-    const samplePayload = this.testInput() || '{"example": "data"}';
+    const method = (this.wizardState().sourceConfig['method'] as string || 'POST').toUpperCase();
     
-    return `curl -X POST ${testUrl} \\\n  ${headerFlags} \\\n  -d '${samplePayload}'`;
+    if (method === 'GET') {
+      return `curl -X GET ${testUrl} \\\n  ${headerFlags}`;
+    }
+    
+    return `curl -X ${method} ${testUrl} \\\n  ${headerFlags} \\\n  -d '{}'`;
   }
 
   onBack(): void {
