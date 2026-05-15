@@ -530,9 +530,20 @@ export class ConfigurationStepComponent implements OnInit {
     console.log('🔍 Current path from config:', currentPath);
     if (!currentPath) return;
 
-    const matchingEndpoint = system.endpoints.find(endpoint =>
+    // Try exact match first
+    let matchingEndpoint = system.endpoints.find(endpoint =>
       this.normalizePath(endpoint.path) === currentPath
     );
+
+    // Try parametric match: /api/orders/{id} matches /api/orders/ORD-001
+    if (!matchingEndpoint) {
+      matchingEndpoint = system.endpoints.find(endpoint => {
+        const pattern = this.normalizePath(endpoint.path);
+        if (!pattern.includes('{')) return false;
+        const regex = new RegExp('^' + pattern.replace(/\{[^}]+\}/g, '[^/]+') + '$');
+        return regex.test(currentPath);
+      });
+    }
 
     if (matchingEndpoint) {
       console.log('✅ Found matching endpoint:', matchingEndpoint.path);
