@@ -251,6 +251,13 @@ public class MappingExecutionService {
                 }
 
                 JsonObject outboundPayload = toJsonObject(requestPayload);
+                
+                // Substitute URL path parameters: {orderId} -> value from request payload
+                String resolvedUrl = substituteUrlParams(connection.url(), outboundPayload);
+                OutboundConnection resolvedConnection = resolvedUrl.equals(connection.url()) 
+                    ? connection 
+                    : connection.withUrl(resolvedUrl);
+
                 JsonObject headers = requestTemplateService.renderHeadersFromSourceConfig(sourceConfig, outboundPayload);
 
                 // Fallback: if no Authorization header from requestTransformation, check source_config for bearerToken
@@ -264,7 +271,7 @@ public class MappingExecutionService {
 
                 return outboundHttpService.execute(
                         mapping.getTenantId(),
-                        connection,
+                        resolvedConnection,
                         new OutboundHttpRequest(outboundPayload, headers)
                     )
                     .map(result -> {
@@ -428,6 +435,30 @@ public class MappingExecutionService {
             }
         }
         return null;
+    }
+
+    /**
+     * Substitute URL path parameters like {orderId} with values from the request payload.
+     * Example: http://api.example.com/orders/{orderId} + {"orderId":"ORD-5001"}
+     *       -> http://api.example.com/orders/ORD-5001
+     */
+    private String substituteUrlParams(String url, JsonObject payload) {
+        if (url == null || !url.contains("{")) return url;
+        
+        String result = url;
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\{([^}]+)\\}");
+        java.util.regex.Matcher matcher = pattern.matcher(url);
+        
+        while (matcher.find()) {
+            String paramName = matcher.group(1);
+            String value = payload.getString(paramName);
+            if (value != null && !value.isBlank()) {
+                result = result.replace("{" + paramName + "}", value);
+                LOG.infof("🔗 URL param substitution: {%s} -> %s", paramName, value);
+            }
+        }
+        
+        return result;
     }
 
     private UUID firstUuid(String... values) {

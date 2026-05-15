@@ -80,6 +80,15 @@ public record OutboundConnection(
         );
     }
 
+    public OutboundConnection withUrl(String newUrl) {
+        return new OutboundConnection(
+                connectionId, tenantId, draftId, name, purpose, protocol, method,
+                newUrl, credentialId, environment, schedule, timeoutMs,
+                retryPolicy, responseHandling, status, lastTestAt, lastTestResult,
+                createdAt, updatedAt, isSystemTemplate, baseUrl, knownEndpoints
+        );
+    }
+
     public enum ConnectionPurpose {
         SOURCE_PAYLOAD,
         ENRICHMENT,

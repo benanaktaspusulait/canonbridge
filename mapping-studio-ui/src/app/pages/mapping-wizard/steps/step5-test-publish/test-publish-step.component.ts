@@ -65,14 +65,21 @@ export class TestPublishStepComponent implements OnInit {
       const state = this.wizardState();
       if (this.testInput()) return; // Already has input
       
-      // For GET requests, use empty object - proxy fetches data itself
+      // For GET requests, provide path parameters as JSON
       const method = (state.sourceConfig['method'] as string || '').toUpperCase();
       if (method === 'GET') {
-        this.testInput.set('{}');
+        // Extract path params from URL template (e.g., {orderId})
+        const url = (state.sourceConfig['url'] as string) || (state.sourceConfig['path'] as string) || '';
+        const params: Record<string, string> = {};
+        const matches = url.matchAll(/\{([^}]+)\}/g);
+        for (const match of matches) {
+          params[match[1]] = `SAMPLE-${match[1].toUpperCase()}`;
+        }
+        this.testInput.set(JSON.stringify(Object.keys(params).length > 0 ? params : {}, null, 2));
         return;
       }
       
-      // For POST/PUT, use sample request payload (sampleJson = request sample)
+      // For POST/PUT, use sample request payload
       const sample = state.sampleJson;
       if (sample) {
         this.testInput.set(sample);
