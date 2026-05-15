@@ -403,9 +403,21 @@ export class MappingWizardComponent implements OnInit {
       'string_trim': 'string_trim',
       'string_substring': 'string_substring',
       'string_replace': 'string_replace',
+      'array_join': 'array_join',
+      'array_first': 'array_first',
+      'array_last': 'array_last',
+      'array_element': 'array_element',
+      'array_count': 'array_count',
+      'array_filter_equals': 'array_filter_equals',
+      'math_sum': 'math_sum',
+      'math_average': 'math_average',
+      'math_min': 'math_min',
+      'math_max': 'math_max',
+      'conditional_value': 'conditional_value',
+      'template_string': 'template_string',
       'custom_jsonata': 'custom_jsonata'
     };
-    return mapping[transform] || 'direct';
+    return mapping[transform] || (transform as TransformKind) || 'direct';
   }
 
   private parseJsonValue(value: unknown): any {
@@ -1111,6 +1123,13 @@ export class MappingWizardComponent implements OnInit {
     this.wizardState.update(state => ({
       ...state,
       targetSchemaJson: schemaJson
+    }));
+  }
+
+  onRulesUpdated(rules: any[]): void {
+    this.wizardState.update(state => ({
+      ...state,
+      mappingRules: rules
     }));
   }
 

@@ -135,6 +135,7 @@ export class FieldMappingStepComponent implements OnInit {
   
   mappingComplete = output<{ rules: any[]; excludedTargetFields: string[]; targetSchemaJson: string }>();
   schemaUpdated = output<string>();
+  rulesUpdated = output<any[]>();
   backClicked = output<void>();
 
   private readonly mappingService = inject(MappingService);
@@ -669,11 +670,20 @@ export class FieldMappingStepComponent implements OnInit {
   }
 
   selectSourceField(field: SourceField): void {
-    // Toggle selection
     if (this.selectedSourceField()?.path === field.path) {
       this.selectedSourceField.set(null);
     } else {
       this.selectedSourceField.set(field);
+    }
+  }
+
+  selectSourceFieldByPath(path: string, type: string): void {
+    // Create a virtual source field for the group parent
+    const existing = this.sourceFields().find(f => f.path === path);
+    if (existing) {
+      this.selectSourceField(existing);
+    } else {
+      this.selectedSourceField.set({ path, type, sample: undefined });
     }
   }
 
@@ -1363,6 +1373,7 @@ export class FieldMappingStepComponent implements OnInit {
       next: () => {
         this.savingRules.set(false);
         this.schemaUpdated.emit(targetSchemaJson);
+        this.rulesUpdated.emit(cleanedRules);
         console.log('✅ Mapping rules saved');
       },
       error: (err) => {

@@ -49,8 +49,9 @@
         pTextarea
         [ngModel]="mappingDescription()"
         (ngModelChange)="onFieldChange(); mappingDescription.set($event)"
-        placeholder="Optional description"
-        [rows]="3"
+        placeholder="Optional description of what this mapping does"
+        [rows]="2"
+        [autoResize]="true"
         class="w-full"></textarea>
     </div>
   </div>

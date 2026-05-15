@@ -142,6 +142,7 @@
               [excludedFields]="getExcludedTargetFields()"
               (mappingComplete)="onFieldMappingComplete($event)"
               (schemaUpdated)="onTargetSchemaUpdated($event)"
+              (rulesUpdated)="onRulesUpdated($event)"
               (backClicked)="goBack()" />
           }
           @case (7) {
