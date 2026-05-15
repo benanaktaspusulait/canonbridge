@@ -163,8 +163,21 @@ public class MappingExecutionService {
 
         try {
             JsonNode rulesNode = objectMapper.readTree(mappingRulesStr);
+            // Handle case where mapping_rules is double-encoded as a string
+            if (rulesNode.isTextual()) {
+                rulesNode = objectMapper.readTree(rulesNode.asText());
+            }
             if (!rulesNode.isArray() || rulesNode.size() == 0) {
+                LOG.warn("Mapping rules is not a non-empty array, returning API response as-is");
                 return Uni.createFrom().item(apiResponse);
+            }
+
+            // If API returned an array, transform each element
+            if (apiResponse.isArray() && apiResponse.size() > 0) {
+                LOG.infof("API returned array with %d items, transforming first item", apiResponse.size());
+                JsonNode firstItem = apiResponse.get(0);
+                String jsonataExpression = buildJsonataFromRules(rulesNode);
+                return evaluateJsonata(jsonataExpression, firstItem);
             }
 
             // Build combined JSONata expression from transformation rules
@@ -384,8 +397,21 @@ public class MappingExecutionService {
     private Uni<JsonNode> evaluateJsonata(String expression, JsonNode payload) {
         var requestBody = new JsonObject()
             .put("expression", expression)
-            .put("payload", new JsonObject(payload.toString()))
             .put("timeoutMs", 5000);
+
+        // Handle both array and object payloads
+        String payloadStr = payload.toString();
+        try {
+            if (payload.isArray()) {
+                requestBody.put("payload", new io.vertx.core.json.JsonArray(payloadStr));
+            } else {
+                requestBody.put("payload", new JsonObject(payloadStr));
+            }
+        } catch (Exception e) {
+            // Fallback: send raw string
+            LOG.warn("Could not parse payload as JSON object/array, using raw value");
+            requestBody.put("payload", payloadStr);
+        }
 
         return webClient.postAbs(transformerUrl + "/v1/jsonata/evaluate")
             .timeout(Duration.ofSeconds(10).toMillis())
