@@ -11,6 +11,7 @@ SHOPMAX_CLIENT_ID="shopmax-demo-client"
 SHOPMAX_CLIENT_SECRET="shopmax-demo-secret"
 FASTCARGO_USERNAME="fastcargo-demo"
 FASTCARGO_PASSWORD="fastcargo-secret"
+WEBHOOK_API_KEY="payflex-secret-key"
 
 echo "=========================================="
 echo "CanonBridge Mock Service Demo"
@@ -124,6 +125,7 @@ WEBHOOK_PAYLOAD='{
 }'
 
 WEBHOOK_RESPONSE=$(curl -s -X POST "${BASE_URL}/webhook/payment" \
+  -H "X-Webhook-Key: ${WEBHOOK_API_KEY}" \
   -H "Content-Type: application/json" \
   -d "${WEBHOOK_PAYLOAD}")
 
@@ -133,7 +135,8 @@ echo ""
 
 # List received webhooks
 echo "Listing received webhooks..."
-WEBHOOKS=$(curl -s -X GET "${BASE_URL}/webhooks?limit=5")
+WEBHOOKS=$(curl -s -X GET "${BASE_URL}/webhooks?limit=5" \
+  -H "X-Webhook-Key: ${WEBHOOK_API_KEY}")
 echo "${WEBHOOKS}" | jq '.'
 echo ""
 echo "✅ Webhook received and stored"
@@ -188,6 +191,6 @@ echo "- PayFlex rate limit: POST ${BASE_URL}/api/payments/query?scenario=rate-li
 echo "- PayFlex server error: POST ${BASE_URL}/api/payments/query?scenario=server-error"
 echo "- ShopMax compact format: GET ${BASE_URL}/api/orders/recent?format=compact"
 echo "- ShopMax unavailable: GET ${BASE_URL}/api/orders/recent?scenario=unavailable"
-echo "- FastCargo WSDL: GET ${BASE_URL}/ws/fastcargo.wsdl"
+echo "- FastCargo WSDL: GET ${BASE_URL}/ws/fastcargo.wsdl with Basic Auth"
 echo "- FastCargo not found: Use tracking number 'UNKNOWN-123'"
 echo ""

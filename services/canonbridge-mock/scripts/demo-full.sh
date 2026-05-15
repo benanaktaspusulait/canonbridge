@@ -7,6 +7,9 @@ echo ""
 
 MOCK_URL="http://localhost:8080"
 KAFKA_CONTAINER="canonbridge-kafka"
+FASTCARGO_USERNAME="fastcargo-demo"
+FASTCARGO_PASSWORD="fastcargo-secret"
+WEBHOOK_API_KEY="payflex-secret-key"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -72,7 +75,7 @@ echo "$PAYMENT_PAYLOAD" | jq .
 
 RESPONSE=$(curl -s -X POST "$MOCK_URL/webhook/payment" \
   -H "Content-Type: application/json" \
-  -H "X-Webhook-Key: payflex-secret-key" \
+  -H "X-Webhook-Key: $WEBHOOK_API_KEY" \
   -d "$PAYMENT_PAYLOAD")
 
 echo ""
@@ -109,6 +112,7 @@ echo "📤 Sending SOAP request to: $MOCK_URL/ws/track"
 echo "$SOAP_REQUEST"
 
 SOAP_RESPONSE=$(curl -s -X POST "$MOCK_URL/ws/track" \
+  --user "$FASTCARGO_USERNAME:$FASTCARGO_PASSWORD" \
   -H "Content-Type: text/xml" \
   -H "SOAPAction: getShipmentStatus" \
   -d "$SOAP_REQUEST")
@@ -224,7 +228,7 @@ echo "   4. ✅ PayFlex REST API queried successfully"
 echo "   5. ✅ All events verified in Kafka topics"
 echo ""
 echo "🔍 Next steps:"
-echo "   • View webhook history: curl $MOCK_URL/webhooks"
+echo "   • View webhook history: curl -H \"X-Webhook-Key: $WEBHOOK_API_KEY\" $MOCK_URL/webhooks"
 echo "   • Consume Kafka events: ./scripts/consume-events.sh"
 echo "   • Check health: curl $MOCK_URL/actuator/health"
 echo ""

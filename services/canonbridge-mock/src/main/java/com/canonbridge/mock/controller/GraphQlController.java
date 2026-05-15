@@ -1,5 +1,6 @@
 package com.canonbridge.mock.controller;
 
+import com.canonbridge.mock.auth.MockTokenService;
 import com.canonbridge.mock.service.GraphQlService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import java.util.Map;
 public class GraphQlController {
 
     private final GraphQlService graphQlService;
+    private final MockTokenService tokenService;
 
     @PostMapping
     public ResponseEntity<?> execute(
@@ -30,11 +32,15 @@ public class GraphQlController {
 
         log.info("POST /graphql - scenario: {}", scenario);
 
-        // For demo/test purposes, allow requests without authorization
-        // In production, this would be strictly enforced
-        if (authorization != null && !isValidBearerToken(authorization)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("errors", new Object[] { Map.of("message", "Invalid bearer token format") }));
+        MockTokenService.BearerValidation validation = tokenService.validateBearer(authorization, "graphql:query");
+        if (!validation.valid()) {
+            return ResponseEntity.status(validation.status())
+                    .body(Map.of("errors", new Object[] {
+                            Map.of(
+                                    "message", validation.description(),
+                                    "extensions", Map.of("code", validation.error())
+                            )
+                    }));
         }
 
         if ("rate-limit".equals(scenario)) {
@@ -48,9 +54,5 @@ public class GraphQlController {
         }
 
         return ResponseEntity.ok(graphQlService.execute(request));
-    }
-
-    private boolean isValidBearerToken(String authorization) {
-        return authorization != null && authorization.startsWith("Bearer ") && authorization.length() > 7;
     }
 }

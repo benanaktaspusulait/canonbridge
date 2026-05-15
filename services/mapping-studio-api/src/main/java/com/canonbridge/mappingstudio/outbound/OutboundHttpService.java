@@ -132,18 +132,14 @@ public class OutboundHttpService {
 
     private void applyCredential(HttpRequest.Builder builder, CredentialMaterial credential) {
         if (credential == null) {
-            System.out.println("DEBUG: No credential provided");
             return;
         }
 
-        System.out.println("DEBUG: Applying credential - authType: " + credential.authType());
         JsonObject secret = credential.secret();
-        System.out.println("DEBUG: Secret JSON: " + secret.encode());
         switch (credential.authType()) {
             case API_KEY -> {
                 String headerName = secret.getString("headerName", "X-API-Key");
                 String apiKey = requireSecret(secret, "apiKey");
-                System.out.println("DEBUG: Setting API key header - name: " + headerName + ", value: " + apiKey);
                 builder.header(headerName, apiKey);
             }
             case BASIC_AUTH -> {

@@ -1,5 +1,6 @@
 package com.canonbridge.mock.controller;
 
+import com.canonbridge.mock.auth.MockTokenService;
 import com.canonbridge.mock.service.GrpcMockService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import java.util.Map;
 public class GrpcMockController {
 
     private final GrpcMockService grpcMockService;
+    private final MockTokenService tokenService;
 
     @PostMapping("/GetCustomer")
     public ResponseEntity<?> getCustomer(
@@ -30,9 +32,9 @@ public class GrpcMockController {
 
         log.info("POST /grpc/customer.ProfileService/GetCustomer - scenario: {}", scenario);
 
-        if (!isValidBearerToken(authorization)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("code", "UNAUTHENTICATED", "message", "Invalid or missing bearer token"));
+        ResponseEntity<?> authError = validateBearer(authorization);
+        if (authError != null) {
+            return authError;
         }
 
         if ("not-found".equals(scenario)) {
@@ -56,9 +58,9 @@ public class GrpcMockController {
 
         log.info("POST /grpc/customer.ProfileService/ListCustomerEvents - scenario: {}", scenario);
 
-        if (!isValidBearerToken(authorization)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("code", "UNAUTHENTICATED", "message", "Invalid or missing bearer token"));
+        ResponseEntity<?> authError = validateBearer(authorization);
+        if (authError != null) {
+            return authError;
         }
 
         if ("unavailable".equals(scenario)) {
@@ -69,7 +71,16 @@ public class GrpcMockController {
         return ResponseEntity.ok(grpcMockService.listCustomerEvents(request));
     }
 
-    private boolean isValidBearerToken(String authorization) {
-        return authorization != null && authorization.startsWith("Bearer ") && authorization.length() > 7;
+    private ResponseEntity<?> validateBearer(String authorization) {
+        MockTokenService.BearerValidation validation = tokenService.validateBearer(authorization, "grpc:profile");
+        if (validation.valid()) {
+            return null;
+        }
+        HttpStatus status = validation.status();
+        return ResponseEntity.status(status)
+                .body(Map.of(
+                        "code", status == HttpStatus.FORBIDDEN ? "PERMISSION_DENIED" : "UNAUTHENTICATED",
+                        "message", validation.description()
+                ));
     }
 }

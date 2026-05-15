@@ -1,5 +1,6 @@
 package com.canonbridge.mock.controller;
 
+import com.canonbridge.mock.auth.MockTokenService;
 import com.canonbridge.mock.service.ShopMaxService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import java.util.Map;
 public class ShopMaxController {
 
     private final ShopMaxService shopMaxService;
+    private final MockTokenService tokenService;
 
     @GetMapping("/recent")
     public ResponseEntity<?> getRecentOrders(
@@ -26,19 +28,9 @@ public class ShopMaxController {
 
         log.info("GET /api/orders/recent - format: {}, scenario: {}", format, scenario);
 
-        // Auth check
-        if (!isValidBearerToken(authorization)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Invalid or missing bearer token"));
-        }
-
-        if (isExpiredBearerToken(authorization)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of(
-                            "error", "token_expired",
-                            "error_description", "The access token has expired. Please obtain a new token.",
-                            "hint", "Use POST /oauth/token to refresh your token"
-                    ));
+        ResponseEntity<?> authError = validateBearer(authorization);
+        if (authError != null) {
+            return authError;
         }
 
         // Handle scenarios
@@ -119,36 +111,17 @@ public class ShopMaxController {
     }
 
     private ResponseEntity<?> validateBearer(String authorization) {
-        if (!isValidBearerToken(authorization)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Invalid or missing bearer token"));
+        MockTokenService.BearerValidation validation = tokenService.validateBearer(authorization, "read:orders", "orders.read");
+        if (validation.valid()) {
+            return null;
         }
 
-        if (isExpiredBearerToken(authorization)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of(
-                            "error", "token_expired",
-                            "error_description", "The access token has expired. Please obtain a new token.",
-                            "hint", "Use POST /oauth/token to refresh your token"
-                    ));
-        }
-
-        return null;
-    }
-
-    private boolean isValidBearerToken(String authorization) {
-        if (authorization == null || !authorization.startsWith("Bearer ")) {
-            return false;
-        }
-        return authorization.length() > 7;
-    }
-
-    private boolean isExpiredBearerToken(String authorization) {
-        if (authorization == null || !authorization.startsWith("Bearer ")) {
-            return false;
-        }
-        String token = authorization.substring(7);
-        return token.startsWith("expired_");
+        return ResponseEntity.status(validation.status())
+                .body(Map.of(
+                        "error", validation.error(),
+                        "error_description", validation.description(),
+                        "hint", "Use POST /oauth/token with client_credentials before calling this API"
+                ));
     }
 
     private ResponseEntity<?> handleScenario(String scenario) {

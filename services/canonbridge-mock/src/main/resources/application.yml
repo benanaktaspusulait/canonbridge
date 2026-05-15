@@ -28,18 +28,21 @@ management:
 
 # Mock Configuration
 mock:
+  tenant-id: ${MOCK_TENANT_ID:tenant-acme}
   payflex:
     api-key: ${PAYFLEX_API_KEY:demo-api-key-12345}
   shopmax:
     client-id: ${SHOPMAX_CLIENT_ID:shopmax-demo-client}
     client-secret: ${SHOPMAX_CLIENT_SECRET:shopmax-demo-secret}
     token-expiry-seconds: 3600
+    default-scope: ${SHOPMAX_DEFAULT_SCOPE:read:orders write:orders graphql:query grpc:profile}
   fastcargo:
     username: ${FASTCARGO_USERNAME:fastcargo-demo}
     password: ${FASTCARGO_PASSWORD:fastcargo-secret}
     service-url: ${FASTCARGO_SERVICE_URL:http://localhost:8080}
   webhook:
     storage-dir: ${WEBHOOK_STORAGE_DIR:/tmp/webhooks}
+    api-key: ${WEBHOOK_API_KEY:payflex-secret-key}
   kafka:
     topics:
       payflex-raw: partner.payflex.raw

@@ -2,13 +2,7 @@ import { inject } from '@angular/core';
 import { HttpInterceptorFn } from '@angular/common/http';
 import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
-
-/**
- * Default tenant ID for development when no user is logged in
- * This allows testing API endpoints without authentication
- */
-const DEV_DEFAULT_TENANT_ID = 'default-tenant';
-const DEV_DEFAULT_USER_ID = 'dev-user';
+import { Router } from '@angular/router';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const apiBase = environment.api.baseUrl;
@@ -18,6 +12,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   const auth = inject(AuthService);
+  const router = inject(Router);
   const user = auth.currentUser();
   const token = auth.getToken();
 
@@ -26,38 +21,35 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
-  // If user is logged in, use their credentials
-  if (user && token) {
-    if (!user.tenantId) {
-      console.error('[AuthInterceptor] User has no tenantId:', user);
+  // Authentication is REQUIRED for all API calls
+  if (!user || !token) {
+    console.error('[AuthInterceptor] No authentication found, redirecting to login');
+    router.navigate(['/login']);
+    throw new Error('Authentication required');
+  }
+
+  // Validate tenant ID
+  if (!user.tenantId) {
+    console.error('[AuthInterceptor] User has no tenantId:', user);
+    auth.logout();
+    throw new Error('Invalid user session - missing tenant ID');
+  }
+
+  // Add authentication headers
+  const cloned = req.clone({
+    setHeaders: {
+      'Authorization': `Bearer ${token}`,
+      'X-Tenant-Id': user.tenantId,
+      'X-User-Id': user.id
     }
+  });
 
-    const cloned = req.clone({
-      setHeaders: {
-        'Authorization': `Bearer ${token}`,
-        'X-Tenant-Id': user.tenantId || DEV_DEFAULT_TENANT_ID,
-        'X-User-Id': user.id
-      }
-    });
+  console.log('[AuthInterceptor] Request headers:', {
+    url: req.url,
+    tenantId: user.tenantId,
+    userId: user.id,
+    hasToken: !!token
+  });
 
-    return next(cloned);
-  }
-
-  // In development mode, use default tenant/user IDs when not logged in
-  if (!environment.production) {
-    console.warn('[AuthInterceptor] No user logged in, using dev defaults for:', req.url);
-    
-    const cloned = req.clone({
-      setHeaders: {
-        'X-Tenant-Id': DEV_DEFAULT_TENANT_ID,
-        'X-User-Id': DEV_DEFAULT_USER_ID
-      }
-    });
-
-    return next(cloned);
-  }
-
-  // In production, don't add headers if not authenticated
-  console.warn('[AuthInterceptor] No user or token found for request:', req.url);
-  return next(req);
+  return next(cloned);
 };

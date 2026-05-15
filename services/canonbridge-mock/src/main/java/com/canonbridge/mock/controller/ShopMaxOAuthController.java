@@ -1,5 +1,6 @@
 package com.canonbridge.mock.controller;
 
+import com.canonbridge.mock.auth.MockTokenService;
 import com.canonbridge.mock.config.MockConfiguration;
 import com.canonbridge.mock.model.shopmax.TokenResponse;
 import lombok.RequiredArgsConstructor;
@@ -9,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/oauth")
@@ -18,15 +18,17 @@ import java.util.UUID;
 public class ShopMaxOAuthController {
 
     private final MockConfiguration mockConfig;
+    private final MockTokenService tokenService;
 
     @PostMapping("/token")
     public ResponseEntity<?> getToken(
             @RequestParam(name = "grant_type") String grantType,
             @RequestParam(name = "client_id") String clientId,
             @RequestParam(name = "client_secret") String clientSecret,
+            @RequestParam(name = "scope", required = false) String scope,
             @RequestParam(name = "scenario", required = false) String scenario) {
 
-        log.info("POST /oauth/token - grant_type: {}, client_id: {}, scenario: {}", grantType, clientId, scenario);
+        log.info("POST /oauth/token - grant_type: {}, client_id: {}, scope: {}, scenario: {}", grantType, clientId, scope, scenario);
 
         // Validate grant type
         if (!"client_credentials".equals(grantType)) {
@@ -48,20 +50,21 @@ public class ShopMaxOAuthController {
         }
 
         if ("expired-token".equals(scenario)) {
-            var expiredToken = new TokenResponse(
+            var issued = tokenService.issueExpiredToken(clientId, scope);
+            return ResponseEntity.ok(new TokenResponse(
                     "Bearer",
-                    "expired_" + UUID.randomUUID().toString().replace("-", ""),
-                    -1,
-                    "read:orders write:orders"
-            );
-            return ResponseEntity.ok(expiredToken);
+                    issued.accessToken(),
+                    issued.expiresIn(),
+                    issued.scope()
+            ));
         }
 
+        var issued = tokenService.issueToken(clientId, scope);
         var token = new TokenResponse(
                 "Bearer",
-                UUID.randomUUID().toString().replace("-", ""),
-                mockConfig.getShopmax().getTokenExpirySeconds(),
-                "read:orders write:orders"
+                issued.accessToken(),
+                issued.expiresIn(),
+                issued.scope()
         );
 
         return ResponseEntity.ok(token);

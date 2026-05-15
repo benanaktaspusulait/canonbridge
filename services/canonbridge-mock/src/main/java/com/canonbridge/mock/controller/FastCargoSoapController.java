@@ -92,8 +92,16 @@ public class FastCargoSoapController {
     }
 
     @GetMapping(value = "/fastcargo.wsdl", produces = MediaType.TEXT_XML_VALUE)
-    public ResponseEntity<String> getWsdl() {
+    public ResponseEntity<String> getWsdl(
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
         log.info("GET /ws/fastcargo.wsdl");
+
+        if (!isValidBasicAuth(authorization)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .header("WWW-Authenticate", "Basic realm=\"FastCargo SOAP API\"")
+                    .body(createSoapFault("Unauthorized", "Invalid or missing credentials"));
+        }
+
         return ResponseEntity.ok(fastCargoService.getWsdl());
     }
 

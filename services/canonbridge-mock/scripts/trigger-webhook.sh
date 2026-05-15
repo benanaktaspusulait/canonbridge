@@ -3,6 +3,7 @@
 # Script to manually trigger a webhook event
 
 BASE_URL="${1:-http://localhost:8080}"
+WEBHOOK_API_KEY="${WEBHOOK_API_KEY:-payflex-secret-key}"
 
 echo "Triggering PayFlex payment webhook..."
 
@@ -23,6 +24,7 @@ echo "${WEBHOOK_PAYLOAD}" | jq '.'
 echo ""
 
 RESPONSE=$(curl -s -X POST "${BASE_URL}/webhook/payment" \
+  -H "X-Webhook-Key: ${WEBHOOK_API_KEY}" \
   -H "Content-Type: application/json" \
   -d "${WEBHOOK_PAYLOAD}")
 

@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 @Data
 public class MockConfiguration {
 
+    private String tenantId = "tenant-acme";
     private PayFlexConfig payflex = new PayFlexConfig();
     private ShopMaxConfig shopmax = new ShopMaxConfig();
     private FastCargoConfig fastcargo = new FastCargoConfig();
@@ -25,6 +26,7 @@ public class MockConfiguration {
         private String clientId = "shopmax-demo-client";
         private String clientSecret = "shopmax-demo-secret";
         private int tokenExpirySeconds = 3600;
+        private String defaultScope = "read:orders write:orders graphql:query grpc:profile";
     }
 
     @Data
@@ -37,6 +39,7 @@ public class MockConfiguration {
     @Data
     public static class WebhookConfig {
         private String storageDir = "/tmp/webhooks";
+        private String apiKey = "payflex-secret-key";
     }
 
     @Data

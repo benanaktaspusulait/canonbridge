@@ -8,6 +8,9 @@ set -e
 MOCK_BASE_URL="${MOCK_BASE_URL:-http://localhost:8080}"
 WEBHOOK_BASE_URL="${WEBHOOK_BASE_URL:-http://localhost:3000}"
 KAFKA_BOOTSTRAP="${KAFKA_BOOTSTRAP:-localhost:9092}"
+WEBHOOK_API_KEY="${WEBHOOK_API_KEY:-payflex-secret-key}"
+FASTCARGO_USERNAME="${FASTCARGO_USERNAME:-fastcargo-demo}"
+FASTCARGO_PASSWORD="${FASTCARGO_PASSWORD:-fastcargo-secret}"
 
 echo "========================================="
 echo "Mock Service Mapping Test Suite"
@@ -53,9 +56,9 @@ test_payflex_webhook() {
   "timestamp": "2026-05-13T10:30:00Z"
 }'
     
-    RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${MOCK_BASE_URL}/webhook/payflex/payment" \
+    RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${MOCK_BASE_URL}/webhook/payment" \
         -H "Content-Type: application/json" \
-        -H "X-Webhook-Key: payflex-secret-key" \
+        -H "X-Webhook-Key: ${WEBHOOK_API_KEY}" \
         -d "$PAYLOAD")
     
     HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
@@ -95,7 +98,7 @@ test_fastcargo_soap() {
     RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${MOCK_BASE_URL}/ws/track" \
         -H "Content-Type: text/xml" \
         -H "SOAPAction: getShipmentStatus" \
-        --user "fastcargo-demo:fastcargo-secret" \
+        --user "${FASTCARGO_USERNAME}:${FASTCARGO_PASSWORD}" \
         -d "$SOAP_REQUEST")
     
     HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
@@ -215,9 +218,9 @@ test_payflex_failed_payment() {
   "timestamp": "2026-05-13T10:35:00Z"
 }'
     
-    RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${MOCK_BASE_URL}/webhook/payflex/payment" \
+    RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${MOCK_BASE_URL}/webhook/payment" \
         -H "Content-Type: application/json" \
-        -H "X-Webhook-Key: payflex-secret-key" \
+        -H "X-Webhook-Key: ${WEBHOOK_API_KEY}" \
         -d "$PAYLOAD")
     
     HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
@@ -257,7 +260,7 @@ test_fastcargo_delivered() {
     RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${MOCK_BASE_URL}/ws/track" \
         -H "Content-Type: text/xml" \
         -H "SOAPAction: getShipmentStatus" \
-        --user "fastcargo-demo:fastcargo-secret" \
+        --user "${FASTCARGO_USERNAME}:${FASTCARGO_PASSWORD}" \
         -d "$SOAP_REQUEST")
     
     HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
