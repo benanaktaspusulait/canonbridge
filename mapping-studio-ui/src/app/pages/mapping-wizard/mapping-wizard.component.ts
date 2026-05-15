@@ -13,7 +13,7 @@ import { SampleDataStepComponent } from './steps/step2-sample-data/sample-data-s
 import { TargetSchemaStepComponent } from './steps/step3-target-schema/target-schema-step.component';
 import { FieldMappingStepComponent } from './steps/step4-field-mapping/field-mapping-step.component';
 import { TestPublishStepComponent } from './steps/step5-test-publish/test-publish-step.component';
-import { MappingRule, SourceType, WizardState, WizardMode } from './models/mapping-wizard.models';
+import { MappingRule, SourceType, WizardState, WizardMode, TransformKind } from './models/mapping-wizard.models';
 import { MappingService } from '../../core/services/mapping.service';
 import { SchemaService } from '../../core/services/schema.service';
 
@@ -335,18 +335,58 @@ export class MappingWizardComponent implements OnInit {
     if (mapping.mapping_rules) {
       const rules = this.parseJsonValue(mapping.mapping_rules);
       if (Array.isArray(rules)) {
-        return rules as MappingRule[];
+        return rules.map((r: any, i: number) => this.normalizeMappingRule(r, i));
       }
     }
     
     // Fallback to transformation_rules
     if (mapping.transformation_rules) {
       if (Array.isArray(mapping.transformation_rules)) {
-        return mapping.transformation_rules as MappingRule[];
+        return mapping.transformation_rules.map((r: any, i: number) => this.normalizeMappingRule(r, i));
       }
     }
     
     return [];
+  }
+
+  private normalizeMappingRule(rule: any, index: number): MappingRule {
+    return {
+      id: rule.id || `rule_${index}`,
+      targetKey: rule.targetKey || rule.field || rule.targetField || '',
+      sourcePath: rule.sourcePath || rule.source || rule.expression || '',
+      transform: this.normalizeTransformKind(rule.transform),
+      mode: rule.mode || 'visual',
+      paramA: rule.paramA || '',
+      paramB: rule.paramB || '',
+      paramC: rule.paramC || '',
+      advancedExpression: rule.advancedExpression || ''
+    };
+  }
+
+  private normalizeTransformKind(transform: string | undefined): TransformKind {
+    if (!transform) return 'direct';
+    // Map DB transform types to frontend TransformKind
+    const mapping: Record<string, TransformKind> = {
+      'string': 'direct',
+      'number': 'number_coerce',
+      'object': 'direct',
+      'array': 'direct',
+      'boolean': 'direct',
+      'date': 'date_format',
+      'direct': 'direct',
+      'date_format': 'date_format',
+      'enum_map': 'enum_map',
+      'number_coerce': 'number_coerce',
+      'default_value': 'default_value',
+      'combine': 'combine',
+      'string_uppercase': 'string_uppercase',
+      'string_lowercase': 'string_lowercase',
+      'string_trim': 'string_trim',
+      'string_substring': 'string_substring',
+      'string_replace': 'string_replace',
+      'custom_jsonata': 'custom_jsonata'
+    };
+    return mapping[transform] || 'direct';
   }
 
   private parseJsonValue(value: unknown): any {
@@ -426,6 +466,16 @@ export class MappingWizardComponent implements OnInit {
     if (fallbackSample) {
       console.log('Built field mapping sample JSON from mapping rules');
       return fallbackSample;
+    }
+
+    // Fallback: generate sample from input_schema
+    const inputSchemaJson = this.firstJsonText(mapping.input_schema, sourceConfig['inputSchema']);
+    if (inputSchemaJson) {
+      const sampleFromSchema = this.buildSampleFromInputSchema(inputSchemaJson);
+      if (sampleFromSchema) {
+        console.log('Built field mapping sample JSON from input_schema');
+        return sampleFromSchema;
+      }
     }
 
     console.warn('⚠️ No field mapping sample JSON found in mapping');
@@ -546,6 +596,74 @@ export class MappingWizardComponent implements OnInit {
 
   private lastPathSegment(value: string): string {
     return value.replace(/\[(\d+)\]/g, '.$1').split('.').filter(Boolean).pop() || 'value';
+  }
+
+  private buildSampleFromInputSchema(schemaJson: string): string {
+    try {
+      const schema = typeof schemaJson === 'string' ? JSON.parse(schemaJson) : schemaJson;
+      if (!schema || typeof schema !== 'object') return '';
+      
+      const sample = this.generateSampleFromSchema(schema);
+      if (sample && typeof sample === 'object' && Object.keys(sample).length > 0) {
+        return JSON.stringify(sample, null, 2);
+      }
+      return '';
+    } catch {
+      return '';
+    }
+  }
+
+  private generateSampleFromSchema(schema: any, depth = 0): any {
+    if (depth > 5) return null;
+    
+    if (schema.type === 'object' && schema.properties) {
+      const result: Record<string, unknown> = {};
+      for (const [key, prop] of Object.entries(schema.properties)) {
+        result[key] = this.generateSampleValueFromProperty(key, prop as any, depth);
+      }
+      return result;
+    }
+    
+    if (schema.type === 'array' && schema.items) {
+      return [this.generateSampleFromSchema(schema.items, depth + 1)];
+    }
+    
+    return this.generateSampleValueFromProperty('value', schema, depth);
+  }
+
+  private generateSampleValueFromProperty(key: string, prop: any, depth: number): unknown {
+    if (!prop) return null;
+    
+    const type = prop.type || 'string';
+    const keyLower = key.toLowerCase();
+    
+    if (type === 'object' && prop.properties) {
+      return this.generateSampleFromSchema(prop, depth + 1);
+    }
+    if (type === 'array') {
+      if (prop.items) {
+        return [this.generateSampleFromSchema(prop.items, depth + 1)];
+      }
+      return [];
+    }
+    if (type === 'number' || type === 'integer') {
+      if (keyLower.includes('amount') || keyLower.includes('total') || keyLower.includes('price')) return 1250.50;
+      if (keyLower.includes('score')) return 0.85;
+      return 42;
+    }
+    if (type === 'boolean') {
+      return true;
+    }
+    if (keyLower.includes('email')) return 'john.doe@example.com';
+    if (keyLower.includes('date') || keyLower.includes('time') || prop.format === 'date-time') return '2026-05-14T10:00:00Z';
+    if (keyLower.includes('id')) return `${key.toUpperCase()}-001`;
+    if (keyLower.includes('status')) return 'ACTIVE';
+    if (keyLower.includes('currency')) return 'EUR';
+    if (keyLower.includes('name')) return 'John Doe';
+    if (keyLower.includes('phone')) return '+1 555 123 4567';
+    if (keyLower.includes('url') || keyLower.includes('endpoint')) return 'https://api.example.com/resource';
+    
+    return `sample_${key}`;
   }
 
   private firstJsonText(...values: unknown[]): string | null {
