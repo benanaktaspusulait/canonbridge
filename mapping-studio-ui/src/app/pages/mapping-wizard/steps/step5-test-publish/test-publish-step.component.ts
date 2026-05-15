@@ -1,13 +1,12 @@
 import { Component, input, output, signal, inject, OnInit, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, KeyValuePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { MappingService } from '../../../../core/services/mapping.service';
 import { WizardState } from '../../models/mapping-wizard.models';
@@ -20,12 +19,12 @@ import { firstValueFrom } from 'rxjs';
   imports: [
     CommonModule,
     FormsModule,
-    CardModule,
     ButtonModule,
     InputTextModule,
     MessageModule,
-    ProgressSpinnerModule,
-    TooltipModule
+    TagModule,
+    TooltipModule,
+    KeyValuePipe
   ],
   templateUrl: './test-publish-step.component.html',
   styleUrl: './test-publish-step.component.scss'

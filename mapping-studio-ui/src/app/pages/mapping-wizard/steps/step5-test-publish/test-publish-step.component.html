@@ -1,6 +1,6 @@
 <div class="step-container">
-  <!-- Top Navigation -->
-  <div class="top-navigation">
+  <!-- Top Actions -->
+  <div class="top-actions">
     <p-button
       label="Back"
       icon="pi pi-arrow-left"
@@ -8,27 +8,7 @@
       [outlined]="true"
       [disabled]="saving()"
       (onClick)="onBack()" />
-    
-    <div class="nav-info">
-      @if (!mappingName().trim()) {
-        <p-message 
-          severity="warn" 
-          text="Please enter a mapping name" 
-          [closable]="false" />
-      } @else if (!testSuccess()) {
-        <p-message 
-          severity="info" 
-          text="Run a test before publishing" 
-          [closable]="false" />
-      } @else {
-        <p-message 
-          severity="success" 
-          text="Ready to publish!" 
-          [closable]="false" />
-      }
-    </div>
-
-    <div class="nav-actions">
+    <div class="right-buttons">
       <p-button
         label="Save as Draft"
         icon="pi pi-save"
@@ -46,229 +26,137 @@
     </div>
   </div>
 
-  <p-card>
-    <ng-template pTemplate="header">
-      <div class="card-header">
-        <h2>Test & Publish Mapping</h2>
-        <p class="subtitle">Test your mapping with sample data and publish when ready</p>
+  <!-- Mapping Name & Description -->
+  <div class="section naming-section">
+    <div class="form-row">
+      <div class="form-field flex-2">
+        <label for="mapping-name">Mapping Name *</label>
+        <input
+          id="mapping-name"
+          pInputText
+          type="text"
+          [ngModel]="mappingName()"
+          (ngModelChange)="mappingName.set($event)"
+          placeholder="Enter mapping name" />
       </div>
-    </ng-template>
+      <div class="form-field flex-3">
+        <label for="mapping-description">Description</label>
+        <input
+          id="mapping-description"
+          pInputText
+          type="text"
+          [ngModel]="mappingDescription()"
+          (ngModelChange)="mappingDescription.set($event)"
+          placeholder="Optional description" />
+      </div>
+    </div>
+  </div>
 
-    <ng-template pTemplate="content">
-      <div class="content-grid">
-        <!-- Left Column: Mapping Details & Summary -->
-        <div class="left-column">
-          <!-- Mapping Details -->
-          <div class="section">
-            <h3>Mapping Details</h3>
-            <div class="form-fields">
-              <div class="form-field">
-                <label for="mapping-name">Mapping Name *</label>
-                <input
-                  id="mapping-name"
-                  pInputText
-                  type="text"
-                  [ngModel]="mappingName()"
-                  (ngModelChange)="mappingName.set($event)"
-                  placeholder="Enter mapping name"
-                  [style]="{'width': '100%'}" />
-              </div>
+  <!-- Test Section -->
+  <div class="section test-section">
+    <div class="test-header">
+      <h3>Test</h3>
+      @if (testSuccess()) {
+        <p-tag value="Passed" severity="success" icon="pi pi-check" />
+      }
+    </div>
 
-              <div class="form-field">
-                <label for="mapping-description">Description</label>
-                <textarea
-                  id="mapping-description"
-                  [ngModel]="mappingDescription()"
-                  (ngModelChange)="mappingDescription.set($event)"
-                  placeholder="Optional description"
-                  [rows]="3"
-                  [style]="{'width': '100%'}"></textarea>
-              </div>
-            </div>
+    <div class="test-input-area">
+      <label>Request Payload</label>
+      <textarea
+        [ngModel]="testInput()"
+        (ngModelChange)="testInput.set($event)"
+        placeholder='{"transactionId": "TXN-001"}'
+        [rows]="4"
+        class="json-textarea"></textarea>
+      <p-button
+        label="Run Test"
+        icon="pi pi-play"
+        [loading]="testing()"
+        [disabled]="!testInput().trim()"
+        (onClick)="runTest()" />
+    </div>
+
+    @if (testError()) {
+      <p-message severity="error" [text]="testError()" styleClass="w-full" />
+    }
+
+    @if (mappedRequestOutput() || testOutput()) {
+      <div class="test-results">
+        @if (mappedRequestOutput()) {
+          <div class="result-panel">
+            <label>Request Sent to API</label>
+            <pre><code>{{ mappedRequestOutput() }}</code></pre>
           </div>
-
-          <!-- Configuration Summary -->
-          <div class="section">
-            <h3>Configuration Summary</h3>
-            <div class="summary-list">
-              @for (item of getSummary(); track item) {
-                <div class="summary-item">
-                  <i class="pi pi-check-circle"></i>
-                  <span>{{ item }}</span>
-                </div>
-              }
-            </div>
+        }
+        @if (testOutput()) {
+          <div class="result-panel success">
+            <label>Mapped Response</label>
+            <pre><code>{{ testOutput() }}</code></pre>
           </div>
+        }
+      </div>
+    }
+  </div>
 
-          <!-- API Proxy URL for Integration -->
-          @if (mappingId()) {
-            <div class="section proxy-url-section">
-              <h3>
-                <i class="pi pi-sitemap"></i>
-                API Proxy Endpoint
-              </h3>
-              <p class="section-description">
-                {{ getProxyDescription() }}
-              </p>
-              
-              <div class="url-box">
-                <label>🔗 Your New Endpoint URL</label>
-                <div class="url-display">
-                  <code class="proxy-url">{{ getTestUrl() }}</code>
-                  <p-button
-                    icon="pi pi-copy"
-                    [text]="true"
-                    size="small"
-                    (onClick)="copyToClipboard(getTestUrl()!)"
-                    pTooltip="Copy URL" />
-                </div>
-              </div>
+  <!-- Integration Info (shown after successful test) -->
+  @if (testSuccess() && mappingId()) {
+    <div class="section integration-section">
+      <h3>Integration</h3>
+      <p class="section-desc">Use this endpoint in your application. The proxy handles auth, request transformation, and response mapping.</p>
 
-              <div class="headers-box">
-                <label>📋 Required Headers</label>
-                @for (header of getTestHeaders() | keyvalue; track header.key) {
-                  <div class="header-item">
-                    <code class="header-key">{{ header.key }}:</code>
-                    <code class="header-value">{{ header.value }}</code>
-                  </div>
-                }
-              </div>
-
-              @if (getCurlCommand()) {
-                <div class="curl-box">
-                  <label>💻 Test with cURL</label>
-                  <pre class="curl-command"><code>{{ getCurlCommand() }}</code></pre>
-                  <p-button
-                    label="Copy cURL"
-                    icon="pi pi-copy"
-                    size="small"
-                    [outlined]="true"
-                    (onClick)="copyToClipboard(getCurlCommand()!)" />
-                </div>
-              }
-
-              <div class="integration-steps">
-                <h4>🚀 Integration Steps:</h4>
-                <ol>
-                  <li>Save and publish this mapping</li>
-                  <li>Update your application to use the new endpoint URL above</li>
-                  <li>Keep your existing request format - no code changes needed!</li>
-                  <li>Test with Postman or cURL to verify the transformation</li>
-                </ol>
-              </div>
-
-              <p-message 
-                severity="success" 
-                [text]="'This proxy handles request transformation, API calls, and response transformation automatically. Your app just changes the URL!'" />
-            </div>
-          }
+      <div class="integration-grid">
+        <div class="integration-item">
+          <label>Endpoint</label>
+          <div class="url-row">
+            <code>{{ getTestUrl() }}</code>
+            <p-button icon="pi pi-copy" [text]="true" size="small" (onClick)="copyToClipboard(getTestUrl()!)" />
+          </div>
         </div>
-
-        <!-- Right Column: Test Execution -->
-        <div class="right-column">
-          <div class="section test-section">
-            <div class="section-heading">
-              <div>
-                <h3>Test Proxy Flow</h3>
-                <p>Send the original request to the generated endpoint and inspect the mapped response.</p>
-              </div>
-              @if (mappingId()) {
-                <span class="endpoint-badge">Proxy URL</span>
-              }
-            </div>
-
-            @if (getTestUrl()) {
-              <div class="endpoint-callout">
-                <span>Generated endpoint</span>
-                <code>{{ getTestUrl() }}</code>
-              </div>
-            }
-            
-            <!-- Test Input -->
-            <div class="form-field">
-              <label for="test-input">Original Request JSON</label>
-              <textarea
-                id="test-input"
-                [ngModel]="testInput()"
-                (ngModelChange)="testInput.set($event)"
-                placeholder='{"example": "data"}'
-                [rows]="8"
-                class="json-textarea"></textarea>
-              <small class="field-help">This payload is sent to the generated proxy endpoint, not directly to the target API.</small>
-            </div>
-
-            <!-- Test Button -->
-            <div class="test-actions">
-              <p-button
-                label="Run Proxy Test"
-                icon="pi pi-play"
-                [loading]="testing()"
-                [disabled]="!testInput().trim()"
-                (onClick)="runTest()" />
-              
-              @if (testSuccess()) {
-                <span class="test-status success">
-                  <i class="pi pi-check-circle"></i>
-                  Test passed successfully
-                </span>
-              }
-            </div>
-
-            <!-- Test Output -->
-            @if (mappedRequestOutput()) {
-              <div class="json-panel">
-                <div class="json-panel-header">
-                  <label>Mapped Request Sent by Proxy</label>
-                </div>
-                <pre class="test-output request"><code>{{ mappedRequestOutput() }}</code></pre>
-              </div>
-            }
-
-            @if (testOutput()) {
-              <div class="json-panel">
-                <div class="json-panel-header">
-                  <label>Mapped Response</label>
-                  @if (testEndpoint()) {
-                    <span>{{ testEndpoint() }}</span>
-                  }
-                </div>
-                <pre class="test-output success"><code>{{ testOutput() }}</code></pre>
-              </div>
-            }
-
-            <!-- Test Error -->
-            @if (testError()) {
-              <p-message severity="error" [text]="testError()" />
+        <div class="integration-item">
+          <label>Headers</label>
+          <div class="headers-list">
+            @for (header of getTestHeaders() | keyvalue; track header.key) {
+              <code>{{ header.key }}: {{ header.value }}</code>
             }
           </div>
         </div>
       </div>
-    </ng-template>
 
-    <ng-template pTemplate="footer">
-      <div class="button-group">
-        <p-button
-          label="Back"
-          icon="pi pi-arrow-left"
-          severity="secondary"
-          [disabled]="saving()"
-          (onClick)="onBack()" />
-        <div class="right-buttons">
-          <p-button
-            label="Save as Draft"
-            icon="pi pi-save"
-            severity="secondary"
-            [loading]="saving()"
-            [disabled]="!mappingName().trim()"
-            (onClick)="saveMapping('DRAFT')" />
-          <p-button
-            label="Publish"
-            icon="pi pi-check"
-            [loading]="saving()"
-            [disabled]="!mappingName().trim() || !testSuccess()"
-            (onClick)="saveMapping('READY_TO_PUBLISH')" />
+      @if (getCurlCommand()) {
+        <div class="curl-section">
+          <label>cURL</label>
+          <pre class="curl-command"><code>{{ getCurlCommand() }}</code></pre>
+          <p-button label="Copy" icon="pi pi-copy" size="small" [outlined]="true" (onClick)="copyToClipboard(getCurlCommand()!)" />
         </div>
-      </div>
-    </ng-template>
-  </p-card>
+      }
+    </div>
+  }
+
+  <!-- Bottom Actions -->
+  <div class="bottom-actions">
+    <p-button
+      label="Back"
+      icon="pi pi-arrow-left"
+      severity="secondary"
+      [outlined]="true"
+      [disabled]="saving()"
+      (onClick)="onBack()" />
+    <div class="right-buttons">
+      <p-button
+        label="Save as Draft"
+        icon="pi pi-save"
+        severity="secondary"
+        [outlined]="true"
+        [loading]="saving()"
+        [disabled]="!mappingName().trim()"
+        (onClick)="saveMapping('DRAFT')" />
+      <p-button
+        label="Publish"
+        icon="pi pi-check"
+        [loading]="saving()"
+        [disabled]="!mappingName().trim() || !testSuccess()"
+        (onClick)="saveMapping('READY_TO_PUBLISH')" />
+    </div>
+  </div>
 </div>

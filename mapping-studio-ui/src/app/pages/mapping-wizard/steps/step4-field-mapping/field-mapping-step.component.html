@@ -68,14 +68,6 @@
         size="small"
         (onClick)="clearAllMappings()"
         pTooltip="Remove all mappings" />
-      <p-button
-        [label]="showJsonataReference() ? 'Hide Reference' : 'Show Reference'"
-        [icon]="showJsonataReference() ? 'pi pi-eye-slash' : 'pi pi-book'"
-        severity="info"
-        [outlined]="true"
-        size="small"
-        (onClick)="toggleJsonataReference()"
-        pTooltip="Toggle JSONata functions reference" />
     </div>
   </div>
 
@@ -477,27 +469,8 @@
     </div>
   }
 
-  <!-- JSONata Functions Reference (Collapsible) -->
-  @if (showJsonataReference()) {
-    <div class="jsonata-reference">
-      <div class="reference-header">
-        <h3><i class="pi pi-book"></i> JSONata Functions Reference</h3>
-        <p>Complete reference for all available transformation functions</p>
-        <div class="pattern-usage-hint">
-          <i class="pi pi-lightbulb"></i>
-          <strong>Tip:</strong> Switch a field to Expression mode, then click any pattern below to insert it!
-        </div>
-      </div>
-      
-      <div class="reference-content">
-        <details open>
-          <summary>String Functions</summary>
-          <div class="function-grid">
-            <div class="function-card">
-              <code>$uppercase(str)</code>
-              <p>Convert string to UPPERCASE</p>
-              <span class="example">Example: $uppercase("hello") → "HELLO"</span>
-            </div>
+  <!-- Footer Actions -->
+  <div class="step-footer">
             <div class="function-card">
               <code>$lowercase(str)</code>
               <p>Convert string to lowercase</p>
