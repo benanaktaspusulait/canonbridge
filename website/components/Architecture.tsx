@@ -38,24 +38,21 @@ export default function Architecture() {
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
         >
-          {/* Flow diagram */}
           <div className="flex flex-col gap-6">
             {/* Row 1: Sources */}
             <div className="flex flex-wrap justify-center gap-3">
-              {["Message Queue", "Webhook", "REST API", "SOAP", "SFTP", "Cloud Storage", "Database", "EDI"].map(
-                (src, i) => (
-                  <motion.div
-                    key={src}
-                    className="px-4 py-2 rounded-lg bg-accent-purple/10 border border-accent-purple/20 text-accent-purple text-sm font-medium"
-                    initial={{ opacity: 0, y: -10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.05 }}
-                  >
-                    {src}
-                  </motion.div>
-                )
-              )}
+              {t.architecture.sources.map((src, i) => (
+                <motion.div
+                  key={src}
+                  className="px-4 py-2 rounded-lg bg-accent-purple/10 border border-accent-purple/20 text-accent-purple text-sm font-medium"
+                  initial={{ opacity: 0, y: -10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05 }}
+                >
+                  {src}
+                </motion.div>
+              ))}
             </div>
 
             {/* Arrow */}
@@ -68,8 +65,8 @@ export default function Architecture() {
             {/* Row 2: Ingress */}
             <div className="flex justify-center">
               <div className="px-6 py-3 rounded-xl bg-navy-700 border border-white/10 text-center">
-                <div className="text-white font-semibold">Ingress Layer</div>
-                <div className="text-gray-500 text-xs mt-1">Protocol normalization → CanonBridge envelope</div>
+                <div className="text-white font-semibold">{t.architecture.ingress}</div>
+                <div className="text-gray-500 text-xs mt-1">{t.architecture.ingressDesc}</div>
               </div>
             </div>
 
@@ -80,11 +77,11 @@ export default function Architecture() {
               </svg>
             </div>
 
-            {/* Row 3: Kafka Raw */}
+            {/* Row 3: Raw Events */}
             <div className="flex justify-center">
               <div className="px-6 py-3 rounded-xl bg-orange-500/10 border border-orange-500/20 text-center">
-                <div className="text-orange-400 font-semibold">Event Stream: raw.events</div>
-                <div className="text-gray-500 text-xs mt-1">Per-tenant, per-partner partitioning</div>
+                <div className="text-orange-400 font-semibold">{t.architecture.rawEvents}</div>
+                <div className="text-gray-500 text-xs mt-1">{t.architecture.rawEventsDesc}</div>
               </div>
             </div>
 
@@ -98,12 +95,11 @@ export default function Architecture() {
             {/* Row 4: Transformer */}
             <div className="flex justify-center">
               <div className="px-8 py-4 rounded-xl bg-accent-blue/10 border border-accent-blue/20 text-center glow-blue">
-                <div className="text-accent-blue font-bold text-lg">Transformer Service</div>
+                <div className="text-accent-blue font-bold text-lg">{t.architecture.transformer}</div>
                 <div className="text-gray-400 text-xs mt-2 flex flex-wrap justify-center gap-2">
-                  <span className="px-2 py-0.5 bg-white/5 rounded">Expression Engine</span>
-                  <span className="px-2 py-0.5 bg-white/5 rounded">Validation</span>
-                  <span className="px-2 py-0.5 bg-white/5 rounded">Worker Pool</span>
-                  <span className="px-2 py-0.5 bg-white/5 rounded">Retry</span>
+                  {t.architecture.transformerTags.map((tag) => (
+                    <span key={tag} className="px-2 py-0.5 bg-white/5 rounded">{tag}</span>
+                  ))}
                 </div>
               </div>
             </div>
@@ -115,11 +111,11 @@ export default function Architecture() {
               </svg>
             </div>
 
-            {/* Row 5: Kafka Canonical */}
+            {/* Row 5: Canonical Events */}
             <div className="flex justify-center">
               <div className="px-6 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-                <div className="text-emerald-400 font-semibold">Event Stream: canonical.events</div>
-                <div className="text-gray-500 text-xs mt-1">Validated, versioned, stable schema</div>
+                <div className="text-emerald-400 font-semibold">{t.architecture.canonicalEvents}</div>
+                <div className="text-gray-500 text-xs mt-1">{t.architecture.canonicalEventsDesc}</div>
               </div>
             </div>
 
@@ -133,11 +129,11 @@ export default function Architecture() {
             {/* Row 6: Business Service */}
             <div className="flex justify-center">
               <div className="px-8 py-4 rounded-xl bg-accent-cyan/10 border border-accent-cyan/20 text-center glow-cyan">
-                <div className="text-accent-cyan font-bold text-lg">Business Service</div>
+                <div className="text-accent-cyan font-bold text-lg">{t.architecture.businessService}</div>
                 <div className="text-gray-400 text-xs mt-2 flex flex-wrap justify-center gap-2">
-                  <span className="px-2 py-0.5 bg-white/5 rounded">Idempotency</span>
-                  <span className="px-2 py-0.5 bg-white/5 rounded">Ordering</span>
-                  <span className="px-2 py-0.5 bg-white/5 rounded">Outbox</span>
+                  {t.architecture.businessTags.map((tag) => (
+                    <span key={tag} className="px-2 py-0.5 bg-white/5 rounded">{tag}</span>
+                  ))}
                 </div>
               </div>
             </div>
@@ -152,13 +148,13 @@ export default function Architecture() {
             {/* Row 7: Outputs */}
             <div className="flex flex-wrap justify-center gap-4">
               <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-sm">
-                Database
+                {t.architecture.database}
               </div>
               <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-sm">
-                Event Stream: business.events
+                {t.architecture.businessEvents}
               </div>
               <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-sm">
-                Downstream Services
+                {t.architecture.downstream}
               </div>
             </div>
           </div>
@@ -168,23 +164,23 @@ export default function Architecture() {
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <span className="w-3 h-3 rounded-full bg-accent-purple/30" />
-                Sources
+                {t.architecture.legendSources}
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <span className="w-3 h-3 rounded-full bg-orange-500/30" />
-                Raw Events
+                {t.architecture.legendRaw}
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <span className="w-3 h-3 rounded-full bg-accent-blue/30" />
-                Transformation
+                {t.architecture.legendTransformation}
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <span className="w-3 h-3 rounded-full bg-emerald-500/30" />
-                Canonical
+                {t.architecture.legendCanonical}
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <span className="w-3 h-3 rounded-full bg-accent-cyan/30" />
-                Business Logic
+                {t.architecture.legendBusiness}
               </div>
             </div>
           </div>
