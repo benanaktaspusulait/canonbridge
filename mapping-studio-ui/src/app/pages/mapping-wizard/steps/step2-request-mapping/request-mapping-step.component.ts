@@ -108,7 +108,19 @@ export class RequestMappingStepComponent implements OnInit {
     return errors;
   });
 
-  hasBlockingErrors = computed(() => this.requiredFieldErrors().length > 0);
+  hasBlockingErrors = computed(() => {
+    // Block if required fields are excluded
+    if (this.requiredFieldErrors().length > 0) return true;
+    
+    // Block if there are backend validation errors
+    if (this.backendValidationErrors().length > 0) return true;
+    
+    // Block if validation hasn't been run yet and there are included fields
+    const hasIncludedFields = this.fieldMappings().some(m => m.included);
+    if (hasIncludedFields && !this.backendValidationDone()) return true;
+    
+    return false;
+  });
 
   allValidationErrors = computed(() => [
     ...this.requiredFieldErrors().map(f => ({
@@ -173,6 +185,11 @@ export class RequestMappingStepComponent implements OnInit {
     if (!mapping.included) return null;
     const v = mapping.sourceValue;
     const r = mapping.validationRules;
+
+    // Validate required fields
+    if (mapping.required && (v === null || v === undefined || v === '')) {
+      return 'This field is required';
+    }
 
     if (mapping.fieldType === 'number' && typeof v === 'number') {
       if (r.minValue !== null && r.minValue !== undefined && v < r.minValue) {
@@ -405,10 +422,28 @@ export class RequestMappingStepComponent implements OnInit {
         this.backendValidationErrors.set(result.errors || []);
         this.backendValidating.set(false);
         this.backendValidationDone.set(true);
+        
+        // Log validation result for debugging
+        if (result.valid) {
+          console.log('✓ Validation successful:', result.message);
+        } else {
+          console.warn('✗ Validation failed:', result.totalErrors, 'error(s)');
+          result.errors?.forEach(err => {
+            console.warn(`  - ${err.field}: ${err.message}`);
+          });
+        }
       },
-      error: () => {
+      error: (err) => {
+        console.error('Validation request failed:', err);
         this.backendValidating.set(false);
         this.backendValidationDone.set(true);
+        
+        // Add a generic error to show something went wrong
+        this.backendValidationErrors.set([{
+          field: '_system',
+          type: 'ERROR',
+          message: 'Failed to validate request. Please try again or check your connection.'
+        }]);
       }
     });
   }
@@ -544,6 +579,22 @@ export class RequestMappingStepComponent implements OnInit {
   }
 
   onNext(): void {
+    // Validate before proceeding
+    if (!this.isValid()) {
+      return;
+    }
+
+    // If validation hasn't been run yet, run it first
+    if (this.useVisualMode() && !this.backendValidationDone() && this.fieldMappings().some(m => m.included)) {
+      this.validateWithBackend();
+      return;
+    }
+
+    // Check for blocking errors
+    if (this.hasBlockingErrors()) {
+      return;
+    }
+
     let config: RequestTransformationConfig;
 
     if (this.useVisualMode()) {
@@ -663,5 +714,38 @@ export class RequestMappingStepComponent implements OnInit {
     });
     this.copySuccess.set(true);
     setTimeout(() => this.copySuccess.set(false), 2000);
+  }
+
+  getNextButtonTooltip(): string {
+    if (!this.needsRequestPayload()) {
+      return '';
+    }
+
+    if (this.requiredFieldErrors().length > 0) {
+      return `Required fields are excluded: ${this.requiredFieldErrors().join(', ')}`;
+    }
+
+    if (this.backendValidationErrors().length > 0) {
+      return `Validation errors found: ${this.backendValidationErrors().length} issue(s)`;
+    }
+
+    if (this.useVisualMode() && !this.backendValidationDone() && this.fieldMappings().some(m => m.included)) {
+      return 'Please validate the request payload before proceeding';
+    }
+
+    if (!this.isValid()) {
+      if (this.mode() === 'template' && this.templateError()) {
+        return `Template JSON error: ${this.templateError()}`;
+      }
+      if (this.mode() === 'jsonata' && this.jsonataError()) {
+        return `JSONata error: ${this.jsonataError()}`;
+      }
+      if (this.headersError()) {
+        return `Headers JSON error: ${this.headersError()}`;
+      }
+      return 'Please fix validation errors before proceeding';
+    }
+
+    return '';
   }
 }

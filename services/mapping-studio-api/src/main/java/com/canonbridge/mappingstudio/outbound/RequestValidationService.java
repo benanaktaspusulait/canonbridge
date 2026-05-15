@@ -38,7 +38,7 @@ public class RequestValidationService {
             if (value == null || isBlankValue(value)) {
                 if (required) {
                     errors.add(new FieldError(field, "REQUIRED",
-                        "Field '" + field + "' is required but missing or empty"));
+                        String.format("Field '%s' is required but is missing or empty", field)));
                 }
                 continue;
             }
@@ -56,11 +56,13 @@ public class RequestValidationService {
 
                 if (minValue != null && dVal < minValue) {
                     errors.add(new FieldError(field, "RANGE",
-                        "Field '" + field + "' value " + dVal + " is below minimum " + minValue));
+                        String.format("Field '%s' value %.2f is below the minimum allowed value of %.2f", 
+                            field, dVal, minValue)));
                 }
                 if (maxValue != null && dVal > maxValue) {
                     errors.add(new FieldError(field, "RANGE",
-                        "Field '" + field + "' value " + dVal + " exceeds maximum " + maxValue));
+                        String.format("Field '%s' value %.2f exceeds the maximum allowed value of %.2f", 
+                            field, dVal, maxValue)));
                 }
             }
 
@@ -72,19 +74,24 @@ public class RequestValidationService {
 
                 if (minLength != null && strVal.length() < minLength) {
                     errors.add(new FieldError(field, "LENGTH",
-                        "Field '" + field + "' length " + strVal.length() + " is below minimum length " + minLength));
+                        String.format("Field '%s' length (%d characters) is below the minimum required length of %d characters", 
+                            field, strVal.length(), minLength)));
                 }
                 if (maxLength != null && strVal.length() > maxLength) {
                     errors.add(new FieldError(field, "LENGTH",
-                        "Field '" + field + "' length " + strVal.length() + " exceeds maximum length " + maxLength));
+                        String.format("Field '%s' length (%d characters) exceeds the maximum allowed length of %d characters", 
+                            field, strVal.length(), maxLength)));
                 }
                 if (pattern != null && !pattern.isBlank()) {
                     try {
                         if (!Pattern.matches(pattern, strVal)) {
                             errors.add(new FieldError(field, "PATTERN",
-                                "Field '" + field + "' value '" + strVal + "' does not match pattern: " + pattern));
+                                String.format("Field '%s' value '%s' does not match the required pattern: %s", 
+                                    field, strVal, pattern)));
                         }
-                    } catch (PatternSyntaxException ignored) {
+                    } catch (PatternSyntaxException e) {
+                        errors.add(new FieldError(field, "PATTERN",
+                            String.format("Field '%s' has an invalid regex pattern: %s", field, e.getMessage())));
                     }
                 }
                 if (enumValues != null && !enumValues.isEmpty()) {
@@ -96,8 +103,11 @@ public class RequestValidationService {
                         }
                     }
                     if (!found) {
+                        String allowedValues = String.join(", ", 
+                            enumValues.stream().map(Object::toString).toList());
                         errors.add(new FieldError(field, "ENUM",
-                            "Field '" + field + "' value '" + strVal + "' must be one of: " + enumValues.encode()));
+                            String.format("Field '%s' value '%s' is not valid. Allowed values are: %s", 
+                                field, strVal, allowedValues)));
                     }
                 }
             }
@@ -125,14 +135,29 @@ public class RequestValidationService {
     }
 
     private String checkType(String field, Object value, String expectedType) {
+        String actualType = getTypeName(value);
         return switch (expectedType) {
             case "number" -> (value instanceof Number) ? null
-                : "Field '" + field + "' expected number but got " + value.getClass().getSimpleName();
+                : String.format("Field '%s' must be a number, but received %s", field, actualType);
             case "string" -> (value instanceof String) ? null
-                : "Field '" + field + "' expected string but got " + value.getClass().getSimpleName();
+                : String.format("Field '%s' must be a string, but received %s", field, actualType);
             case "boolean" -> (value instanceof Boolean) ? null
-                : "Field '" + field + "' expected boolean but got " + value.getClass().getSimpleName();
+                : String.format("Field '%s' must be a boolean, but received %s", field, actualType);
+            case "array" -> (value instanceof io.vertx.core.json.JsonArray) ? null
+                : String.format("Field '%s' must be an array, but received %s", field, actualType);
+            case "object" -> (value instanceof JsonObject) ? null
+                : String.format("Field '%s' must be an object, but received %s", field, actualType);
             default -> null;
         };
+    }
+
+    private String getTypeName(Object value) {
+        if (value == null) return "null";
+        if (value instanceof String) return "string";
+        if (value instanceof Number) return "number";
+        if (value instanceof Boolean) return "boolean";
+        if (value instanceof io.vertx.core.json.JsonArray) return "array";
+        if (value instanceof JsonObject) return "object";
+        return value.getClass().getSimpleName().toLowerCase();
     }
 }

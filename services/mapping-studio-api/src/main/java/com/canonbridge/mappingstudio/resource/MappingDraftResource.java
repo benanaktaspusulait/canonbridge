@@ -186,8 +186,26 @@ public class MappingDraftResource {
             throw new BadRequestException("Request body is required");
         }
 
-        JsonObject payload = body.getJsonObject("payload", new JsonObject());
-        JsonArray rules = body.getJsonArray("rules", new JsonArray());
+        JsonObject payload = body.getJsonObject("payload");
+        JsonArray rules = body.getJsonArray("rules");
+
+        if (payload == null) {
+            JsonObject errorResponse = new JsonObject()
+                .put("valid", false)
+                .put("errors", new JsonArray().add(new JsonObject()
+                    .put("field", "_payload")
+                    .put("type", "MISSING")
+                    .put("message", "Request payload is required for validation")));
+            return Uni.createFrom().item(Response.ok(errorResponse).build());
+        }
+
+        if (rules == null || rules.isEmpty()) {
+            JsonObject response = new JsonObject()
+                .put("valid", true)
+                .put("errors", new JsonArray())
+                .put("message", "No validation rules defined");
+            return Uni.createFrom().item(Response.ok(response).build());
+        }
 
         RequestValidationService.ValidationResult result = requestValidationService.validate(payload, rules);
 
@@ -200,7 +218,11 @@ public class MappingDraftResource {
 
         JsonObject response = new JsonObject()
             .put("valid", result.valid())
-            .put("errors", errorsJson);
+            .put("errors", errorsJson)
+            .put("totalErrors", errorsJson.size())
+            .put("message", result.valid() 
+                ? "Validation successful - all fields are valid" 
+                : String.format("Validation failed with %d error(s)", errorsJson.size()));
 
         return Uni.createFrom().item(Response.ok(response).build());
     }

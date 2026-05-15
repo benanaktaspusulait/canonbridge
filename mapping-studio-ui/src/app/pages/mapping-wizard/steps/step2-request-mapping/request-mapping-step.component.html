@@ -28,26 +28,53 @@
 
       <!-- Validation Error Summary -->
       @if (allValidationErrors().length > 0) {
-        <div class="validation-summary">
+        <div class="validation-summary error">
           <div class="summary-header">
             <i class="pi pi-exclamation-triangle"></i>
-            <span>{{ allValidationErrors().length }} validation issue{{ allValidationErrors().length > 1 ? 's' : '' }} found</span>
+            <span class="summary-title">
+              {{ allValidationErrors().length }} validation issue{{ allValidationErrors().length > 1 ? 's' : '' }} found
+            </span>
+            <span class="summary-subtitle">Please fix these issues before proceeding</span>
           </div>
           <ul class="summary-list">
             @for (err of allValidationErrors(); track err.field + err.type) {
               <li class="summary-item" [class]="'type-' + err.type.toLowerCase()">
-                <span class="err-field">{{ err.field }}</span>
-                <span class="err-message">{{ err.message }}</span>
+                <div class="err-icon">
+                  @if (err.type === 'REQUIRED') {
+                    <i class="pi pi-exclamation-circle"></i>
+                  } @else if (err.type === 'TYPE_MISMATCH') {
+                    <i class="pi pi-times-circle"></i>
+                  } @else if (err.type === 'RANGE' || err.type === 'LENGTH') {
+                    <i class="pi pi-exclamation-triangle"></i>
+                  } @else if (err.type === 'PATTERN' || err.type === 'ENUM') {
+                    <i class="pi pi-ban"></i>
+                  } @else {
+                    <i class="pi pi-info-circle"></i>
+                  }
+                </div>
+                <div class="err-content">
+                  <span class="err-field">{{ err.field }}</span>
+                  <span class="err-message">{{ err.message }}</span>
+                </div>
               </li>
             }
           </ul>
         </div>
       }
 
-      @if (backendValidationDone() && backendValidationErrors().length === 0 && allValidationErrors().length === 0) {
+      @if (backendValidationDone() && backendValidationErrors().length === 0 && allValidationErrors().length === 0 && fieldMappings().some(m => m.included)) {
         <div class="validation-success">
           <i class="pi pi-check-circle"></i>
           <span>Payload validated successfully — no issues found</span>
+        </div>
+      }
+
+      @if (!backendValidationDone() && fieldMappings().some(m => m.included)) {
+        <div class="validation-warning">
+          <i class="pi pi-info-circle"></i>
+          <span>Please click "Validate" to check your request payload before proceeding</span>
+        </div>
+      }
         </div>
       }
 
@@ -452,7 +479,7 @@
             icon="pi pi-arrow-right"
             iconPos="right"
             [disabled]="!isValid()"
-            [pTooltip]="hasBlockingErrors() ? 'Required fields are excluded from the request' : ''"
+            [pTooltip]="getNextButtonTooltip()"
             tooltipPosition="top"
             (onClick)="onNext()">
           </p-button>

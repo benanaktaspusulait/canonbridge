@@ -83,6 +83,8 @@ export interface RequestValidationRequest {
 export interface RequestValidationResponse {
   valid: boolean;
   errors: ValidationError[];
+  totalErrors?: number;
+  message?: string;
 }
 
 @Injectable({
