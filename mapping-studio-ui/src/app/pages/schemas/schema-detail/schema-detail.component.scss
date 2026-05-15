@@ -25,178 +25,207 @@
     }
 
     .header-info {
-      h2 {
-        margin: 0;
-        font-size: 1.5rem;
-        font-weight: 600;
-      }
-      .subject {
-        font-size: 0.875rem;
-        color: var(--text-color-secondary);
-        font-family: monospace;
-      }
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-  }
-
-  .validation-result {
-    margin-bottom: 1.5rem;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-
-    &.success {
-      background: var(--green-50);
-      border: 1px solid var(--green-300);
-      color: var(--green-700);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-weight: 500;
-    }
-
-    &.error {
-      background: var(--red-50);
-      border: 1px solid var(--red-300);
-
-      .result-header {
+      h2 { margin: 0; font-size: 1.5rem; font-weight: 600; }
+      .header-meta {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        color: var(--red-700);
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-      }
-
-      .error-list {
-        margin: 0;
-        padding-left: 1.5rem;
-        li {
-          padding: 0.25rem 0;
-          color: var(--red-600);
-          font-size: 0.875rem;
-        }
-      }
-    }
-  }
-
-  .card-header {
-    padding: 1rem;
-    h3 {
-      margin: 0 0 0.25rem 0;
-      font-size: 1.25rem;
-      font-weight: 600;
-    }
-    .text-muted {
-      margin: 0;
-      color: var(--text-color-secondary);
-      font-size: 0.875rem;
-    }
-  }
-
-  .rules-table {
-    .table-header {
-      display: grid;
-      grid-template-columns: 200px 80px 80px 1fr;
-      gap: 1rem;
-      padding: 0.75rem 1rem;
-      background: var(--surface-100);
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 0.875rem;
-      color: var(--text-color-secondary);
-      margin-bottom: 0.5rem;
-    }
-
-    .table-row {
-      display: grid;
-      grid-template-columns: 200px 80px 80px 1fr;
-      gap: 1rem;
-      padding: 0.75rem 1rem;
-      border-bottom: 1px solid var(--surface-200);
-      align-items: start;
-
-      &:last-child {
-        border-bottom: none;
-      }
-    }
-
-    .col-field {
-      .field-name {
-        font-family: monospace;
-        font-weight: 600;
-        font-size: 0.875rem;
-      }
-      .field-desc {
-        display: block;
-        font-size: 0.75rem;
-        color: var(--text-color-secondary);
         margin-top: 0.25rem;
+        code { font-size: 0.8125rem; color: var(--text-color-secondary); }
       }
     }
 
-    .col-constraints {
-      .constraint-row {
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
+    .header-actions { display: flex; gap: 0.5rem; }
+  }
+
+  // Schema JSON tab
+  .schema-editor-tab {
+    .form-fields { margin-bottom: 1.5rem; }
+    .form-row { display: flex; gap: 1rem; margin-bottom: 1rem; }
+    .form-field {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      label { font-size: 0.8125rem; font-weight: 600; color: var(--text-color-secondary); }
+    }
+    .json-editor-section {
+      .editor-header {
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;
+        label { font-size: 0.875rem; font-weight: 600; }
       }
-
-      .constraint-field {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-
-        label {
-          font-size: 0.75rem;
-          color: var(--text-color-secondary);
-          font-weight: 500;
-        }
-
-        :deep(.constraint-input) {
-          width: 100px;
-        }
-
-        .constraint-text {
-          width: 150px;
-          font-size: 0.875rem;
-        }
-      }
-
-      .enum-field {
-        .enum-values {
-          font-size: 0.8125rem;
-          font-family: monospace;
-          color: var(--purple-600);
-        }
-      }
-
-      .format-value {
+      .json-textarea {
+        width: 100%;
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
         font-size: 0.8125rem;
-        font-family: monospace;
-        color: var(--blue-600);
-      }
-
-      .no-constraints {
-        color: var(--text-color-secondary);
+        line-height: 1.5;
       }
     }
   }
 
-  .schema-preview-card {
-    margin-top: 1.5rem;
-  }
+  // Validation Rules tab
+  .validation-rules-tab {
+    .rules-summary {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--surface-50);
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+      .sep { color: var(--surface-400); }
+    }
 
-  .schema-json {
-    background: var(--surface-50);
-    padding: 1rem;
-    border-radius: 6px;
-    font-size: 0.8125rem;
-    overflow-x: auto;
-    max-height: 400px;
-    overflow-y: auto;
+    .validation-result {
+      margin-bottom: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+
+      &.success {
+        background: var(--green-50); border: 1px solid var(--green-300); color: var(--green-700);
+        display: flex; align-items: center; gap: 0.5rem; font-weight: 500;
+      }
+      &.error {
+        background: var(--red-50); border: 1px solid var(--red-300);
+        .result-header { display: flex; align-items: center; gap: 0.5rem; color: var(--red-700); font-weight: 600; margin-bottom: 0.5rem; }
+        .error-list { margin: 0; padding-left: 1.5rem; li { padding: 0.25rem 0; color: var(--red-600); font-size: 0.875rem; } }
+      }
+    }
+
+    .rules-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    // Rule cards
+    .rule-card {
+      border: 1px solid var(--surface-200);
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+      transition: border-color 0.2s;
+
+      &.expanded { border-color: var(--primary-300); }
+      &.deprecated { opacity: 0.7; }
+
+      .rule-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        background: var(--surface-50);
+        transition: background 0.15s;
+
+        &:hover { background: var(--surface-100); }
+
+        .rule-header-left {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+
+          i { font-size: 0.75rem; color: var(--text-color-secondary); width: 16px; }
+          .field-name { font-family: monospace; font-weight: 600; font-size: 0.9rem; }
+          :deep(.type-tag) { font-size: 0.7rem; }
+
+          .badge {
+            font-size: 0.6875rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+
+            &.required { background: var(--red-100); color: var(--red-700); }
+            &.nullable { background: var(--blue-100); color: var(--blue-700); }
+            &.deprecated { background: var(--orange-100); color: var(--orange-700); }
+            &.format { background: var(--purple-100); color: var(--purple-700); }
+          }
+        }
+
+        .rule-header-right {
+          .constraint-count { font-size: 0.8125rem; color: var(--text-color-secondary); }
+        }
+      }
+
+      .rule-body {
+        padding: 1rem;
+        border-top: 1px solid var(--surface-200);
+        background: white;
+
+        .rule-section {
+          margin-bottom: 1.25rem;
+          &:last-child { margin-bottom: 0; }
+
+          h5 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-color-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+          }
+        }
+
+        .flags-row {
+          display: flex;
+          gap: 1.5rem;
+
+          .flag {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+          }
+        }
+
+        .constraints-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+          gap: 1rem;
+
+          .constraint-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+
+            &.wide { grid-column: span 2; }
+
+            label {
+              font-size: 0.75rem;
+              font-weight: 500;
+              color: var(--text-color-secondary);
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+            }
+          }
+        }
+
+        .enum-section {
+          .enum-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            min-height: 32px;
+            align-items: center;
+
+            .no-enum { font-size: 0.8125rem; color: var(--text-color-secondary); font-style: italic; }
+          }
+
+          .enum-add {
+            display: flex;
+            gap: 0.5rem;
+            max-width: 300px;
+            input { flex: 1; }
+          }
+        }
+      }
+    }
   }
 }

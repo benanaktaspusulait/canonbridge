@@ -10,185 +10,305 @@
   } @else {
     <div class="page-header">
       <div class="header-left">
-        <p-button
-          icon="pi pi-arrow-left"
-          [text]="true"
-          severity="secondary"
-          (onClick)="goBack()" />
+        <p-button icon="pi pi-arrow-left" [text]="true" severity="secondary" (onClick)="goBack()" />
         <div class="header-info">
           <h2>{{ schema()!.name }}</h2>
-          <span class="subject">{{ schema()!.subject }}</span>
+          <div class="header-meta">
+            <p-tag [value]="schema()!.schema_type" severity="info" />
+            <code>{{ schema()!.subject }}</code>
+            <p-tag [value]="'v' + schema()!.version" severity="secondary" />
+            <p-tag [value]="schema()!.status!" [severity]="schema()!.status === 'ACTIVE' ? 'success' : 'warn'" />
+          </div>
         </div>
       </div>
       <div class="header-actions">
-        <p-button
-          label="Validate Rules"
-          icon="pi pi-check-circle"
-          severity="info"
-          [outlined]="true"
-          [loading]="validating()"
-          (onClick)="validate()" />
-        <p-button
-          label="Save"
-          icon="pi pi-save"
-          [loading]="saving()"
-          (onClick)="saveValidationRules()" />
+        <p-button label="Save" icon="pi pi-save" [loading]="saving()" (onClick)="save()" />
       </div>
     </div>
 
-    <!-- Validation Result -->
-    @if (validationDone()) {
-      @if (validationSuccess()) {
-        <div class="validation-result success">
-          <i class="pi pi-check-circle"></i>
-          <span>Schema validation rules are consistent — no issues found</span>
-        </div>
-      } @else {
-        <div class="validation-result error">
-          <div class="result-header">
-            <i class="pi pi-exclamation-triangle"></i>
-            <span>{{ validationErrors().length }} validation issue(s) found</span>
+    <p-tabs [value]="activeTab" (valueChange)="activeTab = +($event ?? 0)">
+      <p-tablist>
+        <p-tab [value]="0"><i class="pi pi-code"></i> Schema JSON</p-tab>
+        <p-tab [value]="1"><i class="pi pi-shield"></i> Validation Rules</p-tab>
+      </p-tablist>
+      <p-tabpanels>
+        <p-tabpanel [value]="0">
+        <div class="schema-editor-tab">
+          <div class="form-fields">
+            <div class="form-row">
+              <div class="form-field">
+                <label>Name</label>
+                <input pInputText [(ngModel)]="editName" />
+              </div>
+              <div class="form-field">
+                <label>Subject</label>
+                <input pInputText [(ngModel)]="editSubject" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label>Type</label>
+                <p-select [(ngModel)]="editSchemaType" [options]="schemaTypes" optionLabel="label" optionValue="value" />
+              </div>
+              <div class="form-field">
+                <label>Status</label>
+                <p-select [(ngModel)]="editStatus" [options]="statusOptions" optionLabel="label" optionValue="value" />
+              </div>
+            </div>
+            <div class="form-field">
+              <label>Description</label>
+              <input pInputText [(ngModel)]="editDescription" placeholder="Brief description" />
+            </div>
           </div>
-          <ul class="error-list">
-            @for (err of validationErrors(); track err.field + err.type) {
-              <li>
-                <strong>{{ err.field }}</strong>: {{ err.message }}
-              </li>
+
+          <div class="json-editor-section">
+            <div class="editor-header">
+              <label>Schema JSON</label>
+              <p-button label="Format" icon="pi pi-code" [text]="true" size="small" (onClick)="formatJson()" />
+            </div>
+            <textarea pTextarea [(ngModel)]="editSchemaJson" [rows]="20" class="json-textarea"></textarea>
+            @if (jsonError()) {
+              <p-message severity="error" [text]="jsonError()!" />
             }
-          </ul>
-        </div>
-      }
-    }
-
-    <!-- Validation Rules Table -->
-    <p-card>
-      <ng-template pTemplate="header">
-        <div class="card-header">
-          <h3>Field Validation Rules</h3>
-          <p class="text-muted">Define constraints for each field in the schema</p>
-        </div>
-      </ng-template>
-
-      <div class="rules-table">
-        <div class="table-header">
-          <div class="col-field">Field</div>
-          <div class="col-type">Type</div>
-          <div class="col-required">Required</div>
-          <div class="col-constraints">Constraints</div>
-        </div>
-
-        @for (rule of validationRules(); track rule.field; let i = $index) {
-          <div class="table-row">
-            <div class="col-field">
-              <span class="field-name">{{ rule.field }}</span>
-              @if (rule.description) {
-                <span class="field-desc">{{ rule.description }}</span>
-              }
-            </div>
-
-            <div class="col-type">
-              <p-tag [value]="rule.type" [severity]="getTypeSeverity(rule.type)" />
-            </div>
-
-            <div class="col-required">
-              <p-checkbox
-                [(ngModel)]="rule.required"
-                [binary]="true"
-                (onChange)="toggleRequired(i)" />
-            </div>
-
-            <div class="col-constraints">
-              @if (rule.type === 'number' || rule.type === 'integer') {
-                <div class="constraint-row">
-                  <div class="constraint-field">
-                    <label>Min</label>
-                    <p-inputnumber
-                      [ngModel]="rule.minValue ?? null"
-                      (ngModelChange)="updateRule(i, 'minValue', $event)"
-                      [showButtons]="false"
-                      placeholder="—"
-                      styleClass="constraint-input" />
-                  </div>
-                  <div class="constraint-field">
-                    <label>Max</label>
-                    <p-inputnumber
-                      [ngModel]="rule.maxValue ?? null"
-                      (ngModelChange)="updateRule(i, 'maxValue', $event)"
-                      [showButtons]="false"
-                      placeholder="—"
-                      styleClass="constraint-input" />
-                  </div>
-                </div>
-              }
-
-              @if (rule.type === 'string') {
-                <div class="constraint-row">
-                  <div class="constraint-field">
-                    <label>Min Length</label>
-                    <p-inputnumber
-                      [ngModel]="rule.minLength ?? null"
-                      (ngModelChange)="updateRule(i, 'minLength', $event)"
-                      [showButtons]="false"
-                      placeholder="—"
-                      styleClass="constraint-input" />
-                  </div>
-                  <div class="constraint-field">
-                    <label>Max Length</label>
-                    <p-inputnumber
-                      [ngModel]="rule.maxLength ?? null"
-                      (ngModelChange)="updateRule(i, 'maxLength', $event)"
-                      [showButtons]="false"
-                      placeholder="—"
-                      styleClass="constraint-input" />
-                  </div>
-                  <div class="constraint-field">
-                    <label>Pattern</label>
-                    <input
-                      pInputText
-                      type="text"
-                      [ngModel]="rule.pattern ?? ''"
-                      (ngModelChange)="updateRule(i, 'pattern', $event)"
-                      placeholder="regex"
-                      class="constraint-text" />
-                  </div>
-                </div>
-              }
-
-              @if (rule.enumValues && rule.enumValues.length > 0) {
-                <div class="constraint-row">
-                  <div class="constraint-field enum-field">
-                    <label>Enum</label>
-                    <span class="enum-values">{{ rule.enumValues.join(', ') }}</span>
-                  </div>
-                </div>
-              }
-
-              @if (rule.format) {
-                <div class="constraint-row">
-                  <div class="constraint-field">
-                    <label>Format</label>
-                    <span class="format-value">{{ rule.format }}</span>
-                  </div>
-                </div>
-              }
-
-              @if (rule.type === 'object' || rule.type === 'array' || rule.type === 'boolean') {
-                <span class="no-constraints">—</span>
-              }
-            </div>
           </div>
-        }
-      </div>
-    </p-card>
-
-    <!-- Schema JSON Preview -->
-    <p-card styleClass="schema-preview-card">
-      <ng-template pTemplate="header">
-        <div class="card-header">
-          <h3>Schema JSON</h3>
         </div>
-      </ng-template>
-      <pre class="schema-json">{{ buildSchemaJsonWithRules() | json }}</pre>
-    </p-card>
+        </p-tabpanel>
+
+        <p-tabpanel [value]="1">
+        <div class="validation-rules-tab">
+
+          <!-- Summary -->
+          <div class="rules-summary">
+            <span><strong>{{ rulesSummary().total }}</strong> fields</span>
+            <span class="sep">•</span>
+            <span><strong>{{ rulesSummary().required }}</strong> required</span>
+            <span class="sep">•</span>
+            <span><strong>{{ rulesSummary().withConstraints }}</strong> with constraints</span>
+          </div>
+
+          <!-- Validation Result -->
+          @if (validationDone()) {
+            @if (validationSuccess()) {
+              <div class="validation-result success">
+                <i class="pi pi-check-circle"></i>
+                <span>All validation rules are consistent</span>
+              </div>
+            } @else {
+              <div class="validation-result error">
+                <div class="result-header">
+                  <i class="pi pi-exclamation-triangle"></i>
+                  <span>{{ validationErrors().length }} issue(s) found</span>
+                </div>
+                <ul class="error-list">
+                  @for (err of validationErrors(); track err.field + err.type) {
+                    <li><strong>{{ err.field }}</strong>: {{ err.message }}</li>
+                  }
+                </ul>
+              </div>
+            }
+          }
+
+          <!-- Actions -->
+          <div class="rules-actions">
+            <p-button label="Validate" icon="pi pi-check-circle" severity="info" [outlined]="true" [loading]="validating()" (onClick)="validate()" />
+            <p-button label="Expand All" icon="pi pi-angle-double-down" [text]="true" size="small" (onClick)="expandAll()" />
+            <p-button label="Collapse All" icon="pi pi-angle-double-up" [text]="true" size="small" (onClick)="collapseAll()" />
+          </div>
+
+          <!-- Rules -->
+          @for (rule of validationRules(); track rule.field; let i = $index) {
+            <div class="rule-card" [class.expanded]="rule.expanded" [class.deprecated]="rule.deprecated">
+              <div class="rule-header" (click)="toggleExpand(i)">
+                <div class="rule-header-left">
+                  <i class="pi" [class.pi-chevron-right]="!rule.expanded" [class.pi-chevron-down]="rule.expanded"></i>
+                  <span class="field-name">{{ rule.field }}</span>
+                  <p-tag [value]="rule.type" [severity]="getTypeSeverity(rule.type)" styleClass="type-tag" />
+                  @if (rule.required) {
+                    <span class="badge required">required</span>
+                  }
+                  @if (rule.nullable) {
+                    <span class="badge nullable">nullable</span>
+                  }
+                  @if (rule.deprecated) {
+                    <span class="badge deprecated">deprecated</span>
+                  }
+                  @if (rule.format) {
+                    <span class="badge format">{{ rule.format }}</span>
+                  }
+                </div>
+                <div class="rule-header-right">
+                  @if (getConstraintCount(rule) > 0) {
+                    <span class="constraint-count">{{ getConstraintCount(rule) }} constraint{{ getConstraintCount(rule) > 1 ? 's' : '' }}</span>
+                  }
+                </div>
+              </div>
+
+              @if (rule.expanded) {
+                <div class="rule-body">
+                  <!-- Row 1: Basic flags -->
+                  <div class="rule-section">
+                    <h5>Basic</h5>
+                    <div class="flags-row">
+                      <label class="flag">
+                        <p-checkbox [(ngModel)]="rule.required" [binary]="true" (onChange)="toggleRequired(i)" />
+                        <span>Required</span>
+                      </label>
+                      <label class="flag">
+                        <p-checkbox [(ngModel)]="rule.nullable" [binary]="true" (onChange)="toggleNullable(i)" />
+                        <span>Nullable</span>
+                      </label>
+                      <label class="flag">
+                        <p-checkbox [(ngModel)]="rule.deprecated" [binary]="true" (onChange)="updateRule(i, 'deprecated', rule.deprecated)" />
+                        <span>Deprecated</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- String constraints -->
+                  @if (rule.type === 'string') {
+                    <div class="rule-section">
+                      <h5>String Constraints</h5>
+                      <div class="constraints-grid">
+                        <div class="constraint-field">
+                          <label>Min Length</label>
+                          <p-inputnumber [ngModel]="rule.minLength ?? null" (ngModelChange)="updateRule(i, 'minLength', $event)" [showButtons]="true" [min]="0" placeholder="—" />
+                        </div>
+                        <div class="constraint-field">
+                          <label>Max Length</label>
+                          <p-inputnumber [ngModel]="rule.maxLength ?? null" (ngModelChange)="updateRule(i, 'maxLength', $event)" [showButtons]="true" [min]="0" placeholder="—" />
+                        </div>
+                        <div class="constraint-field">
+                          <label>Format</label>
+                          <p-select [ngModel]="rule.format ?? ''" (ngModelChange)="updateRule(i, 'format', $event || null)" [options]="formatOptions" optionLabel="label" optionValue="value" placeholder="None" />
+                        </div>
+                        <div class="constraint-field wide">
+                          <label>Pattern (Regex)</label>
+                          <input pInputText [ngModel]="rule.pattern ?? ''" (ngModelChange)="updateRule(i, 'pattern', $event || null)" placeholder="e.g. ^[A-Z]{2,3}$" />
+                        </div>
+                        <div class="constraint-field wide">
+                          <label>Pattern Description</label>
+                          <input pInputText [ngModel]="rule.patternDescription ?? ''" (ngModelChange)="updateRule(i, 'patternDescription', $event || null)" placeholder="Human-readable description of the pattern" />
+                        </div>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Number constraints -->
+                  @if (rule.type === 'number' || rule.type === 'integer') {
+                    <div class="rule-section">
+                      <h5>Number Constraints</h5>
+                      <div class="constraints-grid">
+                        <div class="constraint-field">
+                          <label>Minimum</label>
+                          <p-inputnumber [ngModel]="rule.minimum ?? null" (ngModelChange)="updateRule(i, 'minimum', $event)" [showButtons]="true" placeholder="—" />
+                        </div>
+                        <div class="constraint-field">
+                          <label>
+                            Exclusive
+                            <p-checkbox [(ngModel)]="rule.exclusiveMinimum" [binary]="true" (onChange)="updateRule(i, 'exclusiveMinimum', rule.exclusiveMinimum)" />
+                          </label>
+                        </div>
+                        <div class="constraint-field">
+                          <label>Maximum</label>
+                          <p-inputnumber [ngModel]="rule.maximum ?? null" (ngModelChange)="updateRule(i, 'maximum', $event)" [showButtons]="true" placeholder="—" />
+                        </div>
+                        <div class="constraint-field">
+                          <label>
+                            Exclusive
+                            <p-checkbox [(ngModel)]="rule.exclusiveMaximum" [binary]="true" (onChange)="updateRule(i, 'exclusiveMaximum', rule.exclusiveMaximum)" />
+                          </label>
+                        </div>
+                        <div class="constraint-field">
+                          <label>Multiple Of</label>
+                          <p-inputnumber [ngModel]="rule.multipleOf ?? null" (ngModelChange)="updateRule(i, 'multipleOf', $event)" [showButtons]="false" placeholder="—" />
+                        </div>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Array constraints -->
+                  @if (rule.type === 'array') {
+                    <div class="rule-section">
+                      <h5>Array Constraints</h5>
+                      <div class="constraints-grid">
+                        <div class="constraint-field">
+                          <label>Min Items</label>
+                          <p-inputnumber [ngModel]="rule.minItems ?? null" (ngModelChange)="updateRule(i, 'minItems', $event)" [showButtons]="true" [min]="0" placeholder="—" />
+                        </div>
+                        <div class="constraint-field">
+                          <label>Max Items</label>
+                          <p-inputnumber [ngModel]="rule.maxItems ?? null" (ngModelChange)="updateRule(i, 'maxItems', $event)" [showButtons]="true" [min]="0" placeholder="—" />
+                        </div>
+                        <div class="constraint-field">
+                          <label class="flag">
+                            <p-checkbox [(ngModel)]="rule.uniqueItems" [binary]="true" (onChange)="updateRule(i, 'uniqueItems', rule.uniqueItems)" />
+                            <span>Unique Items</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Enum values -->
+                  <div class="rule-section">
+                    <h5>Allowed Values (Enum)</h5>
+                    <div class="enum-section">
+                      <div class="enum-chips">
+                        @for (val of rule.enumValues || []; track val; let ei = $index) {
+                          <p-chip [label]="val" [removable]="true" (onRemove)="removeEnumValue(i, ei)" />
+                        }
+                        @if (!rule.enumValues || rule.enumValues.length === 0) {
+                          <span class="no-enum">No enum values — field accepts any value of its type</span>
+                        }
+                      </div>
+                      <div class="enum-add">
+                        <input pInputText [(ngModel)]="newEnumValue" placeholder="Add value..." (keyup.enter)="addEnumValue(i, newEnumValue)" />
+                        <p-button icon="pi pi-plus" size="small" [outlined]="true" (onClick)="addEnumValue(i, newEnumValue)" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Meta -->
+                  <div class="rule-section">
+                    <h5>Metadata</h5>
+                    <div class="constraints-grid">
+                      <div class="constraint-field">
+                        <label>Default Value</label>
+                        <input pInputText [ngModel]="rule.defaultValue ?? ''" (ngModelChange)="updateRule(i, 'defaultValue', $event || null)" placeholder="Default if not provided" />
+                      </div>
+                      <div class="constraint-field wide">
+                        <label>Custom Error Message</label>
+                        <input pInputText [ngModel]="rule.customErrorMessage ?? ''" (ngModelChange)="updateRule(i, 'customErrorMessage', $event || null)" placeholder="Override default validation error" />
+                      </div>
+                      <div class="constraint-field wide">
+                        <label>Description</label>
+                        <input pInputText [ngModel]="rule.description ?? ''" (ngModelChange)="updateRule(i, 'description', $event)" placeholder="Field description" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Examples -->
+                  <div class="rule-section">
+                    <h5>Examples</h5>
+                    <div class="enum-section">
+                      <div class="enum-chips">
+                        @for (ex of rule.examples || []; track ex; let ei = $index) {
+                          <p-chip [label]="ex" [removable]="true" (onRemove)="removeExample(i, ei)" />
+                        }
+                      </div>
+                      <div class="enum-add">
+                        <input pInputText #exInput placeholder="Add example..." (keyup.enter)="addExample(i, exInput.value); exInput.value = ''" />
+                        <p-button icon="pi pi-plus" size="small" [outlined]="true" (onClick)="addExample(i, exInput.value); exInput.value = ''" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
   }
 </div>
