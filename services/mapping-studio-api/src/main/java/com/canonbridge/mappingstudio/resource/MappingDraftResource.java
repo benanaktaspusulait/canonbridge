@@ -21,11 +21,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.jboss.logging.Logger;
+
 @Path("/api/mapping-drafts")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Mapping Drafts", description = "Mapping draft management operations")
 public class MappingDraftResource {
+
+    private static final Logger LOG = Logger.getLogger(MappingDraftResource.class);
 
     @Inject
     MappingDraftRepository draftRepository;
@@ -328,6 +332,9 @@ public class MappingDraftResource {
         if (value == null) {
             return null;
         }
+        LOG.infof("[jsonValueAsString] type=%s, value=%s", value.getClass().getName(), 
+            String.valueOf(value).length() > 100 ? String.valueOf(value).substring(0, 100) + "..." : String.valueOf(value));
+        
         if (value instanceof JsonObject jsonObject) {
             return jsonObject.encode();
         }
@@ -335,7 +342,6 @@ public class MappingDraftResource {
             return jsonArray.encode();
         }
         if (value instanceof String str) {
-            // If string is JSON-encoded (object/array), parse and re-encode to ensure valid JSON
             String trimmed = str.trim();
             if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
                 try {
@@ -345,7 +351,7 @@ public class MappingDraftResource {
                         return new io.vertx.core.json.JsonArray(trimmed).encode();
                     }
                 } catch (Exception e) {
-                    // Not valid JSON, return as-is
+                    LOG.warnf("[jsonValueAsString] Failed to parse as JSON: %s", e.getMessage());
                     return str;
                 }
             }

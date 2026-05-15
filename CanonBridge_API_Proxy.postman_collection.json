@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "7f7f9a8e-2f1e-4c99-9c9d-6f0c0d2fd7b1",
     "name": "CanonBridge API Proxy",
-    "description": "Test collection for CanonBridge dynamic API proxy system",
+    "description": "Test collection for CanonBridge dynamic API proxy system.\n\nIncludes validation tests for the PayFlex Payment Query mapping.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -17,229 +17,409 @@
       "type": "string"
     },
     {
-      "key": "mappingIdPost",
-      "value": "b3bb5c80-7966-4014-a2b4-235539f36b1b",
+      "key": "payflexMappingId",
+      "value": "dbe69b5d-7311-478c-9957-654ed3b8a3d0",
       "type": "string",
-      "description": "POST mapping ID - Payment Proxy with request body"
+      "description": "PayFlex Payment Query mapping ID (REST_API, POST)"
     },
     {
-      "key": "mappingIdGet",
-      "value": "e87b7f54-0e6a-4606-9c43-61b0891ce2be",
+      "key": "mockApiUrl",
+      "value": "http://localhost:8085",
+      "type": "string"
+    },
+    {
+      "key": "mockApiKey",
+      "value": "demo-api-key-12345",
+      "type": "string"
+    },
+    {
+      "key": "foodmarketMappingId",
+      "value": "e5555555-5555-5555-5555-555555555555",
       "type": "string",
-      "description": "GET mapping ID - Payment Proxy with query params"
+      "description": "FoodMarket Order Summary mapping ID (REST_API, GET)"
     }
   ],
   "item": [
     {
-      "name": "Proxy Endpoints",
+      "name": "PayFlex Payment Query - Proxy",
+      "description": "Tests for the PayFlex Payment Query mapping proxy.\n\nMapping: dbe69b5d-7311-478c-9957-654ed3b8a3d0\nSource: REST_API (POST)\nTarget API: http://canonbridge-mock:8080/api/payments/query\nAuth: API_KEY (X-Api-Key)\n\nValidation rules:\n- transactionId: required, string, min_length=3",
       "item": [
         {
-          "name": "POST Proxy - Payment Query with Body",
+          "name": "✅ Valid Request - Full Transaction ID",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-Tenant-Id",
-                "value": "{{tenantId}}"
-              }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"partner_format\": \"detailed\",\n  \"customer_id\": \"CUST-12345\"\n}"
+              "raw": "{\n  \"transactionId\": \"TRANSACTIONID-001\"\n}"
             },
-            "url": "{{baseUrl}}/api/proxy/{{mappingIdPost}}",
-            "description": "POST proxy example:\n1. Accepts request body with partner_format and customer_id\n2. Transforms request body to API format (adds status, converts fields)\n3. Calls external API with POST\n4. Transforms complex response to simple 5-field format\n5. Returns: paymentId, amount, currency, status, customerEmail"
+            "url": "{{baseUrl}}/api/proxy/{{payflexMappingId}}",
+            "description": "Valid request with proper transactionId.\n\nExpected: 200 OK with mapped response containing merchantId, payerName, riskScore, etc."
           },
           "response": []
         },
         {
-          "name": "GET Proxy - Payment Latest with Query Params",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-Tenant-Id",
-                "value": "{{tenantId}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/proxy/{{mappingIdGet}}?format=detailed",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "proxy", "{{mappingIdGet}}"],
-              "query": [
-                {
-                  "key": "format",
-                  "value": "detailed",
-                  "description": "Response format: detailed or flat"
-                }
-              ]
-            },
-            "description": "GET proxy example:\n1. Accepts query parameters (no request body)\n2. Transforms query params to API query string\n3. Calls external API with GET\n4. Transforms complex response to simple 5-field format\n5. Returns: paymentId, amount, currency, status, customerEmail"
-          },
-          "response": [
-            {
-              "name": "Success - Transformed Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "X-Tenant-Id",
-                    "value": "tenant-acme"
-                  }
-                ],
-                "url": {
-                  "raw": "http://localhost:8082/api/proxy/e87b7f54-0e6a-4606-9c43-61b0891ce2be?format=detailed",
-                  "protocol": "http",
-                  "host": ["localhost"],
-                  "port": "8082",
-                  "path": ["api", "proxy", "e87b7f54-0e6a-4606-9c43-61b0891ce2be"],
-                  "query": [
-                    {
-                      "key": "format",
-                      "value": "detailed"
-                    }
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json;charset=UTF-8"
-                }
-              ],
-              "body": "{\n  \"paymentId\": \"PAY-D4271272\",\n  \"amount\": 1250.5,\n  \"currency\": \"EUR\",\n  \"status\": \"COMPLETED\",\n  \"customerEmail\": \"john.doe@example.com\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "GET Proxy - Payment Latest (Flat Format)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-Tenant-Id",
-                "value": "{{tenantId}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/proxy/{{mappingIdGet}}?format=flat",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "proxy", "{{mappingIdGet}}"],
-              "query": [
-                {
-                  "key": "format",
-                  "value": "flat",
-                  "description": "Response format: detailed or flat"
-                }
-              ]
-            },
-            "description": "Same GET proxy but with flat format query parameter"
-          },
-          "response": []
-        },
-        {
-          "name": "POST Proxy - Different Customer",
+          "name": "✅ Valid Request - Short Transaction ID",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-Tenant-Id",
-                "value": "{{tenantId}}"
-              }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"partner_format\": \"flat\",\n  \"customer_id\": \"CUST-67890\"\n}"
+              "raw": "{\n  \"transactionId\": \"TXN-999\"\n}"
             },
-            "url": "{{baseUrl}}/api/proxy/{{mappingIdPost}}",
-            "description": "POST proxy with different customer and flat format"
+            "url": "{{baseUrl}}/api/proxy/{{payflexMappingId}}",
+            "description": "Valid request with minimum length transactionId (3+ chars).\n\nExpected: 200 OK with mapped response."
           },
           "response": []
         },
         {
-          "name": "POST Proxy - Validation Error (Invalid Format)",
+          "name": "❌ Validation: Missing Required Field (empty body)",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-Tenant-Id",
-                "value": "{{tenantId}}"
-              }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"partner_format\": \"invalid_format\",\n  \"customer_id\": \"CUST-99999\"\n}"
+              "raw": "{}"
             },
-            "url": "{{baseUrl}}/api/proxy/{{mappingIdPost}}",
-            "description": "Test validation - should return 400 error because partner_format must be 'flat' or 'detailed'"
+            "url": "{{baseUrl}}/api/proxy/{{payflexMappingId}}",
+            "description": "Empty body - transactionId is required.\n\nExpected: Error response with message \"Field 'transactionId' is required\""
           },
           "response": []
         },
         {
-          "name": "POST Proxy - Validation Error (Missing Required Field)",
+          "name": "❌ Validation: Missing Required Field (null value)",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-Tenant-Id",
-                "value": "{{tenantId}}"
-              }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"partner_format\": \"detailed\"\n}"
+              "raw": "{\n  \"transactionId\": null\n}"
             },
-            "url": "{{baseUrl}}/api/proxy/{{mappingIdPost}}",
-            "description": "Test validation - should return 400 error because customer_id is required"
+            "url": "{{baseUrl}}/api/proxy/{{payflexMappingId}}",
+            "description": "Null transactionId - required field cannot be null.\n\nExpected: Error response with message \"Field 'transactionId' is required\""
           },
           "response": []
         },
         {
-          "name": "Get Mapping Proxy Info (POST)",
+          "name": "❌ Validation: Missing Required Field (blank string)",
           "request": {
-            "method": "GET",
+            "method": "POST",
             "header": [
-              {
-                "key": "X-Tenant-Id",
-                "value": "{{tenantId}}"
-              }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
             ],
-            "url": "{{baseUrl}}/api/proxy/{{mappingIdPost}}/info",
-            "description": "Get information about the POST mapping proxy endpoint"
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"   \"\n}"
+            },
+            "url": "{{baseUrl}}/api/proxy/{{payflexMappingId}}",
+            "description": "Blank string transactionId - required field cannot be empty/whitespace.\n\nExpected: Error response with message \"Field 'transactionId' is required\""
           },
           "response": []
         },
         {
-          "name": "Get Mapping Proxy Info (GET)",
+          "name": "❌ Validation: Wrong Type (number instead of string)",
           "request": {
-            "method": "GET",
+            "method": "POST",
             "header": [
-              {
-                "key": "X-Tenant-Id",
-                "value": "{{tenantId}}"
-              }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
             ],
-            "url": "{{baseUrl}}/api/proxy/{{mappingIdGet}}/info",
-            "description": "Get information about the GET mapping proxy endpoint"
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": 12345\n}"
+            },
+            "url": "{{baseUrl}}/api/proxy/{{payflexMappingId}}",
+            "description": "Number instead of string - type validation should fail.\n\nExpected: Error response with message \"Field 'transactionId' must be of type string\""
+          },
+          "response": []
+        },
+        {
+          "name": "❌ Validation: Wrong Type (boolean instead of string)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/proxy/{{payflexMappingId}}",
+            "description": "Boolean instead of string - type validation should fail.\n\nExpected: Error response with message \"Field 'transactionId' must be of type string\""
+          },
+          "response": []
+        },
+        {
+          "name": "❌ Validation: Wrong Type (array instead of string)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": [\"TXN-001\"]\n}"
+            },
+            "url": "{{baseUrl}}/api/proxy/{{payflexMappingId}}",
+            "description": "Array instead of string - type validation should fail.\n\nExpected: Error response with message \"Field 'transactionId' must be of type string\""
+          },
+          "response": []
+        },
+        {
+          "name": "❌ Validation: Too Short (min_length=3)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"AB\"\n}"
+            },
+            "url": "{{baseUrl}}/api/proxy/{{payflexMappingId}}",
+            "description": "transactionId too short (2 chars, minimum is 3).\n\nExpected: Error response with message \"Field 'transactionId' length 2 is below minimum 3\""
+          },
+          "response": []
+        },
+        {
+          "name": "❌ Validation: Single Character (min_length=3)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"X\"\n}"
+            },
+            "url": "{{baseUrl}}/api/proxy/{{payflexMappingId}}",
+            "description": "transactionId only 1 char (minimum is 3).\n\nExpected: Error response with message \"Field 'transactionId' length 1 is below minimum 3\""
+          },
+          "response": []
+        },
+        {
+          "name": "❌ Validation: Invalid JSON (malformed body)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ invalid json }"
+            },
+            "url": "{{baseUrl}}/api/proxy/{{payflexMappingId}}",
+            "description": "Malformed JSON body.\n\nExpected: Error response with message about invalid JSON payload."
+          },
+          "response": []
+        },
+        {
+          "name": "❌ Auth: Missing Tenant ID Header",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"TXN-001\"\n}"
+            },
+            "url": "{{baseUrl}}/api/proxy/{{payflexMappingId}}",
+            "description": "Missing X-Tenant-Id header.\n\nExpected: 400 Bad Request with message \"X-Tenant-Id header is required\""
+          },
+          "response": []
+        },
+        {
+          "name": "❌ Not Found: Invalid Mapping ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"TXN-001\"\n}"
+            },
+            "url": "{{baseUrl}}/api/proxy/00000000-0000-0000-0000-000000000000",
+            "description": "Non-existent mapping ID.\n\nExpected: 404 Not Found with message \"Mapping not found\""
+          },
+          "response": []
+        },
+        {
+          "name": "✅ Valid Request - Extra Fields Ignored",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"TXN-EXTRA-001\",\n  \"extraField\": \"should be ignored\",\n  \"anotherField\": 42\n}"
+            },
+            "url": "{{baseUrl}}/api/proxy/{{payflexMappingId}}",
+            "description": "Valid request with extra fields that are not in the schema.\nExtra fields should be ignored, only transactionId is used.\n\nExpected: 200 OK with mapped response."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "PayFlex Payment Query - Validate Endpoint",
+      "description": "Tests for the /validate-request endpoint which validates payload against field rules without calling the external API.",
+      "item": [
+        {
+          "name": "✅ Validate: Valid Payload",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": { \"transactionId\": \"TXN-001\" },\n  \"rules\": [\n    { \"field\": \"transactionId\", \"required\": true, \"type\": \"string\", \"minLength\": 3 }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/mapping-drafts/{{payflexMappingId}}/validate-request",
+            "description": "Validate a valid payload.\n\nExpected: {\"valid\": true, \"errors\": [], \"totalErrors\": 0}"
+          },
+          "response": []
+        },
+        {
+          "name": "❌ Validate: Required Field Missing",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": {},\n  \"rules\": [\n    { \"field\": \"transactionId\", \"required\": true, \"type\": \"string\" }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/mapping-drafts/{{payflexMappingId}}/validate-request",
+            "description": "Validate with missing required field.\n\nExpected: {\"valid\": false, \"errors\": [{\"field\": \"transactionId\", \"type\": \"REQUIRED\", ...}]}"
+          },
+          "response": []
+        },
+        {
+          "name": "❌ Validate: Type Mismatch",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": { \"amount\": \"not-a-number\" },\n  \"rules\": [\n    { \"field\": \"amount\", \"required\": true, \"type\": \"number\" }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/mapping-drafts/{{payflexMappingId}}/validate-request",
+            "description": "Validate with wrong type (string instead of number).\n\nExpected: {\"valid\": false, \"errors\": [{\"field\": \"amount\", \"type\": \"TYPE_MISMATCH\", ...}]}"
+          },
+          "response": []
+        },
+        {
+          "name": "❌ Validate: Number Out of Range",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": { \"amount\": -50 },\n  \"rules\": [\n    { \"field\": \"amount\", \"required\": true, \"type\": \"number\", \"minValue\": 0, \"maxValue\": 100000 }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/mapping-drafts/{{payflexMappingId}}/validate-request",
+            "description": "Validate with number below minimum.\n\nExpected: {\"valid\": false, \"errors\": [{\"field\": \"amount\", \"type\": \"RANGE\", ...}]}"
+          },
+          "response": []
+        },
+        {
+          "name": "❌ Validate: String Too Short",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": { \"currency\": \"E\" },\n  \"rules\": [\n    { \"field\": \"currency\", \"required\": true, \"type\": \"string\", \"minLength\": 3, \"maxLength\": 3 }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/mapping-drafts/{{payflexMappingId}}/validate-request",
+            "description": "Validate with string too short (1 char, needs exactly 3).\n\nExpected: {\"valid\": false, \"errors\": [{\"field\": \"currency\", \"type\": \"LENGTH\", ...}]}"
+          },
+          "response": []
+        },
+        {
+          "name": "❌ Validate: Pattern Mismatch",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": { \"email\": \"not-an-email\" },\n  \"rules\": [\n    { \"field\": \"email\", \"required\": true, \"type\": \"string\", \"pattern\": \"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}$\" }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/mapping-drafts/{{payflexMappingId}}/validate-request",
+            "description": "Validate with string not matching regex pattern.\n\nExpected: {\"valid\": false, \"errors\": [{\"field\": \"email\", \"type\": \"PATTERN\", ...}]}"
+          },
+          "response": []
+        },
+        {
+          "name": "❌ Validate: Enum Value Not Allowed",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": { \"status\": \"UNKNOWN\" },\n  \"rules\": [\n    { \"field\": \"status\", \"required\": true, \"type\": \"string\", \"enumValues\": [\"SUCCESS\", \"FAILED\", \"REFUNDED\"] }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/mapping-drafts/{{payflexMappingId}}/validate-request",
+            "description": "Validate with value not in allowed enum list.\n\nExpected: {\"valid\": false, \"errors\": [{\"field\": \"status\", \"type\": \"ENUM\", ...}]}"
+          },
+          "response": []
+        },
+        {
+          "name": "❌ Validate: Multiple Errors",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": { \"amount\": -10, \"currency\": \"TOOLONG\" },\n  \"rules\": [\n    { \"field\": \"transactionId\", \"required\": true, \"type\": \"string\" },\n    { \"field\": \"amount\", \"required\": true, \"type\": \"number\", \"minValue\": 0 },\n    { \"field\": \"currency\", \"required\": true, \"type\": \"string\", \"maxLength\": 3 }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/mapping-drafts/{{payflexMappingId}}/validate-request",
+            "description": "Validate with multiple errors at once:\n- transactionId missing (required)\n- amount negative (min 0)\n- currency too long (max 3)\n\nExpected: {\"valid\": false, \"errors\": [...], \"totalErrors\": 3}"
           },
           "response": []
         }
@@ -247,87 +427,121 @@
     },
     {
       "name": "Direct Mock API (for comparison)",
+      "description": "Direct calls to the mock PayFlex API without going through the proxy. Useful for comparing raw API response vs transformed response.",
       "item": [
         {
-          "name": "Mock API - Get Latest Payment (Detailed)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-API-Key",
-                "value": "demo-api-key-12345"
-              }
-            ],
-            "url": {
-              "raw": "http://localhost:8085/api/payments/latest?format=detailed",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8085",
-              "path": ["api", "payments", "latest"],
-              "query": [
-                {
-                  "key": "format",
-                  "value": "detailed"
-                }
-              ]
-            },
-            "description": "Direct call to mock API with detailed format (without proxy) for comparison. Returns full payment object with nested structures."
-          },
-          "response": []
-        },
-        {
-          "name": "Mock API - Get Latest Payment (Flat)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-API-Key",
-                "value": "demo-api-key-12345"
-              }
-            ],
-            "url": {
-              "raw": "http://localhost:8085/api/payments/latest?format=flat",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8085",
-              "path": ["api", "payments", "latest"],
-              "query": [
-                {
-                  "key": "format",
-                  "value": "flat"
-                }
-              ]
-            },
-            "description": "Direct call to mock API with flat format. Returns simplified payment structure."
-          },
-          "response": []
-        },
-        {
-          "name": "Mock API - Query Payments with Body",
+          "name": "Mock API - Query Payment (with auth)",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "X-API-Key",
-                "value": "demo-api-key-12345"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "X-Api-Key", "value": "{{mockApiKey}}" },
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customerId\": \"CUST-12345\",\n  \"status\": \"COMPLETED\",\n  \"dateFrom\": \"2024-01-01\",\n  \"dateTo\": \"2024-12-31\"\n}"
+              "raw": "{\n  \"transactionId\": \"TRANSACTIONID-001\"\n}"
             },
+            "url": "{{mockApiUrl}}/api/payments/query",
+            "description": "Direct call to mock PayFlex API with valid API key.\n\nExpected: 200 OK with full payment response (nested structure)."
+          },
+          "response": []
+        },
+        {
+          "name": "Mock API - Query Payment (without auth)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"TRANSACTIONID-001\"\n}"
+            },
+            "url": "{{mockApiUrl}}/api/payments/query",
+            "description": "Direct call to mock PayFlex API WITHOUT API key.\n\nExpected: 401 Unauthorized - proves auth is enforced."
+          },
+          "response": []
+        },
+        {
+          "name": "Mock API - Get Latest Payment",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Api-Key", "value": "{{mockApiKey}}" }
+            ],
+            "url": "{{mockApiUrl}}/api/payments/latest",
+            "description": "Get latest payment from mock API.\n\nExpected: 200 OK with payment data."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "FoodMarket Order Summary (GET - Complex Mapping)",
+      "description": "FoodMarket mock API - a food delivery order system.\n\nRaw API returns complex nested order with 8 items, payment breakdown, delivery info.\nProxy mapping transforms it into a simple summary with category counts and totals.\n\nMapping ID: e5555555-5555-5555-5555-555555555555\nAuth: Bearer token (handled by proxy)\nRaw endpoint: GET /api/foodmarket/orders/{orderId}\nProxy endpoint: GET /api/proxy/e5555555-5555-5555-5555-555555555555",
+      "item": [
+        {
+          "name": "🔄 PROXY: Get Order Summary (mapped response)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Tenant-Id", "value": "{{tenantId}}" }
+            ],
+            "url": "{{baseUrl}}/api/proxy/{{foodmarketMappingId}}",
+            "description": "Calls FoodMarket API through the proxy.\n\nThe proxy:\n1. Calls GET /api/foodmarket/orders/ORD-5001 with Bearer auth\n2. Applies JSONata transformation (aggregation, flattening, calculation)\n3. Returns simplified summary\n\nExpected mapped response:\n{\n  orderId, customerName, customerLoyalty, restaurantName,\n  totalItems: 13 (sum of all quantities),\n  totalAmount: 96.29, currency: TRY,\n  foodCount: 4, beverageCount: 6, dessertCount: 2, snackCount: 1,\n  deliveryMinutes: 22, onTime: true, overallRating: 4.5\n}"
+          },
+          "response": []
+        },
+        {
+          "name": "📋 RAW: Get Order (full response - before mapping)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer demo-token-12345" }
+            ],
+            "url": "{{mockApiUrl}}/api/foodmarket/orders/ORD-5001",
+            "description": "Direct call to FoodMarket mock API - returns the FULL complex response.\n\nCompare this with the proxy response above to see the transformation.\n\nResponse includes:\n- 8 items across 4 categories (FOOD x4qty, BEVERAGE x6qty, DESSERT x2qty, SNACK x1qty)\n- Nested customer with loyalty tier (GOLD) and address\n- Payment breakdown (subtotal 85.93, tax 6.87, delivery 4.99, tip 3.50, discount -5.00 = total 96.29 TRY)\n- Delivery driver info (22 min actual vs 25 min estimated)\n- Ratings (food:5, delivery:4, overall:4.5)"
+          },
+          "response": []
+        },
+        {
+          "name": "📋 RAW: Get Different Order",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer demo-token-12345" }
+            ],
+            "url": "{{mockApiUrl}}/api/foodmarket/orders/ORD-9999",
+            "description": "Direct call with different order ID to verify dynamic data."
+          },
+          "response": []
+        },
+        {
+          "name": "❌ RAW: Without Auth (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{mockApiUrl}}/api/foodmarket/orders/ORD-5001",
+            "description": "Direct call without Bearer token.\n\nExpected: 401 Unauthorized.\nThe proxy handles auth automatically - you don't need to provide it."
+          },
+          "response": []
+        },
+        {
+          "name": "📋 RAW: List Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer demo-token-12345" }
+            ],
             "url": {
-              "raw": "http://localhost:8085/api/payments/query",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "8085",
-              "path": ["api", "payments", "query"]
+              "raw": "{{mockApiUrl}}/api/foodmarket/orders?limit=3",
+              "host": ["{{mockApiUrl}}"],
+              "path": ["api", "foodmarket", "orders"],
+              "query": [
+                { "key": "limit", "value": "3" }
+              ]
             },
-            "description": "Query payments with filter criteria in request body"
+            "description": "List multiple orders from mock API."
           },
           "response": []
         }

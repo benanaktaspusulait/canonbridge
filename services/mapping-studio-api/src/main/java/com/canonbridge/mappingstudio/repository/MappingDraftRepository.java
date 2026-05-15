@@ -113,10 +113,10 @@ public class MappingDraftRepository {
 
         return client.preparedQuery(
             "UPDATE mapping_drafts SET " +
-            "name = $1, description = $2, source_type = $3, source_config = $4::jsonb, " +
-            "input_schema = $5::jsonb, canonical_schema_ref = $6, mapping_rules = $7::jsonb, " +
-            "generated_jsonata = $8, validation_rules = $9::jsonb, status = $10, " +
-            "last_validated_at = $11, validation_result = $12::jsonb, " +
+            "name = $1, description = $2, source_type = $3, source_config = $4, " +
+            "input_schema = $5, canonical_schema_ref = $6, mapping_rules = $7, " +
+            "generated_jsonata = $8, validation_rules = $9, status = $10, " +
+            "last_validated_at = $11, validation_result = $12, " +
             "updated_at = $13, updated_by = $14 " +
             "WHERE tenant_id = $15 AND id = $16 " +
             "RETURNING *"
@@ -125,15 +125,15 @@ public class MappingDraftRepository {
             draft.getName(),
             draft.getDescription(),
             draft.getSourceType().name(),
-            draft.getSourceConfig(),
-            draft.getInputSchema(),
+            toJsonbParam(draft.getSourceConfig()),
+            toJsonbParam(draft.getInputSchema()),
             draft.getCanonicalSchemaRef(),
-            draft.getMappingRules(),
+            toJsonbParam(draft.getMappingRules()),
             draft.getGeneratedJsonata(),
-            draft.getValidationRules(),
+            toJsonbParam(draft.getValidationRules()),
             draft.getStatus().name(),
             toLocalDateTime(draft.getLastValidatedAt()),
-            draft.getValidationResult(),
+            toJsonbParam(draft.getValidationResult()),
             LocalDateTime.ofInstant(now, ZoneOffset.UTC),
             draft.getUpdatedBy(),
             draft.getTenantId(),
@@ -208,5 +208,27 @@ public class MappingDraftRepository {
 
     private LocalDateTime toLocalDateTime(Instant instant) {
         return instant == null ? null : LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+    }
+
+    /**
+     * Convert a JSON string to a proper Vert.x JSON type for PostgreSQL jsonb columns.
+     * This ensures the reactive PG client sends the correct type hint.
+     */
+    private Object toJsonbParam(String jsonStr) {
+        if (jsonStr == null || jsonStr.isBlank()) {
+            return null;
+        }
+        String trimmed = jsonStr.trim();
+        try {
+            if (trimmed.startsWith("[")) {
+                return new io.vertx.core.json.JsonArray(trimmed);
+            } else if (trimmed.startsWith("{")) {
+                return new io.vertx.core.json.JsonObject(trimmed);
+            }
+        } catch (Exception e) {
+            // Not valid JSON, fall through
+        }
+        // Return as string - will be stored as jsonb string
+        return jsonStr;
     }
 }

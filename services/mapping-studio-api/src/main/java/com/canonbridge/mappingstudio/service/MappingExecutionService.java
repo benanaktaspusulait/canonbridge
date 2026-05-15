@@ -166,10 +166,21 @@ public class MappingExecutionService {
     }
 
     /**
-     * Apply response transformation using mapping rules
+     * Apply response transformation using mapping rules or generated JSONata
      */
     private Uni<JsonNode> applyResponseTransformation(MappingDraft mapping, JsonNode apiResponse) {
-        // Parse mapping rules JSON
+        // First check if there's a direct JSONata expression
+        String generatedJsonata = mapping.getGeneratedJsonata();
+        if (generatedJsonata != null && !generatedJsonata.isBlank()) {
+            LOG.infof("Using generated_jsonata expression for response transformation");
+            JsonNode targetPayload = apiResponse;
+            if (apiResponse.isArray() && apiResponse.size() > 0) {
+                targetPayload = apiResponse.get(0);
+            }
+            return evaluateJsonata(generatedJsonata, targetPayload);
+        }
+
+        // Then try mapping_rules
         String mappingRulesStr = mapping.getMappingRules();
         if (mappingRulesStr == null || mappingRulesStr.isBlank()) {
             LOG.info("No response transformation rules, returning API response as-is");
@@ -182,6 +193,20 @@ public class MappingExecutionService {
             if (rulesNode.isTextual()) {
                 rulesNode = objectMapper.readTree(rulesNode.asText());
             }
+            
+            // If mapping_rules is an object with $type=jsonata, use the expression directly
+            if (rulesNode.isObject() && rulesNode.has("expression")) {
+                String expression = rulesNode.get("expression").asText();
+                if (expression != null && !expression.isBlank()) {
+                    LOG.infof("Using JSONata expression from mapping_rules object");
+                    JsonNode targetPayload = apiResponse;
+                    if (apiResponse.isArray() && apiResponse.size() > 0) {
+                        targetPayload = apiResponse.get(0);
+                    }
+                    return evaluateJsonata(expression, targetPayload);
+                }
+            }
+            
             if (!rulesNode.isArray() || rulesNode.size() == 0) {
                 LOG.warn("Mapping rules is not a non-empty array, returning API response as-is");
                 return Uni.createFrom().item(apiResponse);
