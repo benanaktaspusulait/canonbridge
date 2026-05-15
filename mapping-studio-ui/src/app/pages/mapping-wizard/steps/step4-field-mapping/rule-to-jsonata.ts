@@ -99,8 +99,14 @@ export function ruleToJsonataFragment(rule: MappingRule): string {
       const uiIndex = Math.max(1, parseInt(rule.paramA || '1', 10) || 1);
       return `${base}[${uiIndex - 1}]`;
     }
-    case 'array_count':
+    case 'array_count': {
+      const filterField = rule.paramA?.trim();
+      const filterValue = rule.paramB?.trim();
+      if (filterField && filterValue) {
+        return `$count(${base}[${jqPath(filterField)} = '${escapeSingleQuoted(filterValue)}'])`;
+      }
       return `$count(${base})`;
+    }
     case 'array_filter_equals': {
       const field = jqPath(rule.paramA || '').replace(/^\$?\./, '');
       const value = jsonataStringLiteral(rule.paramB || '');
@@ -113,14 +119,22 @@ export function ruleToJsonataFragment(rule: MappingRule): string {
       const fb = escapeSingleQuoted(rule.paramA || '');
       return `$exists(${base}) and ${base} != null and $string(${base}) != '' ? ${base} : '${fb}'`;
     }
-    case 'math_sum':
-      return `$sum(${base})`;
-    case 'math_average':
-      return `$average(${base})`;
-    case 'math_min':
-      return `$min(${base})`;
-    case 'math_max':
-      return `$max(${base})`;
+    case 'math_sum': {
+      const subField = rule.paramA?.trim();
+      return subField ? `$sum(${base}.${jqPath(subField)})` : `$sum(${base})`;
+    }
+    case 'math_average': {
+      const subField = rule.paramA?.trim();
+      return subField ? `$average(${base}.${jqPath(subField)})` : `$average(${base})`;
+    }
+    case 'math_min': {
+      const subField = rule.paramA?.trim();
+      return subField ? `$min(${base}.${jqPath(subField)})` : `$min(${base})`;
+    }
+    case 'math_max': {
+      const subField = rule.paramA?.trim();
+      return subField ? `$max(${base}.${jqPath(subField)})` : `$max(${base})`;
+    }
     case 'combine': {
       const p2 = jqPath(rule.paramA || '');
       const sep = escapeSingleQuoted(rule.paramB || ' ');

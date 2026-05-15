@@ -1,6 +1,12 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import VideoSection from "@/components/VideoSection";
+import Metrics from "@/components/Metrics";
+import Scalability from "@/components/Scalability";
+import Architecture from "@/components/Architecture";
+import Features from "@/components/Features";
+import UseCases from "@/components/UseCases";
+import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
@@ -26,13 +32,13 @@ export default function Home() {
       </section>
 
       <VideoSection
-        id="step-1"
+        id="sources"
         step={1}
         subtitle="Connect"
         title="Onboard Any Partner Source"
         description="Add a new partner in seconds. Connect their data source — whether it's a Kafka topic, webhook endpoint, REST API, SOAP service, SFTP folder, or S3 bucket. CanonBridge handles the protocol complexity."
         bullets={[
-          "10+ source types: Kafka, Webhook, REST, SOAP, SFTP, S3, Database, EDI, File Drop, Scheduled Poll",
+          "10+ source types: Message Queues, Webhooks, REST, SOAP, SFTP, Cloud Storage, Databases, EDI, File Drops, Scheduled Polling",
           "Auto-detect payload structure from any format",
           "Per-partner authentication and credential management",
           "Zero infrastructure changes — just configure and go",
@@ -105,6 +111,30 @@ export default function Home() {
         ]}
         videoSrc="/videos/monitor.mp4"
       />
+
+      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+      <Metrics />
+
+      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+      <Scalability />
+
+      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+      <Architecture />
+
+      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+      <Features />
+
+      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+      <UseCases />
+
+      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+      <Footer />
     </main>
   );
 }

@@ -285,7 +285,28 @@
                               @for (param of transformOpt.params; track param.name) {
                                 <div class="param-field">
                                   <label>{{ param.label }}</label>
-                                  @if (param.type === 'textarea') {
+                                  @if (param.type === 'source-subfield') {
+                                    @if (getSubFieldOptions(field.key).length > 0) {
+                                      <p-select
+                                        [options]="getSubFieldOptions(field.key)"
+                                        [ngModel]="getParamValue(mapping, param.name)"
+                                        (ngModelChange)="updateRuleParam(field.key, param.name, $event)"
+                                        optionLabel="label"
+                                        optionValue="value"
+                                        [placeholder]="param.placeholder || 'Select sub-field'"
+                                        [style]="{'width': '100%'}"
+                                        size="small" />
+                                    } @else {
+                                      <input
+                                        pInputText
+                                        type="text"
+                                        [ngModel]="getParamValue(mapping, param.name)"
+                                        (ngModelChange)="updateRuleParam(field.key, param.name, $event)"
+                                        [placeholder]="param.placeholder || ''"
+                                        [style]="{'width': '100%'}"
+                                        size="small" />
+                                    }
+                                  } @else if (param.type === 'textarea') {
                                     <textarea
                                       pTextarea
                                       [ngModel]="getParamValue(mapping, param.name)"

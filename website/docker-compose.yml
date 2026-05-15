@@ -1,0 +1,9 @@
+services:
+  website:
+    build: .
+    ports:
+      - "8090:80"
+    restart: unless-stopped
+    volumes:
+      # Mount videos externally so you can update without rebuilding
+      - ./public/videos:/usr/share/nginx/html/videos:ro

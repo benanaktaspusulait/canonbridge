@@ -49,24 +49,25 @@ export default function Hero() {
 
           {/* Subtitle */}
           <p className="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto mb-10 leading-relaxed">
-            Kafka, webhooks, REST APIs, SOAP, SFTP, S3, databases — connect any
-            data source and transform it into your canonical format. Visual
-            mapping, enterprise reliability, no engineering bottleneck.
+            Message queues, webhooks, REST APIs, SOAP services, file transfers,
+            databases — connect any data source and transform it into your
+            canonical format. Visual mapping, enterprise reliability, no
+            engineering bottleneck.
           </p>
 
           {/* Source badges */}
           <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
             {[
-              "Kafka",
+              "Message Queues",
               "Webhooks",
-              "REST API",
+              "REST APIs",
               "SOAP/XML",
               "SFTP",
-              "S3",
-              "Database",
+              "Cloud Storage",
+              "Databases",
               "EDI",
-              "File Drop",
-              "Scheduled Poll",
+              "File Drops",
+              "Scheduled Polling",
             ].map((source) => (
               <span
                 key={source}

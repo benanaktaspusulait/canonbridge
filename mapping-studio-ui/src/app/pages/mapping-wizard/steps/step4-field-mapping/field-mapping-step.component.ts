@@ -96,7 +96,7 @@ interface TransformOption {
   params?: Array<{
     name: string;
     label: string;
-    type: 'text' | 'number' | 'textarea' | 'select';
+    type: 'text' | 'number' | 'textarea' | 'select' | 'source-subfield';
     placeholder?: string;
     options?: Array<{ label: string; value: string }>;
   }>;
@@ -224,7 +224,12 @@ export class FieldMappingStepComponent implements OnInit {
     { label: 'Array Element', value: 'array_element', category: 'Array', description: 'Get element at index',
       params: [{ name: 'paramA', label: 'Index (1-based)', type: 'number', placeholder: '1' }]
     },
-    { label: 'Array Count', value: 'array_count', category: 'Array', description: 'Count array elements' },
+    { label: 'Array Count', value: 'array_count', category: 'Array', description: 'Count array elements (optionally filtered)',
+      params: [
+        { name: 'paramA', label: 'Filter by field (optional)', type: 'source-subfield', placeholder: 'e.g., type' },
+        { name: 'paramB', label: 'Equals value (optional)', type: 'text', placeholder: 'e.g., icecek' }
+      ]
+    },
     { label: 'Array Filter', value: 'array_filter_equals', category: 'Array', description: 'Filter array by field value',
       params: [
         { name: 'paramA', label: 'Field Path', type: 'text', placeholder: 'e.g., status' },
@@ -233,10 +238,18 @@ export class FieldMappingStepComponent implements OnInit {
     },
     
     // Math Transformations
-    { label: 'Sum', value: 'math_sum', category: 'Math', description: 'Sum of array numbers' },
-    { label: 'Average', value: 'math_average', category: 'Math', description: 'Average of array numbers' },
-    { label: 'Minimum', value: 'math_min', category: 'Math', description: 'Minimum value in array' },
-    { label: 'Maximum', value: 'math_max', category: 'Math', description: 'Maximum value in array' },
+    { label: 'Sum', value: 'math_sum', category: 'Math', description: 'Sum of array numbers',
+      params: [{ name: 'paramA', label: 'Sub-field', type: 'source-subfield', placeholder: 'e.g., quantity' }]
+    },
+    { label: 'Average', value: 'math_average', category: 'Math', description: 'Average of array numbers',
+      params: [{ name: 'paramA', label: 'Sub-field', type: 'source-subfield', placeholder: 'e.g., price' }]
+    },
+    { label: 'Minimum', value: 'math_min', category: 'Math', description: 'Minimum value in array',
+      params: [{ name: 'paramA', label: 'Sub-field', type: 'source-subfield', placeholder: 'e.g., amount' }]
+    },
+    { label: 'Maximum', value: 'math_max', category: 'Math', description: 'Maximum value in array',
+      params: [{ name: 'paramA', label: 'Sub-field', type: 'source-subfield', placeholder: 'e.g., amount' }]
+    },
     
     // Type Conversions
     { label: 'Convert to Number', value: 'number_coerce', category: 'Type', description: 'Convert value to number' },
@@ -830,6 +843,35 @@ export class FieldMappingStepComponent implements OnInit {
 
   getMappingForTarget(targetKey: string): MappingRule | undefined {
     return this.mappingRules().find(r => r.targetKey === targetKey);
+  }
+
+  getSubFieldOptions(targetKey: string): Array<{ label: string; value: string }> {
+    const mapping = this.getMappingForTarget(targetKey);
+    if (!mapping) return [];
+    
+    const sourcePath = mapping.sourcePath;
+    const prefix = sourcePath + '.';
+    
+    // Find child fields of the mapped source field
+    const childFields = this.sourceFields()
+      .filter(f => f.path.startsWith(prefix))
+      .map(f => ({
+        label: f.path.slice(prefix.length),
+        value: f.path.slice(prefix.length)
+      }));
+    
+    if (childFields.length > 0) return childFields;
+    
+    // If source is an array with sample data, extract keys from sample
+    const sourceField = this.sourceFields().find(f => f.path === sourcePath);
+    if (sourceField && sourceField.type === 'array' && Array.isArray(sourceField.sample) && sourceField.sample.length > 0) {
+      const firstItem = sourceField.sample[0];
+      if (firstItem && typeof firstItem === 'object') {
+        return Object.keys(firstItem).map(key => ({ label: key, value: key }));
+      }
+    }
+    
+    return [];
   }
 
   getParamValue(mapping: MappingRule, paramName: string): string {
