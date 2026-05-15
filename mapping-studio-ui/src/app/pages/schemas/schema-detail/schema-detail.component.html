@@ -1,0 +1,194 @@
+<div class="schema-detail-page">
+  @if (loading()) {
+    <div class="loading">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span>Loading schema...</span>
+    </div>
+  } @else if (!schema()) {
+    <p-message severity="error" text="Schema not found"></p-message>
+    <p-button label="Back to Schemas" icon="pi pi-arrow-left" (onClick)="goBack()" />
+  } @else {
+    <div class="page-header">
+      <div class="header-left">
+        <p-button
+          icon="pi pi-arrow-left"
+          [text]="true"
+          severity="secondary"
+          (onClick)="goBack()" />
+        <div class="header-info">
+          <h2>{{ schema()!.name }}</h2>
+          <span class="subject">{{ schema()!.subject }}</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <p-button
+          label="Validate Rules"
+          icon="pi pi-check-circle"
+          severity="info"
+          [outlined]="true"
+          [loading]="validating()"
+          (onClick)="validate()" />
+        <p-button
+          label="Save"
+          icon="pi pi-save"
+          [loading]="saving()"
+          (onClick)="saveValidationRules()" />
+      </div>
+    </div>
+
+    <!-- Validation Result -->
+    @if (validationDone()) {
+      @if (validationSuccess()) {
+        <div class="validation-result success">
+          <i class="pi pi-check-circle"></i>
+          <span>Schema validation rules are consistent — no issues found</span>
+        </div>
+      } @else {
+        <div class="validation-result error">
+          <div class="result-header">
+            <i class="pi pi-exclamation-triangle"></i>
+            <span>{{ validationErrors().length }} validation issue(s) found</span>
+          </div>
+          <ul class="error-list">
+            @for (err of validationErrors(); track err.field + err.type) {
+              <li>
+                <strong>{{ err.field }}</strong>: {{ err.message }}
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    }
+
+    <!-- Validation Rules Table -->
+    <p-card>
+      <ng-template pTemplate="header">
+        <div class="card-header">
+          <h3>Field Validation Rules</h3>
+          <p class="text-muted">Define constraints for each field in the schema</p>
+        </div>
+      </ng-template>
+
+      <div class="rules-table">
+        <div class="table-header">
+          <div class="col-field">Field</div>
+          <div class="col-type">Type</div>
+          <div class="col-required">Required</div>
+          <div class="col-constraints">Constraints</div>
+        </div>
+
+        @for (rule of validationRules(); track rule.field; let i = $index) {
+          <div class="table-row">
+            <div class="col-field">
+              <span class="field-name">{{ rule.field }}</span>
+              @if (rule.description) {
+                <span class="field-desc">{{ rule.description }}</span>
+              }
+            </div>
+
+            <div class="col-type">
+              <p-tag [value]="rule.type" [severity]="getTypeSeverity(rule.type)" />
+            </div>
+
+            <div class="col-required">
+              <p-checkbox
+                [(ngModel)]="rule.required"
+                [binary]="true"
+                (onChange)="toggleRequired(i)" />
+            </div>
+
+            <div class="col-constraints">
+              @if (rule.type === 'number' || rule.type === 'integer') {
+                <div class="constraint-row">
+                  <div class="constraint-field">
+                    <label>Min</label>
+                    <p-inputnumber
+                      [ngModel]="rule.minValue ?? null"
+                      (ngModelChange)="updateRule(i, 'minValue', $event)"
+                      [showButtons]="false"
+                      placeholder="—"
+                      styleClass="constraint-input" />
+                  </div>
+                  <div class="constraint-field">
+                    <label>Max</label>
+                    <p-inputnumber
+                      [ngModel]="rule.maxValue ?? null"
+                      (ngModelChange)="updateRule(i, 'maxValue', $event)"
+                      [showButtons]="false"
+                      placeholder="—"
+                      styleClass="constraint-input" />
+                  </div>
+                </div>
+              }
+
+              @if (rule.type === 'string') {
+                <div class="constraint-row">
+                  <div class="constraint-field">
+                    <label>Min Length</label>
+                    <p-inputnumber
+                      [ngModel]="rule.minLength ?? null"
+                      (ngModelChange)="updateRule(i, 'minLength', $event)"
+                      [showButtons]="false"
+                      placeholder="—"
+                      styleClass="constraint-input" />
+                  </div>
+                  <div class="constraint-field">
+                    <label>Max Length</label>
+                    <p-inputnumber
+                      [ngModel]="rule.maxLength ?? null"
+                      (ngModelChange)="updateRule(i, 'maxLength', $event)"
+                      [showButtons]="false"
+                      placeholder="—"
+                      styleClass="constraint-input" />
+                  </div>
+                  <div class="constraint-field">
+                    <label>Pattern</label>
+                    <input
+                      pInputText
+                      type="text"
+                      [ngModel]="rule.pattern ?? ''"
+                      (ngModelChange)="updateRule(i, 'pattern', $event)"
+                      placeholder="regex"
+                      class="constraint-text" />
+                  </div>
+                </div>
+              }
+
+              @if (rule.enumValues && rule.enumValues.length > 0) {
+                <div class="constraint-row">
+                  <div class="constraint-field enum-field">
+                    <label>Enum</label>
+                    <span class="enum-values">{{ rule.enumValues.join(', ') }}</span>
+                  </div>
+                </div>
+              }
+
+              @if (rule.format) {
+                <div class="constraint-row">
+                  <div class="constraint-field">
+                    <label>Format</label>
+                    <span class="format-value">{{ rule.format }}</span>
+                  </div>
+                </div>
+              }
+
+              @if (rule.type === 'object' || rule.type === 'array' || rule.type === 'boolean') {
+                <span class="no-constraints">—</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </p-card>
+
+    <!-- Schema JSON Preview -->
+    <p-card styleClass="schema-preview-card">
+      <ng-template pTemplate="header">
+        <div class="card-header">
+          <h3>Schema JSON</h3>
+        </div>
+      </ng-template>
+      <pre class="schema-json">{{ buildSchemaJsonWithRules() | json }}</pre>
+    </p-card>
+  }
+</div>

@@ -127,6 +127,92 @@ public class SchemaResource {
                 .map(deleted -> deleted ? Response.noContent().build() : Response.status(Response.Status.NOT_FOUND).build());
     }
 
+    @POST
+    @Path("/{id}/validate")
+    @Operation(summary = "Validate schema rules for consistency")
+    public Uni<Response> validateSchema(
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            @PathParam("id") UUID id,
+            io.vertx.core.json.JsonObject body) {
+        return schemaRepository.findById(requireTenantId(tenantId), id)
+                .map(schema -> {
+                    if (schema == null) {
+                        return Response.status(Response.Status.NOT_FOUND).build();
+                    }
+
+                    io.vertx.core.json.JsonArray rules = body.getJsonArray("rules", new io.vertx.core.json.JsonArray());
+                    java.util.List<io.vertx.core.json.JsonObject> errors = new java.util.ArrayList<>();
+
+                    for (int i = 0; i < rules.size(); i++) {
+                        io.vertx.core.json.JsonObject rule = rules.getJsonObject(i);
+                        if (rule == null) continue;
+
+                        String field = rule.getString("field", "");
+                        String type = rule.getString("type", "any");
+                        boolean required = Boolean.TRUE.equals(rule.getBoolean("required"));
+
+                        // Validate min/max consistency for numbers
+                        if ("number".equals(type) || "integer".equals(type)) {
+                            Double minVal = rule.getDouble("minValue");
+                            Double maxVal = rule.getDouble("maxValue");
+                            if (minVal != null && maxVal != null && minVal > maxVal) {
+                                errors.add(new io.vertx.core.json.JsonObject()
+                                    .put("field", field)
+                                    .put("type", "RANGE")
+                                    .put("message", String.format("Min value (%.2f) cannot be greater than max value (%.2f)", minVal, maxVal)));
+                            }
+                        }
+
+                        // Validate minLength/maxLength consistency for strings
+                        if ("string".equals(type)) {
+                            Integer minLen = rule.getInteger("minLength");
+                            Integer maxLen = rule.getInteger("maxLength");
+                            if (minLen != null && maxLen != null && minLen > maxLen) {
+                                errors.add(new io.vertx.core.json.JsonObject()
+                                    .put("field", field)
+                                    .put("type", "LENGTH")
+                                    .put("message", String.format("Min length (%d) cannot be greater than max length (%d)", minLen, maxLen)));
+                            }
+                            if (minLen != null && minLen < 0) {
+                                errors.add(new io.vertx.core.json.JsonObject()
+                                    .put("field", field)
+                                    .put("type", "LENGTH")
+                                    .put("message", "Min length cannot be negative"));
+                            }
+
+                            // Validate regex pattern
+                            String pattern = rule.getString("pattern");
+                            if (pattern != null && !pattern.isBlank()) {
+                                try {
+                                    java.util.regex.Pattern.compile(pattern);
+                                } catch (java.util.regex.PatternSyntaxException e) {
+                                    errors.add(new io.vertx.core.json.JsonObject()
+                                        .put("field", field)
+                                        .put("type", "PATTERN")
+                                        .put("message", String.format("Invalid regex pattern: %s", e.getMessage())));
+                                }
+                            }
+                        }
+
+                        // Validate enum values not empty if field is required
+                        io.vertx.core.json.JsonArray enumValues = rule.getJsonArray("enumValues");
+                        if (required && enumValues != null && enumValues.isEmpty()) {
+                            errors.add(new io.vertx.core.json.JsonObject()
+                                .put("field", field)
+                                .put("type", "ENUM")
+                                .put("message", "Required field with enum constraint must have at least one allowed value"));
+                        }
+                    }
+
+                    io.vertx.core.json.JsonObject response = new io.vertx.core.json.JsonObject()
+                        .put("valid", errors.isEmpty())
+                        .put("errors", new io.vertx.core.json.JsonArray(errors))
+                        .put("totalErrors", errors.size());
+
+                    return Response.ok(response).build();
+                });
+    }
+
     private String requireTenantId(String tenantId) {
         if (tenantId == null || tenantId.isBlank()) {
             throw new BadRequestException("X-Tenant-Id header is required");

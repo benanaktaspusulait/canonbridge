@@ -54,6 +54,11 @@ export const routes: Routes = [
           import('./pages/schemas/schemas.component').then(m => m.SchemasComponent)
       },
       {
+        path: 'schemas/:id',
+        loadComponent: () =>
+          import('./pages/schemas/schema-detail/schema-detail.component').then(m => m.SchemaDetailComponent)
+      },
+      {
         path: 'external-systems',
         loadComponent: () =>
           import('./pages/external-systems/external-systems.component').then(

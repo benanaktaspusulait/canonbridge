@@ -58,4 +58,8 @@ export class SchemaService {
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
+
+  validateSchema(id: string, request: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/${id}/validate`, request);
+  }
 }

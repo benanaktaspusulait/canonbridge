@@ -1,5 +1,6 @@
 import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -7,6 +8,7 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
+import { TooltipModule } from 'primeng/tooltip';
 import { FormsModule } from '@angular/forms';
 import { SchemaService, SchemaDefinition } from '../../core/services/schema.service';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
@@ -24,13 +26,15 @@ import { I18nPipe } from '../../core/i18n/i18n.pipe';
     InputTextModule,
     TextareaModule,
     SelectModule,
-    I18nPipe
+    I18nPipe,
+    TooltipModule
   ],
   templateUrl: './schemas.component.html',
   styleUrl: './schemas.component.scss'
 })
 export class SchemasComponent implements OnInit {
   private schemaService = inject(SchemaService);
+  private router = inject(Router);
 
   schemas = signal<SchemaDefinition[]>([]);
   loading = signal(true);
@@ -91,6 +95,10 @@ export class SchemasComponent implements OnInit {
     this.editMode.set(true);
     this.currentSchema.set({ ...schema });
     this.showDialog.set(true);
+  }
+
+  openValidationRules(schema: SchemaDefinition): void {
+    this.router.navigate(['/schemas', schema.id]);
   }
 
   closeDialog(): void {
