@@ -12,7 +12,6 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MappingService } from '../../../../core/services/mapping.service';
 import { WizardState } from '../../models/mapping-wizard.models';
 import mappingEngine from 'jsonata';
-import { buildCombinedMappingExpression } from '../step4-field-mapping/rule-to-jsonata';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -47,7 +46,9 @@ export class TestPublishStepComponent implements OnInit {
   mappingDescription = signal('');
   testInput = signal('');
   testOutput = signal('');
+  mappedRequestOutput = signal('');
   testError = signal('');
+  testEndpoint = signal('');
   proxyUrl = signal('');
   proxyInfo = signal<any>(null);
   
@@ -134,130 +135,67 @@ export class TestPublishStepComponent implements OnInit {
     this.testing.set(true);
     this.testError.set('');
     this.testOutput.set('');
+    this.mappedRequestOutput.set('');
+    this.testEndpoint.set('');
     this.testSuccess.set(false);
 
     try {
       const state = this.wizardState();
-      
-      // Check if we need to call real API
-      const shouldCallRealApi = this.shouldCallRealApi(state);
-      
-      if (shouldCallRealApi) {
-        console.log('🌐 Calling real API with mapping...');
-        await this.runRealApiTest(state, inputJson);
-      } else {
-        console.log('🔄 Running local JSONata transformation...');
-        await this.runLocalTransformationTest(state, inputJson);
-      }
+      console.log('🌐 Calling generated proxy endpoint...');
+      await this.syncDraftBeforeProxyTest(state);
+      await this.runProxyEndpointTest(state, inputJson);
       
     } catch (error: any) {
       console.error('❌ Test execution failed:', error);
-      this.testError.set('Test execution failed: ' + error.message);
+      this.testError.set('Test execution failed: ' + this.errorMessage(error));
       this.testing.set(false);
     }
   }
 
-  private shouldCallRealApi(state: WizardState): boolean {
-    // Call real API if:
-    // 1. Source type is REST_API, SCHEDULED_API, SOAP, GRAPHQL, GRPC
-    // 2. External system is configured
-    // 3. API URL/endpoint is available in sourceConfig
-    
-    const apiSourceTypes = ['REST_API', 'SCHEDULED_API', 'SOAP', 'GRAPHQL', 'GRPC'];
-    if (!apiSourceTypes.includes(state.sourceType || '')) {
-      return false;
-    }
-    
-    const config = state.sourceConfig;
-    const hasUrl = config['url'] || config['endpoint'] || config['wsdlUrl'];
-    
-    return !!hasUrl;
+  private errorMessage(error: any): string {
+    if (error?.error?.details) return error.error.details;
+    if (error?.error?.error) return error.error.error;
+    if (error?.message) return error.message;
+    return 'Unknown error';
   }
 
-  private async runRealApiTest(state: WizardState, inputJson: any): Promise<void> {
-    const testSteps: any[] = [];
-    
-    try {
-      // Step 1: Apply request transformation if in API Gateway mode
-      let requestPayload = inputJson;
-      if (state.mode === 'api-gateway' && state.requestTransformation) {
-        testSteps.push({
-          step: '1. Request Transformation',
-          description: 'Applying request mapping to input data',
-          input: inputJson
-        });
-        
-        requestPayload = await this.applyRequestTransformation(state, inputJson);
-        testSteps[testSteps.length - 1].output = requestPayload;
-        testSteps[testSteps.length - 1].status = 'success';
-      }
-      
-      // Step 2: Call external API
-      testSteps.push({
-        step: '2. External API Call',
-        description: 'Calling the configured external API',
-        request: requestPayload
-      });
-      
-      const apiResponse = await this.callExternalApi(state, requestPayload);
-      testSteps[testSteps.length - 1].response = apiResponse;
-      testSteps[testSteps.length - 1].status = 'success';
-      
-      // Step 3: Apply response mapping
-      testSteps.push({
-        step: '3. Response Mapping',
-        description: 'Applying field mappings to API response',
-        input: apiResponse
-      });
-      
-      const mappedResponse = await this.applyResponseMapping(state, apiResponse);
-      testSteps[testSteps.length - 1].output = mappedResponse;
-      testSteps[testSteps.length - 1].status = 'success';
-      
-      // Format the final result
-      const result = {
-        testMode: 'real-api',
-        status: 'success',
-        message: 'End-to-end API test completed successfully',
-        steps: testSteps,
-        finalOutput: mappedResponse,
-        metadata: {
-          sourceType: state.sourceType,
-          externalSystemId: state.externalSystemId,
-          mappingRulesApplied: state.mappingRules.length,
-          timestamp: new Date().toISOString()
-        }
-      };
-      
-      this.testOutput.set(JSON.stringify(result, null, 2));
-      this.testSuccess.set(true);
-      this.testing.set(false);
-      
-      console.log('✅ Real API test completed:', result);
-      
-    } catch (error: any) {
-      // Mark the failed step
-      if (testSteps.length > 0) {
-        testSteps[testSteps.length - 1].status = 'error';
-        testSteps[testSteps.length - 1].error = error.message;
-      }
-      
-      const result = {
-        testMode: 'real-api',
-        status: 'error',
-        message: 'API test failed',
-        error: error.message,
-        steps: testSteps,
-        metadata: {
-          sourceType: state.sourceType,
-          timestamp: new Date().toISOString()
-        }
-      };
-      
-      this.testOutput.set(JSON.stringify(result, null, 2));
-      this.testing.set(false);
-      throw error;
+  private async syncDraftBeforeProxyTest(state: WizardState): Promise<void> {
+    const mappingId = this.mappingId();
+    if (!mappingId) {
+      throw new Error('Save this mapping as a draft before running the generated proxy test.');
     }
+
+    await firstValueFrom(this.mappingService.update(mappingId, {
+      source_type: state.sourceType,
+      source_config: JSON.stringify(this.buildSourceConfig(state)),
+      canonical_schema_ref: state.targetSchemaRef,
+      target_schema_ref: state.targetSchemaRef,
+      mapping_rules: JSON.stringify(state.mappingRules),
+      transformation_rules: state.mappingRules,
+      sample_payload: state.fieldMappingSampleJson || state.sampleJson
+    } as any));
+  }
+
+  private async runProxyEndpointTest(state: WizardState, inputJson: any): Promise<void> {
+    const mappingId = this.mappingId();
+    if (!mappingId) {
+      throw new Error('Proxy endpoint is not available until the mapping is saved.');
+    }
+
+    const endpoint = this.getTestUrl() || `/api/proxy/${mappingId}`;
+    const proxyPath = `/api/proxy/${mappingId}`;
+    this.testEndpoint.set(endpoint);
+
+    const mappedRequest = await this.applyRequestTransformation(state, inputJson);
+    this.mappedRequestOutput.set(JSON.stringify(mappedRequest, null, 2));
+
+    const headers = this.getTestHeaders();
+    const response = await firstValueFrom(this.http.post<any>(proxyPath, inputJson, { headers }));
+
+    this.testOutput.set(JSON.stringify(response, null, 2));
+    this.testSuccess.set(true);
+    this.testing.set(false);
+    console.log('✅ Proxy endpoint test completed:', response);
   }
 
   private async applyRequestTransformation(state: WizardState, input: any): Promise<any> {
@@ -276,92 +214,41 @@ export class TestPublishStepComponent implements OnInit {
   }
 
   private applyTemplate(template: any, data: any): any {
-    const templateStr = JSON.stringify(template);
-    const expression = mappingEngine(templateStr);
-    return expression.evaluate(data);
+    return this.renderTemplate(template, data);
   }
 
-  private async callExternalApi(state: WizardState, payload: any): Promise<any> {
-    const config = state.sourceConfig;
-    const url = (config['url'] || config['endpoint']) as string;
-    const method = ((config['method'] as string) || 'POST').toUpperCase();
-    
-    if (!url) {
-      throw new Error('API URL not configured');
-    }
-    
-    console.log(`📡 Calling ${method} ${url}`);
-    console.log('📤 Request payload:', payload);
-    
-    // Build headers
-    const headersObj: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(state.requestTransformation?.headers || {})
-    };
-    
-    try {
-      let response: any;
-      
-      if (method === 'GET') {
-        response = await firstValueFrom(this.http.get(url, { headers: headersObj }));
-      } else if (method === 'POST') {
-        response = await firstValueFrom(this.http.post(url, payload, { headers: headersObj }));
-      } else if (method === 'PUT') {
-        response = await firstValueFrom(this.http.put(url, payload, { headers: headersObj }));
-      } else if (method === 'PATCH') {
-        response = await firstValueFrom(this.http.patch(url, payload, { headers: headersObj }));
-      } else if (method === 'DELETE') {
-        // DELETE method typically doesn't send a body
-        response = await firstValueFrom(this.http.delete(url, { headers: headersObj }));
-      } else {
-        throw new Error(`Unsupported HTTP method: ${method}`);
+  private renderTemplate(value: any, context: any): any {
+    if (typeof value === 'string') {
+      const exact = value.match(/^\s*\{\{\s*([^}]+)\s*}}\s*$/);
+      if (exact) {
+        return this.getByPath(context, exact[1].trim());
       }
-      
-      console.log('📥 API Response:', response);
-      return response;
-      
-    } catch (error: any) {
-      console.error('❌ API call failed:', error);
-      throw new Error(`API call failed: ${error.message || error.statusText || 'Unknown error'}`);
+
+      return value.replace(/\{\{\s*([^}]+)\s*}}/g, (_, path) => {
+        const resolved = this.getByPath(context, path.trim());
+        return resolved === undefined || resolved === null ? '' : String(resolved);
+      });
     }
+
+    if (Array.isArray(value)) {
+      return value.map(item => this.renderTemplate(item, context));
+    }
+
+    if (value && typeof value === 'object') {
+      return Object.fromEntries(
+        Object.entries(value).map(([key, child]) => [key, this.renderTemplate(child, context)])
+      );
+    }
+
+    return value;
   }
 
-  private async applyResponseMapping(state: WizardState, apiResponse: any): Promise<any> {
-    // Apply the field mapping rules to transform API response to canonical format
-    const jsonataExpression = buildCombinedMappingExpression(state.mappingRules);
-    console.log('🔄 Applying response mapping with JSONata:', jsonataExpression);
-    
-    const expression = mappingEngine(jsonataExpression);
-    const result = await expression.evaluate(apiResponse);
-    
-    console.log('✅ Mapped response:', result);
-    return result;
-  }
-
-  private async runLocalTransformationTest(state: WizardState, inputJson: any): Promise<void> {
-    // Original local-only transformation test
-    const jsonataExpression = buildCombinedMappingExpression(state.mappingRules);
-    console.log('🔄 Testing with JSONata expression:', jsonataExpression);
-    
-    const expression = mappingEngine(jsonataExpression);
-    const transformedResult = await expression.evaluate(inputJson);
-    
-    console.log('✅ Transformation result:', transformedResult);
-    
-    // Format the output
-    const result = {
-      testMode: 'local-transformation',
-      status: 'success',
-      message: 'Transformation completed successfully',
-      input: inputJson,
-      output: transformedResult,
-      mappingRulesApplied: state.mappingRules.length,
-      jsonataExpression: jsonataExpression
-    };
-    
-    this.testOutput.set(JSON.stringify(result, null, 2));
-    this.testSuccess.set(true);
-    this.testing.set(false);
+  private getByPath(obj: any, path: string): any {
+    const normalized = path.replace(/^\$\.?/, '');
+    return normalized.split('.').filter(Boolean).reduce((current, part) => {
+      if (current === undefined || current === null) return undefined;
+      return current[part];
+    }, obj);
   }
 
   saveMapping(): void {
@@ -408,7 +295,7 @@ export class TestPublishStepComponent implements OnInit {
       target_schema_ref: state.targetSchemaRef,
       mapping_rules: JSON.stringify(state.mappingRules),
       transformation_rules: state.mappingRules,
-      sample_payload: state.sampleJson,
+      sample_payload: state.fieldMappingSampleJson || state.sampleJson,
       
       // Source-specific fields
       kafka_topic: config['topic'] || null,
@@ -443,7 +330,11 @@ export class TestPublishStepComponent implements OnInit {
     }
 
     if (state.sampleJson) {
-      sourceConfig['sourceJson'] = state.sampleJson;
+      sourceConfig['requestSampleJson'] = state.sampleJson;
+    }
+
+    if (state.fieldMappingSampleJson) {
+      sourceConfig['sourceJson'] = state.fieldMappingSampleJson;
     }
 
     return sourceConfig;

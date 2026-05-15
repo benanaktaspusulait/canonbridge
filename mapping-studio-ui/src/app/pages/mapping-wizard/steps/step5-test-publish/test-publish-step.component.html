@@ -166,26 +166,41 @@
 
         <!-- Right Column: Test Execution -->
         <div class="right-column">
-          <div class="section">
-            <h3>Test Transformation</h3>
+          <div class="section test-section">
+            <div class="section-heading">
+              <div>
+                <h3>Test Proxy Flow</h3>
+                <p>Send the original request to the generated endpoint and inspect the mapped response.</p>
+              </div>
+              @if (mappingId()) {
+                <span class="endpoint-badge">Proxy URL</span>
+              }
+            </div>
+
+            @if (getTestUrl()) {
+              <div class="endpoint-callout">
+                <span>Generated endpoint</span>
+                <code>{{ getTestUrl() }}</code>
+              </div>
+            }
             
             <!-- Test Input -->
             <div class="form-field">
-              <label for="test-input">Test Input JSON</label>
+              <label for="test-input">Original Request JSON</label>
               <textarea
                 id="test-input"
                 [ngModel]="testInput()"
                 (ngModelChange)="testInput.set($event)"
                 placeholder='{"example": "data"}'
                 [rows]="8"
-                [style]="{'width': '100%', 'font-family': 'monospace'}"></textarea>
-              <small class="field-help">Provide sample JSON to test the transformation</small>
+                class="json-textarea"></textarea>
+              <small class="field-help">This payload is sent to the generated proxy endpoint, not directly to the target API.</small>
             </div>
 
             <!-- Test Button -->
             <div class="test-actions">
               <p-button
-                label="Run Test"
+                label="Run Proxy Test"
                 icon="pi pi-play"
                 [loading]="testing()"
                 [disabled]="!testInput().trim()"
@@ -200,9 +215,23 @@
             </div>
 
             <!-- Test Output -->
+            @if (mappedRequestOutput()) {
+              <div class="json-panel">
+                <div class="json-panel-header">
+                  <label>Mapped Request Sent by Proxy</label>
+                </div>
+                <pre class="test-output request"><code>{{ mappedRequestOutput() }}</code></pre>
+              </div>
+            }
+
             @if (testOutput()) {
-              <div class="form-field">
-                <label>Test Output</label>
+              <div class="json-panel">
+                <div class="json-panel-header">
+                  <label>Mapped Response</label>
+                  @if (testEndpoint()) {
+                    <span>{{ testEndpoint() }}</span>
+                  }
+                </div>
                 <pre class="test-output success"><code>{{ testOutput() }}</code></pre>
               </div>
             }

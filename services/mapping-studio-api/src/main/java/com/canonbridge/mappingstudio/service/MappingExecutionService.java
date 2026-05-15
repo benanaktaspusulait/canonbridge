@@ -1,6 +1,12 @@
 package com.canonbridge.mappingstudio.service;
 
+import com.canonbridge.mappingstudio.domain.Credential;
 import com.canonbridge.mappingstudio.domain.MappingDraft;
+import com.canonbridge.mappingstudio.domain.OutboundConnection;
+import com.canonbridge.mappingstudio.outbound.OutboundHttpRequest;
+import com.canonbridge.mappingstudio.outbound.OutboundHttpService;
+import com.canonbridge.mappingstudio.outbound.RequestTemplateService;
+import com.canonbridge.mappingstudio.repository.OutboundConnectionRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.smallrye.mutiny.Uni;
@@ -17,6 +23,7 @@ import org.jboss.logging.Logger;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Service for executing mappings as API proxy
@@ -36,6 +43,15 @@ public class MappingExecutionService {
 
     @Inject
     ObjectMapper objectMapper;
+
+    @Inject
+    OutboundConnectionRepository connectionRepository;
+
+    @Inject
+    OutboundHttpService outboundHttpService;
+
+    @Inject
+    RequestTemplateService requestTemplateService;
 
     @ConfigProperty(name = "canonbridge.transformer.url", defaultValue = "http://localhost:8083")
     String transformerUrl;
@@ -111,41 +127,27 @@ public class MappingExecutionService {
      * Apply request transformation using JSONata
      */
     private Uni<JsonNode> applyRequestTransformation(MappingDraft mapping, JsonNode originalRequest) {
-        // Parse source config JSON
-        JsonNode sourceConfig;
-        try {
-            String sourceConfigStr = mapping.getSourceConfig();
-            if (sourceConfigStr == null || sourceConfigStr.isBlank()) {
-                return Uni.createFrom().item(originalRequest);
-            }
-            sourceConfig = objectMapper.readTree(sourceConfigStr);
-        } catch (Exception e) {
-            LOG.error("Failed to parse source config", e);
+        JsonObject sourceConfig = parseSourceConfig(mapping);
+        if (sourceConfig.isEmpty()) {
             return Uni.createFrom().item(originalRequest);
         }
 
-        // If no request transformation rules, return original
-        if (!sourceConfig.has("requestTransformation")) {
+        if (!sourceConfig.containsKey("requestTransformation") && !sourceConfig.containsKey("requestTemplate")) {
             LOG.info("No request transformation configured, using original request");
             return Uni.createFrom().item(originalRequest);
         }
 
-        var requestTransform = sourceConfig.get("requestTransformation");
-        String jsonataExpression = null;
-
-        if (requestTransform.has("jsonata")) {
-            jsonataExpression = requestTransform.get("jsonata").asText();
-        } else if (requestTransform.has("template")) {
-            // Convert template to JSONata
-            jsonataExpression = convertTemplateToJsonata(requestTransform.get("template"));
-        }
-
-        if (jsonataExpression == null || jsonataExpression.isBlank()) {
-            return Uni.createFrom().item(originalRequest);
-        }
-
-        // Call transformer service to evaluate JSONata
-        return evaluateJsonata(jsonataExpression, originalRequest);
+        return requestTemplateService.renderFromSourceConfig(sourceConfig, new JsonObject(originalRequest.toString()))
+            .map(rendered -> {
+                if (rendered == null) {
+                    return originalRequest;
+                }
+                try {
+                    return objectMapper.readTree(rendered.encode());
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to parse rendered request template", e);
+                }
+            });
     }
 
     /**
@@ -180,80 +182,200 @@ public class MappingExecutionService {
      * Call external API
      */
     private Uni<JsonNode> callExternalApi(MappingDraft mapping, JsonNode requestPayload) {
-        // Parse source config JSON
-        JsonNode sourceConfig;
+        JsonObject sourceConfig = parseSourceConfig(mapping);
+        if (sourceConfig.isEmpty()) {
+            return Uni.createFrom().failure(
+                new IllegalStateException("Source config not found")
+            );
+        }
+
+        return resolveOutboundConnection(mapping, sourceConfig)
+            .chain(connection -> {
+                if (connection == null || connection.url() == null || connection.url().isBlank()) {
+                    return Uni.createFrom().failure(
+                        new IllegalStateException("External API URL not configured")
+                    );
+                }
+
+                JsonObject outboundPayload = toJsonObject(requestPayload);
+                JsonObject headers = requestTemplateService.renderHeadersFromSourceConfig(sourceConfig, outboundPayload);
+
+                return outboundHttpService.execute(
+                        mapping.getTenantId(),
+                        connection,
+                        new OutboundHttpRequest(outboundPayload, headers)
+                    )
+                    .map(result -> {
+                        if (!result.success()) {
+                            throw new RuntimeException(
+                                "External API returned " + result.statusCode() + ": " + result.body()
+                            );
+                        }
+                        try {
+                            return objectMapper.readTree(result.body());
+                        } catch (Exception e) {
+                            throw new RuntimeException("Failed to parse API response", e);
+                        }
+                    });
+            });
+    }
+
+    private JsonObject parseSourceConfig(MappingDraft mapping) {
         try {
             String sourceConfigStr = mapping.getSourceConfig();
             if (sourceConfigStr == null || sourceConfigStr.isBlank()) {
-                return Uni.createFrom().failure(
-                    new IllegalStateException("Source config not found")
-                );
+                return new JsonObject();
             }
-            sourceConfig = objectMapper.readTree(sourceConfigStr);
+            return new JsonObject(sourceConfigStr);
         } catch (Exception e) {
-            return Uni.createFrom().failure(
-                new IllegalStateException("Failed to parse source config: " + e.getMessage())
-            );
+            LOG.error("Failed to parse source config", e);
+            return new JsonObject();
         }
-        
-        if (!sourceConfig.has("url")) {
+    }
+
+    private Uni<OutboundConnection> resolveOutboundConnection(MappingDraft mapping, JsonObject sourceConfig) {
+        String directUrl = firstNonBlank(
+            sourceConfig.getString("url"),
+            sourceConfig.getString("connectionUrl"),
+            sourceConfig.getString("endpointUrl")
+        );
+
+        if (directUrl != null) {
+            return Uni.createFrom().item(buildAdhocConnection(mapping, sourceConfig, directUrl));
+        }
+
+        UUID connectionId = firstUuid(
+            sourceConfig.getString("externalSystemId"),
+            sourceConfig.getString("connectionId"),
+            sourceConfig.getString("sourceConnectionId"),
+            sourceConfig.getString("source_connection_id"),
+            sourceConfig.getString("external_system_id")
+        );
+
+        if (connectionId == null) {
             return Uni.createFrom().failure(
                 new IllegalStateException("External API URL not configured")
             );
         }
 
-        String url = sourceConfig.get("url").asText();
-        String method = sourceConfig.has("method") 
-            ? sourceConfig.get("method").asText().toUpperCase() 
-            : "POST";
+        return connectionRepository.findById(mapping.getTenantId(), connectionId)
+            .map(connection -> withEndpointOverride(connection, sourceConfig));
+    }
 
-        // Add query params from transformed request if present
-        if (requestPayload.has("queryParams")) {
-            var queryParams = requestPayload.get("queryParams");
-            var queryString = new StringBuilder();
-            queryParams.fields().forEachRemaining(entry -> {
-                if (queryString.length() > 0) {
-                    queryString.append("&");
-                }
-                queryString.append(entry.getKey()).append("=").append(entry.getValue().asText());
-            });
-            if (queryString.length() > 0) {
-                url = url + (url.contains("?") ? "&" : "?") + queryString.toString();
+    private OutboundConnection buildAdhocConnection(MappingDraft mapping, JsonObject sourceConfig, String url) {
+        return new OutboundConnection(
+            null,
+            mapping.getTenantId(),
+            mapping.getId(),
+            mapping.getName(),
+            OutboundConnection.ConnectionPurpose.SOURCE_PAYLOAD,
+            protocolFromSourceType(mapping),
+            firstNonBlank(sourceConfig.getString("method"), "POST"),
+            url,
+            null,
+            Credential.Environment.PRODUCTION,
+            null,
+            sourceConfig.getInteger("timeoutMs", 5000),
+            new JsonObject(),
+            new JsonObject(),
+            OutboundConnection.ConnectionStatus.NOT_TESTED,
+            null,
+            null,
+            null,
+            null,
+            false,
+            null,
+            new io.vertx.core.json.JsonArray()
+        );
+    }
+
+    private OutboundConnection withEndpointOverride(OutboundConnection connection, JsonObject sourceConfig) {
+        if (connection == null) {
+            return null;
+        }
+
+        String method = firstNonBlank(sourceConfig.getString("method"), connection.method(), "POST");
+        String url = firstNonBlank(
+            sourceConfig.getString("url"),
+            sourceConfig.getString("connectionUrl"),
+            sourceConfig.getString("endpointUrl")
+        );
+
+        if (url == null) {
+            String path = firstNonBlank(sourceConfig.getString("path"), sourceConfig.getString("endpoint"));
+            String baseUrl = firstNonBlank(sourceConfig.getString("baseUrl"), connection.baseUrl());
+            if (path != null && baseUrl != null) {
+                url = joinUrl(baseUrl, path);
             }
         }
 
-        LOG.infof("📡 Calling external API: %s %s", method, url);
-
-        // Build request based on method
-        var request = "GET".equals(method) 
-            ? webClient.getAbs(url)
-            : webClient.postAbs(url);
-            
-        request.timeout(Duration.ofSeconds(30).toMillis())
-            .putHeader("Content-Type", "application/json");
-
-        // Add custom headers if configured
-        if (sourceConfig.has("headers")) {
-            var headersNode = sourceConfig.get("headers");
-            headersNode.fields().forEachRemaining(entry -> {
-                request.putHeader(entry.getKey(), entry.getValue().asText());
-            });
+        if (url == null) {
+            url = connection.url();
         }
 
-        // Send request based on method
-        var responseFuture = "GET".equals(method)
-            ? request.send()
-            : request.sendJson(requestPayload.toString());
-            
-        return responseFuture
-            .map(HttpResponse::bodyAsJsonObject)
-            .map(jsonObject -> {
-                try {
-                    return objectMapper.readTree(jsonObject.encode());
-                } catch (Exception e) {
-                    throw new RuntimeException("Failed to parse API response", e);
-                }
-            });
+        return new OutboundConnection(
+            connection.connectionId(),
+            connection.tenantId(),
+            connection.draftId(),
+            connection.name(),
+            connection.purpose(),
+            connection.protocol(),
+            method,
+            url,
+            connection.credentialId(),
+            connection.environment(),
+            connection.schedule(),
+            connection.timeoutMs(),
+            connection.retryPolicy(),
+            connection.responseHandling(),
+            connection.status(),
+            connection.lastTestAt(),
+            connection.lastTestResult(),
+            connection.createdAt(),
+            connection.updatedAt(),
+            connection.isSystemTemplate(),
+            connection.baseUrl(),
+            connection.knownEndpoints()
+        );
+    }
+
+    private JsonObject toJsonObject(JsonNode node) {
+        if (node != null && node.isObject()) {
+            return new JsonObject(node.toString());
+        }
+        return new JsonObject().put("value", node);
+    }
+
+    private OutboundConnection.Protocol protocolFromSourceType(MappingDraft mapping) {
+        if (mapping.getSourceType() == MappingDraft.SourceType.SOAP) return OutboundConnection.Protocol.SOAP;
+        if (mapping.getSourceType() == MappingDraft.SourceType.GRPC) return OutboundConnection.Protocol.GRPC;
+        if (mapping.getSourceType() == MappingDraft.SourceType.API_ENRICHMENT) return OutboundConnection.Protocol.GRAPHQL;
+        return OutboundConnection.Protocol.REST;
+    }
+
+    private String joinUrl(String baseUrl, String path) {
+        String base = baseUrl.replaceAll("/+$", "");
+        String suffix = path.startsWith("/") ? path : "/" + path;
+        return base + suffix;
+    }
+
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return null;
+    }
+
+    private UUID firstUuid(String... values) {
+        String value = firstNonBlank(values);
+        if (value == null) return null;
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     /**
