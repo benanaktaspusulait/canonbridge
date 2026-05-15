@@ -507,6 +507,11 @@ export class FieldMappingStepComponent implements OnInit {
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
         fields.push(...this.extractFieldPathsWithTypes(value, path));
       }
+      
+      // For arrays with object items, extract child fields from first item
+      if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && value[0] !== null) {
+        fields.push(...this.extractFieldPathsWithTypes(value[0], path));
+      }
     }
     
     return fields;

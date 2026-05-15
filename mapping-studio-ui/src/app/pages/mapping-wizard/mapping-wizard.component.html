@@ -31,26 +31,6 @@
         @switch (currentStep()) {
           @case (0) {
             @if (!isEditMode()) {
-              <app-mode-selector 
-                (modeSelected)="onModeSelected($event)" />
-            } @else {
-              <div class="edit-mode-step0">
-                <div class="selected-mode">
-                  <h2>{{ 'wizard.mode.selected' | i18n }}</h2>
-                  <p>{{ wizardState().mode === 'api-gateway' ? ('wizard.mode.apiGateway' | i18n) : ('wizard.mode.integrationHub' | i18n) }}</p>
-                  <div class="actions">
-                    <p-button 
-                      [label]="'wizard.next' | i18n" 
-                      icon="pi pi-arrow-right"
-                      iconPos="right"
-                      (onClick)="goNext()" />
-                  </div>
-                </div>
-              </div>
-            }
-          }
-          @case (1) {
-            @if (!isEditMode()) {
               <app-source-type-selection 
                 (sourceTypeSelected)="onSourceTypeSelected($event)" />
             } @else {
@@ -78,12 +58,6 @@
                               {{ wizardState().sourceConfig['path'] }}
                             </span>
                           }
-                          @if (wizardState().sourceConfig['url']) {
-                            <span class="detail-badge url-badge">
-                              <i class="pi pi-globe"></i>
-                              {{ wizardState().sourceConfig['url'] }}
-                            </span>
-                          }
                         </div>
                       }
                     </div>
@@ -99,7 +73,7 @@
               </div>
             }
           }
-          @case (2) {
+          @case (1) {
             <app-configuration-step
               [sourceType]="wizardState().sourceType!"
               [initialConfig]="wizardState().sourceConfig"
@@ -107,32 +81,30 @@
               (configurationComplete)="onConfigurationComplete($event)"
               (backClicked)="goBack()" />
           }
-          @case (3) {
+          @case (2) {
             <app-sample-data-step
               [method]="getConfigMethod()"
               [initialSampleJson]="wizardState().sampleJson"
               (sampleDataComplete)="onSampleDataComplete($event)"
               (backClicked)="goBack()" />
           }
-          @case (4) {
-            @if (wizardState().mode === 'api-gateway') {
-              <app-request-mapping-step
-                [sourceType]="wizardState().sourceType!"
-                [method]="getConfigMethod()"
-                [initialConfig]="wizardState().requestTransformation"
-                [canonicalSampleJson]="wizardState().sampleJson"
-                [mappingId]="mappingId()"
-                (requestMappingComplete)="onRequestMappingComplete($event)"
-                (backClicked)="goBack()" />
-            }
+          @case (3) {
+            <app-request-mapping-step
+              [sourceType]="wizardState().sourceType!"
+              [method]="getConfigMethod()"
+              [initialConfig]="wizardState().requestTransformation"
+              [canonicalSampleJson]="wizardState().sampleJson"
+              [mappingId]="mappingId()"
+              (requestMappingComplete)="onRequestMappingComplete($event)"
+              (backClicked)="goBack()" />
           }
-          @case (5) {
+          @case (4) {
             <app-target-schema-step
               [initialSchemaRef]="wizardState().targetSchemaRef"
               (schemaSelected)="onTargetSchemaSelected($event)"
               (backClicked)="goBack()" />
           }
-          @case (6) {
+          @case (5) {
             <app-field-mapping-step
               [sampleJson]="wizardState().fieldMappingSampleJson || wizardState().sampleJson"
               [targetSchemaJson]="targetSchemaJson()"
@@ -145,7 +117,7 @@
               (rulesUpdated)="onRulesUpdated($event)"
               (backClicked)="goBack()" />
           }
-          @case (7) {
+          @case (6) {
             <app-test-publish-step
               [wizardState]="wizardState()"
               [mappingId]="mappingId()"

@@ -5,7 +5,6 @@ import { ButtonModule } from 'primeng/button';
 import { StepsModule } from 'primeng/steps';
 import { MenuItem } from 'primeng/api';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
-import { ModeSelectorComponent } from './steps/step0-mode-selector/mode-selector.component';
 import { SourceTypeSelectionComponent } from './steps/step0-source-type/source-type-selection.component';
 import { ConfigurationStepComponent } from './steps/step1-configuration/configuration-step.component';
 import { RequestMappingStepComponent } from './steps/step2-request-mapping/request-mapping-step.component';
@@ -27,7 +26,6 @@ import { SchemaService } from '../../core/services/schema.service';
     ButtonModule,
     StepsModule,
     I18nPipe,
-    ModeSelectorComponent,
     SourceTypeSelectionComponent,
     ConfigurationStepComponent,
     RequestMappingStepComponent,
@@ -66,13 +64,12 @@ export class MappingWizardComponent implements OnInit {
   });
 
   steps: MenuItem[] = [
-    { label: 'Mode Selection' },
     { label: 'Source Type' },
     { label: 'Configuration' },
     { label: 'Sample Data' },
-    { label: 'API Request' }, // Changed from 'Request Mapping' - this is for preparing the outgoing API request
+    { label: 'Request Mapping' },
     { label: 'Target Schema' },
-    { label: 'Field Mapping' }, // This is where actual field mapping happens
+    { label: 'Field Mapping' },
     { label: 'Test & Publish' }
   ];
 
@@ -146,8 +143,8 @@ export class MappingWizardComponent implements OnInit {
           this.loadTargetSchemaForEdit(targetSchemaRef);
         }
         
-        // Start from step 2 in edit mode (skip mode and source type selection)
-        this.currentStep.set(2);
+        // Start from step 1 in edit mode (skip source type selection)
+        this.currentStep.set(1);
         this.loading.set(false);
       },
       error: (err) => {
@@ -747,9 +744,10 @@ export class MappingWizardComponent implements OnInit {
   onSourceTypeSelected(sourceType: SourceType): void {
     this.wizardState.update(state => ({
       ...state,
-      sourceType
+      sourceType,
+      mode: 'api-gateway' // Auto-set mode based on source type
     }));
-    this.currentStep.set(2); // Go to Configuration step
+    this.currentStep.set(1); // Go to Configuration step
   }
 
   onModeSelected(mode: WizardMode): void {
@@ -767,7 +765,7 @@ export class MappingWizardComponent implements OnInit {
       sourceConfig: { ...state.sourceConfig, ...data.config }
     }));
     
-    this.currentStep.set(3); // Go to Sample Data step
+    this.currentStep.set(2); // Go to Sample Data step
   }
 
   onRequestMappingComplete(data: { config: any; validationRules?: any[] }): void {
@@ -786,7 +784,7 @@ export class MappingWizardComponent implements OnInit {
       });
     }
 
-    this.currentStep.set(5);
+    this.currentStep.set(4); // Go to Target Schema step
   }
 
   onSampleDataComplete(data: { sampleJson: string }): void {
@@ -804,10 +802,7 @@ export class MappingWizardComponent implements OnInit {
   }
 
   private getNextStepAfterSampleData(): number {
-    const mode = this.wizardState().mode;
-    // If API Gateway mode, go to Request Mapping (step 4)
-    // If Integration Hub mode, skip to Target Schema (step 5)
-    return mode === 'api-gateway' ? 4 : 5;
+    return this.needsRequestMapping() ? 3 : 4;
   }
 
   onTargetSchemaSelected(data: { schemaRef: string }): void {
@@ -821,7 +816,7 @@ export class MappingWizardComponent implements OnInit {
     
     // If schema didn't change and we already have a custom target_schema_json, keep it
     if (!schemaChanged && currentState.targetSchemaJson) {
-      this.currentStep.set(6);
+      this.currentStep.set(5);
       return;
     }
     
@@ -834,7 +829,7 @@ export class MappingWizardComponent implements OnInit {
           ...state,
           targetSchemaJson: schema.schema_json
         }));
-        this.currentStep.set(6); // Go to Field Mapping step
+        this.currentStep.set(5); // Go to Field Mapping step
       },
       error: (err) => {
         console.error('❌ Failed to load schema from API:', err);
@@ -925,7 +920,7 @@ export class MappingWizardComponent implements OnInit {
           }));
         }
         
-        this.currentStep.set(6); // Go to Field Mapping step
+        this.currentStep.set(5); // Go to Field Mapping step
       }
     });
   }
@@ -961,7 +956,7 @@ export class MappingWizardComponent implements OnInit {
     // Auto-save mapping rules, generated JSONata, and target schema to DB
     this.autoSaveMappingRules(data.rules, data.excludedTargetFields, data.targetSchemaJson);
     
-    this.currentStep.set(7); // Go to Test & Publish step
+    this.currentStep.set(6); // Go to Test & Publish step
   }
 
   private autoSaveMappingRules(rules: any[], excludedTargetFields?: string[], targetSchemaJson?: string): void {
@@ -1066,11 +1061,9 @@ export class MappingWizardComponent implements OnInit {
   }
 
   private getNextStep(currentStep: number): number {
-    const mode = this.wizardState().mode;
-    
-    // Step 3 (Sample Data) → Step 4 or 5 depending on mode
-    if (currentStep === 3) {
-      return mode === 'api-gateway' ? 4 : 5; // Include or skip Request Mapping
+    // Step 2 (Sample Data) → Step 3 (Request Mapping) or Step 4 (Target Schema)
+    if (currentStep === 2) {
+      return this.needsRequestMapping() ? 3 : 4;
     }
     
     // All other steps proceed sequentially
@@ -1078,29 +1071,35 @@ export class MappingWizardComponent implements OnInit {
   }
 
   private getPreviousStep(currentStep: number): number {
-    const mode = this.wizardState().mode;
-    
-    // Step 5 (Target Schema) → Step 4 or 3 depending on mode
-    if (currentStep === 5) {
-      return mode === 'api-gateway' ? 4 : 3; // Go back to Request Mapping or Sample Data
+    // Step 4 (Target Schema) → Step 3 (Request Mapping) or Step 2 (Sample Data)
+    if (currentStep === 4) {
+      return this.needsRequestMapping() ? 3 : 2;
     }
     
     // All other steps go back sequentially
     return currentStep - 1;
   }
 
+  /** Determines if Request Mapping step is needed based on source type and method */
+  private needsRequestMapping(): boolean {
+    const sourceType = this.wizardState().sourceType;
+    const method = ((this.wizardState().sourceConfig['method'] as string) || '').toUpperCase();
+    
+    // Kafka, Webhook, File Batch - no outbound API call, no request mapping needed
+    if (sourceType === 'KAFKA' || sourceType === 'WEBHOOK' || sourceType === 'FILE_BATCH' || sourceType === 'MANUAL') {
+      return false;
+    }
+    
+    // GET/DELETE - no request body, no request mapping needed
+    if (method === 'GET' || method === 'DELETE') {
+      return false;
+    }
+    
+    // POST/PUT/PATCH on REST, SOAP, gRPC, GraphQL - request mapping needed
+    return true;
+  }
+
   getStepLabel(stepIndex: number): string {
-    const mode = this.wizardState().mode;
-    
-    // Change "Target Schema" to "Request Schema" for API Gateway mode
-    if (stepIndex === 5 && mode === 'api-gateway') {
-      return 'Request Schema';
-    }
-    
-    if (stepIndex === 5 && mode === 'integration-hub') {
-      return 'Target Schema';
-    }
-    
     return this.steps[stepIndex]?.label || '';
   }
 

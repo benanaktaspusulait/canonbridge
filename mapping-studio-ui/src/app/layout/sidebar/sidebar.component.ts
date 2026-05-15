@@ -4,7 +4,6 @@ import { TooltipModule } from 'primeng/tooltip';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { ThemeService } from '../../core/theme/theme.service';
 import { AuthService } from '../../core/services/auth.service';
-import { environment } from '../../../environments/environment';
 
 interface NavEntry {
   route: string;
@@ -21,7 +20,6 @@ interface NavGroup {
 
 const PRIMARY_NAV: NavEntry[] = [
   { route: '/dashboard', icon: 'pi pi-home', labelKey: 'nav.dashboard' },
-  { route: '/studio', icon: 'pi pi-objects-column', labelKey: 'nav.studio' },
   { route: '/mappings', icon: 'pi pi-directions', labelKey: 'nav.mappings' },
   { route: '/partners', icon: 'pi pi-building', labelKey: 'nav.partners' },
   { route: '/external-systems', icon: 'pi pi-cloud', labelKey: 'nav.externalSystems' },
@@ -35,7 +33,6 @@ const PRIMARY_NAV: NavEntry[] = [
 ];
 
 const SECONDARY_NAV: NavEntry[] = [
-  { route: '/demo', icon: 'pi pi-play-circle', labelKey: 'nav.demo' },
   { route: '/settings', icon: 'pi pi-cog', labelKey: 'nav.settings' }
 ];
 
@@ -53,10 +50,6 @@ export class SidebarComponent {
 
   @Input() collapsed = false;
 
-  private readonly secondaryNavItems = environment.features.enableDemoMode
-    ? SECONDARY_NAV
-    : SECONDARY_NAV.filter(item => item.route !== '/demo');
-
   readonly navGroups: NavGroup[] = [
     {
       labelKey: 'sidebar.menuGroup',
@@ -64,10 +57,10 @@ export class SidebarComponent {
     },
     {
       labelKey: 'sidebar.preferencesGroup',
-      items: this.secondaryNavItems
+      items: SECONDARY_NAV
     }
   ];
-  readonly iconNavItems: NavEntry[] = [...PRIMARY_NAV, ...this.secondaryNavItems];
+  readonly iconNavItems: NavEntry[] = [...PRIMARY_NAV, ...SECONDARY_NAV];
   
   isActive(route: string): boolean {
     return this.router.url === route;

@@ -30,13 +30,6 @@ export const routes: Routes = [
           import('./pages/mappings/mappings.component').then(m => m.MappingsComponent)
       },
       {
-        path: 'studio',
-        loadComponent: () =>
-          import('./pages/integration-studio/integration-studio.component').then(
-            m => m.IntegrationStudioComponent
-          )
-      },
-      {
         path: 'wizard',
         loadComponent: () =>
           import('./pages/mapping-wizard/mapping-wizard.component').then(
@@ -79,11 +72,6 @@ export const routes: Routes = [
         path: 'settings',
         loadComponent: () =>
           import('./pages/settings/settings.component').then(m => m.SettingsComponent)
-      },
-      {
-        path: 'demo',
-        loadComponent: () =>
-          import('./pages/demo/demo.component').then(m => m.DemoComponent)
       }
     ]
   },

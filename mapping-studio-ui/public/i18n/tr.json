@@ -27,8 +27,7 @@
     "schemas": "Şemalar",
     "dlq": "DLQ",
     "monitoring": "İzleme",
-    "settings": "Ayarlar",
-    "demo": "Demo Modu"
+    "settings": "Ayarlar"
   },
   "sidebar": {
     "logoSub": "Mapping Studio",
@@ -77,7 +76,6 @@
     "subtitle": "CanonBridge operasyon özeti.",
     "studio": "Integration Studio",
     "monitoring": "İzleme",
-    "demo": "Demo Modu",
     "recentTitle": "Son eşlemeler",
     "recentSubtitle": "Tüm ortaklardaki son eşleme aktivitesi",
     "viewAll": "Tümünü gör",

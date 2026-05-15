@@ -27,8 +27,7 @@
     "schemas": "Schemas",
     "dlq": "DLQ",
     "monitoring": "Monitoring",
-    "settings": "Settings",
-    "demo": "Demo Mode"
+    "settings": "Settings"
   },
   "sidebar": {
     "logoSub": "Mapping Studio",
@@ -77,7 +76,6 @@
     "subtitle": "Operational snapshot of CanonBridge.",
     "studio": "Integration Studio",
     "monitoring": "Monitoring",
-    "demo": "Demo Mode",
     "recentTitle": "Recent Mappings",
     "recentSubtitle": "Latest mapping activity across all partners",
     "viewAll": "View All",

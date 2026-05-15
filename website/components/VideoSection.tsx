@@ -9,7 +9,8 @@ interface VideoSectionProps {
   step: number;
   description: string;
   bullets: string[];
-  videoSrc: string;
+  videoSrc?: string;
+  youtubeId?: string;
   reversed?: boolean;
   id?: string;
 }
@@ -21,6 +22,7 @@ export default function VideoSection({
   description,
   bullets,
   videoSrc,
+  youtubeId,
   reversed = false,
   id,
 }: VideoSectionProps) {
@@ -110,42 +112,56 @@ export default function VideoSection({
           >
             <div className="laptop-frame glow-blue">
               <div className="laptop-screen">
-                <video
-                  ref={videoRef}
-                  src={videoSrc}
-                  muted
-                  loop
-                  playsInline
-                  preload="metadata"
-                  className="w-full h-full object-cover"
-                >
-                  Your browser does not support the video tag.
-                </video>
-                {/* Placeholder overlay when no video loads */}
-                <div className="absolute inset-0 flex items-center justify-center bg-navy-800/90 video-placeholder">
-                  <div className="text-center">
-                    <svg
-                      className="w-16 h-16 text-gray-600 mx-auto mb-3"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
+                {youtubeId ? (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${youtubeId}?autoplay=0&rel=0&modestbranding=1&showinfo=0`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full border-0"
+                    title={title}
+                  />
+                ) : (
+                  <>
+                    <video
+                      ref={videoRef}
+                      src={videoSrc}
+                      muted
+                      loop
+                      playsInline
+                      preload="metadata"
+                      className="w-full h-full object-cover"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1}
-                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1}
-                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <p className="text-gray-500 text-sm">Demo video</p>
-                  </div>
-                </div>
+                      Your browser does not support the video tag.
+                    </video>
+                    {/* Placeholder overlay when no video loads */}
+                    {!videoSrc && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-navy-800/90 video-placeholder">
+                        <div className="text-center">
+                          <svg
+                            className="w-16 h-16 text-gray-600 mx-auto mb-3"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1}
+                              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1}
+                              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          <p className="text-gray-500 text-sm">Demo video</p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </motion.div>
