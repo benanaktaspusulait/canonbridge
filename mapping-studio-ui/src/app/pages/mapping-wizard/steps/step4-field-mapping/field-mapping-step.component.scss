@@ -674,6 +674,7 @@
         color: #94a3b8;
         background: #f8fafc;
         transition: all 0.3s ease;
+        position: relative;
 
         i {
           font-size: 2rem;
@@ -684,6 +685,29 @@
         span {
           font-size: 0.9375rem;
           font-weight: 500;
+        }
+
+        .remove-field-btn {
+          position: absolute;
+          top: 0.5rem;
+          right: 0.5rem;
+          background: none;
+          border: none;
+          color: #94a3b8;
+          cursor: pointer;
+          padding: 0.25rem;
+          border-radius: 4px;
+          opacity: 0;
+          transition: all 0.2s ease;
+
+          &:hover {
+            color: #ef4444;
+            background: #fef2f2;
+          }
+        }
+
+        &:hover .remove-field-btn {
+          opacity: 1;
         }
 
         &:hover {

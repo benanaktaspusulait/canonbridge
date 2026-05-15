@@ -905,11 +905,12 @@ export class MappingWizardComponent implements OnInit {
     });
   }
 
-  onFieldMappingComplete(data: { rules: any[] }): void {
+  onFieldMappingComplete(data: { rules: any[]; excludedTargetFields: string[] }): void {
     this.wizardState.update(state => {
-      const updated = {
+      const updated: any = {
         ...state,
-        mappingRules: data.rules
+        mappingRules: data.rules,
+        excludedTargetFields: data.excludedTargetFields || []
       };
       
       // If no sample data exists, generate from inputSchema or targetSchemaJson
@@ -927,20 +928,30 @@ export class MappingWizardComponent implements OnInit {
     });
     
     // Auto-save mapping rules and generated JSONata to DB
-    this.autoSaveMappingRules(data.rules);
+    this.autoSaveMappingRules(data.rules, data.excludedTargetFields);
     
     this.currentStep.set(7); // Go to Test & Publish step
   }
 
-  private autoSaveMappingRules(rules: any[]): void {
+  private autoSaveMappingRules(rules: any[], excludedTargetFields?: string[]): void {
     const mappingId = this.mappingId();
     if (!mappingId) return;
     
     const generatedJsonata = rules.length > 0 ? buildCombinedMappingExpression(rules) : '';
     
+    // Save excluded fields in source_config
+    const state = this.wizardState();
+    const sourceConfig = { ...state.sourceConfig };
+    if (excludedTargetFields && excludedTargetFields.length > 0) {
+      sourceConfig['excludedTargetFields'] = excludedTargetFields;
+    } else {
+      delete sourceConfig['excludedTargetFields'];
+    }
+    
     this.mappingService.update(mappingId, {
       mapping_rules: JSON.stringify(rules),
-      generated_jsonata: generatedJsonata
+      generated_jsonata: generatedJsonata,
+      source_config: JSON.stringify(sourceConfig)
     } as any).subscribe({
       next: () => console.log('✅ Mapping rules auto-saved'),
       error: (err: any) => console.warn('⚠️ Failed to auto-save mapping rules:', err)
@@ -1057,6 +1068,16 @@ export class MappingWizardComponent implements OnInit {
 
   getConfigMethod(): string {
     return (this.wizardState().sourceConfig['method'] as string) || 'GET';
+  }
+
+  getExcludedTargetFields(): string[] {
+    const state = this.wizardState() as any;
+    if (state.excludedTargetFields && Array.isArray(state.excludedTargetFields)) {
+      return state.excludedTargetFields;
+    }
+    const fromConfig = state.sourceConfig?.['excludedTargetFields'];
+    if (Array.isArray(fromConfig)) return fromConfig;
+    return [];
   }
 
   getSourceTypeIcon(): string {

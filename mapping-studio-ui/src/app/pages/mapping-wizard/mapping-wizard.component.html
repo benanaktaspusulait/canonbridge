@@ -139,6 +139,7 @@
               [inputSchema]="wizardState().inputSchema || ''"
               [mappingId]="mappingId()"
               [initialRules]="wizardState().mappingRules"
+              [excludedFields]="getExcludedTargetFields()"
               (mappingComplete)="onFieldMappingComplete($event)"
               (backClicked)="goBack()" />
           }

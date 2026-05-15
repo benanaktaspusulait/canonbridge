@@ -131,8 +131,9 @@ export class FieldMappingStepComponent implements OnInit {
   inputSchema = input<string>('');
   mappingId = input<string | null>(null);
   initialRules = input<any[]>([]);
+  excludedFields = input<string[]>([]);
   
-  mappingComplete = output<{ rules: any[] }>();
+  mappingComplete = output<{ rules: any[]; excludedTargetFields: string[] }>();
   backClicked = output<void>();
 
   private readonly mappingService = inject(MappingService);
@@ -143,6 +144,7 @@ export class FieldMappingStepComponent implements OnInit {
   sourceFieldFilter = signal('');
   collapsedGroups = signal<Set<string>>(new Set());
   savingRules = signal(false);
+  removedTargetFields = signal<Set<string>>(new Set());
   
   filteredSourceFields = computed(() => {
     const filter = this.sourceFieldFilter().toLowerCase().trim();
@@ -397,11 +399,11 @@ export class FieldMappingStepComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    console.log('🔧 Transform Options:', this.transformOptions.length, 'items');
-    console.log('First 3 options:', this.transformOptions.slice(0, 3).map(o => ({ label: o.label, value: o.value, category: o.category })));
-    console.log('📥 Initial rules input:', this.initialRules());
-    console.log('📥 Sample JSON input:', this.sampleJson());
-    console.log('📥 Target schema JSON input:', this.targetSchemaJson());
+    // Load excluded fields from input
+    const excluded = this.excludedFields();
+    if (excluded && excluded.length > 0) {
+      this.removedTargetFields.set(new Set(excluded));
+    }
     
     this.extractSourceFields();
     this.extractTargetFields();
@@ -467,25 +469,21 @@ export class FieldMappingStepComponent implements OnInit {
 
   extractTargetFields(): void {
     const targetSchemaStr = this.targetSchemaJson();
-    console.log('=== EXTRACTING TARGET FIELDS ===');
-    console.log('targetSchemaJson string:', targetSchemaStr);
-    console.log('targetSchemaJson length:', targetSchemaStr?.length);
     
     if (!targetSchemaStr || targetSchemaStr.trim() === '') {
-      console.warn('⚠️ Target schema JSON is empty');
       this.targetFields.set([]);
       return;
     }
     
     try {
       const schema = JSON.parse(targetSchemaStr);
-      console.log('✅ Parsed target schema:', schema);
       const fields = this.extractSchemaFieldsWithTypes(schema);
-      console.log('✅ Extracted target fields:', fields);
-      this.targetFields.set(fields);
+      // Filter out excluded fields
+      const excluded = this.removedTargetFields();
+      const filtered = fields.filter(f => !excluded.has(f.key));
+      this.targetFields.set(filtered);
     } catch (e) {
       console.error('❌ Failed to parse target schema:', e);
-      console.error('Target schema value:', targetSchemaStr);
       this.targetFields.set([]);
     }
   }
@@ -770,6 +768,16 @@ export class FieldMappingStepComponent implements OnInit {
   removeMapping(targetKey: string): void {
     this.mappingRules.update(rules => rules.filter(r => r.targetKey !== targetKey));
     this.updateMappedStatus();
+  }
+
+  removeTargetField(targetKey: string): void {
+    this.removedTargetFields.update(set => {
+      const newSet = new Set(set);
+      newSet.add(targetKey);
+      return newSet;
+    });
+    this.targetFields.update(fields => fields.filter(f => f.key !== targetKey));
+    this.mappingRules.update(rules => rules.filter(r => r.targetKey !== targetKey));
   }
 
   updateTransform(targetKey: string, transform: TransformKind): void {
@@ -1304,12 +1312,14 @@ export class FieldMappingStepComponent implements OnInit {
   }
 
   onNext(): void {
-    // Clean up rules for target fields that no longer exist
     const validTargetKeys = new Set(this.targetFields().map(f => f.key));
     const cleanedRules = this.mappingRules().filter(r => validTargetKeys.has(r.targetKey));
     this.mappingRules.set(cleanedRules);
     
-    this.mappingComplete.emit({ rules: cleanedRules });
+    this.mappingComplete.emit({ 
+      rules: cleanedRules,
+      excludedTargetFields: Array.from(this.removedTargetFields())
+    });
   }
 
   saveRules(): void {
