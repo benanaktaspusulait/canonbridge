@@ -134,6 +134,7 @@ export class FieldMappingStepComponent implements OnInit {
   excludedFields = input<string[]>([]);
   
   mappingComplete = output<{ rules: any[]; excludedTargetFields: string[]; targetSchemaJson: string }>();
+  schemaUpdated = output<string>();
   backClicked = output<void>();
 
   private readonly mappingService = inject(MappingService);
@@ -1361,6 +1362,7 @@ export class FieldMappingStepComponent implements OnInit {
     } as any).subscribe({
       next: () => {
         this.savingRules.set(false);
+        this.schemaUpdated.emit(targetSchemaJson);
         console.log('✅ Mapping rules saved');
       },
       error: (err) => {

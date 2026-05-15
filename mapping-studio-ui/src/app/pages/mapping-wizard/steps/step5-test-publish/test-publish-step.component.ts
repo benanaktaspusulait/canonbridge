@@ -214,8 +214,15 @@ export class TestPublishStepComponent implements OnInit {
     const proxyPath = `/api/proxy/${mappingId}`;
     this.testEndpoint.set(endpoint);
 
-    const mappedRequest = await this.applyRequestTransformation(state, inputJson);
-    this.mappedRequestOutput.set(JSON.stringify(mappedRequest, null, 2));
+    // Show what the proxy will actually call
+    const targetUrl = this.resolveTargetUrl(state, inputJson);
+    const method = (state.sourceConfig['method'] as string || 'GET').toUpperCase();
+    const requestInfo: any = {
+      method,
+      url: targetUrl,
+      params: inputJson
+    };
+    this.mappedRequestOutput.set(JSON.stringify(requestInfo, null, 2));
 
     const headers = this.getTestHeaders();
     const response = await firstValueFrom(this.http.post<any>(proxyPath, inputJson, { headers }));
@@ -224,6 +231,19 @@ export class TestPublishStepComponent implements OnInit {
     this.testSuccess.set(true);
     this.testing.set(false);
     console.log('✅ Proxy endpoint test completed:', response);
+  }
+
+  private resolveTargetUrl(state: WizardState, params: any): string {
+    let url = (state.sourceConfig['url'] as string) || '';
+    if (!url) return 'Unknown';
+    
+    // Replace {param} placeholders with actual values
+    for (const [key, value] of Object.entries(params)) {
+      if (typeof value === 'string') {
+        url = url.replace(`{${key}}`, value);
+      }
+    }
+    return url;
   }
 
   private async applyRequestTransformation(state: WizardState, input: any): Promise<any> {

@@ -1100,6 +1100,14 @@ export class MappingWizardComponent implements OnInit {
     return [];
   }
 
+  onTargetSchemaUpdated(schemaJson: string): void {
+    this.targetSchemaJson.set(schemaJson);
+    this.wizardState.update(state => ({
+      ...state,
+      targetSchemaJson: schemaJson
+    }));
+  }
+
   getSourceTypeIcon(): string {
     const sourceType = this.wizardState().sourceType;
     const iconMap: Record<SourceType, string> = {

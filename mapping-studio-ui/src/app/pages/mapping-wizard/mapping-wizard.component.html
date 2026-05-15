@@ -141,6 +141,7 @@
               [initialRules]="wizardState().mappingRules"
               [excludedFields]="getExcludedTargetFields()"
               (mappingComplete)="onFieldMappingComplete($event)"
+              (schemaUpdated)="onTargetSchemaUpdated($event)"
               (backClicked)="goBack()" />
           }
           @case (7) {
