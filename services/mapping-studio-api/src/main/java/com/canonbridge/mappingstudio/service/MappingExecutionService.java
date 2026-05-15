@@ -83,8 +83,8 @@ public class MappingExecutionService {
                 .chain(transformedRequest -> {
                     LOG.infof("✅ Request transformed successfully");
                     
-                    // Step 2: Call external API
-                    return callExternalApi(mapping, transformedRequest)
+                    // Step 2: Call external API (pass original request for URL param substitution)
+                    return callExternalApi(mapping, transformedRequest, requestJson)
                         .chain(apiResponse -> {
                             LOG.infof("✅ External API called successfully");
                             
@@ -234,7 +234,7 @@ public class MappingExecutionService {
     /**
      * Call external API
      */
-    private Uni<JsonNode> callExternalApi(MappingDraft mapping, JsonNode requestPayload) {
+    private Uni<JsonNode> callExternalApi(MappingDraft mapping, JsonNode requestPayload, JsonNode originalRequest) {
         JsonObject sourceConfig = parseSourceConfig(mapping);
         if (sourceConfig.isEmpty()) {
             return Uni.createFrom().failure(
@@ -252,8 +252,9 @@ public class MappingExecutionService {
 
                 JsonObject outboundPayload = toJsonObject(requestPayload);
                 
-                // Substitute URL path parameters: {orderId} -> value from request payload
-                String resolvedUrl = substituteUrlParams(connection.url(), outboundPayload);
+                // Substitute URL path parameters using original request (before transformation)
+                JsonObject urlParams = toJsonObject(originalRequest);
+                String resolvedUrl = substituteUrlParams(connection.url(), urlParams);
                 OutboundConnection resolvedConnection = resolvedUrl.equals(connection.url()) 
                     ? connection 
                     : connection.withUrl(resolvedUrl);

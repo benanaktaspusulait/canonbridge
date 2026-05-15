@@ -133,7 +133,7 @@ export class FieldMappingStepComponent implements OnInit {
   initialRules = input<any[]>([]);
   excludedFields = input<string[]>([]);
   
-  mappingComplete = output<{ rules: any[]; excludedTargetFields: string[] }>();
+  mappingComplete = output<{ rules: any[]; excludedTargetFields: string[]; targetSchemaJson: string }>();
   backClicked = output<void>();
 
   private readonly mappingService = inject(MappingService);
@@ -1318,8 +1318,30 @@ export class FieldMappingStepComponent implements OnInit {
     
     this.mappingComplete.emit({ 
       rules: cleanedRules,
-      excludedTargetFields: Array.from(this.removedTargetFields())
+      excludedTargetFields: Array.from(this.removedTargetFields()),
+      targetSchemaJson: this.buildCurrentTargetSchema()
     });
+  }
+
+  private buildCurrentTargetSchema(): string {
+    const fields = this.targetFields();
+    const properties: Record<string, any> = {};
+    const required: string[] = [];
+    
+    for (const field of fields) {
+      properties[field.key] = { type: field.type };
+      if (field.required) {
+        required.push(field.key);
+      }
+    }
+    
+    const schema = {
+      type: 'object',
+      properties,
+      ...(required.length > 0 ? { required } : {})
+    };
+    
+    return JSON.stringify(schema);
   }
 
   saveRules(): void {
@@ -1329,11 +1351,13 @@ export class FieldMappingStepComponent implements OnInit {
     const validTargetKeys = new Set(this.targetFields().map(f => f.key));
     const cleanedRules = this.mappingRules().filter(r => validTargetKeys.has(r.targetKey));
     const generatedJsonata = cleanedRules.length > 0 ? buildCombinedMappingExpression(cleanedRules) : '';
+    const targetSchemaJson = this.buildCurrentTargetSchema();
 
     this.savingRules.set(true);
     this.mappingService.update(id, {
       mapping_rules: JSON.stringify(cleanedRules),
-      generated_jsonata: generatedJsonata
+      generated_jsonata: generatedJsonata,
+      target_schema_json: targetSchemaJson
     } as any).subscribe({
       next: () => {
         this.savingRules.set(false);

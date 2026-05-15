@@ -36,6 +36,7 @@ export interface MappingDraft {
   schedule_cron?: string;
   input_schema?: string;
   canonical_schema_ref?: string;
+  target_schema_json?: string;
   mapping_rules?: string;
   generated_jsonata?: string;
   validation_rules?: string;

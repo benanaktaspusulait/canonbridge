@@ -133,9 +133,16 @@ export class MappingWizardComponent implements OnInit {
         
         console.log('=== WIZARD STATE AFTER UPDATE ===', this.wizardState());
         
-        // Load target schema JSON if we have a schema ref
-        if (targetSchemaRef) {
-          console.log('🔄 Loading target schema:', targetSchemaRef);
+        // Use mapping-specific target schema if available, otherwise load from schema registry
+        if (mapping.target_schema_json) {
+          console.log('✅ Using mapping-specific target schema');
+          this.targetSchemaJson.set(mapping.target_schema_json);
+          this.wizardState.update(state => ({
+            ...state,
+            targetSchemaJson: mapping.target_schema_json || ''
+          }));
+        } else if (targetSchemaRef) {
+          console.log('🔄 Loading target schema from registry:', targetSchemaRef);
           this.loadTargetSchemaForEdit(targetSchemaRef);
         }
         
@@ -905,12 +912,13 @@ export class MappingWizardComponent implements OnInit {
     });
   }
 
-  onFieldMappingComplete(data: { rules: any[]; excludedTargetFields: string[] }): void {
+  onFieldMappingComplete(data: { rules: any[]; excludedTargetFields: string[]; targetSchemaJson: string }): void {
     this.wizardState.update(state => {
       const updated: any = {
         ...state,
         mappingRules: data.rules,
-        excludedTargetFields: data.excludedTargetFields || []
+        excludedTargetFields: data.excludedTargetFields || [],
+        targetSchemaJson: data.targetSchemaJson || state.targetSchemaJson
       };
       
       // If no sample data exists, generate from inputSchema or targetSchemaJson
@@ -926,14 +934,19 @@ export class MappingWizardComponent implements OnInit {
       
       return updated;
     });
+
+    // Update targetSchemaJson signal
+    if (data.targetSchemaJson) {
+      this.targetSchemaJson.set(data.targetSchemaJson);
+    }
     
-    // Auto-save mapping rules and generated JSONata to DB
-    this.autoSaveMappingRules(data.rules, data.excludedTargetFields);
+    // Auto-save mapping rules, generated JSONata, and target schema to DB
+    this.autoSaveMappingRules(data.rules, data.excludedTargetFields, data.targetSchemaJson);
     
     this.currentStep.set(7); // Go to Test & Publish step
   }
 
-  private autoSaveMappingRules(rules: any[], excludedTargetFields?: string[]): void {
+  private autoSaveMappingRules(rules: any[], excludedTargetFields?: string[], targetSchemaJson?: string): void {
     const mappingId = this.mappingId();
     if (!mappingId) return;
     
@@ -948,11 +961,18 @@ export class MappingWizardComponent implements OnInit {
       delete sourceConfig['excludedTargetFields'];
     }
     
-    this.mappingService.update(mappingId, {
+    const updatePayload: any = {
       mapping_rules: JSON.stringify(rules),
       generated_jsonata: generatedJsonata,
       source_config: JSON.stringify(sourceConfig)
-    } as any).subscribe({
+    };
+    
+    // Save mapping-specific target schema snapshot
+    if (targetSchemaJson) {
+      updatePayload.target_schema_json = targetSchemaJson;
+    }
+    
+    this.mappingService.update(mappingId, updatePayload).subscribe({
       next: () => console.log('✅ Mapping rules auto-saved'),
       error: (err: any) => console.warn('⚠️ Failed to auto-save mapping rules:', err)
     });

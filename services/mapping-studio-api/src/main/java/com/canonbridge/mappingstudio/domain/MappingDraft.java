@@ -36,6 +36,9 @@ public class MappingDraft {
     @JsonProperty("canonical_schema_ref")
     private String canonicalSchemaRef;
 
+    @JsonProperty("target_schema_json")
+    private String targetSchemaJson;
+
     @JsonProperty("mapping_rules")
     private String mappingRules;
 
@@ -100,6 +103,9 @@ public class MappingDraft {
 
     public String getCanonicalSchemaRef() { return canonicalSchemaRef; }
     public void setCanonicalSchemaRef(String canonicalSchemaRef) { this.canonicalSchemaRef = canonicalSchemaRef; }
+
+    public String getTargetSchemaJson() { return targetSchemaJson; }
+    public void setTargetSchemaJson(String targetSchemaJson) { this.targetSchemaJson = targetSchemaJson; }
 
     public String getMappingRules() { return mappingRules; }
     public void setMappingRules(String mappingRules) { this.mappingRules = mappingRules; }

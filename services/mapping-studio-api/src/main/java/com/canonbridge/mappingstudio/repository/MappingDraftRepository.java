@@ -117,7 +117,7 @@ public class MappingDraftRepository {
             "input_schema = $5, canonical_schema_ref = $6, mapping_rules = $7, " +
             "generated_jsonata = $8, validation_rules = $9, status = $10, " +
             "last_validated_at = $11, validation_result = $12, " +
-            "updated_at = $13, updated_by = $14 " +
+            "updated_at = $13, updated_by = $14, target_schema_json = $17 " +
             "WHERE tenant_id = $15 AND id = $16 " +
             "RETURNING *"
         )
@@ -137,7 +137,8 @@ public class MappingDraftRepository {
             LocalDateTime.ofInstant(now, ZoneOffset.UTC),
             draft.getUpdatedBy(),
             draft.getTenantId(),
-            draft.getId()
+            draft.getId(),
+            toJsonbParam(draft.getTargetSchemaJson())
         ))
         .map(rowSet -> {
             if (rowSet.size() == 0) {
@@ -181,6 +182,9 @@ public class MappingDraftRepository {
         draft.setInputSchema(inputSchema != null ? inputSchema.toString() : null);
         
         draft.setCanonicalSchemaRef(row.getString("canonical_schema_ref"));
+        
+        Object targetSchemaJson = row.getValue("target_schema_json");
+        draft.setTargetSchemaJson(targetSchemaJson != null ? targetSchemaJson.toString() : null);
         
         Object mappingRules = row.getValue("mapping_rules");
         draft.setMappingRules(mappingRules != null ? mappingRules.toString() : null);

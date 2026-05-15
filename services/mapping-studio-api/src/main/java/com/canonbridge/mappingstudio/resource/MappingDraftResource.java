@@ -297,6 +297,9 @@ public class MappingDraftResource {
         if (request.containsKey("generated_jsonata")) {
             draft.setGeneratedJsonata(request.getString("generated_jsonata"));
         }
+        if (request.containsKey("target_schema_json")) {
+            draft.setTargetSchemaJson(jsonValueAsString(request.getValue("target_schema_json")));
+        }
         if (request.containsKey("validation_rules")) {
             draft.setValidationRules(jsonValueAsString(request.getValue("validation_rules")));
         }
