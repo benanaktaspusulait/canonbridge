@@ -16,6 +16,7 @@
 
   .right-buttons {
     display: flex;
+    align-items: center;
     gap: 0.5rem;
   }
 }
@@ -36,22 +37,15 @@
 
 // Naming
 .naming-section {
-  .form-row {
-    display: flex;
-    gap: 1rem;
-
-    @media (max-width: 768px) {
-      flex-direction: column;
-    }
-  }
-
   .form-field {
     display: flex;
     flex-direction: column;
     gap: 0.375rem;
+    margin-bottom: 0.75rem;
 
-    &.flex-2 { flex: 2; }
-    &.flex-3 { flex: 3; }
+    &:last-child {
+      margin-bottom: 0;
+    }
 
     label {
       font-size: 0.8125rem;
@@ -77,26 +71,43 @@
     flex-direction: column;
     gap: 0.5rem;
 
-    label {
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: var(--text-color-secondary);
+    .editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      label {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--text-color-secondary);
+      }
+
+      .editor-actions {
+        display: flex;
+        gap: 0.25rem;
+      }
     }
 
-    .json-textarea {
+    .json-editor-textarea {
       width: 100%;
       resize: vertical;
       padding: 0.75rem;
       border: 1px solid var(--surface-border);
       border-radius: 6px;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
       font-size: 0.8125rem;
-      line-height: 1.5;
-      background: var(--surface-ground);
+      line-height: 1.6;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      tab-size: 2;
+      white-space: pre;
+      overflow-wrap: normal;
+      overflow-x: auto;
 
       &:focus {
         outline: none;
         border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb, 99, 102, 241), 0.1);
       }
     }
   }
@@ -109,35 +120,41 @@
   }
 
   .result-panel {
-    label {
-      display: block;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--text-color-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 0.375rem;
-    }
 
-    pre {
-      margin: 0;
-      padding: 0.75rem;
-      border-radius: 6px;
-      background: var(--surface-ground);
-      border: 1px solid var(--surface-border);
-      overflow-x: auto;
-      max-height: 250px;
-
-      code {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.8125rem;
-        line-height: 1.5;
+      label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-color-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin: 0;
       }
     }
 
-    &.success pre {
-      border-color: var(--green-300);
-      background: var(--green-50);
+    .json-output {
+      margin: 0;
+      padding: 0.75rem;
+      border-radius: 6px;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      border: 1px solid var(--surface-border);
+      overflow-x: auto;
+      max-height: 300px;
+
+      code {
+        font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+        font-size: 0.8125rem;
+        line-height: 1.6;
+      }
+    }
+
+    &.success .json-output {
+      border-color: var(--green-400);
     }
   }
 }

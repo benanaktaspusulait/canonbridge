@@ -566,10 +566,19 @@ export class FieldMappingStepComponent implements OnInit {
 
   private updateMappedStatus(): void {
     const rules = this.mappingRules();
+    const targets = this.targetFields();
+    
+    // Remove orphan rules (rules for target fields that no longer exist)
+    const validTargetKeys = new Set(targets.map(f => f.key));
+    const cleanedRules = rules.filter(r => validTargetKeys.has(r.targetKey));
+    if (cleanedRules.length !== rules.length) {
+      this.mappingRules.set(cleanedRules);
+    }
+    
     this.targetFields.update(fields => 
       fields.map(f => ({
         ...f,
-        mapped: rules.some(r => r.targetKey === f.key)
+        mapped: cleanedRules.some(r => r.targetKey === f.key)
       }))
     );
   }
@@ -1169,7 +1178,12 @@ export class FieldMappingStepComponent implements OnInit {
   }
 
   onNext(): void {
-    this.mappingComplete.emit({ rules: this.mappingRules() });
+    // Clean up rules for target fields that no longer exist
+    const validTargetKeys = new Set(this.targetFields().map(f => f.key));
+    const cleanedRules = this.mappingRules().filter(r => validTargetKeys.has(r.targetKey));
+    this.mappingRules.set(cleanedRules);
+    
+    this.mappingComplete.emit({ rules: cleanedRules });
   }
 
   onBack(): void {

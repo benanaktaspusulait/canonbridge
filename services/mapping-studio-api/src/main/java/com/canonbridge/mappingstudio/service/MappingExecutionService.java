@@ -253,6 +253,15 @@ public class MappingExecutionService {
                 JsonObject outboundPayload = toJsonObject(requestPayload);
                 JsonObject headers = requestTemplateService.renderHeadersFromSourceConfig(sourceConfig, outboundPayload);
 
+                // Fallback: if no Authorization header from requestTransformation, check source_config for bearerToken
+                if (!headers.containsKey("Authorization") && !headers.containsKey("authorization")) {
+                    String bearerToken = sourceConfig.getString("bearerToken");
+                    if (bearerToken != null && !bearerToken.isBlank()) {
+                        headers.put("Authorization", "Bearer " + bearerToken);
+                        LOG.infof("🔑 Added Bearer token from source_config");
+                    }
+                }
+
                 return outboundHttpService.execute(
                         mapping.getTenantId(),
                         connection,

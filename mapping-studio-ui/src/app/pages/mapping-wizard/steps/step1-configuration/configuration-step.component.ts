@@ -275,9 +275,6 @@ export class ConfigurationStepComponent implements OnInit {
   private filterSystemsBySourceType(systems: OutboundConnection[]): OutboundConnection[] {
     const sourceType = this.sourceType();
     
-    // Only show system templates (not specific endpoint configurations)
-    const templates = systems.filter(s => s.is_system_template === true);
-    
     // Map source types to compatible protocols
     const protocolMap: Record<SourceType, string[]> = {
       'KAFKA': [], // Kafka doesn't use external systems
@@ -295,10 +292,10 @@ export class ConfigurationStepComponent implements OnInit {
     const allowedProtocols = protocolMap[sourceType];
     
     if (allowedProtocols.length === 0) {
-      return templates; // No filtering needed
+      return systems; // No filtering needed
     }
     
-    return templates.filter(s => allowedProtocols.includes(s.protocol));
+    return systems.filter(s => allowedProtocols.includes(s.protocol));
   }
 
   private toExternalSystemOption(system: OutboundConnection & { connection_id: string }): ExternalSystemOption {

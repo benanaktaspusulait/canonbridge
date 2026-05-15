@@ -8,6 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
+import { TextareaModule } from 'primeng/textarea';
 import { MappingService } from '../../../../core/services/mapping.service';
 import { WizardState } from '../../models/mapping-wizard.models';
 import { buildCombinedMappingExpression } from '../step4-field-mapping/rule-to-jsonata';
@@ -22,6 +23,7 @@ import { firstValueFrom } from 'rxjs';
     FormsModule,
     ButtonModule,
     InputTextModule,
+    TextareaModule,
     MessageModule,
     TagModule,
     TooltipModule,
@@ -55,6 +57,7 @@ export class TestPublishStepComponent implements OnInit {
   testing = signal(false);
   saving = signal(false);
   testSuccess = signal(false);
+  hasUnsavedChanges = signal(false);
 
   constructor() {
     // Auto-populate test input when wizard state changes
@@ -258,6 +261,21 @@ export class TestPublishStepComponent implements OnInit {
     }, obj);
   }
 
+  onFieldChange(): void {
+    this.hasUnsavedChanges.set(true);
+  }
+
+  formatTestInput(): void {
+    const input = this.testInput();
+    if (!input.trim()) return;
+    try {
+      const parsed = JSON.parse(input);
+      this.testInput.set(JSON.stringify(parsed, null, 2));
+    } catch {
+      // Invalid JSON, leave as-is
+    }
+  }
+
   saveMapping(status: 'DRAFT' | 'READY_TO_PUBLISH' = 'DRAFT'): void {
     if (!this.mappingName().trim()) {
       this.testError.set('Please provide a mapping name');
@@ -278,6 +296,7 @@ export class TestPublishStepComponent implements OnInit {
     operation.subscribe({
       next: (result) => {
         this.saving.set(false);
+        this.hasUnsavedChanges.set(false);
         // Navigate to mapping list or detail page
         this.router.navigate(['/mappings']);
       },
@@ -337,8 +356,17 @@ export class TestPublishStepComponent implements OnInit {
       sourceConfig['connectionId'] = state.externalSystemId;
     }
 
+    // Merge requestTransformation: keep existing headers if state has none
+    const existingTransform = sourceConfig['requestTransformation'] as any;
     if (state.requestTransformation) {
-      sourceConfig['requestTransformation'] = state.requestTransformation;
+      const incoming = state.requestTransformation as any;
+      const existingHeaders = (existingTransform && existingTransform.headers) || {};
+      const incomingHeaders = incoming.headers || {};
+      const mergedHeaders = Object.keys(incomingHeaders).length > 0 ? incomingHeaders : existingHeaders;
+      sourceConfig['requestTransformation'] = {
+        ...incoming,
+        headers: mergedHeaders
+      };
     }
 
     if (state.sampleJson) {

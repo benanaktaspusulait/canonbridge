@@ -9,6 +9,9 @@
       [disabled]="saving()"
       (onClick)="onBack()" />
     <div class="right-buttons">
+      @if (hasUnsavedChanges()) {
+        <p-tag value="Unsaved changes" severity="warn" icon="pi pi-exclamation-triangle" />
+      }
       <p-button
         label="Save as Draft"
         icon="pi pi-save"
@@ -28,27 +31,27 @@
 
   <!-- Mapping Name & Description -->
   <div class="section naming-section">
-    <div class="form-row">
-      <div class="form-field flex-2">
-        <label for="mapping-name">Mapping Name *</label>
-        <input
-          id="mapping-name"
-          pInputText
-          type="text"
-          [ngModel]="mappingName()"
-          (ngModelChange)="mappingName.set($event)"
-          placeholder="Enter mapping name" />
-      </div>
-      <div class="form-field flex-3">
-        <label for="mapping-description">Description</label>
-        <input
-          id="mapping-description"
-          pInputText
-          type="text"
-          [ngModel]="mappingDescription()"
-          (ngModelChange)="mappingDescription.set($event)"
-          placeholder="Optional description" />
-      </div>
+    <div class="form-field">
+      <label for="mapping-name">Mapping Name *</label>
+      <input
+        id="mapping-name"
+        pInputText
+        type="text"
+        [ngModel]="mappingName()"
+        (ngModelChange)="onFieldChange(); mappingName.set($event)"
+        placeholder="Enter mapping name"
+        class="w-full" />
+    </div>
+    <div class="form-field">
+      <label for="mapping-description">Description</label>
+      <textarea
+        id="mapping-description"
+        pTextarea
+        [ngModel]="mappingDescription()"
+        (ngModelChange)="onFieldChange(); mappingDescription.set($event)"
+        placeholder="Optional description"
+        [rows]="3"
+        class="w-full"></textarea>
     </div>
   </div>
 
@@ -62,13 +65,30 @@
     </div>
 
     <div class="test-input-area">
-      <label>Request Payload</label>
+      <div class="editor-header">
+        <label>Request Payload</label>
+        <div class="editor-actions">
+          <p-button
+            icon="pi pi-align-left"
+            pTooltip="Format JSON"
+            [text]="true"
+            size="small"
+            (onClick)="formatTestInput()" />
+          <p-button
+            icon="pi pi-copy"
+            pTooltip="Copy"
+            [text]="true"
+            size="small"
+            (onClick)="copyToClipboard(testInput())" />
+        </div>
+      </div>
       <textarea
         [ngModel]="testInput()"
         (ngModelChange)="testInput.set($event)"
         placeholder='{"transactionId": "TXN-001"}'
-        [rows]="4"
-        class="json-textarea"></textarea>
+        [rows]="10"
+        class="json-editor-textarea"
+        spellcheck="false"></textarea>
       <p-button
         label="Run Test"
         icon="pi pi-play"
@@ -85,14 +105,20 @@
       <div class="test-results">
         @if (mappedRequestOutput()) {
           <div class="result-panel">
-            <label>Request Sent to API</label>
-            <pre><code>{{ mappedRequestOutput() }}</code></pre>
+            <div class="result-header">
+              <label>Request Sent to API</label>
+              <p-button icon="pi pi-copy" [text]="true" size="small" pTooltip="Copy" (onClick)="copyToClipboard(mappedRequestOutput())" />
+            </div>
+            <pre class="json-output"><code>{{ mappedRequestOutput() }}</code></pre>
           </div>
         }
         @if (testOutput()) {
           <div class="result-panel success">
-            <label>Mapped Response</label>
-            <pre><code>{{ testOutput() }}</code></pre>
+            <div class="result-header">
+              <label>Mapped Response</label>
+              <p-button icon="pi pi-copy" [text]="true" size="small" pTooltip="Copy" (onClick)="copyToClipboard(testOutput())" />
+            </div>
+            <pre class="json-output"><code>{{ testOutput() }}</code></pre>
           </div>
         }
       </div>
@@ -143,6 +169,9 @@
       [disabled]="saving()"
       (onClick)="onBack()" />
     <div class="right-buttons">
+      @if (hasUnsavedChanges()) {
+        <p-tag value="Unsaved changes" severity="warn" icon="pi pi-exclamation-triangle" />
+      }
       <p-button
         label="Save as Draft"
         icon="pi pi-save"

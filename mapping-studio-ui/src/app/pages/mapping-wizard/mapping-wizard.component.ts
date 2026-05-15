@@ -14,6 +14,7 @@ import { TargetSchemaStepComponent } from './steps/step3-target-schema/target-sc
 import { FieldMappingStepComponent } from './steps/step4-field-mapping/field-mapping-step.component';
 import { TestPublishStepComponent } from './steps/step5-test-publish/test-publish-step.component';
 import { MappingRule, SourceType, WizardState, WizardMode, TransformKind } from './models/mapping-wizard.models';
+import { buildCombinedMappingExpression } from './steps/step4-field-mapping/rule-to-jsonata';
 import { MappingService } from '../../core/services/mapping.service';
 import { SchemaService } from '../../core/services/schema.service';
 
@@ -928,10 +929,25 @@ export class MappingWizardComponent implements OnInit {
       return updated;
     });
     
-    // Auto-save disabled for now due to backend validation issues
-    // this.autoSaveMapping();
+    // Auto-save mapping rules and generated JSONata to DB
+    this.autoSaveMappingRules(data.rules);
     
     this.currentStep.set(7); // Go to Test & Publish step
+  }
+
+  private autoSaveMappingRules(rules: any[]): void {
+    const mappingId = this.mappingId();
+    if (!mappingId) return;
+    
+    const generatedJsonata = rules.length > 0 ? buildCombinedMappingExpression(rules) : '';
+    
+    this.mappingService.update(mappingId, {
+      mapping_rules: JSON.stringify(rules),
+      generated_jsonata: generatedJsonata
+    } as any).subscribe({
+      next: () => console.log('✅ Mapping rules auto-saved'),
+      error: (err: any) => console.warn('⚠️ Failed to auto-save mapping rules:', err)
+    });
   }
 
   private autoSaveMapping(): void {
