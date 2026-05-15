@@ -136,10 +136,27 @@ export function ruleToJsonataFragment(rule: MappingRule): string {
       return subField ? `$max(${base}.${jqPath(subField)})` : `$max(${base})`;
     }
     case 'combine': {
-      const p2 = jqPath(rule.paramA || '');
       const sep = escapeSingleQuoted(rule.paramB || ' ');
-      const b = p2 || '$';
-      return `$join([${base}, ${b}][$boolean($) and $string($) != ''], '${sep}')`;
+      const additionalFields = (rule.paramA || '').split(',').map(f => f.trim()).filter(Boolean);
+      
+      // If source path has a parent (e.g., restaurant.address.district),
+      // resolve relative paths from the same parent
+      const sourceParent = base.includes('.') ? base.substring(0, base.lastIndexOf('.') + 1) : '';
+      
+      const allPaths = [base];
+      for (const field of additionalFields) {
+        // If field already contains the parent path or starts from root, use as-is
+        if (field.includes('.') && !sourceParent) {
+          allPaths.push(jqPath(field));
+        } else if (field.startsWith(sourceParent) || field.includes('.')) {
+          allPaths.push(jqPath(field));
+        } else {
+          // Relative path - prepend parent
+          allPaths.push(sourceParent + jqPath(field));
+        }
+      }
+      
+      return `$join([${allPaths.join(', ')}][$boolean($) and $string($) != ''], '${sep}')`;
     }
     case 'enum_map': {
       const map = parseEnumMap(rule.paramA || '');
@@ -154,12 +171,24 @@ export function ruleToJsonataFragment(rule: MappingRule): string {
       const elseV = escapeSingleQuoted(rule.paramC || '');
       return `$string(${base}) = '${when}' ? '${thenV}' : '${elseV}'`;
     }
-    case 'date_format':
-      if (rule.paramA === 'yyyy-MM-dd' && rule.paramB === 'dd/MM/yyyy') {
-        const parts = `$split($string(${base}), '-')`;
-        return `${parts}[2] & '/' & ${parts}[1] & '/' & ${parts}[0]`;
-      }
-      return `$string(${base})`;
+    case 'date_format': {
+      const outputFormat = rule.paramB || 'dd/MM/yyyy HH:mm';
+      // JSONata $fromMillis with picture format
+      // Convert ISO string to millis, then format
+      const formatMap: Record<string, string> = {
+        'dd/MM/yyyy': '[D01]/[M01]/[Y0001]',
+        'dd/MM/yyyy HH:mm': '[D01]/[M01]/[Y0001] [H01]:[m01]',
+        'MM/dd/yyyy': '[M01]/[D01]/[Y0001]',
+        'yyyy-MM-dd': '[Y0001]-[M01]-[D01]',
+        'yyyy-MM-dd HH:mm': '[Y0001]-[M01]-[D01] [H01]:[m01]',
+        'dd.MM.yyyy': '[D01].[M01].[Y0001]',
+        'dd.MM.yyyy HH:mm': '[D01].[M01].[Y0001] [H01]:[m01]',
+        'HH:mm': '[H01]:[m01]',
+        'HH:mm:ss': '[H01]:[m01]:[s01]'
+      };
+      const picture = formatMap[outputFormat] || '[D01]/[M01]/[Y0001] [H01]:[m01]';
+      return `$fromMillis($toMillis(${base}), '${picture}')`;
+    }
     case 'template_string': {
       const tpl = rule.paramA || '';
       if (!tpl) return "''";

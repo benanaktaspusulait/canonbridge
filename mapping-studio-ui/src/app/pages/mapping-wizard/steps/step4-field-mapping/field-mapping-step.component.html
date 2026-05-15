@@ -252,15 +252,49 @@
                   <div class="field-icon">
                     <i [class]="getFieldIcon(field.type)"></i>
                   </div>
-                  <div class="field-info">
-                    <span class="field-key">
-                      {{ field.key }}
-                      @if (field.required) {
-                        <span class="required-badge" pTooltip="Required field">*</span>
-                      }
-                    </span>
-                    <span class="field-type-badge" [attr.data-type]="field.type">{{ field.type }}</span>
-                  </div>
+                  @if (editingTargetField() === field.key) {
+                    <div class="field-edit-inline">
+                      <input
+                        pInputText
+                        type="text"
+                        [ngModel]="editFieldName()"
+                        (ngModelChange)="editFieldName.set($event)"
+                        class="edit-field-input"
+                        size="small" />
+                      <p-select
+                        [options]="fieldTypeOptions"
+                        [ngModel]="editFieldType()"
+                        (ngModelChange)="editFieldType.set($event)"
+                        optionLabel="label"
+                        optionValue="value"
+                        appendTo="body"
+                        size="small"
+                        styleClass="edit-type-select" />
+                      <button type="button" class="icon-btn save" (click)="applyFieldEdit(field.key); $event.stopPropagation()" pTooltip="Apply">
+                        <i class="pi pi-check"></i>
+                      </button>
+                      <button type="button" class="icon-btn cancel" (click)="cancelFieldEdit(); $event.stopPropagation()" pTooltip="Cancel">
+                        <i class="pi pi-times"></i>
+                      </button>
+                    </div>
+                  } @else {
+                    <div class="field-info">
+                      <span class="field-key">
+                        {{ field.key }}
+                        @if (field.required) {
+                          <span class="required-badge" pTooltip="Required field">*</span>
+                        }
+                      </span>
+                      <span class="field-type-badge" [attr.data-type]="field.type">{{ field.type }}</span>
+                    </div>
+                    <button
+                      type="button"
+                      class="icon-btn edit-btn"
+                      (click)="startFieldEdit(field); $event.stopPropagation()"
+                      pTooltip="Edit field name/type">
+                      <i class="pi pi-pencil"></i>
+                    </button>
+                  }
                   @if (field.mapped) {
                     <div class="mapped-indicator" pTooltip="Field is mapped">
                       <i class="pi pi-check-circle"></i>
@@ -608,6 +642,7 @@
         optionLabel="label"
         optionValue="value"
         placeholder="Select type"
+        appendTo="body"
         styleClass="w-full" />
     </div>
 

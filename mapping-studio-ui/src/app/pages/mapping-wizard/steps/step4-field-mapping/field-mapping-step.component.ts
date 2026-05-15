@@ -147,6 +147,9 @@ export class FieldMappingStepComponent implements OnInit {
   collapsedGroups = signal<Set<string>>(new Set());
   savingRules = signal(false);
   removedTargetFields = signal<Set<string>>(new Set());
+  editingTargetField = signal<string | null>(null);
+  editFieldName = signal('');
+  editFieldType = signal('string');
   
   filteredSourceFields = computed(() => {
     const filter = this.sourceFieldFilter().toLowerCase().trim();
@@ -288,10 +291,10 @@ export class FieldMappingStepComponent implements OnInit {
         { name: 'paramB', label: 'Replace With', type: 'text', placeholder: 'Replacement text' }
       ]
     },
-    { label: 'Combine Fields', value: 'combine', category: 'String', description: 'Concatenate two fields',
+    { label: 'Combine Fields', value: 'combine', category: 'String', description: 'Concatenate multiple fields',
       params: [
-        { name: 'paramA', label: 'Second Field Path', type: 'text', placeholder: 'e.g., lastName' },
-        { name: 'paramB', label: 'Separator', type: 'text', placeholder: 'e.g., " "' }
+        { name: 'paramA', label: 'Additional Fields (comma-separated)', type: 'text', placeholder: 'e.g., customer.address.city, customer.address.country' },
+        { name: 'paramB', label: 'Separator', type: 'text', placeholder: 'e.g., ", "' }
       ]
     },
     { label: 'Template String', value: 'template_string', category: 'String', description: 'Build string from template',
@@ -338,22 +341,19 @@ export class FieldMappingStepComponent implements OnInit {
     { label: 'Convert to Number', value: 'number_coerce', category: 'Type', description: 'Convert value to number' },
     
     // Date Transformations
-    { label: 'Date Format', value: 'date_format', category: 'Date', description: 'Convert date format',
+    { label: 'Date Format', value: 'date_format', category: 'Date', description: 'Format date/time value',
       params: [
-        { name: 'paramA', label: 'Input Format', type: 'select', placeholder: 'Select format',
-          options: [
-            { label: 'yyyy-MM-dd', value: 'yyyy-MM-dd' },
-            { label: 'dd/MM/yyyy', value: 'dd/MM/yyyy' },
-            { label: 'MM/dd/yyyy', value: 'MM/dd/yyyy' },
-            { label: 'ISO 8601', value: 'iso8601' }
-          ]
-        },
         { name: 'paramB', label: 'Output Format', type: 'select', placeholder: 'Select format',
           options: [
-            { label: 'yyyy-MM-dd', value: 'yyyy-MM-dd' },
-            { label: 'dd/MM/yyyy', value: 'dd/MM/yyyy' },
-            { label: 'MM/dd/yyyy', value: 'MM/dd/yyyy' },
-            { label: 'ISO 8601', value: 'iso8601' }
+            { label: 'dd/MM/yyyy HH:mm (15/05/2026 16:25)', value: 'dd/MM/yyyy HH:mm' },
+            { label: 'dd/MM/yyyy (15/05/2026)', value: 'dd/MM/yyyy' },
+            { label: 'dd.MM.yyyy HH:mm (15.05.2026 16:25)', value: 'dd.MM.yyyy HH:mm' },
+            { label: 'dd.MM.yyyy (15.05.2026)', value: 'dd.MM.yyyy' },
+            { label: 'yyyy-MM-dd (2026-05-15)', value: 'yyyy-MM-dd' },
+            { label: 'yyyy-MM-dd HH:mm (2026-05-15 16:25)', value: 'yyyy-MM-dd HH:mm' },
+            { label: 'MM/dd/yyyy (05/15/2026)', value: 'MM/dd/yyyy' },
+            { label: 'HH:mm (16:25)', value: 'HH:mm' },
+            { label: 'HH:mm:ss (16:25:38)', value: 'HH:mm:ss' }
           ]
         }
       ]
@@ -791,6 +791,36 @@ export class FieldMappingStepComponent implements OnInit {
     this.mappingRules.update(rules => rules.filter(r => r.targetKey !== targetKey));
   }
 
+  startFieldEdit(field: any): void {
+    this.editingTargetField.set(field.key);
+    this.editFieldName.set(field.key);
+    this.editFieldType.set(field.type);
+  }
+
+  applyFieldEdit(originalKey: string): void {
+    const newName = this.editFieldName().trim();
+    const newType = this.editFieldType();
+    if (!newName) return;
+
+    // Update target field
+    this.targetFields.update(fields => fields.map(f => 
+      f.key === originalKey ? { ...f, key: newName, type: newType } : f
+    ));
+
+    // Update mapping rule if name changed
+    if (newName !== originalKey) {
+      this.mappingRules.update(rules => rules.map(r => 
+        r.targetKey === originalKey ? { ...r, targetKey: newName } : r
+      ));
+    }
+
+    this.editingTargetField.set(null);
+  }
+
+  cancelFieldEdit(): void {
+    this.editingTargetField.set(null);
+  }
+
   updateTransform(targetKey: string, transform: TransformKind): void {
     console.log('🔧 updateTransform called:', targetKey, transform);
     this.mappingRules.update(rules => 
@@ -1112,7 +1142,7 @@ export class FieldMappingStepComponent implements OnInit {
 
       // String transformations
       if (fieldType === 'string') {
-        return opt.category === 'String' || opt.category === 'Basic' || opt.category === 'Logic' || opt.category === 'Array';
+        return opt.category === 'String' || opt.category === 'Basic' || opt.category === 'Logic' || opt.category === 'Array' || opt.category === 'Date';
       }
 
       // Number transformations
