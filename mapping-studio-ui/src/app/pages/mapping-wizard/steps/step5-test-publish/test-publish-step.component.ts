@@ -251,7 +251,7 @@ export class TestPublishStepComponent implements OnInit {
     }, obj);
   }
 
-  saveMapping(): void {
+  saveMapping(status: 'DRAFT' | 'READY_TO_PUBLISH' = 'DRAFT'): void {
     if (!this.mappingName().trim()) {
       this.testError.set('Please provide a mapping name');
       return;
@@ -261,7 +261,7 @@ export class TestPublishStepComponent implements OnInit {
     this.testError.set('');
 
     const state = this.wizardState();
-    const mappingData = this.buildMappingData(state);
+    const mappingData = this.buildMappingData(state, status);
 
     const mappingId = this.mappingId();
     const operation = mappingId
@@ -281,7 +281,7 @@ export class TestPublishStepComponent implements OnInit {
     });
   }
 
-  private buildMappingData(state: WizardState): any {
+  private buildMappingData(state: WizardState, status: 'DRAFT' | 'READY_TO_PUBLISH' = 'DRAFT'): any {
     const config = state.sourceConfig;
     const sourceConfig = this.buildSourceConfig(state);
     
@@ -306,7 +306,7 @@ export class TestPublishStepComponent implements OnInit {
       schedule_cron: config['schedule'] || null,
       external_api_url: config['url'] || null,
       
-      status: 'DRAFT'
+      status: status
     };
   }
 

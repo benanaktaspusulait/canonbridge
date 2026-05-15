@@ -36,13 +36,13 @@
         [outlined]="true"
         [loading]="saving()"
         [disabled]="!mappingName().trim()"
-        (onClick)="saveMapping()" />
+        (onClick)="saveMapping('DRAFT')" />
       <p-button
         label="Publish"
         icon="pi pi-check"
         [loading]="saving()"
         [disabled]="!mappingName().trim() || !testSuccess()"
-        (onClick)="saveMapping()" />
+        (onClick)="saveMapping('READY_TO_PUBLISH')" />
     </div>
   </div>
 
@@ -260,13 +260,13 @@
             severity="secondary"
             [loading]="saving()"
             [disabled]="!mappingName().trim()"
-            (onClick)="saveMapping()" />
+            (onClick)="saveMapping('DRAFT')" />
           <p-button
             label="Publish"
             icon="pi pi-check"
             [loading]="saving()"
             [disabled]="!mappingName().trim() || !testSuccess()"
-            (onClick)="saveMapping()" />
+            (onClick)="saveMapping('READY_TO_PUBLISH')" />
         </div>
       </div>
     </ng-template>

@@ -250,7 +250,7 @@ export class MappingsComponent implements OnInit {
   }
 
   openInStudio(mapping: MappingVersion): void {
-    void this.router.navigate(['/studio'], { queryParams: { mappingId: mapping.id } });
+    void this.router.navigate(['/wizard'], { queryParams: { mappingId: mapping.id } });
   }
 
   deprecate(mapping: MappingVersion, event: Event): void {
