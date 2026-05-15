@@ -50,6 +50,8 @@ export class SidebarComponent {
 
   @Input() collapsed = false;
 
+  collapsedSections = new Set<string>();
+
   readonly navGroups: NavGroup[] = [
     {
       labelKey: 'sidebar.menuGroup',
@@ -64,5 +66,17 @@ export class SidebarComponent {
   
   isActive(route: string): boolean {
     return this.router.url === route;
+  }
+
+  toggleSection(labelKey: string): void {
+    if (this.collapsedSections.has(labelKey)) {
+      this.collapsedSections.delete(labelKey);
+    } else {
+      this.collapsedSections.add(labelKey);
+    }
+  }
+
+  isSectionCollapsed(labelKey: string): boolean {
+    return this.collapsedSections.has(labelKey);
   }
 }

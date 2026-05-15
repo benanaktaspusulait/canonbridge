@@ -1,7 +1,7 @@
 <aside class="layout-sidebar" [class.layout-sidebar-collapsed]="collapsed" role="complementary" aria-label="Sidebar navigation">
   <div class="layout-sidebar-frame">
     <div class="layout-sidebar-header">
-      <a class="layout-sidebar-brand" routerLink="/studio" aria-label="CanonBridge Mapping Studio - Go to home">
+      <a class="layout-sidebar-brand" routerLink="/mappings" aria-label="CanonBridge Mapping Studio - Go to home">
         <span class="layout-sidebar-logo" aria-hidden="true">
           <img
             [src]="theme.darkMode() ? 'img/canonbridgelogowhite.jpeg' : 'img/canonbridgelogoblack.jpeg'"
@@ -21,31 +21,33 @@
       <nav id="primary-navigation" class="layout-sidebar-nav" role="navigation" aria-label="Primary navigation">
         @for (group of navGroups; track group.labelKey) {
           <section class="layout-nav-section" role="group" [attr.aria-label]="group.labelKey | i18n">
-            <div class="layout-nav-section-title">
-              <i class="pi pi-chevron-down" aria-hidden="true"></i>
+            <div class="layout-nav-section-title" (click)="toggleSection(group.labelKey)">
+              <i [class]="isSectionCollapsed(group.labelKey) ? 'pi pi-chevron-right' : 'pi pi-chevron-down'" aria-hidden="true"></i>
               <span>{{ group.labelKey | i18n }}</span>
             </div>
 
-            <div class="layout-nav-list" role="list">
-              @for (item of group.items; track item.route) {
-                <a
-                  class="layout-nav-item"
-                  role="listitem"
-                  [routerLink]="item.route"
-                  routerLinkActive="layout-nav-item--active"
-                  [routerLinkActiveOptions]="{ exact: true }"
-                  [attr.aria-label]="item.labelKey | i18n"
-                  [attr.aria-current]="isActive(item.route) ? 'page' : null">
-                  <span class="layout-nav-item__icon" aria-hidden="true">
-                    <i [class]="item.icon" aria-hidden="true"></i>
-                  </span>
-                  <span class="layout-nav-item__label">{{ item.labelKey | i18n }}</span>
-                  @if (item.badge) {
-                    <span class="layout-nav-item__badge" [attr.aria-label]="item.badge + ' notifications'">{{ item.badge }}</span>
-                  }
-                </a>
-              }
-            </div>
+            @if (!isSectionCollapsed(group.labelKey)) {
+              <div class="layout-nav-list" role="list">
+                @for (item of group.items; track item.route) {
+                  <a
+                    class="layout-nav-item"
+                    role="listitem"
+                    [routerLink]="item.route"
+                    routerLinkActive="layout-nav-item--active"
+                    [routerLinkActiveOptions]="{ exact: true }"
+                    [attr.aria-label]="item.labelKey | i18n"
+                    [attr.aria-current]="isActive(item.route) ? 'page' : null">
+                    <span class="layout-nav-item__icon" aria-hidden="true">
+                      <i [class]="item.icon" aria-hidden="true"></i>
+                    </span>
+                    <span class="layout-nav-item__label">{{ item.labelKey | i18n }}</span>
+                    @if (item.badge) {
+                      <span class="layout-nav-item__badge" [attr.aria-label]="item.badge + ' notifications'">{{ item.badge }}</span>
+                    }
+                  </a>
+                }
+              </div>
+            }
           </section>
         }
       </nav>
