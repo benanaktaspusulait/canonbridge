@@ -139,23 +139,35 @@ export class RequestMappingStepComponent implements OnInit {
   ngOnInit(): void {
     // If we have an initial config (editing existing mapping), use it
     const initial = this.initialConfig();
+    console.log('🔍 [Request Mapping] ngOnInit - initialConfig:', initial);
+    console.log('🔍 [Request Mapping] template:', initial?.template);
+    console.log('🔍 [Request Mapping] template keys:', initial?.template ? Object.keys(initial.template) : 'none');
+    
     if (initial && initial.template && Object.keys(initial.template).length > 0) {
+      console.log('✅ [Request Mapping] Loading from initial config');
       this.loadFromInitialConfig(initial);
     } else {
+      console.log('⚠️ [Request Mapping] No initial config, extracting from sample');
       // Otherwise, extract fields from sample (new mapping)
       this.extractFieldsFromSample();
     }
     
     setTimeout(() => {
       if (this.fieldMappings().length > 0) {
+        console.log('🔄 [Request Mapping] Generating preview from', this.fieldMappings().length, 'fields');
         this.generatePreviewFromFields();
       }
     }, 100);
   }
 
   loadFromInitialConfig(config: RequestTransformationConfig): void {
+    console.log('📥 [Request Mapping] loadFromInitialConfig called');
+    console.log('📥 Config:', config);
+    
     // Load the template and extract fields from it
     const template = config.template;
+    console.log('📥 Template:', template);
+    
     const fields: FieldMapping[] = [];
     
     // Get all fields from canonical sample for reference
@@ -167,6 +179,7 @@ export class RequestMappingStepComponent implements OnInit {
         const parsed = JSON.parse(sampleJson);
         const flatFields = this.flattenObject(parsed);
         flatFields.forEach(f => sampleFields.set(f.path, f.value));
+        console.log('📥 Sample fields map:', Array.from(sampleFields.keys()));
       } catch (e) {
         console.error('Failed to parse sample JSON:', e);
       }
@@ -174,6 +187,7 @@ export class RequestMappingStepComponent implements OnInit {
     
     // Extract fields from template
     this.extractFieldsFromTemplate(template, '', fields, sampleFields);
+    console.log('📥 Extracted fields from template:', fields);
     
     this.fieldMappings.set(fields);
     
@@ -181,6 +195,8 @@ export class RequestMappingStepComponent implements OnInit {
     if (config.headers && Object.keys(config.headers).length > 0) {
       this.headersJson.set(JSON.stringify(config.headers, null, 2));
     }
+    
+    console.log('✅ [Request Mapping] Loaded', fields.length, 'fields from initial config');
   }
 
   private extractFieldsFromTemplate(

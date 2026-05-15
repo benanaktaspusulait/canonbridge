@@ -48,10 +48,17 @@ export class TargetSchemaStepComponent implements OnInit {
 
   loadCanonicalSchemas(): void {
     this.loading.set(true);
+    console.log('🔄 Loading canonical schemas from API...');
+    
     this.schemaService.listByType('CANONICAL').subscribe({
       next: (schemas) => {
+        console.log('✅ Received schemas from API:', schemas.length);
+        
         // Only show ACTIVE schemas
         const activeSchemas = schemas.filter(s => s.status === 'ACTIVE');
+        console.log('✅ Active schemas:', activeSchemas.length);
+        console.log('Schema IDs:', activeSchemas.map(s => `${s.id} - ${s.name}`));
+        
         this.canonicalSchemas.set(activeSchemas);
         
         // After schemas are loaded, check if we have a pre-selected schema
@@ -75,20 +82,24 @@ export class TargetSchemaStepComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        console.error('Failed to load canonical schemas:', err);
+        console.error('❌ Failed to load canonical schemas from API:', err);
+        console.error('Error status:', err.status);
+        console.error('Error message:', err.message);
+        console.error('Error details:', err);
         
         // Check if it's an authentication issue
         if (err.status === 400 || err.status === 401 || err.status === 403) {
-          console.warn('Authentication issue detected. User may not be logged in or session expired.');
+          console.warn('⚠️ Authentication issue detected. User may not be logged in or session expired.');
           console.warn('Error details:', {
             status: err.status,
             statusText: err.statusText,
-            message: err.message
+            message: err.message,
+            url: err.url
           });
         }
         
         // Fallback to mock data if API fails
-        console.log('Falling back to mock data');
+        console.log('🔄 Falling back to mock data');
         this.loadMockSchemas();
         this.loading.set(false);
       }
@@ -97,6 +108,34 @@ export class TargetSchemaStepComponent implements OnInit {
 
   private loadMockSchemas(): void {
     const mockSchemas: SchemaDefinition[] = [
+      {
+        id: '44444444-4444-4444-4444-444444444444',
+        name: 'PaymentCompleted',
+        schema_type: 'CANONICAL',
+        subject: 'canonical.PaymentCompleted',
+        version: 1,
+        status: 'ACTIVE',
+        description: 'Canonical schema for payment completion events',
+        schema_json: JSON.stringify({
+          type: 'object',
+          properties: {
+            transactionId: { type: 'string' },
+            amount: { type: 'number' },
+            currency: { type: 'string' },
+            status: { type: 'string' },
+            paymentMethod: { type: 'string' },
+            customerName: { type: 'string' },
+            customerEmail: { type: 'string' },
+            merchantId: { type: 'string' },
+            cardBrand: { type: 'string' },
+            cardLast4: { type: 'string' },
+            timestamp: { type: 'string' },
+            metadata: { type: 'object' },
+            billingAddress: { type: 'object' }
+          },
+          required: ['transactionId', 'amount', 'currency', 'status']
+        }, null, 2)
+      },
       {
         id: '7d5f75ae-4219-42c4-a85d-9d1df02ec154',
         name: 'OrderCreated',

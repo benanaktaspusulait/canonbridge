@@ -137,6 +137,7 @@ export class FieldMappingStepComponent implements OnInit {
   targetFields = signal<TargetField[]>([]);
   previewResult = signal<any>(null);
   previewError = signal<string | null>(null);
+  copiedPreviewTarget = signal<'source' | 'result' | null>(null);
   showJsonataReference = signal(false);
   selectedRuleForEdit = signal<MappingRule | null>(null);
   selectedSourceField = signal<SourceField | null>(null);
@@ -688,6 +689,62 @@ export class FieldMappingStepComponent implements OnInit {
       console.error('Sample JSON value:', sampleJsonStr);
       this.previewError.set(error.message);
       this.previewResult.set(null);
+    }
+  }
+
+  getSourcePayloadText(): string {
+    return this.formatJsonText(this.sampleJson());
+  }
+
+  getResultPayloadText(): string {
+    const result = this.previewResult();
+    if (result === null || result === undefined) {
+      return '';
+    }
+
+    return JSON.stringify(result, null, 2);
+  }
+
+  copyPreviewPayload(target: 'source' | 'result'): void {
+    const text = target === 'source' ? this.getSourcePayloadText() : this.getResultPayloadText();
+    if (!text) {
+      return;
+    }
+
+    this.writeTextToClipboard(text).then(() => {
+      this.copiedPreviewTarget.set(target);
+      setTimeout(() => {
+        if (this.copiedPreviewTarget() === target) {
+          this.copiedPreviewTarget.set(null);
+        }
+      }, 2000);
+    });
+  }
+
+  private formatJsonText(value: string): string {
+    if (!value) {
+      return '';
+    }
+
+    try {
+      return JSON.stringify(JSON.parse(value), null, 2);
+    } catch {
+      return value;
+    }
+  }
+
+  private async writeTextToClipboard(text: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const el = document.createElement('textarea');
+      el.value = text;
+      el.style.position = 'fixed';
+      el.style.opacity = '0';
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
     }
   }
 

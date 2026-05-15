@@ -427,8 +427,18 @@
       
       <div class="preview-content">
         <div class="preview-section">
-          <h4><i class="pi pi-file"></i> Source Data</h4>
-          <pre class="json-preview source">{{ sampleJson() }}</pre>
+          <div class="preview-section-header">
+            <h4><i class="pi pi-file"></i> Source Data</h4>
+            <p-button
+              [label]="copiedPreviewTarget() === 'source' ? 'Copied!' : 'Copy'"
+              [icon]="copiedPreviewTarget() === 'source' ? 'pi pi-check' : 'pi pi-copy'"
+              [severity]="copiedPreviewTarget() === 'source' ? 'success' : 'secondary'"
+              [outlined]="true"
+              size="small"
+              (onClick)="copyPreviewPayload('source')"
+              pTooltip="Copy source JSON payload" />
+          </div>
+          <pre class="json-preview source">{{ getSourcePayloadText() }}</pre>
         </div>
         
         <div class="preview-arrow">
@@ -437,14 +447,25 @@
         </div>
         
         <div class="preview-section">
-          <h4><i class="pi pi-check-square"></i> Transformed Result</h4>
+          <div class="preview-section-header">
+            <h4><i class="pi pi-check-square"></i> Transformed Result</h4>
+            <p-button
+              [label]="copiedPreviewTarget() === 'result' ? 'Copied!' : 'Copy'"
+              [icon]="copiedPreviewTarget() === 'result' ? 'pi pi-check' : 'pi pi-copy'"
+              [severity]="copiedPreviewTarget() === 'result' ? 'success' : 'secondary'"
+              [outlined]="true"
+              size="small"
+              [disabled]="!!previewError() || previewResult() === null"
+              (onClick)="copyPreviewPayload('result')"
+              pTooltip="Copy transformed JSON payload" />
+          </div>
           @if (previewError()) {
             <p-message 
               severity="error" 
               [text]="previewError()!" 
               styleClass="preview-error" />
           } @else if (previewResult()) {
-            <pre class="json-preview result">{{ JSON.stringify(previewResult(), null, 2) }}</pre>
+            <pre class="json-preview result">{{ getResultPayloadText() }}</pre>
           } @else {
             <div class="preview-placeholder">
               <i class="pi pi-info-circle"></i>
