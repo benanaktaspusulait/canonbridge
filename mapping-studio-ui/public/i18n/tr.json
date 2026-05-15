@@ -1305,6 +1305,8 @@
       "requestPayload": "Request Payload",
       "uploadFile": "JSON Yükle",
       "formatJson": "JSON Formatla",
+      "copyJson": "JSON Kopyala",
+      "copiedJson": "Kopyalandı!",
       "jsonPlaceholder": "{\n  \"orderId\": \"12345\",\n  \"customerId\": \"67890\",\n  \"items\": [\n    {\n      \"productId\": \"ABC\",\n      \"quantity\": 2\n    }\n  ]\n}",
       "invalidJson": "Geçersiz JSON",
       "hint": "Örnek request payload yapıştırın veya JSON dosyası yükleyin. Bu, alanları canonical schema'ya eşlemek için kullanılacak."

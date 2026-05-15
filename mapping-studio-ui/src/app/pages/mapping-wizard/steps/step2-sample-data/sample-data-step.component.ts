@@ -32,6 +32,7 @@ export class SampleDataStepComponent {
 
   sampleJson = signal('');
   jsonError = signal<string | null>(null);
+  copySuccess = signal(false);
 
   constructor() {
     // Use effect to load initial value when input changes
@@ -113,6 +114,31 @@ export class SampleDataStepComponent {
     } catch (e: any) {
       // If JSON is invalid, show error but don't change the content
       this.jsonError.set(e.message);
+    }
+  }
+
+  copyJson(): void {
+    const json = this.sampleJson();
+    if (!json.trim()) return;
+
+    this.writeTextToClipboard(json).then(() => {
+      this.copySuccess.set(true);
+      setTimeout(() => this.copySuccess.set(false), 2000);
+    });
+  }
+
+  private async writeTextToClipboard(text: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const el = document.createElement('textarea');
+      el.value = text;
+      el.style.position = 'fixed';
+      el.style.opacity = '0';
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
     }
   }
 }

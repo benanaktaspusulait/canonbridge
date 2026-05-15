@@ -36,6 +36,15 @@
                 [disabled]="!sampleJson().trim()"
                 (onClick)="formatJson()"
                 styleClass="format-button" />
+              <p-button
+                [label]="copySuccess() ? ('wizard.sampleData.copiedJson' | i18n) : ('wizard.sampleData.copyJson' | i18n)"
+                [icon]="copySuccess() ? 'pi pi-check' : 'pi pi-copy'"
+                [severity]="copySuccess() ? 'success' : 'secondary'"
+                [outlined]="true"
+                size="small"
+                [disabled]="!sampleJson().trim()"
+                (onClick)="copyJson()"
+                styleClass="copy-button" />
               <label for="file-upload" class="file-upload-label">
                 <i class="pi pi-upload"></i>
                 {{ 'wizard.sampleData.uploadFile' | i18n }}
