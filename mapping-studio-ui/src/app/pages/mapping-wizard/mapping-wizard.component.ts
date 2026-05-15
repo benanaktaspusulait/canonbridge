@@ -549,16 +549,23 @@ export class MappingWizardComponent implements OnInit {
     this.currentStep.set(3); // Go to Sample Data step
   }
 
-  onRequestMappingComplete(data: { config: any }): void {
+  onRequestMappingComplete(data: { config: any; validationRules?: any[] }): void {
     this.wizardState.update(state => ({
       ...state,
       requestTransformation: data.config
     }));
-    
-    // Auto-save disabled for now due to backend validation issues
-    // this.autoSaveMapping();
-    
-    this.currentStep.set(5); // Go to Target Schema step
+
+    if (this.mappingId() && data.validationRules && data.validationRules.length > 0) {
+      this.mappingService.update(this.mappingId()!, {
+        name: this.existingMappingName() || 'Untitled',
+        validation_rules: JSON.stringify(data.validationRules)
+      } as any).subscribe({
+        next: () => console.log('Validation rules saved to backend'),
+        error: (err: any) => console.warn('Failed to save validation rules:', err)
+      });
+    }
+
+    this.currentStep.set(5);
   }
 
   onSampleDataComplete(data: { sampleJson: string }): void {

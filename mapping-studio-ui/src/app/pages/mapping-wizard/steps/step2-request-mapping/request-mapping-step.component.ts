@@ -1,4 +1,4 @@
-import { Component, input, output, signal, effect, computed, OnInit } from '@angular/core';
+import { Component, input, output, signal, effect, computed, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
@@ -6,14 +6,31 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { TooltipModule } from 'primeng/tooltip';
+import { TagModule } from 'primeng/tag';
 import { I18nPipe } from '../../../../core/i18n/i18n.pipe';
 import { RequestTransformationConfig } from '../../models/mapping-wizard.models';
+import { MappingService, FieldValidationRule, ValidationError } from '../../../../core/services/mapping.service';
+
+interface FieldValidationRules {
+  minValue?: number | null;
+  maxValue?: number | null;
+  minLength?: number | null;
+  maxLength?: number | null;
+  pattern?: string | null;
+  enumValues?: string[];
+}
 
 interface FieldMapping {
   sourcePath: string;
   targetPath: string;
   sourceValue?: any;
   included: boolean;
+  required: boolean;
+  fieldType: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'any';
+  validationRules: FieldValidationRules;
+  showConstraints: boolean;
 }
 
 @Component({
@@ -27,6 +44,9 @@ interface FieldMapping {
     MessageModule,
     CheckboxModule,
     InputTextModule,
+    InputNumberModule,
+    TooltipModule,
+    TagModule,
     I18nPipe
   ],
   templateUrl: './request-mapping-step.component.html',
@@ -37,23 +57,25 @@ export class RequestMappingStepComponent implements OnInit {
   method = input.required<string>();
   initialConfig = input<RequestTransformationConfig | null>(null);
   canonicalSampleJson = input<string>('');
-  
+  mappingId = input<string | null>(null);
+
   requestMappingComplete = output<{
     config: RequestTransformationConfig;
+    validationRules: FieldValidationRule[];
   }>();
-  
+
   backClicked = output<void>();
 
-  // Visual mode
+  private mappingService = inject(MappingService);
+
   useVisualMode = signal(true);
   fieldMappings = signal<FieldMapping[]>([]);
-  
-  // Advanced mode (existing)
+
   mode = signal<'template' | 'jsonata'>('template');
   templateJson = signal('{}');
   jsonataExpression = signal('');
   headersJson = signal('{}');
-  
+
   templateError = signal<string | null>(null);
   jsonataError = signal<string | null>(null);
   headersError = signal<string | null>(null);
@@ -62,11 +84,48 @@ export class RequestMappingStepComponent implements OnInit {
   previewError = signal<string | null>(null);
   previewLoading = signal<boolean>(false);
 
+  backendValidating = signal(false);
+  backendValidationErrors = signal<ValidationError[]>([]);
+  backendValidationDone = signal(false);
+
+  copySuccess = signal(false);
+
   private previewDebounceTimer: any;
+
+  requiredFieldErrors = computed(() =>
+    this.fieldMappings()
+      .filter(m => m.required && !m.included)
+      .map(m => m.sourcePath)
+  );
+
+  fieldConstraintErrors = computed(() => {
+    const errors: Array<{ field: string; message: string }> = [];
+    this.fieldMappings().forEach(m => {
+      if (!m.included) return;
+      const err = this.validateFieldConstraints(m);
+      if (err) errors.push({ field: m.sourcePath, message: err });
+    });
+    return errors;
+  });
+
+  hasBlockingErrors = computed(() => this.requiredFieldErrors().length > 0);
+
+  allValidationErrors = computed(() => [
+    ...this.requiredFieldErrors().map(f => ({
+      field: f,
+      type: 'REQUIRED',
+      message: `Field "${f}" is required but excluded from the request`
+    })),
+    ...this.fieldConstraintErrors().map(e => ({
+      field: e.field,
+      type: 'CONSTRAINT',
+      message: e.message
+    })),
+    ...this.backendValidationErrors()
+  ]);
 
   ngOnInit(): void {
     this.extractFieldsFromSample();
-    // Generate initial preview
     setTimeout(() => {
       if (this.fieldMappings().length > 0) {
         this.generatePreviewFromFields();
@@ -81,13 +140,17 @@ export class RequestMappingStepComponent implements OnInit {
     try {
       const parsed = JSON.parse(sampleJson);
       const fields = this.flattenObject(parsed);
-      
+
       this.fieldMappings.set(
         fields.map(f => ({
           sourcePath: f.path,
-          targetPath: f.path, // Default: same name
+          targetPath: f.path,
           sourceValue: f.value,
-          included: true // Default: include all fields
+          included: true,
+          required: false,
+          fieldType: this.inferFieldType(f.value),
+          validationRules: {},
+          showConstraints: false
         }))
       );
     } catch (error) {
@@ -95,74 +158,155 @@ export class RequestMappingStepComponent implements OnInit {
     }
   }
 
+  inferFieldType(value: any): 'string' | 'number' | 'boolean' | 'array' | 'object' | 'any' {
+    if (value === null || value === undefined) return 'any';
+    if (Array.isArray(value)) return 'array';
+    const t = typeof value;
+    if (t === 'string') return 'string';
+    if (t === 'number') return 'number';
+    if (t === 'boolean') return 'boolean';
+    if (t === 'object') return 'object';
+    return 'any';
+  }
+
+  validateFieldConstraints(mapping: FieldMapping): string | null {
+    if (!mapping.included) return null;
+    const v = mapping.sourceValue;
+    const r = mapping.validationRules;
+
+    if (mapping.fieldType === 'number' && typeof v === 'number') {
+      if (r.minValue !== null && r.minValue !== undefined && v < r.minValue) {
+        return `Value ${v} is below minimum ${r.minValue}`;
+      }
+      if (r.maxValue !== null && r.maxValue !== undefined && v > r.maxValue) {
+        return `Value ${v} exceeds maximum ${r.maxValue}`;
+      }
+    }
+
+    if (mapping.fieldType === 'string' && typeof v === 'string') {
+      if (r.minLength !== null && r.minLength !== undefined && v.length < r.minLength) {
+        return `Length ${v.length} is below minimum ${r.minLength}`;
+      }
+      if (r.maxLength !== null && r.maxLength !== undefined && v.length > r.maxLength) {
+        return `Length ${v.length} exceeds maximum ${r.maxLength}`;
+      }
+      if (r.pattern) {
+        try {
+          if (!new RegExp(r.pattern).test(v)) {
+            return `Value doesn't match pattern: ${r.pattern}`;
+          }
+        } catch {
+          return `Invalid regex pattern: ${r.pattern}`;
+        }
+      }
+      if (r.enumValues && r.enumValues.length > 0 && !r.enumValues.includes(v)) {
+        return `Value must be one of: ${r.enumValues.join(', ')}`;
+      }
+    }
+
+    return null;
+  }
+
+  getFieldConstraintError(mapping: FieldMapping): string | null {
+    return this.validateFieldConstraints(mapping);
+  }
+
+  isRequiredError(mapping: FieldMapping): boolean {
+    return mapping.required && !mapping.included;
+  }
+
   private flattenObject(obj: any, prefix = ''): Array<{path: string; value: any}> {
     const result: Array<{path: string; value: any}> = [];
-    
+
     for (const key in obj) {
       if (!obj.hasOwnProperty(key)) continue;
-      
+
       const path = prefix ? `${prefix}.${key}` : key;
       const value = obj[key];
-      
+
       if (value && typeof value === 'object' && !Array.isArray(value)) {
-        // Nested object - flatten recursively
         result.push(...this.flattenObject(value, path));
       } else {
-        // Primitive or array - add as is
         result.push({ path, value });
       }
     }
-    
+
     return result;
   }
 
   toggleField(index: number): void {
     this.fieldMappings.update(mappings => {
       const updated = [...mappings];
-      updated[index].included = !updated[index].included;
+      updated[index] = { ...updated[index], included: !updated[index].included };
       return updated;
     });
     this.generatePreviewFromFields();
+    this.backendValidationDone.set(false);
+  }
+
+  toggleRequired(index: number): void {
+    this.fieldMappings.update(mappings => {
+      const updated = [...mappings];
+      updated[index] = { ...updated[index], required: !updated[index].required };
+      return updated;
+    });
+    this.backendValidationDone.set(false);
+  }
+
+  toggleConstraints(index: number): void {
+    this.fieldMappings.update(mappings => {
+      const updated = [...mappings];
+      updated[index] = { ...updated[index], showConstraints: !updated[index].showConstraints };
+      return updated;
+    });
   }
 
   updateTargetPath(index: number, newPath: string): void {
     this.fieldMappings.update(mappings => {
       const updated = [...mappings];
-      updated[index].targetPath = newPath;
+      updated[index] = { ...updated[index], targetPath: newPath };
       return updated;
     });
     this.generatePreviewFromFields();
   }
 
+  updateValidationRule(index: number, key: keyof FieldValidationRules, value: any): void {
+    this.fieldMappings.update(mappings => {
+      const updated = [...mappings];
+      updated[index] = {
+        ...updated[index],
+        validationRules: { ...updated[index].validationRules, [key]: value }
+      };
+      return updated;
+    });
+    this.backendValidationDone.set(false);
+  }
+
   selectAll(): void {
-    this.fieldMappings.update(mappings =>
-      mappings.map(m => ({ ...m, included: true }))
-    );
+    this.fieldMappings.update(mappings => mappings.map(m => ({ ...m, included: true })));
     this.generatePreviewFromFields();
   }
 
   deselectAll(): void {
-    this.fieldMappings.update(mappings =>
-      mappings.map(m => ({ ...m, included: false }))
-    );
+    this.fieldMappings.update(mappings => mappings.map(m => ({ ...m, included: false })));
     this.generatePreviewFromFields();
   }
 
   generatePreviewFromFields(): void {
     const included = this.fieldMappings().filter(f => f.included);
     const result: any = {};
-    
+
     for (const field of included) {
       this.setNestedValue(result, field.targetPath, field.sourceValue);
     }
-    
+
     this.previewOutput.set(JSON.stringify(result, null, 2));
   }
 
   private setNestedValue(obj: any, path: string, value: any): void {
     const parts = path.split('.');
     let current = obj;
-    
+
     for (let i = 0; i < parts.length - 1; i++) {
       const part = parts[i];
       if (!current[part]) {
@@ -170,18 +314,18 @@ export class RequestMappingStepComponent implements OnInit {
       }
       current = current[part];
     }
-    
+
     current[parts[parts.length - 1]] = value;
   }
 
   buildTemplateFromFields(): string {
     const included = this.fieldMappings().filter(f => f.included);
     const template: any = {};
-    
+
     for (const field of included) {
       this.setNestedValue(template, field.targetPath, `{{${field.sourcePath}}}`);
     }
-    
+
     return JSON.stringify(template, null, 2);
   }
 
@@ -192,6 +336,83 @@ export class RequestMappingStepComponent implements OnInit {
     return String(value);
   }
 
+  getTypeSeverity(type: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
+    switch (type) {
+      case 'number': return 'warn';
+      case 'boolean': return 'success';
+      case 'array': return 'info';
+      case 'object': return 'secondary';
+      case 'string': return 'info';
+      default: return 'secondary';
+    }
+  }
+
+  buildValidationRules(): FieldValidationRule[] {
+    return this.fieldMappings()
+      .filter(m => m.included || m.required)
+      .map(m => {
+        const rule: FieldValidationRule = {
+          field: m.targetPath,
+          required: m.required,
+          type: m.fieldType
+        };
+        if (m.validationRules.minValue !== null && m.validationRules.minValue !== undefined) {
+          rule.minValue = m.validationRules.minValue;
+        }
+        if (m.validationRules.maxValue !== null && m.validationRules.maxValue !== undefined) {
+          rule.maxValue = m.validationRules.maxValue;
+        }
+        if (m.validationRules.minLength !== null && m.validationRules.minLength !== undefined) {
+          rule.minLength = m.validationRules.minLength;
+        }
+        if (m.validationRules.maxLength !== null && m.validationRules.maxLength !== undefined) {
+          rule.maxLength = m.validationRules.maxLength;
+        }
+        if (m.validationRules.pattern) {
+          rule.pattern = m.validationRules.pattern;
+        }
+        if (m.validationRules.enumValues && m.validationRules.enumValues.length > 0) {
+          rule.enumValues = m.validationRules.enumValues;
+        }
+        return rule;
+      });
+  }
+
+  validateWithBackend(): void {
+    const id = this.mappingId();
+    if (!id) return;
+
+    const previewJson = this.previewOutput();
+    if (!previewJson) {
+      this.generatePreviewFromFields();
+    }
+
+    let payload: Record<string, unknown> = {};
+    try {
+      payload = JSON.parse(this.previewOutput() || '{}');
+    } catch {
+      payload = {};
+    }
+
+    const rules = this.buildValidationRules();
+
+    this.backendValidating.set(true);
+    this.backendValidationErrors.set([]);
+    this.backendValidationDone.set(false);
+
+    this.mappingService.validateRequest(id, { payload, rules }).subscribe({
+      next: (result) => {
+        this.backendValidationErrors.set(result.errors || []);
+        this.backendValidating.set(false);
+        this.backendValidationDone.set(true);
+      },
+      error: () => {
+        this.backendValidating.set(false);
+        this.backendValidationDone.set(true);
+      }
+    });
+  }
+
   templatePlaceholder = '{ "field": "{{canonical.fieldName}}" }';
 
   needsRequestPayload = computed(() => {
@@ -199,24 +420,26 @@ export class RequestMappingStepComponent implements OnInit {
     return m === 'POST' || m === 'PUT' || m === 'PATCH';
   });
 
+  hasConstraints(mapping: FieldMapping): boolean {
+    const r = mapping.validationRules;
+    return mapping.required ||
+      r.minValue !== null && r.minValue !== undefined ||
+      r.maxValue !== null && r.maxValue !== undefined ||
+      r.minLength !== null && r.minLength !== undefined ||
+      r.maxLength !== null && r.maxLength !== undefined ||
+      !!r.pattern ||
+      (r.enumValues?.length ?? 0) > 0;
+  }
+
   constructor() {
-    // Load initial configuration
     effect(() => {
       const config = this.initialConfig();
-      console.log('=== REQUEST MAPPING STEP: initialConfig effect triggered ===', config);
       if (config) {
-        console.log('Loading config:', {
-          mode: config.mode,
-          template: config.template,
-          jsonata: config.jsonata,
-          headers: config.headers
-        });
         this.mode.set(config.mode);
         this.templateJson.set(JSON.stringify(config.template, null, 2));
         this.jsonataExpression.set(config.jsonata || '');
         this.headersJson.set(JSON.stringify(config.headers || {}, null, 2));
-        
-        // If we have a template, generate preview
+
         if (config.template && Object.keys(config.template).length > 0) {
           setTimeout(() => this.previewTransformation(), 100);
         }
@@ -236,7 +459,6 @@ export class RequestMappingStepComponent implements OnInit {
 
   onJsonataChange(value: string): void {
     this.jsonataExpression.set(value);
-    // Basic validation - just check it's not empty when in jsonata mode
     if (this.mode() === 'jsonata' && !value.trim()) {
       this.jsonataError.set('JSONata expression is required');
     } else {
@@ -281,7 +503,6 @@ export class RequestMappingStepComponent implements OnInit {
         this.headersError.set(null);
       }
     } catch (e: any) {
-      // Error already shown by validation
     }
   }
 
@@ -291,34 +512,41 @@ export class RequestMappingStepComponent implements OnInit {
 
     const file = input.files[0];
     const reader = new FileReader();
-    
+
     reader.onload = (e) => {
       const content = e.target?.result as string;
       this.onTemplateChange(content);
     };
-    
+
     reader.readAsText(file);
   }
 
   isValid(): boolean {
     if (!this.needsRequestPayload()) {
-      return true; // GET/DELETE don't need request payload
+      return true;
+    }
+
+    if (this.hasBlockingErrors()) {
+      return false;
+    }
+
+    if (this.useVisualMode()) {
+      return true;
     }
 
     if (this.mode() === 'template') {
       return this.templateError() === null && this.headersError() === null;
     } else {
-      return this.jsonataExpression().trim() !== '' && 
-             this.jsonataError() === null && 
+      return this.jsonataExpression().trim() !== '' &&
+             this.jsonataError() === null &&
              this.headersError() === null;
     }
   }
 
   onNext(): void {
     let config: RequestTransformationConfig;
-    
+
     if (this.useVisualMode()) {
-      // Build template from visual field mappings
       const template = this.buildTemplateFromFields();
       config = {
         mode: 'template',
@@ -327,7 +555,6 @@ export class RequestMappingStepComponent implements OnInit {
         headers: this.parseJsonSafe(this.headersJson()) as Record<string, string>
       };
     } else {
-      // Use advanced mode (template or jsonata)
       config = {
         mode: this.mode(),
         template: this.parseJsonSafe(this.templateJson()),
@@ -336,7 +563,7 @@ export class RequestMappingStepComponent implements OnInit {
       };
     }
 
-    this.requestMappingComplete.emit({ config });
+    this.requestMappingComplete.emit({ config, validationRules: this.buildValidationRules() });
   }
 
   onBack(): void {
@@ -344,14 +571,13 @@ export class RequestMappingStepComponent implements OnInit {
   }
 
   onSkip(): void {
-    // Skip with empty config
     const config: RequestTransformationConfig = {
       mode: 'template',
       template: {},
       jsonata: '',
       headers: {}
     };
-    this.requestMappingComplete.emit({ config });
+    this.requestMappingComplete.emit({ config, validationRules: [] });
   }
 
   private parseJsonSafe(json: string): Record<string, unknown> {
@@ -364,14 +590,13 @@ export class RequestMappingStepComponent implements OnInit {
     }
   }
 
-  // Preview functionality with debouncing
   private debouncedPreview(): void {
     clearTimeout(this.previewDebounceTimer);
     this.previewDebounceTimer = setTimeout(() => {
       if (this.canonicalSampleJson()) {
         this.previewTransformation();
       }
-    }, 300); // 300ms debounce
+    }, 300);
   }
 
   previewTransformation(): void {
@@ -386,7 +611,6 @@ export class RequestMappingStepComponent implements OnInit {
         const result = this.renderTemplate(template, canonical);
         this.previewOutput.set(JSON.stringify(result, null, 2));
       } else {
-        // For JSONata, we'd need to call backend or use a library
         this.previewOutput.set('JSONata preview requires backend evaluation');
       }
     } catch (e: any) {
@@ -398,33 +622,46 @@ export class RequestMappingStepComponent implements OnInit {
 
   private renderTemplate(template: any, context: Record<string, unknown>): any {
     if (typeof template === 'string') {
-      // Simple {{path}} replacement
-      return template.replace(/\{\{([^}]+)\}\}/g, (match, path) => {
-        const value = this.getNestedValue(context, path.trim());
-        return value !== undefined ? String(value) : match;
+      return template.replace(/\{\{([^}]+)\}\}/g, (_, key) => {
+        const trimmed = key.trim();
+        const value = this.getByPath(context, trimmed);
+        return value !== undefined ? String(value) : `{{${trimmed}}}`;
       });
-    } else if (Array.isArray(template)) {
+    }
+
+    if (Array.isArray(template)) {
       return template.map(item => this.renderTemplate(item, context));
-    } else if (template && typeof template === 'object') {
-      const result: Record<string, any> = {};
-      for (const [key, value] of Object.entries(template)) {
-        result[key] = this.renderTemplate(value, context);
+    }
+
+    if (template && typeof template === 'object') {
+      const result: any = {};
+      for (const key of Object.keys(template)) {
+        result[key] = this.renderTemplate(template[key], context);
       }
       return result;
     }
+
     return template;
   }
 
-  private getNestedValue(obj: any, path: string): any {
-    const parts = path.split('.');
-    let current = obj;
-    for (const part of parts) {
-      if (current && typeof current === 'object' && part in current) {
-        current = current[part];
-      } else {
-        return undefined;
-      }
-    }
-    return current;
+  private getByPath(obj: Record<string, unknown>, path: string): unknown {
+    return path.split('.').reduce((acc: any, key) => {
+      return acc && typeof acc === 'object' ? acc[key] : undefined;
+    }, obj);
+  }
+
+  copyPayload(text: string): void {
+    navigator.clipboard.writeText(text).catch(() => {
+      const el = document.createElement('textarea');
+      el.value = text;
+      el.style.position = 'fixed';
+      el.style.opacity = '0';
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    });
+    this.copySuccess.set(true);
+    setTimeout(() => this.copySuccess.set(false), 2000);
   }
 }

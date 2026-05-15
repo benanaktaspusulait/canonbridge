@@ -57,6 +57,34 @@ export interface RequestPreviewResponse {
   headers: Record<string, string>;
 }
 
+export interface FieldValidationRule {
+  field: string;
+  required: boolean;
+  type: string;
+  minValue?: number;
+  maxValue?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  enumValues?: string[];
+}
+
+export interface ValidationError {
+  field: string;
+  type: string;
+  message: string;
+}
+
+export interface RequestValidationRequest {
+  payload: Record<string, unknown>;
+  rules: FieldValidationRule[];
+}
+
+export interface RequestValidationResponse {
+  valid: boolean;
+  errors: ValidationError[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -100,6 +128,10 @@ export class MappingService {
 
   previewRequest(id: string, request: RequestPreviewRequest): Observable<RequestPreviewResponse> {
     return this.http.post<RequestPreviewResponse>(`${this.baseUrl}/${id}/request-preview`, request);
+  }
+
+  validateRequest(id: string, request: RequestValidationRequest): Observable<RequestValidationResponse> {
+    return this.http.post<RequestValidationResponse>(`${this.baseUrl}/${id}/validate-request`, request);
   }
 
   delete(id: string): Observable<void> {

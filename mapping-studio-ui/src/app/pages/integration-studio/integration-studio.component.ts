@@ -1997,6 +1997,7 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
   }
 
   private loadMappingDraft(id: string): void {
+    this.backendDraftId.set(null);
     this.mappingService.getById(id).subscribe({
       next: (draft) => this.applyMappingDraft(draft),
       error: () => {

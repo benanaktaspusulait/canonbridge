@@ -4,8 +4,10 @@ import com.canonbridge.mappingstudio.audit.AuditLogService;
 import com.canonbridge.mappingstudio.domain.AuditLog;
 import com.canonbridge.mappingstudio.domain.MappingDraft;
 import com.canonbridge.mappingstudio.outbound.RequestTemplateService;
+import com.canonbridge.mappingstudio.outbound.RequestValidationService;
 import com.canonbridge.mappingstudio.repository.MappingDraftRepository;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -33,6 +35,9 @@ public class MappingDraftResource {
 
     @Inject
     RequestTemplateService requestTemplateService;
+
+    @Inject
+    RequestValidationService requestValidationService;
 
     @GET
     @Operation(summary = "List all mapping drafts for tenant")
@@ -165,6 +170,39 @@ public class MappingDraftResource {
                         return Response.ok(updated).build();
                     });
             });
+    }
+
+    @POST
+    @Path("/{id}/validate-request")
+    @Operation(summary = "Validate request payload against field validation rules")
+    public Uni<Response> validateRequest(
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            @PathParam("id") UUID id,
+            JsonObject body) {
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new BadRequestException("X-Tenant-Id header is required");
+        }
+        if (body == null) {
+            throw new BadRequestException("Request body is required");
+        }
+
+        JsonObject payload = body.getJsonObject("payload", new JsonObject());
+        JsonArray rules = body.getJsonArray("rules", new JsonArray());
+
+        RequestValidationService.ValidationResult result = requestValidationService.validate(payload, rules);
+
+        JsonArray errorsJson = new JsonArray(result.errors().stream()
+            .map(e -> new JsonObject()
+                .put("field", e.field())
+                .put("type", e.type())
+                .put("message", e.message()))
+            .toList());
+
+        JsonObject response = new JsonObject()
+            .put("valid", result.valid())
+            .put("errors", errorsJson);
+
+        return Uni.createFrom().item(Response.ok(response).build());
     }
 
     @DELETE

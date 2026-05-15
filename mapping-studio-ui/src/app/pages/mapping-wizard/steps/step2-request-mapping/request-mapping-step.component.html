@@ -9,25 +9,51 @@
 
     @if (!needsRequestPayload()) {
       <p-message severity="info" [text]="'wizard.requestMapping.notNeeded' | i18n"></p-message>
-      
+
       <div class="button-group">
-        <p-button 
-          label="{{ 'common.back' | i18n }}" 
+        <p-button
+          label="{{ 'common.back' | i18n }}"
           icon="pi pi-arrow-left"
           severity="secondary"
           (onClick)="onBack()">
         </p-button>
-        <p-button 
-          label="{{ 'common.next' | i18n }}" 
+        <p-button
+          label="{{ 'common.next' | i18n }}"
           icon="pi pi-arrow-right"
           iconPos="right"
           (onClick)="onSkip()">
         </p-button>
       </div>
     } @else {
-      <!-- Visual Field Selector -->
+
+      <!-- Validation Error Summary -->
+      @if (allValidationErrors().length > 0) {
+        <div class="validation-summary">
+          <div class="summary-header">
+            <i class="pi pi-exclamation-triangle"></i>
+            <span>{{ allValidationErrors().length }} validation issue{{ allValidationErrors().length > 1 ? 's' : '' }} found</span>
+          </div>
+          <ul class="summary-list">
+            @for (err of allValidationErrors(); track err.field + err.type) {
+              <li class="summary-item" [class]="'type-' + err.type.toLowerCase()">
+                <span class="err-field">{{ err.field }}</span>
+                <span class="err-message">{{ err.message }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if (backendValidationDone() && backendValidationErrors().length === 0 && allValidationErrors().length === 0) {
+        <div class="validation-success">
+          <i class="pi pi-check-circle"></i>
+          <span>Payload validated successfully — no issues found</span>
+        </div>
+      }
+
+      <!-- Mode Toggle -->
       <div class="mode-toggle">
-        <p-button 
+        <p-button
           [label]="useVisualMode() ? 'Switch to Advanced Mode' : 'Switch to Visual Mode'"
           icon="pi pi-code"
           severity="secondary"
@@ -44,17 +70,18 @@
               <h4>Select fields to send to the API</h4>
               <p class="hint">
                 <i class="pi pi-info-circle"></i>
-                Tip: Use dots for nested fields (e.g., <code>customer.email</code>)
+                Toggle <strong>Required</strong> to block Next if a field is excluded. Click
+                <i class="pi pi-sliders-h"></i> to set type constraints (min/max, pattern).
               </p>
             </div>
             <div class="bulk-actions">
-              <p-button 
+              <p-button
                 label="Select All"
                 icon="pi pi-check-square"
                 [text]="true"
                 size="small"
                 (onClick)="selectAll()" />
-              <p-button 
+              <p-button
                 label="Deselect All"
                 icon="pi pi-stop"
                 [text]="true"
@@ -63,71 +90,217 @@
             </div>
           </div>
 
-        @if (fieldMappings().length === 0) {
-          <p-message 
-            severity="warn" 
-            text="No sample data found. Please go back and provide sample data." />
-        } @else {
-          <div class="field-mapping-table">
-            <div class="table-header">
-              <div class="col-checkbox"></div>
-              <div class="col-source">Source Field</div>
-              <div class="col-target">API Field Name</div>
-              <div class="col-value">Sample Value</div>
-            </div>
-            
-            @for (mapping of fieldMappings(); track mapping.sourcePath; let i = $index) {
-              <div class="table-row" [class.disabled]="!mapping.included">
-                <div class="col-checkbox">
-                  <p-checkbox
-                    [(ngModel)]="mapping.included"
-                    [binary]="true"
-                    (onChange)="toggleField(i)" />
-                </div>
-                <div class="col-source">
-                  <span class="field-name">{{ mapping.sourcePath }}</span>
-                </div>
-                <div class="col-target">
-                  <input
-                    pInputText
-                    type="text"
-                    [(ngModel)]="mapping.targetPath"
-                    (ngModelChange)="updateTargetPath(i, $event)"
-                    [disabled]="!mapping.included"
-                    placeholder="Enter API field name"
-                    class="target-input" />
-                </div>
-                <div class="col-value">
-                  <span class="sample-value">{{ formatValue(mapping.sourceValue) }}</span>
-                </div>
+          @if (fieldMappings().length === 0) {
+            <p-message
+              severity="warn"
+              text="No sample data found. Please go back and provide sample data." />
+          } @else {
+            <div class="field-mapping-table">
+              <div class="table-header">
+                <div class="col-checkbox"></div>
+                <div class="col-source">Source Field</div>
+                <div class="col-target">API Field Name</div>
+                <div class="col-type">Type</div>
+                <div class="col-required">Required</div>
+                <div class="col-value">Sample Value</div>
+                <div class="col-actions"></div>
               </div>
-            }
+
+              @for (mapping of fieldMappings(); track mapping.sourcePath; let i = $index) {
+                <div class="table-row-wrapper">
+                  <div
+                    class="table-row"
+                    [class.disabled]="!mapping.included"
+                    [class.row-error]="isRequiredError(mapping)"
+                    [class.row-constraint-warn]="!isRequiredError(mapping) && !!getFieldConstraintError(mapping)">
+
+                    <div class="col-checkbox">
+                      <p-checkbox
+                        [(ngModel)]="mapping.included"
+                        [binary]="true"
+                        (onChange)="toggleField(i)" />
+                    </div>
+
+                    <div class="col-source">
+                      <span class="field-name">{{ mapping.sourcePath }}</span>
+                      @if (isRequiredError(mapping)) {
+                        <span class="inline-error">
+                          <i class="pi pi-exclamation-circle"></i> Required field excluded
+                        </span>
+                      }
+                      @if (!isRequiredError(mapping) && getFieldConstraintError(mapping)) {
+                        <span class="inline-warn">
+                          <i class="pi pi-exclamation-triangle"></i> {{ getFieldConstraintError(mapping) }}
+                        </span>
+                      }
+                    </div>
+
+                    <div class="col-target">
+                      <input
+                        pInputText
+                        type="text"
+                        [(ngModel)]="mapping.targetPath"
+                        (ngModelChange)="updateTargetPath(i, $event)"
+                        [disabled]="!mapping.included"
+                        placeholder="Enter API field name"
+                        class="target-input" />
+                    </div>
+
+                    <div class="col-type">
+                      <p-tag
+                        [value]="mapping.fieldType"
+                        [severity]="getTypeSeverity(mapping.fieldType)"
+                        styleClass="type-tag" />
+                    </div>
+
+                    <div class="col-required">
+                      <button
+                        class="required-toggle"
+                        [class.active]="mapping.required"
+                        (click)="toggleRequired(i)"
+                        [pTooltip]="mapping.required ? 'Click to make optional' : 'Click to mark required'"
+                        tooltipPosition="top">
+                        <i class="pi" [class.pi-star-fill]="mapping.required" [class.pi-star]="!mapping.required"></i>
+                        <span>{{ mapping.required ? 'Required' : 'Optional' }}</span>
+                      </button>
+                    </div>
+
+                    <div class="col-value">
+                      <span class="sample-value">{{ formatValue(mapping.sourceValue) }}</span>
+                    </div>
+
+                    <div class="col-actions">
+                      <button
+                        class="constraints-btn"
+                        [class.has-constraints]="hasConstraints(mapping)"
+                        (click)="toggleConstraints(i)"
+                        [pTooltip]="mapping.showConstraints ? 'Hide constraints' : 'Set constraints'"
+                        tooltipPosition="top">
+                        <i class="pi pi-sliders-h"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Inline Constraints Panel -->
+                  @if (mapping.showConstraints) {
+                    <div class="constraints-panel">
+                      <div class="constraints-grid">
+                        @if (mapping.fieldType === 'number') {
+                          <div class="constraint-field">
+                            <label>Min Value</label>
+                            <p-inputnumber
+                              [ngModel]="mapping.validationRules.minValue ?? null"
+                              (ngModelChange)="updateValidationRule(i, 'minValue', $event)"
+                              [showButtons]="false"
+                              placeholder="No minimum"
+                              styleClass="constraint-input" />
+                          </div>
+                          <div class="constraint-field">
+                            <label>Max Value</label>
+                            <p-inputnumber
+                              [ngModel]="mapping.validationRules.maxValue ?? null"
+                              (ngModelChange)="updateValidationRule(i, 'maxValue', $event)"
+                              [showButtons]="false"
+                              placeholder="No maximum"
+                              styleClass="constraint-input" />
+                          </div>
+                        }
+
+                        @if (mapping.fieldType === 'string') {
+                          <div class="constraint-field">
+                            <label>Min Length</label>
+                            <p-inputnumber
+                              [ngModel]="mapping.validationRules.minLength ?? null"
+                              (ngModelChange)="updateValidationRule(i, 'minLength', $event)"
+                              [showButtons]="false"
+                              [min]="0"
+                              placeholder="No minimum"
+                              styleClass="constraint-input" />
+                          </div>
+                          <div class="constraint-field">
+                            <label>Max Length</label>
+                            <p-inputnumber
+                              [ngModel]="mapping.validationRules.maxLength ?? null"
+                              (ngModelChange)="updateValidationRule(i, 'maxLength', $event)"
+                              [showButtons]="false"
+                              [min]="0"
+                              placeholder="No maximum"
+                              styleClass="constraint-input" />
+                          </div>
+                          <div class="constraint-field constraint-field--wide">
+                            <label>Pattern (regex)</label>
+                            <input
+                              pInputText
+                              type="text"
+                              [ngModel]="mapping.validationRules.pattern ?? ''"
+                              (ngModelChange)="updateValidationRule(i, 'pattern', $event)"
+                              placeholder="e.g. ^[A-Z]{3}$"
+                              class="constraint-text-input" />
+                          </div>
+                        }
+
+                        @if (mapping.fieldType === 'any' || mapping.fieldType === 'object' || mapping.fieldType === 'array' || mapping.fieldType === 'boolean') {
+                          <div class="constraint-field constraint-field--wide">
+                            <p class="no-constraints-hint">
+                              <i class="pi pi-info-circle"></i>
+                              No numeric or string constraints available for type <strong>{{ mapping.fieldType }}</strong>.
+                              Mark this field as required using the Required toggle.
+                            </p>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Preview Section -->
+        @if (previewOutput()) {
+          <div class="preview-section">
+            <div class="preview-header">
+              <h4>Preview — Request Payload</h4>
+              <div class="preview-actions">
+                @if (mappingId()) {
+                  <p-button
+                    label="Validate"
+                    icon="pi pi-check"
+                    severity="info"
+                    [outlined]="true"
+                    size="small"
+                    [loading]="backendValidating()"
+                    (onClick)="validateWithBackend()" />
+                }
+                <p-button
+                  [icon]="copySuccess() ? 'pi pi-check' : 'pi pi-copy'"
+                  [label]="copySuccess() ? 'Copied!' : 'Copy'"
+                  [severity]="copySuccess() ? 'success' : 'secondary'"
+                  variant="outlined"
+                  size="small"
+                  (onClick)="copyPayload(previewOutput()!)" />
+              </div>
+            </div>
+            <pre class="preview-json">{{ previewOutput() }}</pre>
           </div>
         }
-      </div>
 
-      <!-- Preview Section -->
-      @if (previewOutput()) {
-        <div class="preview-section">
-          <h4>Preview - Request Payload</h4>
-          <pre class="preview-json">{{ previewOutput() }}</pre>
-        </div>
-      }
       } @else {
         <!-- Advanced Mode: Template/JSONata -->
         <div class="advanced-mode">
-          <p-message 
-            severity="info" 
+          <p-message
+            severity="info"
             text="Advanced mode: Write JSON template or JSONata expression directly" />
-          
+
           <div class="mode-selector">
-            <p-button 
+            <p-button
               label="Template Mode"
               [severity]="mode() === 'template' ? 'primary' : 'secondary'"
               [outlined]="mode() !== 'template'"
               (onClick)="onModeChange('template')">
             </p-button>
-            <p-button 
+            <p-button
               label="JSONata Mode"
               [severity]="mode() === 'jsonata' ? 'primary' : 'secondary'"
               [outlined]="mode() !== 'jsonata'"
@@ -139,23 +312,23 @@
             <div class="template-section">
               <h4>Request Template</h4>
               <p class="help-text">Use double curly braces with field names to reference fields from your sample data. Example: <code>{{ '{{' }}fieldName{{ '}}' }}</code></p>
-              
+
               <div class="json-editor">
-                <textarea 
+                <textarea
                   [rows]="15"
                   [(ngModel)]="templateJson"
                   (ngModelChange)="onTemplateChange($event)"
                   [placeholder]="templatePlaceholder"
                   class="w-full font-mono">
                 </textarea>
-                
+
                 @if (templateError()) {
                   <p-message severity="error" [text]="templateError()!"></p-message>
                 }
               </div>
 
               <div class="action-buttons">
-                <p-button 
+                <p-button
                   label="Format JSON"
                   icon="pi pi-align-justify"
                   severity="secondary"
@@ -168,16 +341,16 @@
             <div class="jsonata-section">
               <h4>JSONata Expression</h4>
               <p class="help-text">Write a JSONata expression to transform your sample data</p>
-              
+
               <div class="json-editor">
-                <textarea 
+                <textarea
                   [rows]="15"
                   [(ngModel)]="jsonataExpression"
                   (ngModelChange)="onJsonataChange($event)"
                   placeholder='{ "field": fieldName }'
                   class="w-full font-mono">
                 </textarea>
-                
+
                 @if (jsonataError()) {
                   <p-message severity="error" [text]="jsonataError()!"></p-message>
                 }
@@ -187,7 +360,7 @@
 
           @if (canonicalSampleJson()) {
             <div class="preview-section">
-              <p-button 
+              <p-button
                 label="Preview Transformation"
                 icon="pi pi-eye"
                 severity="info"
@@ -204,7 +377,28 @@
 
               @if (previewOutput() && !previewLoading()) {
                 <div class="preview-output">
-                  <h5>Preview Result</h5>
+                  <div class="preview-header">
+                    <h5>Preview Result</h5>
+                    <div class="preview-actions">
+                      @if (mappingId()) {
+                        <p-button
+                          label="Validate"
+                          icon="pi pi-check"
+                          severity="info"
+                          [outlined]="true"
+                          size="small"
+                          [loading]="backendValidating()"
+                          (onClick)="validateWithBackend()" />
+                      }
+                      <p-button
+                        [icon]="copySuccess() ? 'pi pi-check' : 'pi pi-copy'"
+                        [label]="copySuccess() ? 'Copied!' : 'Copy'"
+                        [severity]="copySuccess() ? 'success' : 'secondary'"
+                        variant="outlined"
+                        size="small"
+                        (onClick)="copyPayload(previewOutput()!)" />
+                    </div>
+                  </div>
                   <pre>{{ previewOutput() }}</pre>
                 </div>
               }
@@ -240,24 +434,26 @@
       </div>
 
       <div class="button-group">
-        <p-button 
-          label="{{ 'common.back' | i18n }}" 
+        <p-button
+          label="{{ 'common.back' | i18n }}"
           icon="pi pi-arrow-left"
           severity="secondary"
           (onClick)="onBack()">
         </p-button>
         <div class="right-buttons">
-          <p-button 
+          <p-button
             label="{{ 'common.skip' | i18n }}"
             severity="secondary"
             [outlined]="true"
             (onClick)="onSkip()">
           </p-button>
-          <p-button 
-            label="{{ 'common.next' | i18n }}" 
+          <p-button
+            label="{{ 'common.next' | i18n }}"
             icon="pi pi-arrow-right"
             iconPos="right"
             [disabled]="!isValid()"
+            [pTooltip]="hasBlockingErrors() ? 'Required fields are excluded from the request' : ''"
+            tooltipPosition="top"
             (onClick)="onNext()">
           </p-button>
         </div>

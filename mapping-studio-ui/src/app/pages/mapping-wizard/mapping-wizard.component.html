@@ -121,6 +121,7 @@
                 [method]="getConfigMethod()"
                 [initialConfig]="wizardState().requestTransformation"
                 [canonicalSampleJson]="wizardState().sampleJson"
+                [mappingId]="mappingId()"
                 (requestMappingComplete)="onRequestMappingComplete($event)"
                 (backClicked)="goBack()" />
             }
