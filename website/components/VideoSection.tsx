@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 
 interface VideoSectionProps {
   title: string;
   subtitle: string;
+  step: number;
   description: string;
   bullets: string[];
   videoSrc: string;
@@ -16,6 +17,7 @@ interface VideoSectionProps {
 export default function VideoSection({
   title,
   subtitle,
+  step,
   description,
   bullets,
   videoSrc,
@@ -26,14 +28,14 @@ export default function VideoSection({
   const videoRef = useRef<HTMLVideoElement>(null);
   const isInView = useInView(sectionRef, { once: false, margin: "-100px" });
 
-  // Auto-play video when in view
-  if (videoRef.current) {
+  useEffect(() => {
+    if (!videoRef.current) return;
     if (isInView) {
       videoRef.current.play().catch(() => {});
     } else {
       videoRef.current.pause();
     }
-  }
+  }, [isInView]);
 
   return (
     <section
@@ -55,9 +57,14 @@ export default function VideoSection({
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.7, ease: "easeOut" }}
           >
-            <span className="text-accent-cyan text-sm font-semibold uppercase tracking-wider">
-              {subtitle}
-            </span>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex items-center justify-center w-8 h-8 rounded-full bg-accent-blue/10 border border-accent-blue/20 text-accent-blue text-sm font-bold">
+                {step}
+              </span>
+              <span className="text-accent-cyan text-sm font-semibold uppercase tracking-wider">
+                {subtitle}
+              </span>
+            </div>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mt-3 mb-6 leading-tight">
               {title}
             </h2>
@@ -111,37 +118,34 @@ export default function VideoSection({
                   playsInline
                   preload="metadata"
                   className="w-full h-full object-cover"
-                  poster=""
                 >
                   Your browser does not support the video tag.
                 </video>
-                {/* Placeholder when no video */}
-                {!videoSrc && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-navy-800">
-                    <div className="text-center">
-                      <svg
-                        className="w-16 h-16 text-gray-600 mx-auto mb-3"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1}
-                          d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1}
-                          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      <p className="text-gray-500 text-sm">Video placeholder</p>
-                    </div>
+                {/* Placeholder overlay when no video loads */}
+                <div className="absolute inset-0 flex items-center justify-center bg-navy-800/90 video-placeholder">
+                  <div className="text-center">
+                    <svg
+                      className="w-16 h-16 text-gray-600 mx-auto mb-3"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1}
+                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1}
+                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <p className="text-gray-500 text-sm">Demo video</p>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </motion.div>

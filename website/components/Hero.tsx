@@ -4,14 +4,14 @@ import { motion } from "framer-motion";
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
       {/* Animated background */}
       <div className="absolute inset-0 gradient-bg" />
 
       {/* Floating orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent-blue/10 rounded-full blur-3xl animate-pulse-slow" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent-purple/10 rounded-full blur-3xl animate-pulse-slow delay-1000" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent-purple/10 rounded-full blur-3xl animate-pulse-slow" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent-cyan/5 rounded-full blur-3xl" />
       </div>
 
@@ -36,41 +36,64 @@ export default function Hero() {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm mb-8">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-sm text-gray-300">
-              Enterprise-Grade Integration Platform
+              Enterprise Integration Platform
             </span>
           </div>
 
           {/* Main heading */}
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-[1.1] mb-6">
-            Transform Partner Data.
+            Any Source. One Format.
             <br />
             <span className="gradient-text">Zero Code.</span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Replace weeks of custom adapter engineering with minutes of visual
-            mapping. CanonBridge handles transformation, validation, retry, and
-            observability — automatically.
+          <p className="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto mb-10 leading-relaxed">
+            Kafka, webhooks, REST APIs, SOAP, SFTP, S3, databases — connect any
+            data source and transform it into your canonical format. Visual
+            mapping, enterprise reliability, no engineering bottleneck.
           </p>
+
+          {/* Source badges */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
+            {[
+              "Kafka",
+              "Webhooks",
+              "REST API",
+              "SOAP/XML",
+              "SFTP",
+              "S3",
+              "Database",
+              "EDI",
+              "File Drop",
+              "Scheduled Poll",
+            ].map((source) => (
+              <span
+                key={source}
+                className="px-3 py-1.5 text-xs font-medium text-gray-300 bg-white/5 border border-white/10 rounded-full"
+              >
+                {source}
+              </span>
+            ))}
+          </div>
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <motion.a
-              href="#demo"
+              href="#how-it-works"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="px-8 py-4 bg-gradient-to-r from-accent-blue to-accent-cyan text-white font-semibold rounded-xl shadow-lg shadow-accent-blue/25 hover:shadow-accent-blue/40 transition-shadow"
             >
-              See It In Action
+              See How It Works
             </motion.a>
             <motion.a
-              href="#architecture"
+              href="#demo"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="px-8 py-4 border border-white/10 text-gray-300 font-medium rounded-xl hover:bg-white/5 hover:border-white/20 transition-all"
             >
-              Explore Architecture
+              Request Demo
             </motion.a>
           </div>
         </motion.div>

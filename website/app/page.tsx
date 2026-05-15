@@ -1,55 +1,107 @@
+import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import VideoSection from "@/components/VideoSection";
 
 export default function Home() {
   return (
     <main>
+      <Navbar />
       <Hero />
 
-      {/* Divider */}
+      {/* Section divider */}
       <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
+      {/* How It Works heading */}
+      <section id="how-it-works" className="pt-24 pb-8">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            From Any Source to Production in{" "}
+            <span className="gradient-text">5 Steps</span>
+          </h2>
+          <p className="text-gray-400 text-lg">
+            No matter where your data comes from — Kafka streams, webhooks, SOAP
+            services, SFTP drops, or REST APIs — the workflow is the same.
+          </p>
+        </div>
+      </section>
+
       <VideoSection
-        id="demo"
-        subtitle="Step 1"
-        title="Upload & Map Visually"
-        description="Drop your partner's sample JSON and watch the structure unfold. Drag fields to their canonical targets — no code, no JSONata knowledge required."
+        id="step-1"
+        step={1}
+        subtitle="Connect"
+        title="Onboard Any Partner Source"
+        description="Add a new partner in seconds. Connect their data source — whether it's a Kafka topic, webhook endpoint, REST API, SOAP service, SFTP folder, or S3 bucket. CanonBridge handles the protocol complexity."
         bullets={[
-          "Auto-detect JSON structure from any partner format",
-          "Drag-and-drop field mapping with visual connections",
-          "Smart suggestions based on field names and types",
-          "Support for nested objects, arrays, and complex transforms",
+          "10+ source types: Kafka, Webhook, REST, SOAP, SFTP, S3, Database, EDI, File Drop, Scheduled Poll",
+          "Auto-detect payload structure from any format",
+          "Per-partner authentication and credential management",
+          "Zero infrastructure changes — just configure and go",
         ]}
-        videoSrc="/videos/upload-map.mp4"
+        videoSrc="/videos/onboard-source.mp4"
       />
 
       <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
       <VideoSection
-        subtitle="Step 2"
-        title="Preview & Publish"
-        description="See your transformation results in real-time before going live. One-click publish with immutable versioning and instant rollback."
+        step={2}
+        subtitle="Map"
+        title="Drag & Drop Field Mapping"
+        description="Visually connect source fields to your canonical schema. No JSONata knowledge needed — the platform generates transformation logic automatically from your visual mappings."
         bullets={[
-          "Live transformation preview with actual partner data",
-          "Schema validation catches errors before production",
-          "Immutable versions — rollback to any point in seconds",
-          "Approval workflow for team collaboration",
+          "Drag-and-drop with visual connection lines",
+          "Smart field suggestions based on names and types",
+          "Support for nested objects, arrays, and complex transforms",
+          "Auto-generated JSONata — edit manually if you want, or don't",
         ]}
-        videoSrc="/videos/preview-publish.mp4"
+        videoSrc="/videos/field-mapping.mp4"
         reversed
       />
 
       <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
       <VideoSection
-        subtitle="Step 3"
-        title="Monitor in Real-Time"
-        description="Full observability from ingestion to delivery. Track every event, catch errors instantly, and resolve issues before they impact business."
+        step={3}
+        subtitle="Validate"
+        title="Test Before You Ship"
+        description="Run your mapping against real partner fixtures. See exactly what comes out, catch schema violations, and fix edge cases — all before a single event hits production."
         bullets={[
-          "Real-time event flow visualization",
-          "Per-partner health dashboards and SLO tracking",
-          "Dead letter queue management with one-click retry",
+          "Live transformation preview with real data",
+          "Schema validation catches errors instantly",
+          "Create fixture libraries for regression testing",
+          "Side-by-side input/output comparison",
+        ]}
+        videoSrc="/videos/test-validate.mp4"
+      />
+
+      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+      <VideoSection
+        step={4}
+        subtitle="Publish"
+        title="One-Click Go Live"
+        description="Publish your mapping with immutable versioning. Every version is preserved — roll back to any point in seconds. Approval workflows keep your team in control."
+        bullets={[
+          "Immutable versions with full audit trail",
+          "Semantic versioning — rollback in one click",
+          "Team approval workflow before production",
+          "Zero-downtime deployment — new version activates instantly",
+        ]}
+        videoSrc="/videos/publish.mp4"
+        reversed
+      />
+
+      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+      <VideoSection
+        step={5}
+        subtitle="Monitor"
+        title="Real-Time Observability"
+        description="Track every event from ingestion to delivery. Per-partner health dashboards, DLQ management, distributed tracing — know exactly what's happening at all times."
+        bullets={[
+          "Per-partner health scores and SLO tracking",
+          "Dead letter queue with one-click retry or discard",
           "Distributed tracing across the entire pipeline",
+          "Alerting: PagerDuty, Slack, email — by severity",
         ]}
         videoSrc="/videos/monitor.mp4"
       />
