@@ -53,6 +53,11 @@ public class AuthService {
             .orElseGet(() -> Uni.createFrom().failure(new AuthException("Invalid or expired token")));
     }
 
+    public Uni<AuthResponse> refresh(String token) {
+        return validateToken(token)
+            .map(user -> new AuthResponse(jwtService.generateToken(user), user));
+    }
+
     public static class AuthException extends RuntimeException {
         public AuthException(String message) {
             super(message);

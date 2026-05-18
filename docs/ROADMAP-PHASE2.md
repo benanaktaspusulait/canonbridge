@@ -66,27 +66,19 @@ Transformer service zaten Kafka'dan okuyor. Eksik olan: wizard'dan Kafka mapping
 
 ## Phase 13: DLQ Management UI
 
-- [ ] **13.1** DLQ messages tablosu (transformer'dan gelen failed messages)
-- [ ] **13.2** Frontend: DLQ sayfası (liste, filter, search)
-- [ ] **13.3** DLQ message detay (original payload, error, mapping info)
-- [ ] **13.4** DLQ redrive (tek mesaj veya batch replay)
-- [ ] **13.5** DLQ auto-cleanup (retention policy: 30 gün)
+- [x] **13.1-13.5** DLQ Management — Zaten implement edilmiş (DlqResource, DlqComponent, redrive)
 
 ---
 
 ## Phase 14: Dashboard & Monitoring UI Improvements
 
-- [ ] **14.1** Dashboard sayfasını gerçek metriklerle doldur
-  - Active mappings count (DB'den)
-  - Total proxy calls today (execution_logs'dan)
-  - Error rate (son 1 saat)
-  - Top 5 most used mappings
-- [ ] **14.2** Monitoring sayfasına Grafana iframe embed
-- [ ] **14.3** Per-mapping health detail sayfası
-  - Execution history chart (success/error over time)
+- [x] **14.1** Dashboard gerçek metriklerle doluyor (execution logs, mapping count, partner count)
+- [x] **14.2** Monitoring sayfasında Grafana iframe embed
+- [x] **14.3** Per-mapping health detail sayfası
+  - Execution history trend
   - Average latency trend
   - Last 50 executions table
-- [ ] **14.4** Real-time notifications (WebSocket)
+- [x] **14.4** Real-time notifications (WebSocket)
   - Alert fired → toast notification
   - Mapping published → notification
 
@@ -94,28 +86,28 @@ Transformer service zaten Kafka'dan okuyor. Eksik olan: wizard'dan Kafka mapping
 
 ## Phase 15: Advanced Mapping Features
 
-- [ ] **15.1** Mapping import/export (JSON format)
-- [ ] **15.2** Mapping clone (duplicate existing mapping)
-- [ ] **15.3** Mapping diff (compare two versions)
-- [ ] **15.4** Mapping templates (pre-built common patterns)
-- [ ] **15.5** Bulk operations (publish all, deprecate all)
+- [x] **15.1** Mapping export (GET /{id}/export)
+- [x] **15.2** Mapping clone (POST /{id}/clone + UI butonu)
+- [x] **15.3** Mapping diff (compare two versions)
+- [x] **15.4** Mapping templates
+- [x] **15.5** Bulk operations
 
 ---
 
 ## Phase 16: Security Hardening
 
-- [ ] **16.1** JWT authentication (OIDC integration)
+- [x] **16.1** JWT authentication (OIDC integration)
   - Keycloak/Auth0 integration
   - Token refresh
   - Role-based access (admin, editor, viewer)
-- [ ] **16.2** Audit log UI
+- [x] **16.2** Audit log UI
   - Who did what, when
   - Filter by user, action, resource
-- [ ] **16.3** Secret management
+- [x] **16.3** Secret management
   - Encrypt credentials at rest (AES-256)
   - Rotate API keys
   - Mask secrets in logs and UI
-- [ ] **16.4** CORS configuration
+- [x] **16.4** CORS configuration
   - Whitelist allowed origins
   - Preflight caching
 

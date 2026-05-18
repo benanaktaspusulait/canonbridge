@@ -71,6 +71,29 @@ public class AuthResource {
             );
     }
 
+    @POST
+    @Path("/refresh")
+    @Operation(summary = "Refresh current access token")
+    public Uni<Response> refresh(@HeaderParam("Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return Uni.createFrom().item(
+                Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(new ErrorResponse("Missing or invalid authorization header"))
+                    .build()
+            );
+        }
+
+        String token = authHeader.substring(7);
+        return authService.refresh(token)
+            .map(authResponse -> Response.ok(authResponse).build())
+            .onFailure(AuthService.AuthException.class)
+            .recoverWithItem(error ->
+                Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(new ErrorResponse(error.getMessage()))
+                    .build()
+            );
+    }
+
     public static class ErrorResponse {
         public String error;
 

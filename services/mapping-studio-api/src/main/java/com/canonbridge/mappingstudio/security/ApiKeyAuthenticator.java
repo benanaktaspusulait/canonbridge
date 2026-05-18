@@ -58,7 +58,10 @@ public class ApiKeyAuthenticator {
             if (jwtService != null) {
                 Optional<JwtService.TokenClaims> tokenClaims = jwtService.validateToken(bearerToken.get());
                 if (tokenClaims.isPresent()) {
-                    return AuthenticationResult.authenticated("user:" + tokenClaims.get().userId());
+                    return AuthenticationResult.authenticated(
+                            "user:" + tokenClaims.get().userId(),
+                            Set.of(tokenClaims.get().role())
+                    );
                 }
             }
 
@@ -90,7 +93,7 @@ public class ApiKeyAuthenticator {
             return AuthenticationResult.failed("invalid_credentials", "Invalid API credentials");
         }
 
-        return AuthenticationResult.authenticated("api-key");
+        return AuthenticationResult.authenticated("api-key", Set.of("admin"));
     }
 
     static Set<String> parseApiKeys(String configuredApiKeys) {
@@ -139,15 +142,16 @@ public class ApiKeyAuthenticator {
     public record AuthenticationResult(
             boolean authenticated,
             String principal,
+            Set<String> roles,
             String error,
             String message
     ) {
-        static AuthenticationResult authenticated(String principal) {
-            return new AuthenticationResult(true, principal, null, null);
+        static AuthenticationResult authenticated(String principal, Set<String> roles) {
+            return new AuthenticationResult(true, principal, roles, null, null);
         }
 
         static AuthenticationResult failed(String error, String message) {
-            return new AuthenticationResult(false, null, error, message);
+            return new AuthenticationResult(false, null, Set.of(), error, message);
         }
     }
 }

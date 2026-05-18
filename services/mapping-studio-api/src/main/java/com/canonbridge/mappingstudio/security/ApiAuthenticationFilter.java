@@ -15,6 +15,7 @@ import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.security.Principal;
+import java.util.Set;
 
 @Provider
 @ApplicationScoped
@@ -50,7 +51,8 @@ public class ApiAuthenticationFilter implements ContainerRequestFilter {
 
         requestContext.setSecurityContext(new ApiKeySecurityContext(
                 requestContext.getSecurityContext(),
-                result.principal()
+                result.principal(),
+                result.roles()
         ));
     }
 
@@ -94,10 +96,12 @@ public class ApiAuthenticationFilter implements ContainerRequestFilter {
 
         private final SecurityContext delegate;
         private final Principal principal;
+        private final Set<String> roles;
 
-        ApiKeySecurityContext(SecurityContext delegate, String principalName) {
+        ApiKeySecurityContext(SecurityContext delegate, String principalName, Set<String> roles) {
             this.delegate = delegate;
             this.principal = () -> principalName;
+            this.roles = roles != null ? roles : Set.of();
         }
 
         @Override
@@ -107,7 +111,7 @@ public class ApiAuthenticationFilter implements ContainerRequestFilter {
 
         @Override
         public boolean isUserInRole(String role) {
-            return delegate != null && delegate.isUserInRole(role);
+            return roles.contains(role) || (delegate != null && delegate.isUserInRole(role));
         }
 
         @Override
