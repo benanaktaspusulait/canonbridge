@@ -106,6 +106,14 @@ export class TransformEngine {
 
     // Strategy 2: Topic-based resolution
     if (context?.topic) {
+      const topicConfig = this.registry.resolveByTopic(context.topic);
+      if (topicConfig) {
+        return {
+          partnerId: topicConfig.partnerId,
+          eventType: topicConfig.eventType,
+          schemaVersion: mappingVersion(topicConfig),
+        };
+      }
       return this.parseTopicName(context.topic);
     }
 
@@ -125,6 +133,10 @@ export class TransformEngine {
       inputSchema = rawEntry.inputSchema as import('ajv').AnySchema;
       canonicalSchema = rawEntry.canonicalSchema as import('ajv').AnySchema;
       mappingText = rawEntry.mappingText;
+    } else if (config.inlineInputSchema && config.inlineCanonicalSchema && config.inlineMappingText) {
+      inputSchema = config.inlineInputSchema as import('ajv').AnySchema;
+      canonicalSchema = config.inlineCanonicalSchema as import('ajv').AnySchema;
+      mappingText = config.inlineMappingText;
     } else {
       const inputSchemaPath = path.join(this.mappingsRoot, config.inputSchema);
       const canonicalSchemaPath = path.join(this.mappingsRoot, config.canonicalSchema);

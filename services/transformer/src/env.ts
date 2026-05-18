@@ -6,6 +6,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export interface Env {
   mappingsRoot: string;
   port: number;
+  mappingDatabaseUrl: string | undefined;
+  mappingDatabaseTenantId: string | undefined;
   // HTTP auth
   apiKey: string | undefined;
   corsOrigins: string[];
@@ -57,6 +59,8 @@ export function loadEnv(): Env {
   return {
     mappingsRoot: process.env.MAPPINGS_ROOT ?? defaultMappings,
     port: Number.parseInt(process.env.PORT ?? '8080', 10),
+    mappingDatabaseUrl: process.env.MAPPING_DATABASE_URL || process.env.DATABASE_URL || undefined,
+    mappingDatabaseTenantId: process.env.MAPPING_DATABASE_TENANT_ID || undefined,
     // G-06: API key auth — undefined means auth disabled (dev/internal use)
     apiKey: process.env.API_KEY || undefined,
     // G-06: explicit CORS origins; empty = allow all (dev default)

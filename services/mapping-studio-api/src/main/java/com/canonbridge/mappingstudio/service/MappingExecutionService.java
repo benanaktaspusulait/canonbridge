@@ -25,6 +25,10 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * Service for executing mappings as API proxy
@@ -319,7 +323,7 @@ public class MappingExecutionService {
                     );
                 }
 
-                JsonObject outboundPayload = toJsonObject(requestPayload);
+                JsonObject outboundPayload = prepareProtocolPayload(mapping, sourceConfig, requestPayload, originalRequest);
                 
                 // Substitute URL path parameters using original request (before transformation)
                 JsonObject urlParams = toJsonObject(originalRequest);
@@ -329,6 +333,12 @@ public class MappingExecutionService {
                     : connection.withUrl(resolvedUrl);
 
                 JsonObject headers = requestTemplateService.renderHeadersFromSourceConfig(sourceConfig, outboundPayload);
+                if (mapping.getSourceType() == MappingDraft.SourceType.SOAP) {
+                    String soapAction = firstNonBlank(sourceConfig.getString("soapAction"), sourceConfig.getString("action"));
+                    if (soapAction != null) {
+                        headers.put("SOAPAction", soapAction);
+                    }
+                }
 
                 // Fallback: if no Authorization header from requestTransformation, check source_config for bearerToken
                 if (!headers.containsKey("Authorization") && !headers.containsKey("authorization")) {
@@ -360,13 +370,140 @@ public class MappingExecutionService {
                             );
                         }
                         circuitBreaker.recordSuccess(circuitKey);
-                        try {
-                            return objectMapper.readTree(result.body());
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to parse API response", e);
-                        }
+                        return parseApiResponseBody(result.body(), resolvedConnection.protocol());
                     });
             });
+    }
+
+    private JsonObject prepareProtocolPayload(
+            MappingDraft mapping,
+            JsonObject sourceConfig,
+            JsonNode transformedRequest,
+            JsonNode originalRequest) {
+        JsonObject payload = toJsonObject(transformedRequest);
+
+        if (mapping.getSourceType() == MappingDraft.SourceType.GRAPHQL) {
+            String query = sourceConfig.getString("query");
+            if (query == null || query.isBlank()) {
+                return payload;
+            }
+            JsonObject variables = sourceConfig.getJsonObject("variables", new JsonObject()).copy();
+            variables.mergeIn(toJsonObject(originalRequest), true);
+            JsonObject graphql = new JsonObject()
+                .put("query", query)
+                .put("variables", variables);
+            String operationName = sourceConfig.getString("operationName");
+            if (operationName != null && !operationName.isBlank()) {
+                graphql.put("operationName", operationName);
+            }
+            return graphql;
+        }
+
+        if (mapping.getSourceType() == MappingDraft.SourceType.SOAP) {
+            JsonObject soap = new JsonObject()
+                .put("operation", firstNonBlank(sourceConfig.getString("operation"), sourceConfig.getString("soapOperation"), "TrackShipment"))
+                .put("namespace", firstNonBlank(sourceConfig.getString("namespace"), "http://fastcargo.com/tracking"))
+                .put("body", payload);
+            String envelope = sourceConfig.getString("soapEnvelope");
+            if (envelope != null && !envelope.isBlank()) {
+                soap.put("soapEnvelope", renderStringTemplate(envelope, toJsonObject(originalRequest)));
+            }
+            return soap;
+        }
+
+        return payload;
+    }
+
+    private JsonNode parseApiResponseBody(String body, OutboundConnection.Protocol protocol) {
+        try {
+            if (protocol == OutboundConnection.Protocol.SOAP) {
+                return objectMapper.readTree(xmlToJson(body).encode());
+            }
+            JsonNode parsed = objectMapper.readTree(body);
+            if (protocol == OutboundConnection.Protocol.GRAPHQL && parsed.has("errors")) {
+                throw new RuntimeException("GraphQL response contains errors: " + parsed.get("errors"));
+            }
+            if (protocol == OutboundConnection.Protocol.GRAPHQL && parsed.has("data")) {
+                return parsed.get("data");
+            }
+            return parsed;
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse API response", e);
+        }
+    }
+
+    private JsonObject xmlToJson(String xml) throws Exception {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(false);
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        Element root = factory.newDocumentBuilder()
+            .parse(new org.xml.sax.InputSource(new java.io.StringReader(xml)))
+            .getDocumentElement();
+
+        Element body = firstElementByLocalName(root, "Body");
+        Element payload = firstChildElement(body != null ? body : root);
+        Element source = payload != null ? payload : root;
+        return new JsonObject().put(localName(source), elementValue(source));
+    }
+
+    private Object elementValue(Element element) {
+        JsonObject children = new JsonObject();
+        NodeList nodes = element.getChildNodes();
+        boolean hasElementChildren = false;
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Node node = nodes.item(i);
+            if (node instanceof Element child) {
+                hasElementChildren = true;
+                children.put(localName(child), elementValue(child));
+            }
+        }
+        if (hasElementChildren) {
+            return children;
+        }
+        return element.getTextContent() != null ? element.getTextContent().trim() : "";
+    }
+
+    private Element firstElementByLocalName(Element root, String name) {
+        NodeList nodes = root.getElementsByTagName("*");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Node node = nodes.item(i);
+            if (node instanceof Element element && name.equals(localName(element))) {
+                return element;
+            }
+        }
+        return null;
+    }
+
+    private Element firstChildElement(Element root) {
+        NodeList nodes = root.getChildNodes();
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Node node = nodes.item(i);
+            if (node instanceof Element element) {
+                return element;
+            }
+        }
+        return null;
+    }
+
+    private String localName(Element element) {
+        String local = element.getLocalName();
+        if (local != null) return local;
+        String nodeName = element.getNodeName();
+        int index = nodeName.indexOf(':');
+        return index >= 0 ? nodeName.substring(index + 1) : nodeName;
+    }
+
+    private String renderStringTemplate(String template, JsonObject context) {
+        String rendered = template;
+        for (String key : context.fieldNames()) {
+            Object value = context.getValue(key);
+            rendered = rendered.replace("{{" + key + "}}", value != null ? String.valueOf(value) : "");
+        }
+        return rendered;
     }
 
     private JsonObject parseSourceConfig(MappingDraft mapping) {

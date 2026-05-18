@@ -1,5 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { Pool } from 'pg';
 
 export interface PartnerMappingConfig {
   partnerId: string;
@@ -11,11 +12,21 @@ export interface PartnerMappingConfig {
   mapping: string;
   canonicalSchema: string;
   enrichmentSteps?: EnrichmentStepConfig[];
+  inlineInputSchema?: unknown;
+  inlineCanonicalSchema?: unknown;
+  inlineMappingText?: string;
   topics: {
     raw: string;
     canonical: string;
     dlq: string;
   };
+}
+
+export interface PartnerRegistryOptions {
+  databaseUrl?: string;
+  tenantId?: string;
+  canonicalTopic?: string;
+  fallbackDlqTopic?: string;
 }
 
 export interface EnrichmentStepConfig {
@@ -55,13 +66,41 @@ async function walkFiles(relDir: string, baseDir: string): Promise<string[]> {
 
 export class PartnerRegistry {
   private byKey = new Map<string, PartnerMappingConfig>();
+  private byTopic = new Map<string, PartnerMappingConfig>();
+  private pool: Pool | undefined;
 
-  constructor(private readonly mappingsRoot: string) {}
+  constructor(
+    private readonly mappingsRoot: string,
+    private readonly options: PartnerRegistryOptions = {},
+  ) {}
 
   async load(): Promise<void> {
     const next = new Map<string, PartnerMappingConfig>();
+    const nextByTopic = new Map<string, PartnerMappingConfig>();
+
+    await this.loadFileConfigs(next, nextByTopic);
+    await this.loadDatabaseConfigs(next, nextByTopic);
+
+    if (next.size === 0) {
+      throw new Error(`No inbound mapping configs found under ${path.join(this.mappingsRoot, 'partners', '**', 'config.json')} or mapping_drafts database source`);
+    }
+
+    // Atomic swap — only replace if load succeeded
+    this.byKey = next;
+    this.byTopic = nextByTopic;
+  }
+
+  private async loadFileConfigs(next: Map<string, PartnerMappingConfig>, nextByTopic: Map<string, PartnerMappingConfig>): Promise<void> {
     const partnersDir = path.join(this.mappingsRoot, 'partners');
-    const files = await walkFiles('', partnersDir);
+    let files: string[];
+    try {
+      files = await walkFiles('', partnersDir);
+    } catch (error: unknown) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT' && this.options.databaseUrl) {
+        return;
+      }
+      throw error;
+    }
 
     for (const rel of files) {
       if (path.basename(rel) !== 'config.json') continue;
@@ -81,18 +120,85 @@ export class PartnerRegistry {
         throw new Error(`Duplicate mapping for ${key} (second file: ${full})`);
       }
       next.set(key, raw);
+      nextByTopic.set(raw.topics.raw, raw);
     }
+  }
 
-    if (next.size === 0) {
-      throw new Error(`No inbound mapping configs found under ${path.join(partnersDir, '**', 'config.json')}`);
+  private async loadDatabaseConfigs(next: Map<string, PartnerMappingConfig>, nextByTopic: Map<string, PartnerMappingConfig>): Promise<void> {
+    if (!this.options.databaseUrl) return;
+
+    const tenantFilter = this.options.tenantId ? 'AND d.tenant_id = $1' : '';
+    const params = this.options.tenantId ? [this.options.tenantId] : [];
+    const result = await this.databasePool().query(
+      `
+      SELECT
+        d.id,
+        d.tenant_id,
+        COALESCE(p.external_id, p.name, d.partner_id::text) AS partner_key,
+        d.event_type,
+        d.source_config,
+        d.input_schema,
+        d.target_schema_json,
+        d.generated_jsonata
+      FROM mapping_drafts d
+      LEFT JOIN partners p ON p.id = d.partner_id AND p.tenant_id = d.tenant_id
+      WHERE d.source_type = 'KAFKA'
+        AND d.status IN ('DRAFT', 'VALID', 'READY_TO_PUBLISH')
+        AND d.generated_jsonata IS NOT NULL
+        AND d.generated_jsonata <> ''
+        ${tenantFilter}
+      ORDER BY d.updated_at DESC
+      `,
+      params,
+    );
+
+    for (const row of result.rows) {
+      const sourceConfig = asObject(row.source_config);
+      const rawTopic = stringValue(sourceConfig.topic) ?? `tenant-${row.tenant_id}.raw.${row.partner_key}.${row.event_type}`;
+      const config: PartnerMappingConfig = {
+        partnerId: stringValue(sourceConfig.partnerId) ?? String(row.partner_key),
+        eventType: String(row.event_type),
+        version: 'draft',
+        schemaVersion: 'draft',
+        inputSchema: `db://${row.id}/input-schema`,
+        canonicalSchema: `db://${row.id}/canonical-schema`,
+        mapping: `db://${row.id}/mapping.jsonata`,
+        inlineInputSchema: asSchema(row.input_schema),
+        inlineCanonicalSchema: asSchema(row.target_schema_json),
+        inlineMappingText: String(row.generated_jsonata),
+        topics: {
+          raw: rawTopic,
+          canonical: stringValue(sourceConfig.canonicalTopic) ?? this.options.canonicalTopic ?? 'canonical.events',
+          dlq: stringValue(sourceConfig.dlqTopic) ?? this.options.fallbackDlqTopic ?? 'canonbridge.dlq',
+        },
+      };
+
+      const key = registryKey(config.partnerId, config.eventType, mappingVersion(config));
+      if (!next.has(key)) {
+        next.set(key, config);
+      }
+      nextByTopic.set(config.topics.raw, config);
     }
+  }
 
-    // Atomic swap — only replace if load succeeded
-    this.byKey = next;
+  private databasePool(): Pool {
+    if (!this.pool) {
+      this.pool = new Pool({
+        connectionString: this.options.databaseUrl,
+        max: 5,
+        idleTimeoutMillis: 30_000,
+        connectionTimeoutMillis: 5_000,
+      });
+    }
+    return this.pool;
   }
 
   resolve(partnerId: string, eventType: string, version?: string): PartnerMappingConfig | undefined {
     return this.byKey.get(registryKey(partnerId, eventType, version));
+  }
+
+  resolveByTopic(topic: string): PartnerMappingConfig | undefined {
+    return this.byTopic.get(topic);
   }
 
   allRawTopics(): string[] {
@@ -111,4 +217,40 @@ export class PartnerRegistry {
     }));
   }
 
+  async close(): Promise<void> {
+    if (this.pool) {
+      await this.pool.end();
+    }
+  }
+}
+
+function asObject(value: unknown): Record<string, unknown> {
+  if (!value) return {};
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+    } catch {
+      return {};
+    }
+  }
+  return typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function asSchema(value: unknown): unknown {
+  if (!value) {
+    return { type: 'object', additionalProperties: true };
+  }
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return { type: 'object', additionalProperties: true };
+    }
+  }
+  return value;
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }

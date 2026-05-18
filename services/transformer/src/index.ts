@@ -10,7 +10,12 @@ import { DlqRepository } from './dlq.js';
 
 async function main(): Promise<void> {
   const env = loadEnv();
-  const registry = new PartnerRegistry(env.mappingsRoot);
+  const registry = new PartnerRegistry(env.mappingsRoot, {
+    databaseUrl: env.mappingDatabaseUrl,
+    tenantId: env.mappingDatabaseTenantId,
+    canonicalTopic: 'canonical.events',
+    fallbackDlqTopic: env.kafkaFallbackDlqTopic,
+  });
   await registry.load();
   
   // G-09: Create cache (Redis or in-memory based on REDIS_URL)
@@ -118,6 +123,7 @@ async function main(): Promise<void> {
     if (kafkaShutdown) await kafkaShutdown();
     if (workerPool) await workerPool.shutdown();
     await cache.close(); // G-09: Close Redis connection
+    await registry.close();
     if (outboxRepo) await outboxRepo.close();
     if (dlqRepo) await dlqRepo.close();
     app.log.info('shutdown complete');

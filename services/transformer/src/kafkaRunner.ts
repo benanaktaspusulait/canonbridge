@@ -231,8 +231,11 @@ export async function startKafkaConsumer(
       await heartbeat();
 
       const transformStart = Date.now();
-      const keys = partnerKeys(parsed, topic);
-      const cfg = keys ? registry.resolve(keys.partnerId, keys.eventType, keys.schemaVersion) : undefined;
+      const topicCfg = registry.resolveByTopic(topic);
+      const keys = partnerKeys(parsed, topic) ?? (topicCfg
+        ? { partnerId: topicCfg.partnerId, eventType: topicCfg.eventType, schemaVersion: topicCfg.version ?? topicCfg.schemaVersion }
+        : undefined);
+      const cfg = keys ? registry.resolve(keys.partnerId, keys.eventType, keys.schemaVersion) ?? topicCfg : topicCfg;
       const result = await engine.transformEnvelope(parsed, { topic, partition, offset });
       const transformDurationMs = Date.now() - transformStart;
 
