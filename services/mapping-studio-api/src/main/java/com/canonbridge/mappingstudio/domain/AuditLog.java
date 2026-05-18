@@ -95,7 +95,10 @@ public class AuditLog {
         EXTERNAL_SYSTEM_UPDATED,
         EXTERNAL_SYSTEM_DELETED,
         LOGIN,
-        LOGOUT
+        LOGOUT,
+        SECURITY_AUTH_FAILED,
+        SECURITY_TENANT_DENIED,
+        SECURITY_RBAC_DENIED
     }
 
     public enum AuditOutcome {

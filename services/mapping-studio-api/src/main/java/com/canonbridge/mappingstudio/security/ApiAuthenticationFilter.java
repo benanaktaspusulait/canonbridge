@@ -1,5 +1,7 @@
 package com.canonbridge.mappingstudio.security;
 
+import com.canonbridge.mappingstudio.audit.AuditLogService;
+import com.canonbridge.mappingstudio.domain.AuditLog;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -33,6 +35,18 @@ public class ApiAuthenticationFilter implements ContainerRequestFilter {
     @ConfigProperty(name = "canonbridge.auth.api-key-header", defaultValue = "X-API-Key")
     String apiKeyHeaderName;
 
+    @ConfigProperty(name = "canonbridge.auth.public-docs.enabled", defaultValue = "false")
+    boolean publicDocsEnabled;
+
+    @ConfigProperty(name = "canonbridge.tenant.default-id", defaultValue = "tenant-acme")
+    String defaultTenantId;
+
+    @ConfigProperty(name = "canonbridge.tenant.header-name", defaultValue = "X-Tenant-Id")
+    String tenantHeaderName;
+
+    @Inject
+    AuditLogService auditLogService;
+
     @Override
     public void filter(ContainerRequestContext requestContext) {
         if (!authEnabled || shouldBypass(requestContext)) {
@@ -45,6 +59,7 @@ public class ApiAuthenticationFilter implements ContainerRequestFilter {
         );
 
         if (!result.authenticated()) {
+            auditFailure(requestContext, result);
             abort(requestContext, result);
             return;
         }
@@ -63,14 +78,43 @@ public class ApiAuthenticationFilter implements ContainerRequestFilter {
 
         String path = requestContext.getUriInfo().getPath();
         
-        // Bypass health, metrics, swagger, auth, and proxy endpoints
-        return path.startsWith("health") || 
-               path.startsWith("metrics") || 
-               path.startsWith("swagger-ui") || 
-               path.startsWith("openapi") ||
-               path.startsWith("api/auth/login") ||
-               path.startsWith("api/proxy/") ||
-               (!path.startsWith("api/"));
+        if (path.startsWith("health") || path.startsWith("metrics") || path.startsWith("api/auth/login")) {
+            return true;
+        }
+
+        if (publicDocsEnabled && (path.startsWith("swagger-ui") || path.startsWith("openapi"))) {
+            return true;
+        }
+
+        return !path.startsWith("api/");
+    }
+
+    private void auditFailure(ContainerRequestContext requestContext, ApiKeyAuthenticator.AuthenticationResult result) {
+        if (auditLogService == null) {
+            return;
+        }
+
+        String tenantId = requestContext.getHeaderString(tenantHeaderName);
+        if (tenantId == null || tenantId.isBlank()) {
+            tenantId = defaultTenantId;
+        }
+
+        String details = "Authentication failed for path " + requestContext.getUriInfo().getPath()
+                + ": " + result.error();
+        auditLogService.logFailure(
+                        tenantId,
+                        "anonymous",
+                        AuditLog.AuditAction.SECURITY_AUTH_FAILED,
+                        "api_request",
+                        requestContext.getUriInfo().getPath(),
+                        details,
+                        correlationId(requestContext))
+                .subscribe().with(ignored -> {}, ignored -> {});
+    }
+
+    private String correlationId(ContainerRequestContext requestContext) {
+        Object value = requestContext.getProperty("correlationId");
+        return value != null ? value.toString() : requestContext.getHeaderString("X-Correlation-Id");
     }
 
     private void abort(ContainerRequestContext requestContext, ApiKeyAuthenticator.AuthenticationResult result) {

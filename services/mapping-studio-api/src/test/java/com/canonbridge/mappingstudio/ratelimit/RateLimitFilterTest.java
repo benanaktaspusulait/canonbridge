@@ -27,7 +27,7 @@ class RateLimitFilterTest {
     void testRateLimitHeadersArePresentInSuccessfulResponse() {
         // When: Making a request to any API endpoint
         Response response = given()
-                .header("X-Tenant-Id", "test-tenant")
+                .header("X-Tenant-Id", "tenant-acme")
                 .when()
                 .get(PROBE_PATH)
                 .then()
@@ -57,7 +57,7 @@ class RateLimitFilterTest {
         for (int i = 0; i < 150; i++) {
             lastResponse = given()
                     .header("X-API-Key", testApiKey)
-                    .header("X-Tenant-Id", "test-tenant")
+                    .header("X-Tenant-Id", "tenant-acme")
                     .when()
                     .get(PROBE_PATH)
                     .then()
@@ -127,7 +127,7 @@ class RateLimitFilterTest {
         // When: Making first request
         Response response1 = given()
                 .header("X-API-Key", testApiKey)
-                .header("X-Tenant-Id", "test-tenant")
+                .header("X-Tenant-Id", "tenant-acme")
                 .when()
                 .get(PROBE_PATH)
                 .then()
@@ -139,7 +139,7 @@ class RateLimitFilterTest {
         // When: Making second request
         Response response2 = given()
                 .header("X-API-Key", testApiKey)
-                .header("X-Tenant-Id", "test-tenant")
+                .header("X-Tenant-Id", "tenant-acme")
                 .when()
                 .get(PROBE_PATH)
                 .then()
@@ -157,7 +157,7 @@ class RateLimitFilterTest {
     void testRateLimitResetTimeIsInFuture() {
         // When: Making a request
         Response response = given()
-                .header("X-Tenant-Id", "test-tenant")
+                .header("X-Tenant-Id", "tenant-acme")
                 .when()
                 .get(PROBE_PATH)
                 .then()

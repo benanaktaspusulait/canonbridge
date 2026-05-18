@@ -48,14 +48,30 @@ class ApiKeyAuthenticatorTest {
         JwtService jwtService = new JwtService();
         UUID userId = UUID.randomUUID();
         ApiKeyAuthenticator authenticator = new ApiKeyAuthenticator(Set.of("test-secret"), jwtService);
+        String token = jwtService.generateToken(activeUser(userId));
 
         ApiKeyAuthenticator.AuthenticationResult result = authenticator.authenticate(
-                "Bearer " + jwtService.generateToken(activeUser(userId)),
+                "Bearer " + token,
                 null
         );
 
         assertTrue(result.authenticated());
         assertEquals("user:" + userId, result.principal());
+        assertEquals(3, token.split("\\.").length);
+    }
+
+    @Test
+    void rejectsTamperedBearerLoginToken() {
+        JwtService jwtService = new JwtService();
+        UUID userId = UUID.randomUUID();
+        ApiKeyAuthenticator authenticator = new ApiKeyAuthenticator(Set.of("test-secret"), jwtService);
+        String token = jwtService.generateToken(activeUser(userId));
+        String tamperedToken = token.substring(0, token.length() - 2) + "xx";
+
+        ApiKeyAuthenticator.AuthenticationResult result = authenticator.authenticate("Bearer " + tamperedToken, null);
+
+        assertFalse(result.authenticated());
+        assertEquals("invalid_credentials", result.error());
     }
 
     @Test

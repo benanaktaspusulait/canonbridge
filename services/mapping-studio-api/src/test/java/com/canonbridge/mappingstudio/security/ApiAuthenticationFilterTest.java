@@ -67,10 +67,24 @@ class ApiAuthenticationFilterTest {
         assertNull(requestContext.abortedResponse);
     }
 
+    @Test
+    void proxyRequestsRequireCredentials() {
+        ApiAuthenticationFilter filter = filterWithKey("test-secret");
+        FakeRequestContext requestContext = new FakeRequestContext("api/proxy/00000000-0000-0000-0000-000000000001");
+
+        filter.filter(requestContext);
+
+        assertNotNull(requestContext.abortedResponse);
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), requestContext.abortedResponse.getStatus());
+    }
+
     private static ApiAuthenticationFilter filterWithKey(String apiKey) {
         ApiAuthenticationFilter filter = new ApiAuthenticationFilter();
         filter.authEnabled = true;
         filter.apiKeyHeaderName = "X-API-Key";
+        filter.publicDocsEnabled = false;
+        filter.defaultTenantId = "tenant-acme";
+        filter.tenantHeaderName = "X-Tenant-Id";
         filter.authenticator = new ApiKeyAuthenticator(Set.of(apiKey));
         return filter;
     }

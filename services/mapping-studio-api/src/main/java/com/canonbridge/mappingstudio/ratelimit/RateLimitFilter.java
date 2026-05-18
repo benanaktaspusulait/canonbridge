@@ -17,6 +17,9 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 
 import java.security.Principal;
+import java.security.MessageDigest;
+import java.nio.charset.StandardCharsets;
+import java.util.HexFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,8 +32,7 @@ import java.util.Map;
  * 
  * Per-tenant overrides are supported via the partners table.
  */
-// @Provider — Temporarily disabled due to blocking issue in reactive context
-// TODO: Convert to non-blocking implementation
+@Provider
 @Priority(Priorities.AUTHORIZATION + 10)
 @ApplicationScoped
 @Blocking
@@ -56,13 +58,11 @@ public class RateLimitFilter implements ContainerRequestFilter, ContainerRespons
             return;
         }
 
-        // Skip rate limiting for health, metrics, auth, and proxy endpoints
-        // (proxy has its own rate limiting via circuit breaker)
+        // Skip only infrastructure and authentication endpoints.
         String path = requestContext.getUriInfo().getPath();
         if (path.startsWith("health") || path.startsWith("metrics") || 
             path.startsWith("openapi") || path.startsWith("swagger-ui") ||
-            path.equals("api/auth/login") || path.startsWith("api/auth/") ||
-            path.startsWith("api/proxy/")) {
+            path.equals("api/auth/login") || path.startsWith("api/auth/")) {
             return;
         }
 
@@ -94,7 +94,7 @@ public class RateLimitFilter implements ContainerRequestFilter, ContainerRespons
             // Unauthenticated request - prefer a presented API key as a stable client id in test/dev,
             // then fall back to IP address.
             String apiKey = requestContext.getHeaderString("X-API-Key");
-            clientId = apiKey != null && !apiKey.isBlank() ? "api-key:" + apiKey : getClientIp();
+            clientId = apiKey != null && !apiKey.isBlank() ? "api-key:" + fingerprint(apiKey) : getClientIp();
             limit = config.unauthenticated().defaultLimit();
             windowSeconds = config.unauthenticated().windowSeconds();
         }
@@ -178,5 +178,14 @@ public class RateLimitFilter implements ContainerRequestFilter, ContainerRespons
         // Fall back to remote address
         String remoteAddress = request.remoteAddress().host();
         return remoteAddress != null ? remoteAddress : "unknown";
+    }
+
+    private static String fingerprint(String value) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest).substring(0, 16);
+        } catch (Exception error) {
+            throw new IllegalStateException("Unable to fingerprint rate limit client", error);
+        }
     }
 }
