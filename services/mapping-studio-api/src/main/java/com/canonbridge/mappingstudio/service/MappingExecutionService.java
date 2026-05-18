@@ -6,6 +6,7 @@ import com.canonbridge.mappingstudio.domain.OutboundConnection;
 import com.canonbridge.mappingstudio.outbound.OutboundHttpRequest;
 import com.canonbridge.mappingstudio.outbound.OutboundHttpService;
 import com.canonbridge.mappingstudio.outbound.RequestTemplateService;
+import com.canonbridge.mappingstudio.outbound.CircuitBreaker;
 import com.canonbridge.mappingstudio.repository.OutboundConnectionRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,6 +59,8 @@ public class MappingExecutionService {
 
     @Inject
     ProxyMetricsService metricsService;
+
+    private final CircuitBreaker circuitBreaker = new CircuitBreaker(5, 30);
 
     @ConfigProperty(name = "canonbridge.transformer.url", defaultValue = "http://localhost:8083")
     String transformerUrl;
@@ -336,6 +339,14 @@ public class MappingExecutionService {
                     }
                 }
 
+                // Check circuit breaker before calling external API
+                String circuitKey = resolvedConnection.url();
+                if (!circuitBreaker.isAllowed(circuitKey)) {
+                    return Uni.createFrom().failure(
+                        new RuntimeException("Circuit breaker OPEN for: " + circuitKey + " (external API unavailable)")
+                    );
+                }
+
                 return outboundHttpService.execute(
                         mapping.getTenantId(),
                         resolvedConnection,
@@ -343,10 +354,12 @@ public class MappingExecutionService {
                     )
                     .map(result -> {
                         if (!result.success()) {
+                            circuitBreaker.recordFailure(circuitKey);
                             throw new RuntimeException(
                                 "External API returned " + result.statusCode() + ": " + result.body()
                             );
                         }
+                        circuitBreaker.recordSuccess(circuitKey);
                         try {
                             return objectMapper.readTree(result.body());
                         } catch (Exception e) {
