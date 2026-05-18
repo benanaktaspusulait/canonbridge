@@ -23,7 +23,8 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 import java.time.Duration;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -799,34 +800,194 @@ public class MappingExecutionService {
      * Build JSONata expression from transformation rules
      */
     private String buildJsonataFromRules(JsonNode rulesNode) {
-        // Build a JSONata object constructor from rules
-        var mappings = new HashMap<String, String>();
-        
+        List<String> lines = new ArrayList<>();
         for (JsonNode rule : rulesNode) {
-            String targetKey = rule.has("targetKey") ? rule.get("targetKey").asText() : null;
-            String sourcePath = rule.has("sourcePath") ? rule.get("sourcePath").asText() : null;
-            
-            if (targetKey != null && sourcePath != null) {
-                // Simple direct mapping for now
-                mappings.put(targetKey, sourcePath);
+            String targetKey = text(rule, "targetKey", "target_key", "field");
+            if (targetKey == null || targetKey.isBlank()) {
+                continue;
             }
+            String expression = ruleToJsonataFragment(rule);
+            lines.add("  " + jsonString(targetKey) + ": (" + expression + ")");
         }
 
-        // Build JSONata object
-        var jsonataBuilder = new StringBuilder("{\n");
-        mappings.forEach((key, value) -> {
-            jsonataBuilder.append("  \"").append(key).append("\": ").append(value).append(",\n");
-        });
-        
-        // Remove trailing comma
-        if (jsonataBuilder.length() > 2) {
-            jsonataBuilder.setLength(jsonataBuilder.length() - 2);
-            jsonataBuilder.append("\n");
+        return "{\n" + String.join(",\n", lines) + "\n}";
+    }
+
+    private String ruleToJsonataFragment(JsonNode rule) {
+        String explicit = text(rule, "jsonataExpression", "jsonata_expression", "advancedExpression", "advanced_expression");
+        if (explicit != null && !explicit.isBlank()) {
+            return explicit.trim();
         }
-        
-        jsonataBuilder.append("}");
-        
-        return jsonataBuilder.toString();
+
+        String sourcePath = text(rule, "sourcePath", "source_path", "source");
+        String base = sourcePath == null || sourcePath.isBlank() ? "$" : jqPath(sourcePath);
+        String transform = text(rule, "transform");
+        transform = transform == null || transform.isBlank() ? "direct" : transform.trim().toLowerCase();
+
+        return switch (transform) {
+            case "number_coerce", "number" -> "$number(" + base + ")";
+            case "string_uppercase", "uppercase" -> "$uppercase($string(" + base + "))";
+            case "string_lowercase", "lowercase" -> "$lowercase($string(" + base + "))";
+            case "string_trim", "trim" -> "$trim($string(" + base + "))";
+            case "string_substring" -> {
+                int start = Math.max(0, intParam(rule, "paramA", "start", 0));
+                String lenRaw = param(rule, "paramB", "length");
+                yield lenRaw == null || lenRaw.isBlank()
+                        ? "$substring($string(" + base + "), " + start + ")"
+                        : "$substring($string(" + base + "), " + start + ", " + Math.max(0, parseInt(lenRaw, 0)) + ")";
+            }
+            case "string_replace" -> "$replace($string(" + base + "), " + singleQuoted(param(rule, "paramA", "find")) + ", " + singleQuoted(param(rule, "paramB", "replace")) + ")";
+            case "array_join" -> "$join(" + base + ", " + singleQuoted(paramOr(rule, ",", "paramA", "delimiter")) + ")";
+            case "array_first" -> base + "[0]";
+            case "array_last" -> base + "[$count(" + base + ") - 1]";
+            case "array_element" -> base + "[" + Math.max(0, intParam(rule, "paramA", "index", 1) - 1) + "]";
+            case "array_count" -> "$count(" + base + ")";
+            case "math_sum" -> "$sum(" + mathPath(base, param(rule, "paramA", "field")) + ")";
+            case "math_average" -> "$average(" + mathPath(base, param(rule, "paramA", "field")) + ")";
+            case "math_min" -> "$min(" + mathPath(base, param(rule, "paramA", "field")) + ")";
+            case "math_max" -> "$max(" + mathPath(base, param(rule, "paramA", "field")) + ")";
+            case "default_value", "default" -> {
+                String fallback = singleQuoted(paramOr(rule, "", "paramA", "defaultValue", "default_value"));
+                yield "$exists(" + base + ") and " + base + " != null and $string(" + base + ") != '' ? " + base + " : " + fallback;
+            }
+            case "enum_map", "enum" -> "$lookup({" + enumPairs(param(rule, "paramA", "enumMap", "enum_map")) + "}, $string(" + base + "))";
+            case "conditional_value" -> "$string(" + base + ") = " + singleQuoted(param(rule, "paramA", "when")) + " ? " + singleQuoted(param(rule, "paramB", "then")) + " : " + singleQuoted(param(rule, "paramC", "else"));
+            case "date_format", "date" -> "$fromMillis($toMillis(" + base + "), " + singleQuoted(datePicture(paramOr(rule, "dd/MM/yyyy HH:mm", "paramB", "outputFormat", "dateFormat"))) + ")";
+            case "template_string" -> templateExpression(paramOr(rule, "", "paramA", "template"));
+            default -> base;
+        };
+    }
+
+    private String text(JsonNode node, String... names) {
+        for (String name : names) {
+            JsonNode value = node.get(name);
+            if (value != null && !value.isNull()) {
+                return value.asText();
+            }
+        }
+        return null;
+    }
+
+    private String param(JsonNode rule, String... names) {
+        for (String name : names) {
+            String direct = text(rule, name);
+            if (direct != null) return direct;
+        }
+        JsonNode params = rule.get("params");
+        if (params != null && params.isObject()) {
+            for (String name : names) {
+                String value = text(params, name);
+                if (value != null) return value;
+            }
+        }
+        return null;
+    }
+
+    private String paramOr(JsonNode rule, String fallback, String... names) {
+        String value = param(rule, names);
+        return value == null ? fallback : value;
+    }
+
+    private int intParam(JsonNode rule, String primary, String secondary, int fallback) {
+        return parseInt(param(rule, primary, secondary), fallback);
+    }
+
+    private int parseInt(String value, int fallback) {
+        try {
+            return value == null ? fallback : Integer.parseInt(value.trim());
+        } catch (Exception e) {
+            return fallback;
+        }
+    }
+
+    private String jqPath(String path) {
+        return path.replaceAll("\\[(\\d+)]", ".$1").trim();
+    }
+
+    private String mathPath(String base, String subField) {
+        return subField == null || subField.isBlank() ? base : base + "." + jqPath(subField);
+    }
+
+    private String singleQuoted(String value) {
+        String safe = value == null ? "" : value;
+        return "'" + safe.replace("\\", "\\\\").replace("'", "\\'") + "'";
+    }
+
+    private String jsonString(String value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception e) {
+            return "\"" + value.replace("\"", "\\\"") + "\"";
+        }
+    }
+
+    private String enumPairs(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "";
+        }
+        try {
+            JsonNode parsed = objectMapper.readTree(raw);
+            if (parsed.isArray()) {
+                List<String> pairs = new ArrayList<>();
+                for (JsonNode row : parsed) {
+                    String source = text(row, "source", "from", "key");
+                    String target = text(row, "target", "to", "value");
+                    if (source != null && target != null) {
+                        pairs.add(singleQuoted(source) + ": " + singleQuoted(target));
+                    }
+                }
+                return String.join(", ", pairs);
+            }
+            if (parsed.isObject()) {
+                List<String> pairs = new ArrayList<>();
+                parsed.fields().forEachRemaining(entry -> pairs.add(singleQuoted(entry.getKey()) + ": " + singleQuoted(entry.getValue().asText())));
+                return String.join(", ", pairs);
+            }
+        } catch (Exception ignored) {
+        }
+
+        List<String> pairs = new ArrayList<>();
+        for (String part : raw.split("[,;]")) {
+            int idx = part.indexOf('=');
+            if (idx > 0) {
+                pairs.add(singleQuoted(part.substring(0, idx).trim()) + ": " + singleQuoted(part.substring(idx + 1).trim()));
+            }
+        }
+        return String.join(", ", pairs);
+    }
+
+    private String datePicture(String outputFormat) {
+        return switch (outputFormat) {
+            case "dd/MM/yyyy" -> "[D01]/[M01]/[Y0001]";
+            case "MM/dd/yyyy" -> "[M01]/[D01]/[Y0001]";
+            case "yyyy-MM-dd" -> "[Y0001]-[M01]-[D01]";
+            case "yyyy-MM-dd HH:mm" -> "[Y0001]-[M01]-[D01] [H01]:[m01]";
+            case "dd.MM.yyyy" -> "[D01].[M01].[Y0001]";
+            case "dd.MM.yyyy HH:mm" -> "[D01].[M01].[Y0001] [H01]:[m01]";
+            case "HH:mm" -> "[H01]:[m01]";
+            case "HH:mm:ss" -> "[H01]:[m01]:[s01]";
+            default -> "[D01]/[M01]/[Y0001] [H01]:[m01]";
+        };
+    }
+
+    private String templateExpression(String template) {
+        if (template == null || template.isBlank()) {
+            return "''";
+        }
+        List<String> chunks = new ArrayList<>();
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\\{\\{\\s*([^}]+?)\\s*}}").matcher(template);
+        int index = 0;
+        while (matcher.find()) {
+            if (matcher.start() > index) {
+                chunks.add(singleQuoted(template.substring(index, matcher.start())));
+            }
+            chunks.add("$string(" + jqPath(matcher.group(1).trim()) + ")");
+            index = matcher.end();
+        }
+        if (index < template.length()) {
+            chunks.add(singleQuoted(template.substring(index)));
+        }
+        return chunks.isEmpty() ? "''" : String.join(" & ", chunks);
     }
 
     /**

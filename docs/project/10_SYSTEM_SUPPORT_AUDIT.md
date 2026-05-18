@@ -103,9 +103,11 @@ DB registry artik `KAFKA` ve `API_ENRICHMENT` draft'larini yukluyor:
 
 Kalan taraf: `canonical_schema_ref` ile schema repository'den async fetch ederek validation yapmak ve daha genis JSON Schema keyword kapsamı eklemek.
 
-### 2.7 Mapping rule fallback transform turlerini yitiriyor
+### 2.7 Mapping rule fallback transform turlerini destekliyor
 
-`services/mapping-studio-api/src/main/java/com/canonbridge/mappingstudio/service/MappingExecutionService.java:797` fallback JSONata uretimi basliyor. `805-807` arasi sadece `targetKey -> sourcePath` direct mapping yapiyor. `generated_jsonata` yoksa number/date/enum/default gibi donusumler uygulanmiyor.
+`services/mapping-studio-api/src/main/java/com/canonbridge/mappingstudio/service/MappingExecutionService.java:797` fallback JSONata uretimi artik visual rule metadata'sini de kullanir. Desteklenen temel transformlar: number coercion, string case/trim/substring/replace, array helpers, math helpers, default value, enum map, conditional value, date format ve template string.
+
+Kalan taraf: fallback builder frontend `rule-to-jsonata.ts` ile ayni davranisi koruyacak sekilde unit testlerle kilitlenmeli.
 
 ## 3. Dokumantasyon Tutarsizliklari
 
@@ -135,8 +137,8 @@ Bu denetimde kosulan kontroller:
 5. Scheduled API icin kalici next-run/last-run DB state'i ve retry visibility ekle.
 6. API enrichment icin credential/header cozme ve GraphQL body template destegini genislet.
 7. Mapping API proxy'de `canonical_schema_ref` icin schema repository lookup ve genis JSON Schema keyword kapsami ekle.
-8. `generated_jsonata` yokken fallback rule builder'in transform/default/enum/date gibi rule turlerini desteklemesini sagla.
-9. Acceptance matrix'i CI'da fail eden kanita donustur; UI'da gorunmesi yeterli sayilmasin.
+8. Fallback rule builder icin frontend `rule-to-jsonata.ts` ile esdeger unit testleri ekle.
+9. Acceptance matrix CI gate'e baglandi: `.github/workflows/ci.yml` icinde `No-Code Acceptance Coverage` job'i `scripts/no-code-acceptance-coverage.mjs --strict --markdown` calistiriyor. Strict mod `PARTIAL`, `OPEN`, `BLOCKED`, `IN_PROGRESS` gap'lerde CI'i fail eder.
 10. Yeni eklenen her external system icin mock endpoint, credential seed, sample payload, mapping draft ve E2E senaryo ekle.
 
 ## 6. Kapanis Karari

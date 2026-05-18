@@ -5,6 +5,7 @@ import path from 'node:path';
 const root = process.cwd();
 const args = process.argv.slice(2);
 const markdownMode = args.includes('--markdown');
+const strictMode = args.includes('--strict');
 const registerPath = args.find((arg) => !arg.startsWith('--'))
   ?? path.join(root, 'docs/testing/NO_CODE_INTEGRATION_GAP_REGISTER.md');
 const markdown = await readFile(registerPath, 'utf8');
@@ -54,6 +55,9 @@ if (markdownMode) {
   console.log(JSON.stringify(output, null, 2));
 }
 
-if (open > 0 || blocked > 0 || inProgress > 0) {
+if (open > 0 || blocked > 0 || inProgress > 0 || (strictMode && partial > 0)) {
+  if (strictMode && partial > 0) {
+    console.error(`Strict coverage failed: ${partial} PARTIAL gap(s) still need runtime evidence.`);
+  }
   process.exitCode = 2;
 }
