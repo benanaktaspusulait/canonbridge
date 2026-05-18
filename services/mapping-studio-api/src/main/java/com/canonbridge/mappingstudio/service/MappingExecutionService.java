@@ -200,6 +200,19 @@ public class MappingExecutionService {
             ? com.canonbridge.mappingstudio.domain.ProxyExecutionLog.ExecutionStatus.SUCCESS
             : com.canonbridge.mappingstudio.domain.ProxyExecutionLog.ExecutionStatus.ERROR);
         log.setErrorMessage(result.error());
+        
+        // Classify error stage
+        if (result.error() != null) {
+            String err = result.error();
+            if (err.contains("Request validation")) log.setErrorStage("VALIDATION");
+            else if (err.contains("External API") || err.contains("Circuit breaker")) log.setErrorStage("API_CALL");
+            else if (err.contains("Response validation")) log.setErrorStage("RESPONSE_VALIDATION");
+            else if (err.contains("JSONata") || err.contains("transformation")) log.setErrorStage("TRANSFORM");
+            else if (err.contains("timeout") || err.contains("Timeout")) log.setErrorStage("TIMEOUT");
+            else if (err.contains("401") || err.contains("403") || err.contains("Authorization")) log.setErrorStage("AUTH_ERROR");
+            else log.setErrorStage("UNKNOWN");
+        }
+        
         log.setRequestSizeBytes(requestPayload != null ? requestPayload.length() : 0);
         log.setRequestPayload(storeRequestPayload ? requestPayload : null);
 

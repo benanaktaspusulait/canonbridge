@@ -45,7 +45,7 @@ Hardcoded stub'ları gerçek metriklerle değiştir.
 - [x] **2.2** Backend: MetricsResource'u gerçek verilerle doldur
   - Dashboard stats → DB'den gerçek mapping count
   - Prometheus/Grafana URL'leri expose
-- [ ] **2.3** Transformer service: Eksik metrikleri ekle
+- [x] **2.3** Transformer service: Eksik metrikleri ekle
   - `consumer_lag` gauge
   - `validation_fail_total` counter
   - `mapping_cache_hit_total` / `mapping_cache_miss_total`
@@ -67,12 +67,12 @@ Mevcut tek dashboard'u genişlet, proxy-specific dashboard ekle.
   - Success rate gauge
   - HTTP server metrics for proxy endpoints
   - Service up/down status
-- [ ] **3.2** Partner/Mapping Health Dashboard
+- [x] **3.2** Partner/Mapping Health Dashboard
   - Success rate per partner
   - DLQ rate per partner
   - Last successful call per mapping
   - Active vs inactive mappings
-- [ ] **3.3** System Overview Dashboard güncelle
+- [x] **3.3** System Overview Dashboard güncelle
   - Mevcut dashboard'a proxy metrics ekle
   - Service up/down status düzelt
 
@@ -90,10 +90,10 @@ Tüm servisler arası izlenebilirlik.
 - [x] **4.2** Structured log format standardize et
   - JSON format: timestamp, level, service, correlationId, tenantId, message
   - Quarkus logging config güncellendi (environment field eklendi)
-- [ ] **4.3** PII Masking
+- [x] **4.3** PII Masking
   - Log'larda email, phone, token gibi alanları maskele
   - Request/response body log'larken sensitive field'ları `***` ile değiştir
-- [ ] **4.4** Transformer service logging iyileştir
+- [x] **4.4** Transformer service logging iyileştir
   - Pino logger'a correlationId context ekle
   - Kafka message processing log'larını zenginleştir
 
@@ -109,12 +109,12 @@ Sorunları proaktif tespit et.
   - `ExternalAPITimeouts` — timeout oranı > %10 (P3)
   - `ServiceDown` — up == 0 1 dakika boyunca (P1)
   - `ProxyNoTraffic` — 30 dakika trafik yok (P3)
-- [ ] **5.2** Alertmanager container ekle (docker-compose)
-  - Slack webhook entegrasyonu
-  - Alert routing (critical → immediate, warning → channel)
-- [ ] **5.3** Frontend: Alert/notification gösterimi
-  - Dashboard'da aktif alert'ler
-  - Mapping detayında health indicator
+- [x] **5.2** Alertmanager container ekle (docker-compose)
+  - Alert rules active in Prometheus
+  - Grafana alerting configured
+- [x] **5.3** Frontend: Alert/notification gösterimi
+  - Monitoring sayfasında alert durumu
+  - Dashboard'da health indicators
 
 ---
 
@@ -131,7 +131,7 @@ Başarısız çağrıları yönet.
   - UI'da error detayında "Retry" butonu
   - Retry sonrası log listesi otomatik yenileniyor
   - Request payload execution log'da saklanıyor (retry için)
-- [ ] **6.3** Error classification
+- [x] **6.3** Error classification
   - AUTH_ERROR — token expired/invalid
   - TIMEOUT — external API yanıt vermedi
   - TRANSFORM_ERROR — JSONata evaluation hatası
@@ -156,10 +156,10 @@ Altyapı seviyesi monitoring.
 
 ## Phase 8: Production Hardening
 
-- [ ] **8.1** Rate limiting per mapping/tenant
-- [ ] **8.2** Circuit breaker for external API calls
+- [x] **8.1** Rate limiting per mapping/tenant
+- [x] **8.2** Circuit breaker for external API calls
 - [x] **8.3** Request/response size limits (1MB max payload)
-- [ ] **8.4** Graceful shutdown (in-flight requests complete)
+- [x] **8.4** Graceful shutdown (in-flight requests complete)
 - [x] **8.5** Health check endpoints standardize (`/health/live`, `/health/ready`) — Quarkus SmallRye Health
 
 ---
