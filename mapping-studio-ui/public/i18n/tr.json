@@ -27,6 +27,7 @@
     "schemas": "Şemalar",
     "dlq": "DLQ",
     "monitoring": "İzleme",
+    "audit": "Denetim kaydı",
     "settings": "Ayarlar"
   },
   "sidebar": {

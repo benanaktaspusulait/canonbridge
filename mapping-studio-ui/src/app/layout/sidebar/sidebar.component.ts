@@ -29,7 +29,8 @@ const PRIMARY_NAV: NavEntry[] = [
     icon: 'pi pi-exclamation-triangle',
     labelKey: 'nav.dlq'
   },
-  { route: '/monitoring', icon: 'pi pi-chart-line', labelKey: 'nav.monitoring' }
+  { route: '/monitoring', icon: 'pi pi-chart-line', labelKey: 'nav.monitoring' },
+  { route: '/audit', icon: 'pi pi-shield', labelKey: 'nav.audit' }
 ];
 
 const SECONDARY_NAV: NavEntry[] = [

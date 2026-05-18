@@ -114,6 +114,40 @@ public class CredentialResource {
         });
     }
 
+    @POST
+    @Path("/{credentialId}/rotate")
+    @Operation(summary = "Rotate credential secret (write-only)")
+    public Uni<Response> rotate(
+            @PathParam("credentialId") UUID credentialId,
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            @HeaderParam("X-User-Id") String userId,
+            RotateCredentialRequest request) {
+
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new BadRequestException("X-Tenant-Id header is required");
+        }
+        if (request == null) {
+            throw new BadRequestException("Request body is required");
+        }
+
+        return credentialRepository.findById(credentialId, tenantId)
+                .chain(existing -> {
+                    if (existing == null) {
+                        return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND).build());
+                    }
+                    Credential.AuthType authType = request.authType() != null ? request.authType() : existing.authType();
+                    String encryptedSecret = secretCodec.encrypt(normalizeSecret(request.secret(), authType));
+                    return credentialRepository.rotateSecret(
+                            credentialId,
+                            tenantId,
+                            encryptedSecret,
+                            request.rotationDueAt(),
+                            userId != null ? userId : "system"
+                    ).map(updated -> Response.ok(updated).build());
+                });
+    }
+
+
     @SuppressWarnings("unchecked")
     private JsonObject normalizeSecret(Object secret, Credential.AuthType authType) {
         if (secret == null) {
@@ -143,6 +177,12 @@ public class CredentialResource {
             String displayName,
             Credential.AuthType authType,
             Credential.Environment environment,
+            Object secret,
+            java.time.Instant rotationDueAt
+    ) {}
+
+    public record RotateCredentialRequest(
+            Credential.AuthType authType,
             Object secret,
             java.time.Instant rotationDueAt
     ) {}

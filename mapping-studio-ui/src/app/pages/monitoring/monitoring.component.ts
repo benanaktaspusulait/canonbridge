@@ -55,6 +55,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
 
   readonly metrics      = signal<MetricCard[]>([]);
   readonly partnerHealth = signal<PartnerHealth[]>([]);
+  readonly grafanaDashboardUrl = signal('');
   readonly loading = signal(false);
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -75,6 +76,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
           return;
         }
         const sys = data.system;
+        this.grafanaDashboardUrl.set(data.grafanaDashboardUrl ?? data.grafanaUrl ?? '');
         this.metrics.set([
           { labelKey: 'monitoring.metric.throughput.label', sloKey: 'monitoring.metric.throughput.slo', value: String(sys.throughput), unit: 'msg/sec', ok: true,  icon: 'pi-send',              color: '#dbeafe' },
           { labelKey: 'monitoring.metric.p99.label',        sloKey: 'monitoring.metric.p99.slo',        value: String(sys.p99Latency),   unit: 'ms',      ok: sys.p99Latency < 200,  icon: 'pi-bolt',              color: '#dcfce7' },
@@ -166,6 +168,11 @@ export class MonitoringComponent implements OnInit, OnDestroy {
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
+
+  openGrafana(): void {
+    const url = this.grafanaDashboardUrl();
+    if (url) window.open(url, '_blank');
+  }
 
   getSeverity(status: string): 'success' | 'warn' | 'danger' {
     const map: Record<string, 'success' | 'warn' | 'danger'> = {

@@ -7,6 +7,9 @@
     <p class="page-subtitle">{{ 'mappings.subtitle' | i18n }}</p>
   </div>
   <div class="page-actions">
+    <input #importFile type="file" accept="application/json" hidden (change)="importMapping($event)" />
+    <p-button label="Import" icon="pi pi-upload" variant="outlined" severity="secondary" (onClick)="importFile.click()" />
+    <p-button label="Templates" icon="pi pi-copy" variant="outlined" severity="secondary" (onClick)="loadTemplates()" />
     <p-button [label]="'mappings.newDemo' | i18n" icon="pi pi-plus" routerLink="/wizard" />
   </div>
 </div>
@@ -36,6 +39,22 @@
     <div class="toolbar-right">
       <span class="result-count">{{ filtered().length }} {{ 'mappings.results' | i18n }}</span>
       <p-button
+        icon="pi pi-send"
+        variant="outlined"
+        severity="secondary"
+        size="small"
+        [disabled]="selectedMappings().length === 0"
+        (onClick)="bulkPublish()"
+        pTooltip="Publish selected" />
+      <p-button
+        icon="pi pi-ban"
+        variant="outlined"
+        severity="warn"
+        size="small"
+        [disabled]="selectedMappings().length === 0"
+        (onClick)="bulkDeprecate()"
+        pTooltip="Deprecate selected" />
+      <p-button
         icon="pi pi-download"
         variant="outlined"
         severity="secondary"
@@ -56,9 +75,17 @@
   }
 
   @if (mappings().length > 0) {
-  <p-table [value]="filtered()" styleClass="p-datatable-sm p-datatable-striped" [paginator]="true" [rows]="10">
+  <p-table
+    [value]="filtered()"
+    styleClass="p-datatable-sm p-datatable-striped"
+    [paginator]="true"
+    [rows]="10"
+    dataKey="id"
+    [selection]="selectedMappings()"
+    (selectionChange)="selectedMappings.set($event)">
     <ng-template pTemplate="header">
       <tr>
+        <th style="width:44px"><p-tableHeaderCheckbox /></th>
         <th pSortableColumn="partner">{{ 'table.partner' | i18n }} <p-sortIcon field="partner" /></th>
         <th pSortableColumn="eventType">{{ 'table.eventType' | i18n }} <p-sortIcon field="eventType" /></th>
         <th pSortableColumn="sourceType">{{ 'table.sourceType' | i18n }} <p-sortIcon field="sourceType" /></th>
@@ -76,6 +103,7 @@
     </ng-template>
     <ng-template pTemplate="body" let-m>
       <tr>
+        <td><p-tableCheckbox [value]="m" /></td>
         <td><strong>{{ m.partner }}</strong></td>
         <td><code class="event-code">{{ m.eventType }}</code></td>
         <td><p-tag severity="secondary" [value]="m.sourceType" /></td>
@@ -115,6 +143,27 @@
               (onClick)="openInStudio(m)"
               [pTooltip]="'mappings.openStudio' | i18n" />
             <p-button
+              icon="pi pi-download"
+              variant="text"
+              severity="secondary"
+              size="small"
+              (onClick)="exportMapping(m)"
+              pTooltip="Export JSON" />
+            <p-button
+              icon="pi pi-clone"
+              variant="text"
+              severity="secondary"
+              size="small"
+              (onClick)="cloneMapping(m)"
+              pTooltip="Clone" />
+            <p-button
+              icon="pi pi-copy"
+              variant="text"
+              severity="secondary"
+              size="small"
+              (onClick)="cloneMapping(m)"
+              pTooltip="Clone" />
+            <p-button
               icon="pi pi-ban"
               variant="text"
               severity="warn"
@@ -135,7 +184,7 @@
     </ng-template>
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td colspan="11" class="empty-cell">{{ 'mappings.empty' | i18n }}</td>
+        <td colspan="12" class="empty-cell">{{ 'mappings.empty' | i18n }}</td>
       </tr>
     </ng-template>
   </p-table>
@@ -204,6 +253,16 @@
       @if (mappingVersions().length === 0) {
         <p>No published versions yet</p>
       } @else {
+        <div class="section-actions">
+          <p-button
+            label="Compare latest"
+            icon="pi pi-code"
+            variant="outlined"
+            severity="secondary"
+            size="small"
+            [disabled]="mappingVersions().length < 2"
+            (onClick)="compareLatestVersions()" />
+        </div>
         <div class="versions-list">
           @for (v of mappingVersions(); track v.id) {
             <div class="version-item" [class.deprecated]="v.status === 'DEPRECATED'">
@@ -215,7 +274,49 @@
             </div>
           }
         </div>
+        @if (versionDiff(); as diff) {
+          <pre class="diff-view">{{ diff | json }}</pre>
+        }
       }
+    </section>
+
+    <section class="detail-section">
+      <h3>Execution history</h3>
+      @if (executionSeries().length === 0) {
+        <p>No execution trend yet</p>
+      } @else {
+        <div class="trend-list">
+          @for (bucket of executionSeries(); track bucket.bucket) {
+            <div class="trend-item">
+              <span>{{ bucket.bucket }}</span>
+              <strong>{{ bucket.success }} ok / {{ bucket.errors }} err</strong>
+              <small>{{ bucket.avgLatencyMs | number:'1.0-0' }}ms avg</small>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="detail-section">
+      <h3>Last 50 executions</h3>
+      <p-table [value]="executionLogs()" styleClass="p-datatable-sm">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Requested</th>
+            <th>Status</th>
+            <th style="text-align:right">Latency</th>
+            <th>Correlation</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-log>
+          <tr>
+            <td class="text-sm">{{ log.request_at || log.created_at }}</td>
+            <td><p-tag [value]="log.status" [severity]="log.status === 'SUCCESS' ? 'success' : 'danger'" /></td>
+            <td style="text-align:right">{{ log.latency_ms || log.duration_ms || 0 }}ms</td>
+            <td><code>{{ log.correlation_id || 'n/a' }}</code></td>
+          </tr>
+        </ng-template>
+      </p-table>
     </section>
 
     <div class="drawer-actions">
@@ -242,3 +343,17 @@
     </div>
   }
 </p-drawer>
+
+<p-dialog header="Mapping templates" [(visible)]="templateDialogVisible" [modal]="true" [style]="{ width: '640px', maxWidth: '95vw' }">
+  <div class="template-list">
+    @for (template of templates(); track template.id) {
+      <article class="template-item">
+        <div>
+          <strong>{{ template.name }}</strong>
+          <p>{{ template.description }}</p>
+        </div>
+        <p-button label="Use" icon="pi pi-plus" size="small" (onClick)="createFromTemplate(template)" />
+      </article>
+    }
+  </div>
+</p-dialog>

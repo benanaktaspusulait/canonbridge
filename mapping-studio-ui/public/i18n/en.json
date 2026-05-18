@@ -27,6 +27,7 @@
     "schemas": "Schemas",
     "dlq": "DLQ",
     "monitoring": "Monitoring",
+    "audit": "Audit Log",
     "settings": "Settings"
   },
   "sidebar": {

@@ -113,6 +113,14 @@ html.dark-mode .metric-card {
   &.breach { color: #dc2626; }
 }
 
+.grafana-frame {
+  width: 100%;
+  min-height: 420px;
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  background: var(--surface-ground);
+}
+
 // ── Table helpers ─────────────────────────────────────────────────────────────
 .latency-warn { color: #ca8a04; font-weight: 600; }
 .dlq-warn     { color: #dc2626; font-weight: 600; }

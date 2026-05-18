@@ -10,6 +10,18 @@ export interface DashboardStats {
   consumerLag: number;
   p99Latency: number;
   activePartners: number;
+  errorRate?: number;
+  topMappings?: TopMappingMetric[];
+}
+
+export interface TopMappingMetric {
+  mappingId: string;
+  name: string;
+  partnerId: string;
+  eventType: string;
+  callCount: number;
+  errorCount: number;
+  avgLatencyMs: number;
 }
 
 export interface MonitoringMetrics {
@@ -23,6 +35,9 @@ export interface MonitoringMetrics {
   };
   window: string;
   timestamp: number;
+  prometheusUrl?: string;
+  grafanaUrl?: string;
+  grafanaDashboardUrl?: string;
 }
 
 export interface PartnerHealthMetrics {

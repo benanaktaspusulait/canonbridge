@@ -158,6 +158,21 @@ public class MappingDraftRepository {
         .map(rowSet -> rowSet.rowCount() > 0);
     }
 
+    public Uni<MappingDraft> updateStatus(String tenantId, UUID id, MappingDraft.DraftStatus status, String updatedBy) {
+        Instant now = Instant.now();
+        return client.preparedQuery(
+            "UPDATE mapping_drafts SET status = $1, updated_at = $2, updated_by = $3 " +
+            "WHERE tenant_id = $4 AND id = $5 RETURNING *"
+        )
+        .execute(Tuple.of(status.name(), LocalDateTime.ofInstant(now, ZoneOffset.UTC), updatedBy, tenantId, id))
+        .map(rowSet -> {
+            if (rowSet.size() == 0) {
+                return null;
+            }
+            return toMappingDraft(rowSet.iterator().next());
+        });
+    }
+
     private List<MappingDraft> toMappingDraftList(RowSet<Row> rows) {
         List<MappingDraft> drafts = new ArrayList<>();
         for (Row row : rows) {

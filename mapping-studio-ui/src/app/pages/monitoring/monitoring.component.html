@@ -56,6 +56,28 @@
   }
 </div>
 
+@if (grafanaDashboardUrl()) {
+  <p-card styleClass="mt-4">
+    <ng-template pTemplate="header">
+      <div class="card-header-row">
+        <div>
+          <h2 class="card-title">Grafana</h2>
+          <p class="card-subtitle">Live production dashboard</p>
+        </div>
+        <p-button
+          icon="pi pi-external-link"
+          variant="text"
+          severity="secondary"
+          size="small"
+          label="Open"
+          [link]="true"
+          (onClick)="openGrafana()" />
+      </div>
+    </ng-template>
+    <iframe class="grafana-frame" [src]="grafanaDashboardUrl()" title="Grafana dashboard"></iframe>
+  </p-card>
+}
+
 <!-- ── Partner health table ──────────────────────────────────────────────── -->
 <p-card styleClass="mt-4">
   <ng-template pTemplate="header">

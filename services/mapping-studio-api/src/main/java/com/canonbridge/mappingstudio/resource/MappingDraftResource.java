@@ -3,6 +3,7 @@ package com.canonbridge.mappingstudio.resource;
 import com.canonbridge.mappingstudio.audit.AuditLogService;
 import com.canonbridge.mappingstudio.domain.AuditLog;
 import com.canonbridge.mappingstudio.domain.MappingDraft;
+import com.canonbridge.mappingstudio.notification.NotificationService;
 import com.canonbridge.mappingstudio.outbound.RequestTemplateService;
 import com.canonbridge.mappingstudio.outbound.RequestValidationService;
 import com.canonbridge.mappingstudio.repository.MappingDraftRepository;
@@ -46,6 +47,9 @@ public class MappingDraftResource {
     @Inject
     com.canonbridge.mappingstudio.service.MappingPublishService publishService;
 
+    @Inject
+    NotificationService notificationService;
+
     @GET
     @Operation(summary = "List all mapping drafts for tenant")
     public Uni<List<MappingDraft>> list(@HeaderParam("X-Tenant-Id") String tenantId) {
@@ -71,6 +75,24 @@ public class MappingDraftResource {
     @Path("/{id}")
     @Operation(summary = "Get mapping draft by ID")
     public Uni<Response> get(
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            @PathParam("id") UUID id) {
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new BadRequestException("X-Tenant-Id header is required");
+        }
+        return draftRepository.findById(tenantId, id)
+            .map(draft -> {
+                if (draft == null) {
+                    return Response.status(Response.Status.NOT_FOUND).build();
+                }
+                return Response.ok(draft).build();
+            });
+    }
+
+    @GET
+    @Path("/{id}/export")
+    @Operation(summary = "Export mapping draft as portable JSON")
+    public Uni<Response> exportDraft(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("id") UUID id) {
         if (tenantId == null || tenantId.isBlank()) {
@@ -135,6 +157,140 @@ public class MappingDraftResource {
                 "Created mapping draft: " + created.getName(),
                 null
             ).map(ignored -> Response.status(Response.Status.CREATED).entity(created).build()));
+    }
+
+    @POST
+    @Path("/import")
+    @Operation(summary = "Import a mapping draft from JSON")
+    public Uni<Response> importDraft(
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            @HeaderParam("X-User-Id") String userId,
+            MappingDraft draft) {
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new BadRequestException("X-Tenant-Id header is required");
+        }
+        if (draft == null) {
+            throw new BadRequestException("Request body is required");
+        }
+
+        draft.setId(null);
+        draft.setTenantId(tenantId);
+        draft.setStatus(MappingDraft.DraftStatus.DRAFT);
+        draft.setCreatedBy(userId);
+        draft.setUpdatedBy(userId);
+        if (draft.getName() == null || draft.getName().isBlank()) {
+            draft.setName("Imported mapping");
+        }
+
+        return draftRepository.create(draft)
+            .flatMap(created -> auditLogService.logSuccess(
+                tenantId, userId,
+                AuditLog.AuditAction.MAPPING_CREATED,
+                "mapping_draft", created.getId() != null ? created.getId().toString() : "",
+                "Imported mapping draft: " + created.getName(),
+                null
+            ).map(ignored -> Response.status(Response.Status.CREATED).entity(created).build()));
+    }
+
+    @POST
+    @Path("/{id}/clone")
+    @Operation(summary = "Clone a mapping draft")
+    public Uni<Response> cloneDraft(
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            @HeaderParam("X-User-Id") String userId,
+            @PathParam("id") UUID id) {
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new BadRequestException("X-Tenant-Id header is required");
+        }
+
+        return draftRepository.findById(tenantId, id)
+            .chain(source -> {
+                if (source == null) {
+                    return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND).build());
+                }
+                MappingDraft clone = copyDraft(source);
+                clone.setName("Copy of " + source.getName());
+                clone.setStatus(MappingDraft.DraftStatus.DRAFT);
+                clone.setCreatedBy(userId);
+                clone.setUpdatedBy(userId);
+                return draftRepository.create(clone)
+                    .map(created -> Response.status(Response.Status.CREATED).entity(created).build());
+            });
+    }
+
+    @POST
+    @Path("/bulk/publish")
+    @Operation(summary = "Publish multiple mapping drafts")
+    public Uni<Response> bulkPublish(
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            @HeaderParam("X-User-Id") String userId,
+            JsonObject body) {
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new BadRequestException("X-Tenant-Id header is required");
+        }
+        JsonArray ids = body != null ? body.getJsonArray("ids", new JsonArray()) : new JsonArray();
+        if (ids.isEmpty()) {
+            throw new BadRequestException("ids array is required");
+        }
+
+        List<Uni<JsonObject>> publishes = ids.stream()
+            .map(String::valueOf)
+            .map(raw -> UUID.fromString(raw.replace("\"", "")))
+            .map(id -> draftRepository.findById(tenantId, id)
+                .chain(draft -> {
+                    if (draft == null) {
+                        return Uni.createFrom().item(new JsonObject()
+                            .put("id", id.toString())
+                            .put("status", "NOT_FOUND"));
+                    }
+                    return publishService.publish(draft, userId, "Bulk publish")
+                        .invoke(version -> notificationService.mappingPublished(
+                            tenantId,
+                            draft.getId().toString(),
+                            draft.getName(),
+                            version.getVersion()
+                        ))
+                        .map(version -> new JsonObject()
+                            .put("id", id.toString())
+                            .put("status", "PUBLISHED")
+                            .put("version_id", version.getId().toString()))
+                        .onFailure().recoverWithItem(err -> new JsonObject()
+                            .put("id", id.toString())
+                            .put("status", "FAILED")
+                            .put("error", err.getMessage()));
+                }))
+            .toList();
+
+        return Uni.combine().all().unis(publishes).with(results -> Response.ok(new JsonObject()
+            .put("results", new JsonArray(results))).build());
+    }
+
+    @POST
+    @Path("/bulk/deprecate")
+    @Operation(summary = "Mark multiple mapping drafts as invalid/deprecated")
+    public Uni<Response> bulkDeprecate(
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            @HeaderParam("X-User-Id") String userId,
+            JsonObject body) {
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new BadRequestException("X-Tenant-Id header is required");
+        }
+        JsonArray ids = body != null ? body.getJsonArray("ids", new JsonArray()) : new JsonArray();
+        if (ids.isEmpty()) {
+            throw new BadRequestException("ids array is required");
+        }
+
+        List<Uni<JsonObject>> updates = ids.stream()
+            .map(String::valueOf)
+            .map(raw -> UUID.fromString(raw.replace("\"", "")))
+            .map(id -> draftRepository.updateStatus(tenantId, id, MappingDraft.DraftStatus.INVALID, userId)
+                .map(updated -> new JsonObject()
+                    .put("id", id.toString())
+                    .put("status", updated == null ? "NOT_FOUND" : "DEPRECATED")))
+            .toList();
+
+        return Uni.combine().all().unis(updates).with(results -> Response.ok(new JsonObject()
+            .put("results", new JsonArray(results))).build());
     }
 
     @PUT
@@ -256,6 +412,12 @@ public class MappingDraftResource {
                 }
 
                 return publishService.publish(draft, userId, publishNotes)
+                    .invoke(version -> notificationService.mappingPublished(
+                        tenantId,
+                        draft.getId().toString(),
+                        draft.getName(),
+                        version.getVersion()
+                    ))
                     .map(version -> Response.status(Response.Status.CREATED).entity(version).build())
                     .onFailure().recoverWithItem(err -> 
                         Response.status(Response.Status.BAD_REQUEST)
@@ -391,6 +553,26 @@ public class MappingDraftResource {
             return str;
         }
         return String.valueOf(value);
+    }
+
+    private MappingDraft copyDraft(MappingDraft source) {
+        MappingDraft draft = new MappingDraft();
+        draft.setTenantId(source.getTenantId());
+        draft.setPartnerId(source.getPartnerId());
+        draft.setEventType(source.getEventType());
+        draft.setName(source.getName());
+        draft.setDescription(source.getDescription());
+        draft.setSourceType(source.getSourceType());
+        draft.setSourceConfig(source.getSourceConfig());
+        draft.setInputSchema(source.getInputSchema());
+        draft.setCanonicalSchemaRef(source.getCanonicalSchemaRef());
+        draft.setTargetSchemaJson(source.getTargetSchemaJson());
+        draft.setMappingRules(source.getMappingRules());
+        draft.setGeneratedJsonata(source.getGeneratedJsonata());
+        draft.setValidationRules(source.getValidationRules());
+        draft.setValidationResult(source.getValidationResult());
+        draft.setLastValidatedAt(source.getLastValidatedAt());
+        return draft;
     }
 
     public record RequestPreviewResponse(Map<String, Object> payload, Map<String, Object> headers) {}

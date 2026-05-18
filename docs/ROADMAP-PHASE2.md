@@ -1,0 +1,153 @@
+# CanonBridge - Phase 2 Roadmap
+
+> Phase 1 tamamlandı: REST API proxy, wizard, observability, versioning, webhook, CI/CD, multi-tenant.
+> Phase 2: Kalan source type'lar, production hardening, ve platform olgunlaştırma.
+
+---
+
+## Phase 9: Kafka Source Type (Wizard Integration)
+
+Transformer service zaten Kafka'dan okuyor. Eksik olan: wizard'dan Kafka mapping oluşturulduğunda transformer'ın bunu kullanması.
+
+- [ ] **9.1** Wizard'da Kafka mapping oluşturulduğunda `source_config`'e topic/consumerGroup kaydet
+- [ ] **9.2** Transformer service: mapping_drafts tablosundan mapping config'i oku (şu an hardcoded)
+- [ ] **9.3** Transformer service: partner registry'yi DB'den yükle (Redis cache ile)
+- [ ] **9.4** Test: Kafka topic'e mesaj gönder → transformer transform etsin → canonical topic'e yazsın
+- [ ] **9.5** Frontend: Kafka mapping test UI (topic'e sample mesaj gönder, canonical output göster)
+
+---
+
+## Phase 10: SOAP Source Type
+
+- [ ] **10.1** Mock SOAP service endpoint'i doğrula (FastCargo WSDL)
+- [ ] **10.2** Backend: SOAP request builder (XML envelope oluşturma)
+- [ ] **10.3** Backend: SOAP response parser (XML → JSON dönüşümü)
+- [ ] **10.4** Proxy endpoint'te SOAP protocol desteği
+- [ ] **10.5** Wizard'da SOAP config (WSDL URL, operation, auth)
+- [ ] **10.6** Test: SOAP proxy uçtan uca
+
+---
+
+## Phase 11: GraphQL Source Type
+
+- [ ] **11.1** Mock GraphQL service endpoint'i doğrula (ProfileHub)
+- [ ] **11.2** Backend: GraphQL query execution (query + variables → response)
+- [ ] **11.3** Proxy endpoint'te GraphQL protocol desteği
+- [ ] **11.4** Wizard'da GraphQL config (query editor, variables)
+- [ ] **11.5** Test: GraphQL proxy uçtan uca
+
+---
+
+## Phase 12: Production Hardening
+
+- [x] **12.1** Rate limiting per tenant (Redis-based sliding window)
+  - Zaten mevcut: RateLimitFilter + RateLimitService
+  - Config: authenticated vs unauthenticated limits
+  - Response: 429 Too Many Requests
+- [x] **12.2** Circuit breaker for external API calls
+  - Failure threshold: 5 consecutive failures → OPEN
+  - Half-open after 30s → test with 1 request
+  - Reset after success
+  - Per-URL circuit (each external API has its own breaker)
+- [x] **12.3** Request timeout configuration per mapping
+  - Default: 5s (source_config.timeoutMs)
+  - Configurable per mapping in source_config
+- [x] **8.3 (Phase 1)** Request size limits (1MB)
+- [ ] **12.4** Graceful shutdown
+  - Drain in-flight requests (30s grace period)
+  - Stop accepting new requests
+  - Complete pending Kafka commits
+- [ ] **12.5** Connection pool tuning
+  - PostgreSQL: min=5, max=20, idle-timeout=5m
+  - Redis: max=10
+  - HTTP client: max-connections=50 per host
+
+---
+
+## Phase 13: DLQ Management UI
+
+- [ ] **13.1** DLQ messages tablosu (transformer'dan gelen failed messages)
+- [ ] **13.2** Frontend: DLQ sayfası (liste, filter, search)
+- [ ] **13.3** DLQ message detay (original payload, error, mapping info)
+- [ ] **13.4** DLQ redrive (tek mesaj veya batch replay)
+- [ ] **13.5** DLQ auto-cleanup (retention policy: 30 gün)
+
+---
+
+## Phase 14: Dashboard & Monitoring UI Improvements
+
+- [ ] **14.1** Dashboard sayfasını gerçek metriklerle doldur
+  - Active mappings count (DB'den)
+  - Total proxy calls today (execution_logs'dan)
+  - Error rate (son 1 saat)
+  - Top 5 most used mappings
+- [ ] **14.2** Monitoring sayfasına Grafana iframe embed
+- [ ] **14.3** Per-mapping health detail sayfası
+  - Execution history chart (success/error over time)
+  - Average latency trend
+  - Last 50 executions table
+- [ ] **14.4** Real-time notifications (WebSocket)
+  - Alert fired → toast notification
+  - Mapping published → notification
+
+---
+
+## Phase 15: Advanced Mapping Features
+
+- [ ] **15.1** Mapping import/export (JSON format)
+- [ ] **15.2** Mapping clone (duplicate existing mapping)
+- [ ] **15.3** Mapping diff (compare two versions)
+- [ ] **15.4** Mapping templates (pre-built common patterns)
+- [ ] **15.5** Bulk operations (publish all, deprecate all)
+
+---
+
+## Phase 16: Security Hardening
+
+- [ ] **16.1** JWT authentication (OIDC integration)
+  - Keycloak/Auth0 integration
+  - Token refresh
+  - Role-based access (admin, editor, viewer)
+- [ ] **16.2** Audit log UI
+  - Who did what, when
+  - Filter by user, action, resource
+- [ ] **16.3** Secret management
+  - Encrypt credentials at rest (AES-256)
+  - Rotate API keys
+  - Mask secrets in logs and UI
+- [ ] **16.4** CORS configuration
+  - Whitelist allowed origins
+  - Preflight caching
+
+---
+
+## Tamamlanan İşler (Phase 1) ✅
+
+- [x] REST API proxy uçtan uca (URL params, auth, JSONata transform)
+- [x] Wizard UI (source type → config → sample → request mapping → target schema → field mapping → test & publish)
+- [x] Field mapping (visual + expression mode, 20+ transforms)
+- [x] Target schema versioning per mapping
+- [x] Execution logging & audit trail
+- [x] Prometheus custom metrics (proxy_requests, duration, errors)
+- [x] Grafana dashboard (Proxy Performance)
+- [x] Alert rules (5 rules: error rate, latency, service down, timeouts, no traffic)
+- [x] Structured logging (JSON + correlationId)
+- [x] Retry mechanism (UI + API)
+- [x] Mapping versioning & publish (draft → immutable version)
+- [x] Webhook source type (auto-register endpoint on publish)
+- [x] CI/CD pipeline (GitHub Actions: build → test → staging → canary → production)
+- [x] Multi-tenant isolation (API key → tenant mapping, filter)
+- [x] PostgreSQL exporter
+- [x] Request size limits (1MB)
+- [x] Health check endpoints
+
+---
+
+## Öncelik Sırası
+
+1. **Phase 9** (Kafka) — Transformer zaten var, sadece wizard integration
+2. **Phase 12** (Production Hardening) — Deploy öncesi şart
+3. **Phase 13** (DLQ UI) — Operasyonel ihtiyaç
+4. **Phase 14** (Dashboard) — Kullanıcı deneyimi
+5. **Phase 10-11** (SOAP/GraphQL) — Ek protocol desteği
+6. **Phase 15-16** (Advanced/Security) — Olgunlaştırma

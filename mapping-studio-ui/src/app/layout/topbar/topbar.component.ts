@@ -8,7 +8,10 @@ import { MenuItem } from 'primeng/api';
 import { SelectModule } from 'primeng/select';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TagModule } from 'primeng/tag';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 import { AuthService } from '../../core/services/auth.service';
+import { RealtimeNotificationService } from '../../core/services/realtime-notification.service';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { I18nService, LangId } from '../../core/i18n/i18n.service';
 import { ThemeService } from '../../core/theme/theme.service';
@@ -26,8 +29,10 @@ import { environment } from '../../../environments/environment';
     SelectModule,
     ToolbarModule,
     TagModule,
+    ToastModule,
     I18nPipe
   ],
+  providers: [MessageService],
   templateUrl: './topbar.component.html',
   styleUrl: './topbar.component.scss'
 })
@@ -38,6 +43,7 @@ export class TopbarComponent {
   readonly auth = inject(AuthService);
   readonly i18n = inject(I18nService);
   readonly theme = inject(ThemeService);
+  private readonly realtimeNotifications = inject(RealtimeNotificationService);
   readonly demoModeEnabled = environment.features.enableDemoMode;
 
   userMenuOpen = false;
@@ -50,6 +56,8 @@ export class TopbarComponent {
   userMenuItems: MenuItem[] = [];
 
   constructor() {
+    this.realtimeNotifications.connect();
+
     effect(() => {
       this.i18n.translations();
       this.userMenuItems = [

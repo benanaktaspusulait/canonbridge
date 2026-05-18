@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
@@ -6,7 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { BadgeModule } from 'primeng/badge';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
-import { MetricsService } from '../../core/services/metrics.service';
+import { MetricsService, TopMappingMetric } from '../../core/services/metrics.service';
 import { MappingService, MappingDraft } from '../../core/services/mapping.service';
 
 interface StatCard {
@@ -31,7 +32,7 @@ interface RecentMapping {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink, CardModule, TagModule, ButtonModule, TableModule, BadgeModule, I18nPipe],
+  imports: [RouterLink, DecimalPipe, CardModule, TagModule, ButtonModule, TableModule, BadgeModule, I18nPipe],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
@@ -42,9 +43,11 @@ export class DashboardComponent implements OnInit {
   readonly loading = signal(false);
   private readonly _stats = signal<StatCard[]>([]);
   private readonly _recentMappings = signal<RecentMapping[]>([]);
+  private readonly _topMappings = signal<TopMappingMetric[]>([]);
   
   readonly stats = this._stats.asReadonly();
   readonly recentMappings = this._recentMappings.asReadonly();
+  readonly topMappings = this._topMappings.asReadonly();
 
   ngOnInit(): void {
     this.loadDashboardData();
@@ -60,6 +63,7 @@ export class DashboardComponent implements OnInit {
           this.loading.set(false);
           return;
         }
+        this._topMappings.set(data.topMappings ?? []);
         this._stats.set([
           {
             labelKey: 'dashboard.stat.msgProcessed.label',
@@ -100,7 +104,7 @@ export class DashboardComponent implements OnInit {
           {
             labelKey: 'dashboard.stat.p99.label',
             changeKey: 'dashboard.stat.p99.change',
-            value: `${data.p99Latency}ms`,
+            value: `${Math.round(data.p99Latency ?? 0)}ms`,
             change: '',
             changeType: 'positive',
             icon: 'pi-bolt',
@@ -109,7 +113,7 @@ export class DashboardComponent implements OnInit {
           {
             labelKey: 'dashboard.stat.partners.label',
             changeKey: 'dashboard.stat.partners.change',
-            value: String(data.activePartners),
+            value: String(data.activePartners ?? 0),
             change: '',
             changeType: 'neutral',
             icon: 'pi-building',
@@ -120,6 +124,7 @@ export class DashboardComponent implements OnInit {
       error: (err) => {
         console.error('Failed to load dashboard stats:', err);
         this._stats.set([]);
+        this._topMappings.set([]);
         this.loading.set(false);
       }
     });
@@ -180,8 +185,8 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  private formatNumber(num: number): string {
-    return num.toLocaleString();
+  private formatNumber(num: number | undefined): string {
+    return Number(num ?? 0).toLocaleString();
   }
 
   getSeverity(status: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {

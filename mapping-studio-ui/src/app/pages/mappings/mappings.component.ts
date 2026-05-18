@@ -1,4 +1,4 @@
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, JsonPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -6,6 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
 import { DrawerModule } from 'primeng/drawer';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
@@ -48,9 +49,11 @@ interface MappingVersion {
     RouterLink,
     FormsModule,
     DecimalPipe,
+    JsonPipe,
     ButtonModule,
     CardModule,
     ConfirmDialogModule,
+    DialogModule,
     DrawerModule,
     EmptyStateComponent,
     IconFieldModule,
@@ -84,8 +87,14 @@ export class MappingsComponent implements OnInit {
   readonly statusFilter = signal<string>('all');
   readonly sourceTypeFilter = signal<string>('all');
   detailVisible = false;
+  templateDialogVisible = false;
   readonly selectedMapping = signal<MappingVersion | null>(null);
   readonly mappingVersions = signal<any[]>([]);
+  readonly selectedMappings = signal<MappingVersion[]>([]);
+  readonly templates = signal<any[]>([]);
+  readonly versionDiff = signal<any | null>(null);
+  readonly executionSeries = signal<any[]>([]);
+  readonly executionLogs = signal<any[]>([]);
 
   readonly statusFilterOptions = [
     { label: 'All statuses', value: 'all' },
@@ -154,6 +163,7 @@ export class MappingsComponent implements OnInit {
         const mappings = Array.isArray(drafts) ? drafts : [];
         const mapped = mappings.map(d => this.draftToViewModel(d));
         this._mappings.set(mapped);
+        this.selectedMappings.set([]);
         
         // Build source type filter options from unique source types
         const uniqueSourceTypes = new Set(mapped.map(m => m.sourceType).filter(Boolean));
@@ -281,7 +291,9 @@ export class MappingsComponent implements OnInit {
   openDetails(mapping: MappingVersion): void {
     this.selectedMapping.set(mapping);
     this.detailVisible = true;
+    this.versionDiff.set(null);
     this.loadMappingVersions(mapping.id);
+    this.loadMappingHealthDetail(mapping.id);
   }
 
   private loadMappingVersions(mappingId: string): void {
@@ -294,6 +306,22 @@ export class MappingsComponent implements OnInit {
         this.mappingVersions.set(filtered);
       },
       error: () => this.mappingVersions.set([])
+    });
+  }
+
+  private loadMappingHealthDetail(mappingId: string): void {
+    this.http.get<any[]>(`/api/proxy/${mappingId}/series`, {
+      headers: { 'X-Tenant-Id': 'tenant-acme' }
+    }).subscribe({
+      next: (series) => this.executionSeries.set(series ?? []),
+      error: () => this.executionSeries.set([])
+    });
+
+    this.http.get<any[]>(`/api/proxy/${mappingId}/logs`, {
+      headers: { 'X-Tenant-Id': 'tenant-acme' }
+    }).subscribe({
+      next: (logs) => this.executionLogs.set((logs ?? []).slice(0, 50)),
+      error: () => this.executionLogs.set([])
     });
   }
 
@@ -310,11 +338,121 @@ export class MappingsComponent implements OnInit {
       acceptLabel: this.t('mappings.deprecate'),
       rejectLabel: this.t('mappings.cancel'),
       accept: () => {
-        this._mappings.update(list => list.map(m => m.id === mapping.id ? { ...m, status: 'deprecated' } : m));
-        this.toast.add({ severity: 'warn', summary: this.t('mappings.toast.deprecated'), detail: mapping.version });
-        const sel = this.selectedMapping();
-        if (sel?.id === mapping.id) this.selectedMapping.set({ ...sel, status: 'deprecated' });
+        this.http.post(`/api/mapping-drafts/bulk/deprecate`, { ids: [mapping.id] }, {
+          headers: { 'X-Tenant-Id': 'tenant-acme' }
+        }).subscribe({
+          next: () => {
+            this._mappings.update(list => list.map(m => m.id === mapping.id ? { ...m, status: 'deprecated' } : m));
+            this.toast.add({ severity: 'warn', summary: this.t('mappings.toast.deprecated'), detail: mapping.version });
+            const sel = this.selectedMapping();
+            if (sel?.id === mapping.id) this.selectedMapping.set({ ...sel, status: 'deprecated' });
+          },
+          error: () => this.toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to deprecate mapping' })
+        });
       }
+    });
+  }
+
+  importMapping(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    file.text().then(content => {
+      const payload = JSON.parse(content);
+      this.http.post(`/api/mapping-drafts/import`, payload, {
+        headers: { 'X-Tenant-Id': 'tenant-acme' }
+      }).subscribe({
+        next: () => {
+          this.toast.add({ severity: 'success', summary: 'Imported', detail: file.name });
+          this.loadMappings();
+        },
+        error: () => this.toast.add({ severity: 'error', summary: 'Import failed', detail: file.name })
+      });
+    }).catch(() => this.toast.add({ severity: 'error', summary: 'Import failed', detail: 'Invalid JSON file' }))
+      .finally(() => input.value = '');
+  }
+
+  exportMapping(mapping: MappingVersion): void {
+    this.http.get<any>(`/api/mapping-drafts/${mapping.id}/export`, {
+      headers: { 'X-Tenant-Id': 'tenant-acme' }
+    }).subscribe({
+      next: (draft) => this.downloadJson(draft, `mapping-${mapping.eventType || mapping.id}.json`),
+      error: () => this.toast.add({ severity: 'error', summary: 'Export failed', detail: mapping.eventType })
+    });
+  }
+
+  cloneMapping(mapping: MappingVersion): void {
+    this.http.post(`/api/mapping-drafts/${mapping.id}/clone`, {}, {
+      headers: { 'X-Tenant-Id': 'tenant-acme' }
+    }).subscribe({
+      next: () => {
+        this.toast.add({ severity: 'success', summary: 'Cloned', detail: mapping.eventType });
+        this.loadMappings();
+      },
+      error: () => this.toast.add({ severity: 'error', summary: 'Clone failed', detail: mapping.eventType })
+    });
+  }
+
+  bulkPublish(): void {
+    const ids = this.selectedMappings().map(m => m.id);
+    if (ids.length === 0) return;
+    this.http.post(`/api/mapping-drafts/bulk/publish`, { ids }, {
+      headers: { 'X-Tenant-Id': 'tenant-acme' }
+    }).subscribe({
+      next: () => {
+        this.toast.add({ severity: 'success', summary: 'Published', detail: `${ids.length} mappings` });
+        this.loadMappings();
+      },
+      error: () => this.toast.add({ severity: 'error', summary: 'Bulk publish failed' })
+    });
+  }
+
+  bulkDeprecate(): void {
+    const ids = this.selectedMappings().map(m => m.id);
+    if (ids.length === 0) return;
+    this.http.post(`/api/mapping-drafts/bulk/deprecate`, { ids }, {
+      headers: { 'X-Tenant-Id': 'tenant-acme' }
+    }).subscribe({
+      next: () => {
+        this.toast.add({ severity: 'warn', summary: 'Deprecated', detail: `${ids.length} mappings` });
+        this.loadMappings();
+      },
+      error: () => this.toast.add({ severity: 'error', summary: 'Bulk deprecate failed' })
+    });
+  }
+
+  loadTemplates(): void {
+    this.http.get<any[]>(`/api/mapping-templates`).subscribe({
+      next: (templates) => {
+        this.templates.set(templates ?? []);
+        this.templateDialogVisible = true;
+      },
+      error: () => this.toast.add({ severity: 'error', summary: 'Templates unavailable' })
+    });
+  }
+
+  createFromTemplate(template: any): void {
+    this.http.post(`/api/mapping-drafts/import`, template.draft, {
+      headers: { 'X-Tenant-Id': 'tenant-acme' }
+    }).subscribe({
+      next: () => {
+        this.templateDialogVisible = false;
+        this.toast.add({ severity: 'success', summary: 'Template created', detail: template.name });
+        this.loadMappings();
+      },
+      error: () => this.toast.add({ severity: 'error', summary: 'Template failed', detail: template.name })
+    });
+  }
+
+  compareLatestVersions(): void {
+    const versions = [...this.mappingVersions()].sort((a, b) => Number(b.version ?? 0) - Number(a.version ?? 0));
+    if (versions.length < 2) return;
+    this.http.get<any>(`/api/mapping-versions/${versions[0].id}/diff/${versions[1].id}`, {
+      headers: { 'X-Tenant-Id': 'tenant-acme' }
+    }).subscribe({
+      next: (diff) => this.versionDiff.set(diff),
+      error: () => this.toast.add({ severity: 'error', summary: 'Diff failed' })
     });
   }
 
@@ -354,6 +492,17 @@ export class MappingsComponent implements OnInit {
     a.click();
     URL.revokeObjectURL(url);
     this.toast.add({ severity: 'info', summary: this.t('mappings.toast.exported'), detail: `${this.filtered().length} rows` });
+  }
+
+  private downloadJson(payload: unknown, filename: string): void {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.toast.add({ severity: 'info', summary: this.t('mappings.toast.exported'), detail: filename });
   }
 
   getSeverity(status: string): 'success' | 'warn' | 'secondary' | 'danger' {

@@ -103,6 +103,32 @@ public class CredentialRepository {
                 .map(rows -> rows.iterator().hasNext() ? toCredential(rows.iterator().next()) : null);
     }
 
+    public Uni<Credential> rotateSecret(UUID credentialId, String tenantId, String encryptedSecret, Instant rotationDueAt, String updatedBy) {
+        String sql = """
+                UPDATE etl_credentials
+                SET encrypted_secret_json = $1,
+                    status = $2,
+                    rotation_due_at = $3,
+                    updated_by = $4,
+                    updated_at = $5
+                WHERE credential_id = $6 AND tenant_id = $7
+                RETURNING credential_id, tenant_id, display_name, auth_type, environment, status,
+                          rotation_due_at, last_used_at, created_by, created_at, updated_by, updated_at
+                """;
+
+        return client.preparedQuery(sql)
+                .execute(Tuples.of(
+                        encryptedSecret,
+                        Credential.CredentialStatus.ACTIVE.name(),
+                        toOffsetDateTime(rotationDueAt),
+                        updatedBy,
+                        OffsetDateTime.now(ZoneOffset.UTC),
+                        credentialId,
+                        tenantId
+                ))
+                .map(rows -> rows.iterator().hasNext() ? toCredential(rows.iterator().next()) : null);
+    }
+
     public Uni<Credential> updateLastUsed(UUID credentialId, String tenantId) {
         String sql = """
                 UPDATE etl_credentials

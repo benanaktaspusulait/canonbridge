@@ -140,4 +140,12 @@ export class MappingService {
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
+
+  clone(id: string): Observable<MappingDraft> {
+    return this.http.post<MappingDraft>(`${this.baseUrl}/${id}/clone`, {});
+  }
+
+  exportMapping(id: string): Observable<MappingDraft> {
+    return this.http.get<MappingDraft>(`${this.baseUrl}/${id}/export`);
+  }
 }

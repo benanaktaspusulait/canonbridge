@@ -1,0 +1,36 @@
+:host ::ng-deep .p-card-body {
+  padding: 1.25rem;
+}
+
+code {
+  font-size: 0.75rem;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+}
+
+pre {
+  max-width: 360px;
+  max-height: 120px;
+  overflow: auto;
+  margin: 0;
+  font-size: 0.75rem;
+  color: #334155;
+  white-space: pre-wrap;
+}
+
+.resource-cell {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.text-sm {
+  font-size: 0.8125rem;
+}
+
+.empty-cell {
+  text-align: center;
+  color: #64748b;
+  padding: 2rem;
+}

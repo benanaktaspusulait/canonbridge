@@ -33,6 +33,43 @@
   <ng-template pTemplate="header">
     <div class="card-header-row">
       <div>
+        <h2 class="card-title">Top mappings</h2>
+        <p class="card-subtitle">Most used mappings in the current operational window</p>
+      </div>
+    </div>
+  </ng-template>
+
+  <p-table [value]="topMappings()" styleClass="p-datatable-sm">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Mapping</th>
+        <th>{{ 'table.eventType' | i18n }}</th>
+        <th style="text-align:right">Calls</th>
+        <th style="text-align:right">Errors</th>
+        <th style="text-align:right">Avg latency</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-m>
+      <tr>
+        <td><strong>{{ m.name || m.mappingId }}</strong></td>
+        <td><code class="event-code">{{ m.eventType }}</code></td>
+        <td style="text-align:right">{{ m.callCount }}</td>
+        <td style="text-align:right">{{ m.errorCount }}</td>
+        <td style="text-align:right">{{ m.avgLatencyMs | number:'1.0-0' }}ms</td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="5" class="text-color-secondary text-sm">No proxy executions yet</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-card>
+
+<p-card styleClass="mt-4">
+  <ng-template pTemplate="header">
+    <div class="card-header-row">
+      <div>
         <h2 class="card-title">{{ 'dashboard.recentTitle' | i18n }}</h2>
         <p class="card-subtitle">{{ 'dashboard.recentSubtitle' | i18n }}</p>
       </div>
