@@ -70,7 +70,10 @@ public class MappingExecutionService {
             String requestPayload,
             HttpHeaders headers) {
 
-        String correlationId = java.util.UUID.randomUUID().toString().substring(0, 8);
+        String headerCorrelationId = headers != null ? headers.getHeaderString("X-Correlation-Id") : null;
+        String correlationId = headerCorrelationId != null && !headerCorrelationId.isBlank()
+            ? headerCorrelationId
+            : java.util.UUID.randomUUID().toString().substring(0, 8);
         long startTime = System.currentTimeMillis();
         LOG.infof("[%s] 📥 Starting mapping execution for: %s", correlationId, mapping.getName());
 
@@ -137,61 +140,67 @@ public class MappingExecutionService {
                         null
                     );
                 })
-                .invoke(result -> {
-                    // Log execution asynchronously
-                    long durationMs = System.currentTimeMillis() - startTime;
-                    var log = new com.canonbridge.mappingstudio.domain.ProxyExecutionLog();
-                    log.setTenantId(mapping.getTenantId());
-                    log.setMappingId(mapping.getId());
-                    log.setCorrelationId(correlationId);
-                    log.setRequestAt(java.time.Instant.ofEpochMilli(startTime));
-                    log.setResponseAt(java.time.Instant.now());
-                    log.setDurationMs((int) durationMs);
-                    log.setStatus(result.success() 
-                        ? com.canonbridge.mappingstudio.domain.ProxyExecutionLog.ExecutionStatus.SUCCESS 
-                        : com.canonbridge.mappingstudio.domain.ProxyExecutionLog.ExecutionStatus.ERROR);
-                    log.setErrorMessage(result.error());
-                    log.setRequestSizeBytes(requestPayload != null ? requestPayload.length() : 0);
-                    log.setRequestPayload(requestPayload);
-                    
-                    if (result.transformedResponse() != null) {
-                        String transformed = result.transformedResponse().toString();
-                        log.setResponseSizeBytes(transformed.length());
-                        log.setTransformedPayload(transformed);
-                    }
-                    if (result.apiResponse() != null) {
-                        log.setResponsePayload(result.apiResponse().toString());
-                    }
-                    
-                    // Parse source config for URL info
-                    try {
-                        var sc = new io.vertx.core.json.JsonObject(mapping.getSourceConfig());
-                        log.setExternalApiUrl(sc.getString("url"));
-                        log.setExternalApiMethod(sc.getString("method", "GET"));
-                    } catch (Exception ignored) {}
-                    
-                    executionLogRepository.create(log).subscribe().with(
-                        saved -> LOG.infof("[%s] 📝 Execution logged: %s %dms", correlationId, log.getStatus(), durationMs),
-                        err -> LOG.warnf("[%s] ⚠️ Failed to save execution log: %s", correlationId, err.getMessage())
-                    );
-                    
-                    // Record Prometheus metrics
-                    String mappingIdStr = mapping.getId() != null ? mapping.getId().toString().substring(0, 8) : "unknown";
-                    metricsService.recordProxyRequest(mappingIdStr, result.success() ? "success" : "error", durationMs);
-                    if (!result.success() && result.error() != null) {
-                        String stage = result.error().contains("Request validation") ? "VALIDATION"
-                            : result.error().contains("External API") ? "API_CALL"
-                            : result.error().contains("Response validation") ? "RESPONSE_VALIDATION"
-                            : "TRANSFORM";
-                        metricsService.recordError(mappingIdStr, stage, "proxy_failure");
-                    }
-                });
+                .invoke(result -> recordExecution(mapping, requestPayload, correlationId, startTime, result, true));
 
         } catch (Exception e) {
             LOG.errorf(e, "❌ Failed to parse request payload");
-            return Uni.createFrom().item(
-                new ExecutionResult(false, null, "Invalid JSON payload: " + e.getMessage(), null, null, null)
-            );
+            var result = new ExecutionResult(false, null, "Invalid JSON payload: " + e.getMessage(), null, null, null);
+            recordExecution(mapping, requestPayload, correlationId, startTime, result, false);
+            return Uni.createFrom().item(result);
+        }
+    }
+
+    private void recordExecution(
+            MappingDraft mapping,
+            String requestPayload,
+            String correlationId,
+            long startTime,
+            ExecutionResult result,
+            boolean storeRequestPayload) {
+        long durationMs = System.currentTimeMillis() - startTime;
+        var log = new com.canonbridge.mappingstudio.domain.ProxyExecutionLog();
+        log.setTenantId(mapping.getTenantId());
+        log.setMappingId(mapping.getId());
+        log.setCorrelationId(correlationId);
+        log.setRequestAt(java.time.Instant.ofEpochMilli(startTime));
+        log.setResponseAt(java.time.Instant.now());
+        log.setDurationMs((int) durationMs);
+        log.setStatus(result.success()
+            ? com.canonbridge.mappingstudio.domain.ProxyExecutionLog.ExecutionStatus.SUCCESS
+            : com.canonbridge.mappingstudio.domain.ProxyExecutionLog.ExecutionStatus.ERROR);
+        log.setErrorMessage(result.error());
+        log.setRequestSizeBytes(requestPayload != null ? requestPayload.length() : 0);
+        log.setRequestPayload(storeRequestPayload ? requestPayload : null);
+
+        if (result.transformedResponse() != null) {
+            String transformed = result.transformedResponse().toString();
+            log.setResponseSizeBytes(transformed.length());
+            log.setTransformedPayload(transformed);
+        }
+        if (result.apiResponse() != null) {
+            log.setResponsePayload(result.apiResponse().toString());
+        }
+
+        try {
+            var sc = new io.vertx.core.json.JsonObject(mapping.getSourceConfig());
+            log.setExternalApiUrl(sc.getString("url"));
+            log.setExternalApiMethod(sc.getString("method", "GET"));
+        } catch (Exception ignored) {}
+
+        executionLogRepository.create(log).subscribe().with(
+            saved -> LOG.infof("[%s] 📝 Execution logged: %s %dms", correlationId, log.getStatus(), durationMs),
+            err -> LOG.warnf("[%s] ⚠️ Failed to save execution log: %s", correlationId, err.getMessage())
+        );
+
+        String mappingIdStr = mapping.getId() != null ? mapping.getId().toString().substring(0, 8) : "unknown";
+        metricsService.recordProxyRequest(mappingIdStr, result.success() ? "success" : "error", durationMs);
+        if (!result.success() && result.error() != null) {
+            String stage = result.error().contains("Request validation") ? "VALIDATION"
+                : result.error().contains("External API") ? "API_CALL"
+                : result.error().contains("Response validation") ? "RESPONSE_VALIDATION"
+                : result.error().contains("Invalid JSON") ? "REQUEST_PARSE"
+                : "TRANSFORM";
+            metricsService.recordError(mappingIdStr, stage, "proxy_failure");
         }
     }
 

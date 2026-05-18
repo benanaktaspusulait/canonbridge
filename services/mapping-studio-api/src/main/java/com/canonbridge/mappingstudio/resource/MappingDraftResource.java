@@ -368,9 +368,6 @@ public class MappingDraftResource {
         if (value == null) {
             return null;
         }
-        LOG.infof("[jsonValueAsString] type=%s, value=%s", value.getClass().getName(), 
-            String.valueOf(value).length() > 100 ? String.valueOf(value).substring(0, 100) + "..." : String.valueOf(value));
-        
         if (value instanceof JsonObject jsonObject) {
             return jsonObject.encode();
         }

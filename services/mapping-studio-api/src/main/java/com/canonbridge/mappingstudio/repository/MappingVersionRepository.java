@@ -153,9 +153,11 @@ public class MappingVersionRepository {
         version.setName(row.getString("name"));
         version.setDescription(row.getString("description"));
         version.setSourceType(MappingDraft.SourceType.valueOf(row.getString("source_type")));
-        version.setConfigJson(row.getString("config_json"));
+        Object configJson = row.getValue("config_json");
+        version.setConfigJson(configJson != null ? configJson.toString() : null);
         version.setJsonataExpression(row.getString("jsonata_expression"));
-        version.setInputSchema(row.getString("input_schema"));
+        Object inputSchema = row.getValue("input_schema");
+        version.setInputSchema(inputSchema != null ? inputSchema.toString() : null);
         version.setCanonicalSchemaRef(row.getString("canonical_schema_ref"));
         version.setStatus(MappingVersion.VersionStatus.valueOf(row.getString("status")));
         

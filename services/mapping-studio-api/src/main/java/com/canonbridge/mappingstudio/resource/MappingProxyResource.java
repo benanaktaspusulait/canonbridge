@@ -137,38 +137,29 @@ public class MappingProxyResource {
                     );
                 }
 
-                // If draft has a published version, use the frozen jsonata from it
-                // but still use draft's source_config for connection details
-                return versionRepository.getNextVersion(tenantId, draft.getPartnerId(), draft.getEventType())
-                    .chain(nextVersion -> {
-                        if (nextVersion > 1) {
-                            LOG.infof("📦 Using published version (v%d exists) for mapping %s", nextVersion - 1, mappingId);
+                // Execute using draft runtime config (auth, URL, templates, transforms).
+                return executionService.executeMapping(draft, requestPayload, headers)
+                    .map(result -> {
+                        if (result.success()) {
+                            LOG.infof("✅ Mapping %s executed successfully", mappingId);
+                            return Response.ok(result.transformedResponse()).build();
+                        } else {
+                            LOG.errorf("❌ Mapping %s execution failed: %s", mappingId, result.error());
+                            int statusCode = determineErrorStatus(result.error());
+                            return Response.status(statusCode)
+                                .entity(new ErrorDetailResponse(
+                                    result.error(), "execution", result.error()
+                                ))
+                                .build();
                         }
-                        
-                        // Execute using draft (has full config including auth, URL, etc.)
-                        return executionService.executeMapping(draft, requestPayload, headers)
-                            .map(result -> {
-                                if (result.success()) {
-                                    LOG.infof("✅ Mapping %s executed successfully", mappingId);
-                                    return Response.ok(result.transformedResponse()).build();
-                                } else {
-                                    LOG.errorf("❌ Mapping %s execution failed: %s", mappingId, result.error());
-                                    int statusCode = determineErrorStatus(result.error());
-                                    return Response.status(statusCode)
-                                        .entity(new ErrorDetailResponse(
-                                            result.error(), "execution", result.error()
-                                        ))
-                                        .build();
-                                }
-                            })
-                            .onFailure().recoverWithItem(throwable -> {
-                                LOG.errorf(throwable, "❌ Unexpected error executing mapping %s", mappingId);
-                                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                                    .entity(new ErrorDetailResponse(
-                                        "Mapping execution failed", "system", throwable.getMessage()
-                                    ))
-                                    .build();
-                            });
+                    })
+                    .onFailure().recoverWithItem(throwable -> {
+                        LOG.errorf(throwable, "❌ Unexpected error executing mapping %s", mappingId);
+                        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                            .entity(new ErrorDetailResponse(
+                                "Mapping execution failed", "system", throwable.getMessage()
+                            ))
+                            .build();
                     });
             });
     }
