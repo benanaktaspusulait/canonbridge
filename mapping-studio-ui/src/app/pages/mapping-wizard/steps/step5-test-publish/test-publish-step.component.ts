@@ -165,7 +165,11 @@ export class TestPublishStepComponent implements OnInit {
       const state = this.wizardState();
       console.log('🌐 Calling generated proxy endpoint...');
       await this.syncDraftBeforeProxyTest(state);
-      await this.runProxyEndpointTest(state, inputJson);
+      if (state.sourceType === 'KAFKA') {
+        await this.runKafkaMappingTest(state, inputJson);
+      } else {
+        await this.runProxyEndpointTest(state, inputJson);
+      }
       
     } catch (error: any) {
       console.error('❌ Test execution failed:', error);
@@ -234,6 +238,29 @@ export class TestPublishStepComponent implements OnInit {
     
     // Reload execution logs after test
     setTimeout(() => this.loadExecutionLogs(), 500);
+  }
+
+  private async runKafkaMappingTest(state: WizardState, inputJson: any): Promise<void> {
+    const mappingId = this.mappingId();
+    if (!mappingId) {
+      throw new Error('Kafka mapping test is not available until the mapping is saved.');
+    }
+
+    const response = await firstValueFrom(this.http.post<any>(`/api/mapping-drafts/${mappingId}/kafka-test`, {
+      payload: inputJson
+    }, {
+      headers: { 'X-Tenant-Id': 'tenant-acme' }
+    }));
+
+    this.testEndpoint.set(String(state.sourceConfig['topic'] ?? response.topic ?? 'Kafka topic'));
+    this.mappedRequestOutput.set(JSON.stringify({
+      topic: response.topic ?? state.sourceConfig['topic'],
+      consumerGroup: response.consumerGroup ?? state.sourceConfig['consumerGroup'],
+      payload: inputJson
+    }, null, 2));
+    this.testOutput.set(JSON.stringify(response.canonical, null, 2));
+    this.testSuccess.set(true);
+    this.testing.set(false);
   }
 
   private resolveTargetUrl(state: WizardState, params: any): string {

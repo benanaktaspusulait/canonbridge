@@ -50,6 +50,9 @@ public class MappingDraftResource {
     @Inject
     NotificationService notificationService;
 
+    @Inject
+    com.canonbridge.mappingstudio.service.MappingExecutionService executionService;
+
     @GET
     @Operation(summary = "List all mapping drafts for tenant")
     public Uni<List<MappingDraft>> list(@HeaderParam("X-Tenant-Id") String tenantId) {
@@ -133,6 +136,42 @@ public class MappingDraftResource {
                                 )).build();
                             });
                 });
+    }
+
+    @POST
+    @Path("/{id}/kafka-test")
+    @Operation(summary = "Test a Kafka mapping sample without requiring a live Kafka broker")
+    public Uni<Response> testKafkaMapping(
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            @PathParam("id") UUID id,
+            JsonObject request) {
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new BadRequestException("X-Tenant-Id header is required");
+        }
+        JsonObject payload = request != null ? request.getJsonObject("payload", request) : new JsonObject();
+
+        return draftRepository.findById(tenantId, id)
+            .chain(draft -> {
+                if (draft == null) {
+                    return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND).build());
+                }
+                if (draft.getSourceType() != MappingDraft.SourceType.KAFKA) {
+                    return Uni.createFrom().item(Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new JsonObject().put("error", "Mapping is not a Kafka source mapping")).build());
+                }
+                return executionService.testSourceMapping(draft, payload.encode())
+                    .map(result -> {
+                        if (!result.success()) {
+                            return Response.status(Response.Status.BAD_REQUEST)
+                                .entity(new JsonObject().put("error", result.error())).build();
+                        }
+                        JsonObject sourceConfig = parseJsonObject(draft.getSourceConfig(), new JsonObject());
+                        return Response.ok(new JsonObject()
+                            .put("topic", sourceConfig.getString("topic"))
+                            .put("consumerGroup", sourceConfig.getString("consumerGroup"))
+                            .put("canonical", parseJsonValue(result.transformedResponse().toString()))).build();
+                    });
+            });
     }
 
     @POST
@@ -553,6 +592,17 @@ public class MappingDraftResource {
             return str;
         }
         return String.valueOf(value);
+    }
+
+    private Object parseJsonValue(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return raw.trim().startsWith("[") ? new JsonArray(raw) : new JsonObject(raw);
+        } catch (Exception e) {
+            return raw;
+        }
     }
 
     private MappingDraft copyDraft(MappingDraft source) {

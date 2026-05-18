@@ -157,6 +157,30 @@ public class MappingExecutionService {
         }
     }
 
+    public Uni<ExecutionResult> testSourceMapping(MappingDraft mapping, String requestPayload) {
+        try {
+            JsonNode requestJson = objectMapper.readTree(requestPayload);
+            String validationError = validateAgainstRules(mapping.getValidationRules(), requestJson, "source mapping test");
+            if (validationError != null) {
+                return Uni.createFrom().item(
+                    new ExecutionResult(false, null, "Request validation failed: " + validationError, requestJson, null, null)
+                );
+            }
+            return applyResponseTransformation(mapping, requestJson)
+                .map(transformed -> new ExecutionResult(true, transformed, null, requestJson, requestJson, transformed))
+                .onFailure().recoverWithItem(error -> new ExecutionResult(
+                    false,
+                    null,
+                    error.getMessage(),
+                    requestJson,
+                    null,
+                    null
+                ));
+        } catch (Exception e) {
+            return Uni.createFrom().item(new ExecutionResult(false, null, "Invalid JSON payload: " + e.getMessage(), null, null, null));
+        }
+    }
+
     private void recordExecution(
             MappingDraft mapping,
             String requestPayload,
@@ -634,6 +658,7 @@ public class MappingExecutionService {
 
     private OutboundConnection.Protocol protocolFromSourceType(MappingDraft mapping) {
         if (mapping.getSourceType() == MappingDraft.SourceType.SOAP) return OutboundConnection.Protocol.SOAP;
+        if (mapping.getSourceType() == MappingDraft.SourceType.GRAPHQL) return OutboundConnection.Protocol.GRAPHQL;
         if (mapping.getSourceType() == MappingDraft.SourceType.GRPC) return OutboundConnection.Protocol.GRPC;
         if (mapping.getSourceType() == MappingDraft.SourceType.API_ENRICHMENT) return OutboundConnection.Protocol.GRAPHQL;
         return OutboundConnection.Protocol.REST;

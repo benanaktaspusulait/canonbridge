@@ -131,6 +131,17 @@
               [placeholder]="'wizard.configuration.kafkaConsumerGroupPlaceholder' | i18n"
               class="w-full" />
           </div>
+
+          <div class="form-field">
+            <label for="kafka-bootstrap">Bootstrap servers</label>
+            <input
+              pInputText
+              id="kafka-bootstrap"
+              [ngModel]="kafkaBootstrapServers()"
+              (ngModelChange)="kafkaBootstrapServers.set($event)"
+              placeholder="kafka:29092"
+              class="w-full" />
+          </div>
         }
 
         @case ('WEBHOOK') {
@@ -229,6 +240,52 @@
             @if (graphqlVariablesError()) {
               <p-message severity="error" [text]="graphqlVariablesError()!" />
             }
+          </div>
+        }
+
+        @case ('SOAP') {
+          <div class="form-field">
+            <label for="soap-wsdl">WSDL URL</label>
+            <input
+              pInputText
+              id="soap-wsdl"
+              [ngModel]="soapWsdlUrl()"
+              (ngModelChange)="soapWsdlUrl.set($event)"
+              placeholder="https://partner.example.com/service?wsdl"
+              class="w-full" />
+          </div>
+
+          <div class="form-field">
+            <label for="soap-operation">Operation *</label>
+            <input
+              pInputText
+              id="soap-operation"
+              [ngModel]="soapOperation()"
+              (ngModelChange)="soapOperation.set($event)"
+              placeholder="TrackShipment"
+              class="w-full" />
+          </div>
+
+          <div class="form-field">
+            <label for="soap-action">SOAPAction</label>
+            <input
+              pInputText
+              id="soap-action"
+              [ngModel]="soapAction()"
+              (ngModelChange)="soapAction.set($event)"
+              placeholder="http://fastcargo.com/tracking/TrackShipment"
+              class="w-full" />
+          </div>
+
+          <div class="form-field">
+            <label for="soap-namespace">Namespace</label>
+            <input
+              pInputText
+              id="soap-namespace"
+              [ngModel]="soapNamespace()"
+              (ngModelChange)="soapNamespace.set($event)"
+              placeholder="http://fastcargo.com/tracking"
+              class="w-full" />
           </div>
         }
 

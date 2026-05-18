@@ -77,6 +77,7 @@ export class ConfigurationStepComponent implements OnInit {
   // Kafka config
   kafkaTopic = signal('');
   kafkaConsumerGroup = signal('');
+  kafkaBootstrapServers = signal('');
 
   // Webhook config
   webhookEndpoint = signal('');
@@ -93,6 +94,12 @@ export class ConfigurationStepComponent implements OnInit {
   graphqlQuery = signal('');
   graphqlVariables = signal('{}');
   graphqlVariablesError = signal<string | null>(null);
+
+  // SOAP config
+  soapWsdlUrl = signal('');
+  soapOperation = signal('');
+  soapAction = signal('');
+  soapNamespace = signal('');
 
   // gRPC config
   grpcService = signal('');
@@ -125,6 +132,9 @@ export class ConfigurationStepComponent implements OnInit {
     if (config['consumerGroup']) {
       this.kafkaConsumerGroup.set(config['consumerGroup'] as string);
     }
+    if (config['bootstrapServers']) {
+      this.kafkaBootstrapServers.set(config['bootstrapServers'] as string);
+    }
     if (config['endpoint']) {
       this.webhookEndpoint.set(config['endpoint'] as string);
     }
@@ -150,6 +160,18 @@ export class ConfigurationStepComponent implements OnInit {
       const variables = config['variables'];
       this.graphqlVariables.set(typeof variables === 'string' ? variables : JSON.stringify(variables, null, 2));
       this.validateGraphqlVariables(this.graphqlVariables());
+    }
+    if (config['wsdlUrl']) {
+      this.soapWsdlUrl.set(config['wsdlUrl'] as string);
+    }
+    if (config['operation']) {
+      this.soapOperation.set(config['operation'] as string);
+    }
+    if (config['soapAction']) {
+      this.soapAction.set(config['soapAction'] as string);
+    }
+    if (config['namespace']) {
+      this.soapNamespace.set(config['namespace'] as string);
     }
     if (config['service']) {
       this.grpcService.set(config['service'] as string);
@@ -630,8 +652,7 @@ export class ConfigurationStepComponent implements OnInit {
     }
     
     if (type === 'SOAP') {
-      // SOAP requires external system selection
-      return this.selectedSystemId() !== null;
+      return this.selectedSystemId() !== null && this.soapOperation().trim() !== '';
     }
 
     if (type === 'GRPC') {
@@ -653,7 +674,8 @@ export class ConfigurationStepComponent implements OnInit {
     if (type === 'KAFKA') {
       config = {
         topic: this.kafkaTopic(),
-        consumerGroup: this.kafkaConsumerGroup()
+        consumerGroup: this.kafkaConsumerGroup(),
+        bootstrapServers: this.kafkaBootstrapServers()
       };
     } else if (type === 'WEBHOOK') {
       config = {
@@ -675,6 +697,14 @@ export class ConfigurationStepComponent implements OnInit {
         method: 'POST',
         query: this.graphqlQuery(),
         variables: this.parseGraphqlVariables()
+      };
+    } else if (type === 'SOAP') {
+      config = {
+        wsdlUrl: this.soapWsdlUrl(),
+        operation: this.soapOperation(),
+        soapAction: this.soapAction(),
+        namespace: this.soapNamespace(),
+        method: 'POST'
       };
     } else if (type === 'GRPC') {
       config = {

@@ -227,34 +227,88 @@ public class OutboundHttpService {
             return payload.encode();
         }
 
+        String explicitEnvelope = payload.getString("soapEnvelope");
+        if (explicitEnvelope != null && !explicitEnvelope.isBlank()) {
+            return explicitEnvelope;
+        }
+
         String operation = payload.getString("operation", connection.url() != null && connection.url().contains("/create")
                 ? "CreateShipment"
                 : "TrackShipment");
+        String namespace = payload.getString("namespace", "http://fastcargo.com/tracking");
+        JsonObject body = payload.getJsonObject("body", payload);
+
         if ("CreateShipment".equalsIgnoreCase(operation)) {
-            String reference = payload.getString("reference", "REF-DEMO-001");
+            String reference = body.getString("reference", "REF-DEMO-001");
             return """
                     <?xml version="1.0" encoding="UTF-8"?>
-                    <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:fc="http://fastcargo.com/tracking">
+                    <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:fc="%s">
                         <soap:Body>
                             <fc:CreateShipmentRequest>
                                 <fc:reference>%s</fc:reference>
                             </fc:CreateShipmentRequest>
                         </soap:Body>
                     </soap:Envelope>
-                    """.formatted(escapeXml(reference));
+                    """.formatted(escapeXml(namespace), escapeXml(reference));
         }
 
-        String trackingNumber = payload.getString("trackingNumber", "TRK-DEMO-001");
+        String trackingNumber = body.getString("trackingNumber", "TRK-DEMO-001");
+        if ("TrackShipment".equalsIgnoreCase(operation)) {
+            return """
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:fc="%s">
+                        <soap:Body>
+                            <fc:TrackShipmentRequest>
+                                <fc:trackingNumber>%s</fc:trackingNumber>
+                            </fc:TrackShipmentRequest>
+                        </soap:Body>
+                    </soap:Envelope>
+                    """.formatted(escapeXml(namespace), escapeXml(trackingNumber));
+        }
+
         return """
                 <?xml version="1.0" encoding="UTF-8"?>
-                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:fc="http://fastcargo.com/tracking">
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:fc="%s">
                     <soap:Body>
-                        <fc:TrackShipmentRequest>
-                            <fc:trackingNumber>%s</fc:trackingNumber>
-                        </fc:TrackShipmentRequest>
+                        <fc:%sRequest>
+                            %s
+                        </fc:%sRequest>
                     </soap:Body>
                 </soap:Envelope>
-                """.formatted(escapeXml(trackingNumber));
+                """.formatted(
+                    escapeXml(namespace),
+                    escapeXml(operation),
+                    soapFields(body),
+                    escapeXml(operation)
+                );
+    }
+
+    private String soapFields(JsonObject body) {
+        StringBuilder fields = new StringBuilder();
+        for (String field : body.fieldNames()) {
+            Object value = body.getValue(field);
+            if (value == null || "operation".equals(field) || "namespace".equals(field) || "soapEnvelope".equals(field)) {
+                continue;
+            }
+            fields.append("<fc:")
+                    .append(escapeXml(field))
+                    .append(">")
+                    .append(escapeXml(soapFieldValue(value)))
+                    .append("</fc:")
+                    .append(escapeXml(field))
+                    .append(">\n");
+        }
+        return fields.toString();
+    }
+
+    private String soapFieldValue(Object value) {
+        if (value instanceof JsonObject jsonObject) {
+            return jsonObject.encode();
+        }
+        if (value instanceof io.vertx.core.json.JsonArray jsonArray) {
+            return jsonArray.encode();
+        }
+        return String.valueOf(value);
     }
 
     private String escapeXml(String value) {

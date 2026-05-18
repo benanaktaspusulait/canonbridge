@@ -6,8 +6,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export interface Env {
   mappingsRoot: string;
   port: number;
-  mappingDatabaseUrl: string | undefined;
-  mappingDatabaseTenantId: string | undefined;
+  mappingDatabaseUrl?: string;
+  mappingDatabaseTenantId?: string;
   // HTTP auth
   apiKey: string | undefined;
   corsOrigins: string[];
