@@ -86,12 +86,11 @@ public class RequestValidationService {
                     try {
                         if (!Pattern.matches(pattern, strVal)) {
                             errors.add(new FieldError(field, "PATTERN",
-                                String.format("Field '%s' value '%s' does not match the required pattern: %s", 
-                                    field, strVal, pattern)));
+                                String.format("Field '%s' does not match the required format pattern.", field)));
                         }
                     } catch (PatternSyntaxException e) {
                         errors.add(new FieldError(field, "PATTERN",
-                            String.format("Field '%s' has an invalid regex pattern: %s", field, e.getMessage())));
+                            String.format("Field '%s' has a misconfigured format rule. Contact your administrator.", field)));
                     }
                 }
                 if (enumValues != null && !enumValues.isEmpty()) {

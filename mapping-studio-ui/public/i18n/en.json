@@ -839,7 +839,21 @@
         "minLength": "{{path}} must be at least {{min}} characters.",
         "maxLength": "{{path}} must be at most {{max}} characters.",
         "regex": "{{path}} does not match the expected text pattern.",
-        "regexInvalid": "The pattern for {{path}} is not valid."
+        "regexInvalid": "The pattern for {{path}} is not valid.",
+        "requiredExcluded": "\"{{field}}\" is marked as required but excluded from the request.",
+        "jsonataRequired": "A JSONata expression is required.",
+        "templateInvalid": "The request template contains invalid JSON.",
+        "headersInvalid": "The headers template contains invalid JSON.",
+        "systemError": "Validation could not be completed. Please try again or check your connection."
+      },
+      "tooltip": {
+        "requiredExcluded": "Required fields are excluded from the request: {{fields}}",
+        "validationErrors": "{{count}} validation issue(s) must be resolved before proceeding.",
+        "validateFirst": "Run the validation check before proceeding to the next step.",
+        "templateError": "Fix the template JSON error before proceeding.",
+        "jsonataError": "Fix the JSONata expression error before proceeding.",
+        "headersError": "Fix the headers JSON error before proceeding.",
+        "fixErrors": "Resolve all validation errors before continuing."
       }
     },
     "canonicalTitle": "Canonical schema",

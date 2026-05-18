@@ -10,6 +10,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { TooltipModule } from 'primeng/tooltip';
 import { TagModule } from 'primeng/tag';
 import { I18nPipe } from '../../../../core/i18n/i18n.pipe';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { RequestTransformationConfig } from '../../models/mapping-wizard.models';
 import { MappingService, FieldValidationRule, ValidationError } from '../../../../core/services/mapping.service';
 
@@ -67,6 +68,7 @@ export class RequestMappingStepComponent implements OnInit {
   backClicked = output<void>();
 
   private mappingService = inject(MappingService);
+  private i18n = inject(I18nService);
 
   useVisualMode = signal(true);
   fieldMappings = signal<FieldMapping[]>([]);
@@ -118,7 +120,7 @@ export class RequestMappingStepComponent implements OnInit {
     ...this.requiredFieldErrors().map(f => ({
       field: f,
       type: 'REQUIRED',
-      message: `Field "${f}" is required but excluded from the request`
+      message: this.i18n.translate('studio.sourceValidation.error.requiredExcluded', { field: f })
     })),
     ...this.fieldConstraintErrors().map(e => ({
       field: e.field,
@@ -272,38 +274,37 @@ export class RequestMappingStepComponent implements OnInit {
     const v = mapping.sourceValue;
     const r = mapping.validationRules;
 
-    // Validate required fields
     if (mapping.required && (v === null || v === undefined || v === '')) {
-      return 'This field is required';
+      return this.i18n.translate('studio.sourceValidation.error.required', { path: mapping.sourcePath });
     }
 
     if (mapping.fieldType === 'number' && typeof v === 'number') {
       if (r.minValue !== null && r.minValue !== undefined && v < r.minValue) {
-        return `Value ${v} is below minimum ${r.minValue}`;
+        return this.i18n.translate('studio.sourceValidation.error.min', { path: mapping.sourcePath, min: r.minValue });
       }
       if (r.maxValue !== null && r.maxValue !== undefined && v > r.maxValue) {
-        return `Value ${v} exceeds maximum ${r.maxValue}`;
+        return this.i18n.translate('studio.sourceValidation.error.max', { path: mapping.sourcePath, max: r.maxValue });
       }
     }
 
     if (mapping.fieldType === 'string' && typeof v === 'string') {
       if (r.minLength !== null && r.minLength !== undefined && v.length < r.minLength) {
-        return `Length ${v.length} is below minimum ${r.minLength}`;
+        return this.i18n.translate('studio.sourceValidation.error.minLength', { path: mapping.sourcePath, min: r.minLength });
       }
       if (r.maxLength !== null && r.maxLength !== undefined && v.length > r.maxLength) {
-        return `Length ${v.length} exceeds maximum ${r.maxLength}`;
+        return this.i18n.translate('studio.sourceValidation.error.maxLength', { path: mapping.sourcePath, max: r.maxLength });
       }
       if (r.pattern) {
         try {
           if (!new RegExp(r.pattern).test(v)) {
-            return `Value doesn't match pattern: ${r.pattern}`;
+            return this.i18n.translate('studio.sourceValidation.error.regex', { path: mapping.sourcePath });
           }
         } catch {
-          return `Invalid regex pattern: ${r.pattern}`;
+          return this.i18n.translate('studio.sourceValidation.error.regexInvalid', { path: mapping.sourcePath });
         }
       }
       if (r.enumValues && r.enumValues.length > 0 && !r.enumValues.includes(v)) {
-        return `Value must be one of: ${r.enumValues.join(', ')}`;
+        return this.i18n.translate('studio.sourceValidation.error.enum', { path: mapping.sourcePath, values: r.enumValues.join(', ') });
       }
     }
 
@@ -524,11 +525,10 @@ export class RequestMappingStepComponent implements OnInit {
         this.backendValidating.set(false);
         this.backendValidationDone.set(true);
         
-        // Add a generic error to show something went wrong
         this.backendValidationErrors.set([{
           field: '_system',
           type: 'ERROR',
-          message: 'Failed to validate request. Please try again or check your connection.'
+          message: this.i18n.translate('studio.sourceValidation.error.systemError')
         }]);
       }
     });
@@ -586,7 +586,7 @@ export class RequestMappingStepComponent implements OnInit {
   onJsonataChange(value: string): void {
     this.jsonataExpression.set(value);
     if (this.mode() === 'jsonata' && !value.trim()) {
-      this.jsonataError.set('JSONata expression is required');
+      this.jsonataError.set(this.i18n.translate('studio.sourceValidation.error.jsonataRequired'));
     } else {
       this.jsonataError.set(null);
     }
@@ -608,9 +608,9 @@ export class RequestMappingStepComponent implements OnInit {
       JSON.parse(value);
       if (field === 'template') this.templateError.set(null);
       if (field === 'headers') this.headersError.set(null);
-    } catch (e: any) {
-      if (field === 'template') this.templateError.set(e.message);
-      if (field === 'headers') this.headersError.set(e.message);
+    } catch {
+      if (field === 'template') this.templateError.set(this.i18n.translate('studio.sourceValidation.error.templateInvalid'));
+      if (field === 'headers') this.headersError.set(this.i18n.translate('studio.sourceValidation.error.headersInvalid'));
     }
   }
 
@@ -813,28 +813,28 @@ export class RequestMappingStepComponent implements OnInit {
     }
 
     if (this.requiredFieldErrors().length > 0) {
-      return `Required fields are excluded: ${this.requiredFieldErrors().join(', ')}`;
+      return this.i18n.translate('studio.sourceValidation.tooltip.requiredExcluded', { fields: this.requiredFieldErrors().join(', ') });
     }
 
     if (this.backendValidationErrors().length > 0) {
-      return `Validation errors found: ${this.backendValidationErrors().length} issue(s)`;
+      return this.i18n.translate('studio.sourceValidation.tooltip.validationErrors', { count: this.backendValidationErrors().length });
     }
 
     if (this.useVisualMode() && !this.backendValidationDone() && this.fieldMappings().some(m => m.included)) {
-      return 'Please validate the request payload before proceeding';
+      return this.i18n.translate('studio.sourceValidation.tooltip.validateFirst');
     }
 
     if (!this.isValid()) {
       if (this.mode() === 'template' && this.templateError()) {
-        return `Template JSON error: ${this.templateError()}`;
+        return this.i18n.translate('studio.sourceValidation.tooltip.templateError');
       }
       if (this.mode() === 'jsonata' && this.jsonataError()) {
-        return `JSONata error: ${this.jsonataError()}`;
+        return this.i18n.translate('studio.sourceValidation.tooltip.jsonataError');
       }
       if (this.headersError()) {
-        return `Headers JSON error: ${this.headersError()}`;
+        return this.i18n.translate('studio.sourceValidation.tooltip.headersError');
       }
-      return 'Please fix validation errors before proceeding';
+      return this.i18n.translate('studio.sourceValidation.tooltip.fixErrors');
     }
 
     return '';

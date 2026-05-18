@@ -839,7 +839,21 @@
         "minLength": "{{path}} en az {{min}} karakter olmalı.",
         "maxLength": "{{path}} en çok {{max}} karakter olmalı.",
         "regex": "{{path}} beklenen metin desenine uymuyor.",
-        "regexInvalid": "{{path}} için girilen desen geçerli değil."
+        "regexInvalid": "{{path}} için girilen desen geçerli değil.",
+        "requiredExcluded": "\"{{field}}\" zorunlu alan olarak işaretlenmiş ancak istekten çıkarılmış.",
+        "jsonataRequired": "JSONata ifadesi girilmesi zorunludur.",
+        "templateInvalid": "İstek şablonu geçersiz JSON içeriyor.",
+        "headersInvalid": "Başlık şablonu geçersiz JSON içeriyor.",
+        "systemError": "Doğrulama tamamlanamadı. Lütfen tekrar deneyin veya bağlantınızı kontrol edin."
+      },
+      "tooltip": {
+        "requiredExcluded": "Zorunlu alanlar istekten çıkarıldı: {{fields}}",
+        "validationErrors": "Devam etmeden önce {{count}} doğrulama hatası giderilmeli.",
+        "validateFirst": "Sonraki adıma geçmeden önce doğrulama kontrolünü çalıştırın.",
+        "templateError": "Devam etmeden önce şablon JSON hatasını düzeltin.",
+        "jsonataError": "Devam etmeden önce JSONata ifadesi hatasını düzeltin.",
+        "headersError": "Devam etmeden önce başlık JSON hatasını düzeltin.",
+        "fixErrors": "Devam etmeden önce tüm doğrulama hatalarını giderin."
       }
     },
     "canonicalTitle": "Kanonik şema",

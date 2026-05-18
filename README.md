@@ -10,7 +10,7 @@
 > - **Infrastructure**: Docker Compose, Kubernetes manifests, CI/CD pipelines ready
 > - **Production Ready**: 2-3 weeks (pending auth integration, outbox consumer, and integration tests)
 >
-> See [PROGRESS_REPORT.md](eksikler/PROGRESS_REPORT.md) for detailed status and [FINAL_PROGRESS_REPORT.md](eksikler/FINAL_PROGRESS_REPORT.md) for latest updates.
+> See [10_SYSTEM_SUPPORT_AUDIT.md](docs/project/10_SYSTEM_SUPPORT_AUDIT.md) for the latest 10-system support audit and remaining gaps.
 
 CanonBridge eliminates the engineering bottleneck of multi-partner integrations. Instead of writing custom adapter code for every new partner, business users define field mappings visually and publish in minutes. The platform handles transformation, validation, ordering, retry, and observability automatically.
 
@@ -245,7 +245,7 @@ Full rationale with tradeoffs: [docs/adr/](./docs/adr/)
 **Code Status**: Core services implemented and tested<br>
 **Documentation**: Comprehensive architecture and implementation docs
 
-> 📋 **See [PROGRESS_REPORT.md](eksikler/PROGRESS_REPORT.md) and [FINAL_PROGRESS_REPORT.md](eksikler/FINAL_PROGRESS_REPORT.md) for detailed status**
+> 📋 **See [10_SYSTEM_SUPPORT_AUDIT.md](docs/project/10_SYSTEM_SUPPORT_AUDIT.md) for the latest support audit and remaining gaps**
 
 | Component | Status | Notes |
 |-----------|--------|-------|
@@ -269,7 +269,7 @@ Full rationale with tradeoffs: [docs/adr/](./docs/adr/)
 4. ⏳ Add integration tests with Testcontainers
 5. ⏳ Security hardening (move secrets to .env, add interceptors)
 
-See [canonbridge-analiz-raporu.md](eksikler/canonbridge-analiz-raporu.md) for detailed technical analysis.
+See [10_SYSTEM_SUPPORT_AUDIT.md](docs/project/10_SYSTEM_SUPPORT_AUDIT.md) for the latest technical audit.
 
 ---
 
@@ -287,14 +287,14 @@ See [canonbridge-analiz-raporu.md](eksikler/canonbridge-analiz-raporu.md) for de
 | **Everyone** | [Master Roadmap](./docs/project/MASTER_ROADMAP.md) · [Documentation Hub](./docs/README.md) |
 
 **Core Documents**:
-- [Project Status](./docs/project/PROJECT_STATUS.md) - Current status and next steps
+- [10 System Support Audit](./docs/project/10_SYSTEM_SUPPORT_AUDIT.md) - Current support gaps and next steps
 - [Master Roadmap](./docs/project/MASTER_ROADMAP.md) - Official project plan
 - [Project Summary](./docs/project/PROJECT_SUMMARY.md) - Quick overview
 - [Brand Identity](./docs/project/BRAND_IDENTITY.md) - Name, vision, messaging
 - [MVP Definition](./docs/project/MVP_DEFINITION.md) - What we build first
 - [Strategy](./docs/project/STRATEGY.md) - Validation and go-to-market
 - [Performance Targets](./docs/project/PERFORMANCE_TARGETS.md) - Performance goals
-- [Documentation Fixes](./docs/project/DOCUMENTATION_FIXES_COMPLETE.md) - Recent improvements
+- [Customer Discovery Kit](./docs/project/CUSTOMER_DISCOVERY_KIT.md) - Validation interview kit
 
 ---
 

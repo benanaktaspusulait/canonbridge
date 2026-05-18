@@ -26,7 +26,7 @@ public class SourcePayloadValidator {
                     : objectMapper.readTree(inputSchema);
             return validate(schema, payload);
         } catch (Exception e) {
-            return new ValidationResult(false, List.of("Payload or schema is not valid JSON: " + e.getMessage()));
+            return new ValidationResult(false, List.of("The payload or schema contains invalid JSON. Verify that both are well-formed JSON documents."));
         }
     }
 
@@ -51,8 +51,11 @@ public class SourcePayloadValidator {
             Iterator<String> names = properties.fieldNames();
             while (names.hasNext()) {
                 String name = names.next();
-                if (payload.has(name) && !matchesType(properties.get(name), payload.get(name))) {
-                    errors.add("Field " + name + " does not match schema type " + properties.get(name).get("type").asText());
+                JsonNode propSchema = properties.get(name);
+                if (payload.has(name) && propSchema != null && !matchesType(propSchema, payload.get(name))) {
+                    JsonNode typeNode = propSchema.get("type");
+                    String expectedType = (typeNode != null && typeNode.isTextual()) ? typeNode.asText() : "unknown";
+                    errors.add(String.format("Field '%s' does not match the expected schema type '%s'.", name, expectedType));
                 }
             }
         }

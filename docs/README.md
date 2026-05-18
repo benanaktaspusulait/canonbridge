@@ -79,7 +79,7 @@ This is the central hub for all CanonBridge documentation. Whether you're a busi
 - [MVP Definition](./project/MVP_DEFINITION.md) - What we build first
 - [Strategy](./project/STRATEGY.md) - Validation and go-to-market
 - [Performance Targets](./project/PERFORMANCE_TARGETS.md) - Performance goals
-- [Documentation Fixes](./project/DOCUMENTATION_FIXES_COMPLETE.md) - Recent improvements
+- [10 System Support Audit](./project/10_SYSTEM_SUPPORT_AUDIT.md) - Current implementation gaps
 
 ### Product
 
