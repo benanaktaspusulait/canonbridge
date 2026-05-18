@@ -32,7 +32,7 @@ import { environment } from '../../../environments/environment';
     ToastModule,
     I18nPipe
   ],
-  providers: [MessageService],
+  providers: [],
   templateUrl: './topbar.component.html',
   styleUrl: './topbar.component.scss'
 })
