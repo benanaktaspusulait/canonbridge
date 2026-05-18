@@ -29,7 +29,7 @@ CREATE INDEX idx_mapping_drafts_status ON mapping_drafts(tenant_id, status);
 CREATE INDEX idx_mapping_drafts_updated_at ON mapping_drafts(updated_at DESC);
 
 COMMENT ON TABLE mapping_drafts IS 'Work-in-progress mapping configurations before publish';
-COMMENT ON COLUMN mapping_drafts.source_type IS 'KAFKA, WEBHOOK, REST_API, SCHEDULED_API, SOAP, FILE_BATCH, API_ENRICHMENT, MANUAL';
+COMMENT ON COLUMN mapping_drafts.source_type IS 'KAFKA, WEBHOOK, REST_API, SCHEDULED_API, GRAPHQL, SOAP, FILE_BATCH, API_ENRICHMENT, MANUAL';
 COMMENT ON COLUMN mapping_drafts.source_config IS 'Source-specific configuration (topic name, webhook URL, etc.)';
 COMMENT ON COLUMN mapping_drafts.input_schema IS 'JSON Schema for source validation';
 COMMENT ON COLUMN mapping_drafts.canonical_schema_ref IS 'Reference to canonical schema';

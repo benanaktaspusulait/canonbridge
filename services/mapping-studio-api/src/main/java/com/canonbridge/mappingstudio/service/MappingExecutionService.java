@@ -411,7 +411,7 @@ public class MappingExecutionService {
             if (query == null || query.isBlank()) {
                 return payload;
             }
-            JsonObject variables = sourceConfig.getJsonObject("variables", new JsonObject()).copy();
+            JsonObject variables = jsonObjectValue(sourceConfig.getValue("variables")).copy();
             variables.mergeIn(toJsonObject(originalRequest), true);
             JsonObject graphql = new JsonObject()
                 .put("query", query)
@@ -541,6 +541,20 @@ public class MappingExecutionService {
             LOG.error("Failed to parse source config", e);
             return new JsonObject();
         }
+    }
+
+    private JsonObject jsonObjectValue(Object value) {
+        if (value instanceof JsonObject jsonObject) {
+            return jsonObject;
+        }
+        if (value instanceof String stringValue && !stringValue.isBlank()) {
+            try {
+                return new JsonObject(stringValue);
+            } catch (Exception ignored) {
+                return new JsonObject();
+            }
+        }
+        return new JsonObject();
     }
 
     private Uni<OutboundConnection> resolveOutboundConnection(MappingDraft mapping, JsonObject sourceConfig) {

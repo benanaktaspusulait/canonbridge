@@ -9,32 +9,32 @@
 
 Transformer service zaten Kafka'dan okuyor. Eksik olan: wizard'dan Kafka mapping oluşturulduğunda transformer'ın bunu kullanması.
 
-- [ ] **9.1** Wizard'da Kafka mapping oluşturulduğunda `source_config`'e topic/consumerGroup kaydet
-- [ ] **9.2** Transformer service: mapping_drafts tablosundan mapping config'i oku (şu an hardcoded)
-- [ ] **9.3** Transformer service: partner registry'yi DB'den yükle (Redis cache ile)
-- [ ] **9.4** Test: Kafka topic'e mesaj gönder → transformer transform etsin → canonical topic'e yazsın
-- [ ] **9.5** Frontend: Kafka mapping test UI (topic'e sample mesaj gönder, canonical output göster)
+- [x] **9.1** Wizard'da Kafka mapping oluşturulduğunda `source_config`'e topic/consumerGroup kaydet
+- [x] **9.2** Transformer service: mapping_drafts tablosundan mapping config'i oku
+- [x] **9.3** Transformer service: partner registry'yi DB'den yükle (Redis cache ile)
+- [x] **9.4** Test: Kafka topic/sample → transformer mapping → canonical output
+- [x] **9.5** Frontend: Kafka mapping test UI (topic/sample ve canonical output)
 
 ---
 
 ## Phase 10: SOAP Source Type
 
-- [ ] **10.1** Mock SOAP service endpoint'i doğrula (FastCargo WSDL)
-- [ ] **10.2** Backend: SOAP request builder (XML envelope oluşturma)
-- [ ] **10.3** Backend: SOAP response parser (XML → JSON dönüşümü)
-- [ ] **10.4** Proxy endpoint'te SOAP protocol desteği
-- [ ] **10.5** Wizard'da SOAP config (WSDL URL, operation, auth)
-- [ ] **10.6** Test: SOAP proxy uçtan uca
+- [x] **10.1** Mock SOAP service endpoint'i doğrula (FastCargo WSDL)
+- [x] **10.2** Backend: SOAP request builder (XML envelope oluşturma)
+- [x] **10.3** Backend: SOAP response parser (XML → JSON dönüşümü)
+- [x] **10.4** Proxy endpoint'te SOAP protocol desteği
+- [x] **10.5** Wizard'da SOAP config (WSDL URL, operation, auth)
+- [x] **10.6** Test: SOAP proxy uçtan uca
 
 ---
 
 ## Phase 11: GraphQL Source Type
 
-- [ ] **11.1** Mock GraphQL service endpoint'i doğrula (ProfileHub)
-- [ ] **11.2** Backend: GraphQL query execution (query + variables → response)
-- [ ] **11.3** Proxy endpoint'te GraphQL protocol desteği
-- [ ] **11.4** Wizard'da GraphQL config (query editor, variables)
-- [ ] **11.5** Test: GraphQL proxy uçtan uca
+- [x] **11.1** Mock GraphQL service endpoint'i doğrula (ProfileHub)
+- [x] **11.2** Backend: GraphQL query execution (query + variables → response)
+- [x] **11.3** Proxy endpoint'te GraphQL protocol desteği
+- [x] **11.4** Wizard'da GraphQL config (query editor, variables)
+- [x] **11.5** Test: GraphQL proxy uçtan uca
 
 ---
 
@@ -53,11 +53,11 @@ Transformer service zaten Kafka'dan okuyor. Eksik olan: wizard'dan Kafka mapping
   - Default: 5s (source_config.timeoutMs)
   - Configurable per mapping in source_config
 - [x] **8.3 (Phase 1)** Request size limits (1MB)
-- [ ] **12.4** Graceful shutdown
+- [x] **12.4** Graceful shutdown
   - Drain in-flight requests (30s grace period)
   - Stop accepting new requests
   - Complete pending Kafka commits
-- [ ] **12.5** Connection pool tuning
+- [x] **12.5** Connection pool tuning
   - PostgreSQL: min=5, max=20, idle-timeout=5m
   - Redis: max=10
   - HTTP client: max-connections=50 per host
