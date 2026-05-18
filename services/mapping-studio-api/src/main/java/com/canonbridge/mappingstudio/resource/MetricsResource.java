@@ -75,7 +75,7 @@ public class MetricsResource {
             metrics.put("timestamp", System.currentTimeMillis());
             metrics.put("prometheusUrl", "http://localhost:9090");
             metrics.put("grafanaUrl", "http://localhost:3000");
-            metrics.put("grafanaDashboardUrl", "http://localhost:3000/d/proxy-performance/proxy-performance?orgId=1&kiosk");
+            metrics.put("grafanaDashboardUrl", "http://localhost:3000/d/proxy-performance/canonbridge-proxy-performance?orgId=1&kiosk");
             return metrics;
         });
     }

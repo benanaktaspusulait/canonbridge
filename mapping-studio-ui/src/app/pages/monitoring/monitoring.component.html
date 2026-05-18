@@ -74,7 +74,7 @@
           (onClick)="openGrafana()" />
       </div>
     </ng-template>
-    <iframe class="grafana-frame" [src]="grafanaDashboardUrl()" title="Grafana dashboard"></iframe>
+    <iframe class="grafana-frame" [src]="safeGrafanaUrl()" title="Grafana dashboard"></iframe>
   </p-card>
 }
 

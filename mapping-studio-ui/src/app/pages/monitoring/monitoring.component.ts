@@ -1,4 +1,5 @@
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal, computed } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -39,6 +40,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
   private readonly toast = inject(MessageService);
   private readonly i18n = inject(I18nService);
   private readonly metricsService = inject(MetricsService);
+  private readonly sanitizer = inject(DomSanitizer);
   private refreshTimer: ReturnType<typeof setInterval> | null = null;
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -55,7 +57,12 @@ export class MonitoringComponent implements OnInit, OnDestroy {
 
   readonly metrics      = signal<MetricCard[]>([]);
   readonly partnerHealth = signal<PartnerHealth[]>([]);
-  readonly grafanaDashboardUrl = signal('');
+  private readonly _grafanaDashboardUrl = signal('');
+  readonly grafanaDashboardUrl = computed(() => this._grafanaDashboardUrl());
+  readonly safeGrafanaUrl = computed<SafeResourceUrl | null>(() => {
+    const url = this._grafanaDashboardUrl();
+    return url ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : null;
+  });
   readonly loading = signal(false);
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -76,7 +83,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
           return;
         }
         const sys = data.system;
-        this.grafanaDashboardUrl.set(data.grafanaDashboardUrl ?? data.grafanaUrl ?? '');
+        this._grafanaDashboardUrl.set(data.grafanaDashboardUrl ?? data.grafanaUrl ?? '');
         this.metrics.set([
           { labelKey: 'monitoring.metric.throughput.label', sloKey: 'monitoring.metric.throughput.slo', value: String(sys.throughput), unit: 'msg/sec', ok: true,  icon: 'pi-send',              color: '#dbeafe' },
           { labelKey: 'monitoring.metric.p99.label',        sloKey: 'monitoring.metric.p99.slo',        value: String(sys.p99Latency),   unit: 'ms',      ok: sys.p99Latency < 200,  icon: 'pi-bolt',              color: '#dcfce7' },
