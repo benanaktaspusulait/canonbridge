@@ -90,6 +90,18 @@ public class ProxyExecutionLogResource {
             );
     }
 
+    @GET
+    @Path("/{mappingId}/series")
+    @Operation(summary = "Get execution time series for a mapping")
+    public Uni<List<java.util.Map<String, Object>>> getSeries(
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            @PathParam("mappingId") UUID mappingId) {
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new BadRequestException("X-Tenant-Id header is required");
+        }
+        return logRepository.executionSeries(tenantId, mappingId);
+    }
+
     @POST
     @Path("/{mappingId}/retry/{logId}")
     @Operation(summary = "Retry a failed proxy execution")

@@ -12,7 +12,9 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -82,6 +84,128 @@ public class ProxyExecutionLogRepository {
             "SELECT COUNT(*) as cnt FROM proxy_execution_logs WHERE tenant_id = $1 AND mapping_id = $2 AND status = $3"
         ).execute(Tuple.of(tenantId, mappingId, status))
         .map(rowSet -> rowSet.iterator().next().getLong("cnt"));
+    }
+
+    public Uni<Map<String, Object>> dashboardStats(String tenantId) {
+        String sql = """
+            SELECT
+              COUNT(*) FILTER (WHERE request_at >= date_trunc('day', NOW())) AS total_today,
+              COUNT(*) FILTER (WHERE request_at >= NOW() - INTERVAL '1 hour') AS total_1h,
+              COUNT(*) FILTER (WHERE request_at >= NOW() - INTERVAL '1 hour' AND status IN ('ERROR', 'TIMEOUT')) AS errors_1h,
+              COALESCE(ROUND(AVG(duration_ms) FILTER (WHERE request_at >= NOW() - INTERVAL '1 hour')), 0) AS avg_latency_1h
+            FROM proxy_execution_logs
+            WHERE tenant_id = $1
+            """;
+        return client.preparedQuery(sql)
+            .execute(Tuple.of(tenantId))
+            .map(rows -> {
+                Row row = rows.iterator().next();
+                long total1h = row.getLong("total_1h");
+                long errors1h = row.getLong("errors_1h");
+                Map<String, Object> stats = new HashMap<>();
+                stats.put("messagesProcessed", row.getLong("total_today"));
+                stats.put("errorRate", total1h > 0 ? Math.round(((double) errors1h / total1h * 100) * 100.0) / 100.0 : 0.0);
+                stats.put("p99Latency", row.getValue("avg_latency_1h"));
+                return stats;
+            });
+    }
+
+    public Uni<List<Map<String, Object>>> topMappings(String tenantId, int limit) {
+        String sql = """
+            SELECT l.mapping_id, d.name, d.partner_id, d.event_type, COUNT(*) AS call_count,
+                   COUNT(*) FILTER (WHERE l.status IN ('ERROR', 'TIMEOUT')) AS error_count,
+                   COALESCE(ROUND(AVG(l.duration_ms)), 0) AS avg_latency_ms
+            FROM proxy_execution_logs l
+            LEFT JOIN mapping_drafts d ON d.id = l.mapping_id AND d.tenant_id = l.tenant_id
+            WHERE l.tenant_id = $1
+            GROUP BY l.mapping_id, d.name, d.partner_id, d.event_type
+            ORDER BY call_count DESC
+            LIMIT $2
+            """;
+        return client.preparedQuery(sql)
+            .execute(Tuple.of(tenantId, limit))
+            .map(rows -> {
+                List<Map<String, Object>> result = new ArrayList<>();
+                rows.forEach(row -> {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("mappingId", row.getUUID("mapping_id"));
+                    item.put("name", row.getString("name"));
+                    item.put("partnerId", row.getUUID("partner_id"));
+                    item.put("eventType", row.getString("event_type"));
+                    item.put("callCount", row.getLong("call_count"));
+                    item.put("errorCount", row.getLong("error_count"));
+                    item.put("avgLatencyMs", row.getValue("avg_latency_ms"));
+                    result.add(item);
+                });
+                return result;
+            });
+    }
+
+    public Uni<List<Map<String, Object>>> healthByMapping(String tenantId) {
+        String sql = """
+            SELECT d.id, d.name, d.partner_id, d.event_type,
+                   COUNT(l.id) AS total,
+                   COUNT(l.id) FILTER (WHERE l.status = 'SUCCESS') AS success,
+                   COUNT(l.id) FILTER (WHERE l.status IN ('ERROR', 'TIMEOUT')) AS errors,
+                   COALESCE(ROUND(AVG(l.duration_ms)), 0) AS avg_latency_ms,
+                   MAX(l.request_at) FILTER (WHERE l.status = 'SUCCESS') AS last_success_at
+            FROM mapping_drafts d
+            LEFT JOIN proxy_execution_logs l ON l.mapping_id = d.id AND l.tenant_id = d.tenant_id
+            WHERE d.tenant_id = $1
+            GROUP BY d.id, d.name, d.partner_id, d.event_type
+            ORDER BY errors DESC, total DESC, d.updated_at DESC
+            """;
+        return client.preparedQuery(sql)
+            .execute(Tuple.of(tenantId))
+            .map(rows -> {
+                List<Map<String, Object>> result = new ArrayList<>();
+                rows.forEach(row -> {
+                    long total = row.getLong("total");
+                    long success = row.getLong("success");
+                    long errors = row.getLong("errors");
+                    double successRate = total > 0 ? (double) success / total * 100 : 0;
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("mappingId", row.getUUID("id"));
+                    item.put("name", row.getString("name"));
+                    item.put("partnerId", row.getUUID("partner_id"));
+                    item.put("eventType", row.getString("event_type"));
+                    item.put("total", total);
+                    item.put("success", success);
+                    item.put("errors", errors);
+                    item.put("successRate", Math.round(successRate * 100.0) / 100.0);
+                    item.put("avgLatencyMs", row.getValue("avg_latency_ms"));
+                    item.put("lastSuccessAt", row.getLocalDateTime("last_success_at"));
+                    result.add(item);
+                });
+                return result;
+            });
+    }
+
+    public Uni<List<Map<String, Object>>> executionSeries(String tenantId, UUID mappingId) {
+        String sql = """
+            SELECT date_trunc('hour', request_at) AS bucket,
+                   COUNT(*) FILTER (WHERE status = 'SUCCESS') AS success,
+                   COUNT(*) FILTER (WHERE status IN ('ERROR', 'TIMEOUT')) AS errors,
+                   COALESCE(ROUND(AVG(duration_ms)), 0) AS avg_latency_ms
+            FROM proxy_execution_logs
+            WHERE tenant_id = $1 AND mapping_id = $2 AND request_at >= NOW() - INTERVAL '24 hours'
+            GROUP BY bucket
+            ORDER BY bucket ASC
+            """;
+        return client.preparedQuery(sql)
+            .execute(Tuple.of(tenantId, mappingId))
+            .map(rows -> {
+                List<Map<String, Object>> result = new ArrayList<>();
+                rows.forEach(row -> {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("bucket", row.getLocalDateTime("bucket"));
+                    item.put("success", row.getLong("success"));
+                    item.put("errors", row.getLong("errors"));
+                    item.put("avgLatencyMs", row.getValue("avg_latency_ms"));
+                    result.add(item);
+                });
+                return result;
+            });
     }
 
     private ProxyExecutionLog toExecutionLog(Row row) {

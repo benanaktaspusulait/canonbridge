@@ -29,8 +29,9 @@ import java.util.Map;
  * 
  * Per-tenant overrides are supported via the partners table.
  */
-@Provider
-@Priority(Priorities.AUTHORIZATION + 10) // Run after authentication
+// @Provider — Temporarily disabled due to blocking issue in reactive context
+// TODO: Convert to non-blocking implementation
+@Priority(Priorities.AUTHORIZATION + 10)
 @ApplicationScoped
 @Blocking
 public class RateLimitFilter implements ContainerRequestFilter, ContainerResponseFilter {
@@ -55,11 +56,13 @@ public class RateLimitFilter implements ContainerRequestFilter, ContainerRespons
             return;
         }
 
-        // Skip rate limiting for health, metrics, and auth endpoints
+        // Skip rate limiting for health, metrics, auth, and proxy endpoints
+        // (proxy has its own rate limiting via circuit breaker)
         String path = requestContext.getUriInfo().getPath();
         if (path.startsWith("health") || path.startsWith("metrics") || 
             path.startsWith("openapi") || path.startsWith("swagger-ui") ||
-            path.equals("api/auth/login") || path.startsWith("api/auth/")) {
+            path.equals("api/auth/login") || path.startsWith("api/auth/") ||
+            path.startsWith("api/proxy/")) {
             return;
         }
 
