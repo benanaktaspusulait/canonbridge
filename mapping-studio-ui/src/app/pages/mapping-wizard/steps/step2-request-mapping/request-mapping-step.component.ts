@@ -109,16 +109,8 @@ export class RequestMappingStepComponent implements OnInit {
   });
 
   hasBlockingErrors = computed(() => {
-    // Block if required fields are excluded
     if (this.requiredFieldErrors().length > 0) return true;
-    
-    // Block if there are backend validation errors
     if (this.backendValidationErrors().length > 0) return true;
-    
-    // Block if validation hasn't been run yet and there are included fields
-    const hasIncludedFields = this.fieldMappings().some(m => m.included);
-    if (hasIncludedFields && !this.backendValidationDone()) return true;
-    
     return false;
   });
 
