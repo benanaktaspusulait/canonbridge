@@ -13,8 +13,8 @@ global:
 #           - alertmanager:9093
 
 # Load rules once and periodically evaluate them
-# rule_files:
-#   - "alerts/*.yml"
+rule_files:
+  - "alerts/*.yml"
 
 scrape_configs:
   # Prometheus self-monitoring
@@ -29,11 +29,11 @@ scrape_configs:
     metrics_path: '/metrics'
     scrape_interval: 10s
 
-  # Mapping Studio API (Java + Quarkus) — Quarkus exposes metrics at /q/metrics
+  # Mapping Studio API (Java + Quarkus) — Quarkus exposes metrics at /metrics
   - job_name: 'mapping-studio-api'
     static_configs:
       - targets: ['mapping-studio-api:8080']
-    metrics_path: '/q/metrics'
+    metrics_path: '/metrics'
     scrape_interval: 10s
 
   # Webhook Receiver (Java + Quarkus) — Quarkus exposes metrics at /q/metrics
@@ -55,10 +55,10 @@ scrape_configs:
       - targets: ['redis-exporter:9121']
     scrape_interval: 15s
 
-  # Kafka JMX Exporter
+  # Kafka Exporter
   - job_name: 'kafka'
     static_configs:
-      - targets: ['kafka:9101']
+      - targets: ['kafka-exporter:9308']
     scrape_interval: 15s
 
   # Node Exporter (system metrics)

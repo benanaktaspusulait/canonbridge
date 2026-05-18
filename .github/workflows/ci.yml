@@ -8,83 +8,260 @@ on:
 
 env:
   NODE_VERSION: "20"
+  JAVA_VERSION: "21"
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository }}
 
 jobs:
-  schema-compatibility:
-    name: Schema Compatibility
+  # ============================================================================
+  # BACKEND: Mapping Studio API (Java/Quarkus)
+  # ============================================================================
+  backend-api:
+    name: Backend API (Quarkus)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/mapping-studio-api
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Build & Test
+        run: mvn clean verify -B
+
+      - name: Build Docker image
+        run: docker build -t ${{ env.IMAGE_PREFIX }}/mapping-studio-api:${{ github.sha }} .
+
+      - name: Push image (main only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker push ${{ env.IMAGE_PREFIX }}/mapping-studio-api:${{ github.sha }}
+          docker tag ${{ env.IMAGE_PREFIX }}/mapping-studio-api:${{ github.sha }} ${{ env.IMAGE_PREFIX }}/mapping-studio-api:latest
+          docker push ${{ env.IMAGE_PREFIX }}/mapping-studio-api:latest
+
+  # ============================================================================
+  # BACKEND: Webhook Receiver (Java/Quarkus)
+  # ============================================================================
+  backend-webhook:
+    name: Webhook Receiver (Quarkus)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/webhook-receiver
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Build & Test
+        run: mvn clean verify -B
+
+      - name: Build Docker image
+        run: docker build -t ${{ env.IMAGE_PREFIX }}/webhook-receiver:${{ github.sha }} .
+
+      - name: Push image (main only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker push ${{ env.IMAGE_PREFIX }}/webhook-receiver:${{ github.sha }}
+
+  # ============================================================================
+  # TRANSFORMER SERVICE (Node.js/Fastify)
+  # ============================================================================
+  transformer:
+    name: Transformer (Node.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/transformer
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: services/transformer/package-lock.json
 
-      - name: Install planning test dependencies
-        run: npm install --no-package-lock
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Validate JSON schemas
-        run: npm run test:schema-compatibility
+      - name: Lint
+        run: npm run lint --if-present
 
-  mapping-fixtures:
-    name: Mapping Fixture Tests
+      - name: Test
+        run: npm test --if-present
+
+      - name: Build
+        run: npm run build --if-present
+
+      - name: Build Docker image
+        run: docker build -t ${{ env.IMAGE_PREFIX }}/transformer:${{ github.sha }} .
+
+      - name: Push image (main only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker push ${{ env.IMAGE_PREFIX }}/transformer:${{ github.sha }}
+
+  # ============================================================================
+  # FRONTEND: Mapping Studio UI (Angular)
+  # ============================================================================
+  frontend:
+    name: Frontend (Angular)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mapping-studio-ui
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: mapping-studio-ui/package-lock.json
 
-      - name: Install planning test dependencies
-        run: npm install --no-package-lock
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Run mapping fixture tests
-        run: npm run test:mapping-fixtures
+      - name: Lint
+        run: npm run lint --if-present
 
-  docker-compose-config:
-    name: Docker Compose Config
+      - name: Build (production)
+        run: npx ng build --configuration=production
+
+      - name: Build Docker image
+        run: docker build -t ${{ env.IMAGE_PREFIX }}/mapping-studio-ui:${{ github.sha }} .
+
+      - name: Push image (main only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker push ${{ env.IMAGE_PREFIX }}/mapping-studio-ui:${{ github.sha }}
+
+  # ============================================================================
+  # MOCK SERVICE (Spring Boot)
+  # ============================================================================
+  mock-service:
+    name: Mock Service (Spring Boot)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/canonbridge-mock
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Build
+        run: mvn clean package -DskipTests -B
+
+      - name: Build Docker image
+        run: docker build -t ${{ env.IMAGE_PREFIX }}/canonbridge-mock:${{ github.sha }} .
+
+  # ============================================================================
+  # INTEGRATION TESTS
+  # ============================================================================
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [backend-api, transformer, backend-webhook]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          POSTGRES_PASSWORD=ci_test_password
+          CANONBRIDGE_API_KEYS=ci-test-key
+          CANONBRIDGE_CREDENTIAL_ENCRYPTION_KEY=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+          GF_SECURITY_ADMIN_PASSWORD=admin
+          EOF
+
+      - name: Start services
+        run: |
+          docker compose up -d postgres kafka zookeeper redis
+          sleep 15
+          docker compose up -d mapping-studio-api transformer webhook-receiver canonbridge-mock
+          sleep 30
+
+      - name: Wait for services
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8082/health > /dev/null 2>&1; then
+              echo "API is ready"
+              break
+            fi
+            echo "Waiting for API... ($i/30)"
+            sleep 5
+          done
+
+      - name: Run API smoke tests
+        run: |
+          # Health check
+          curl -sf http://localhost:8082/health | jq .status
+          
+          # List mappings
+          curl -sf -H "X-Tenant-Id: tenant-acme" http://localhost:8082/api/mapping-drafts | jq length
+          
+          # Metrics endpoint
+          curl -sf http://localhost:8082/metrics > /tmp/mapping-studio-api.metrics
+          test -s /tmp/mapping-studio-api.metrics
+          
+          echo "✅ All smoke tests passed"
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
+
+  # ============================================================================
+  # DOCKER COMPOSE VALIDATION
+  # ============================================================================
+  compose-validation:
+    name: Docker Compose Validation
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Validate compose file
         run: docker compose config --quiet
 
-  shell-scripts:
-    name: Shell Script Syntax
+  # ============================================================================
+  # DATABASE MIGRATION CHECK
+  # ============================================================================
+  migration-check:
+    name: DB Migration Check
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Check shell scripts
-        shell: bash
+      - uses: actions/checkout@v4
+      - name: Check migration file naming
         run: |
-          set -euo pipefail
-          mapfile -t scripts < <(find scripts docker -type f -name '*.sh' | sort)
-          if [ "${#scripts[@]}" -eq 0 ]; then
-            echo "No shell scripts found."
-            exit 0
-          fi
-          bash -n "${scripts[@]}"
-
-  service-placeholders:
-    name: Service Implementation Placeholders
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Report implementation status
-        run: |
-          test -d schemas
-          test -d partners
-          test -d src
-          test -d test
-          echo "Planning assets are present. Runtime service jobs should be added when service directories are implemented."
+          cd services/mapping-studio-api/src/main/resources/db/migration
+          # Verify all files follow V{N}__ pattern
+          for f in *.sql; do
+            if ! echo "$f" | grep -qE '^V[0-9]+__'; then
+              echo "ERROR: Invalid migration filename: $f"
+              exit 1
+            fi
+          done
+          echo "✅ All migration files follow naming convention"
+          echo "Total migrations: $(ls V*.sql | wc -l)"

@@ -29,7 +29,7 @@ import java.util.Map;
  * 
  * Per-tenant overrides are supported via the partners table.
  */
-//@Provider
+@Provider
 @Priority(Priorities.AUTHORIZATION + 10) // Run after authentication
 @ApplicationScoped
 @Blocking

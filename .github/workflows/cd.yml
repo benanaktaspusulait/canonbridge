@@ -7,210 +7,181 @@ on:
       - 'v*'
 
 env:
-  KUBECTL_VERSION: '1.28.0'
-  HELM_VERSION: '3.13.0'
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository }}
 
 jobs:
+  # ============================================================================
+  # BUILD ALL IMAGES
+  # ============================================================================
+  build:
+    name: Build Images
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - { name: mapping-studio-api, path: services/mapping-studio-api, java: true }
+          - { name: webhook-receiver, path: services/webhook-receiver, java: true }
+          - { name: transformer, path: services/transformer, java: false }
+          - { name: mapping-studio-ui, path: mapping-studio-ui, java: false }
+          - { name: canonbridge-mock, path: services/canonbridge-mock, java: true }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        if: matrix.service.java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Setup Node.js
+        if: ${{ !matrix.service.java }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build Java service
+        if: matrix.service.java
+        working-directory: ${{ matrix.service.path }}
+        run: mvn clean package -DskipTests -B
+
+      - name: Build Node service
+        if: ${{ !matrix.service.java && matrix.service.name == 'transformer' }}
+        working-directory: ${{ matrix.service.path }}
+        run: |
+          npm ci
+          npm run build --if-present
+
+      - name: Build Angular app
+        if: matrix.service.name == 'mapping-studio-ui'
+        working-directory: ${{ matrix.service.path }}
+        run: |
+          npm ci
+          npx ng build --configuration=production
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        working-directory: ${{ matrix.service.path }}
+        run: |
+          IMAGE=${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}
+          docker build -t $IMAGE:${{ github.sha }} -t $IMAGE:latest .
+          docker push $IMAGE:${{ github.sha }}
+          docker push $IMAGE:latest
+
   # ============================================================================
   # DEPLOY TO STAGING
   # ============================================================================
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
+    needs: build
+    if: ${{ vars.EKS_CLUSTER_STAGING != '' }}
     environment:
       name: staging
-      url: https://staging.etlsolutions.com
+      url: https://staging.canonbridge.io
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: ${{ vars.AWS_REGION || 'eu-west-1' }}
 
       - name: Setup kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: ${{ env.KUBECTL_VERSION }}
-
-      - name: Setup Helm
-        uses: azure/setup-helm@v3
-        with:
-          version: ${{ env.HELM_VERSION }}
+          version: '1.28.0'
 
       - name: Update kubeconfig
-        run: |
-          aws eks update-kubeconfig --name etl-solutions-staging --region us-east-1
+        run: aws eks update-kubeconfig --name ${{ vars.EKS_CLUSTER_STAGING }} --region ${{ vars.AWS_REGION || 'eu-west-1' }}
 
-      - name: Deploy to staging
+      - name: Deploy services
         run: |
-          kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/configmap.yaml
-          kubectl apply -f k8s/secrets.yaml
-          kubectl apply -f k8s/postgres-statefulset.yaml
-          kubectl apply -f k8s/kafka-statefulset.yaml
-          kubectl apply -f k8s/transformer-deployment.yaml
-          kubectl apply -f k8s/business-service-deployment.yaml
+          export IMAGE_TAG=${{ github.sha }}
+          envsubst < k8s/staging/deployment.yaml | kubectl apply -f -
 
-      - name: Wait for deployment
+      - name: Wait for rollout
         run: |
-          kubectl rollout status deployment/transformer -n etl-solutions --timeout=5m
-          kubectl rollout status deployment/business-service -n etl-solutions --timeout=5m
+          kubectl rollout status deployment/mapping-studio-api -n canonbridge --timeout=5m
+          kubectl rollout status deployment/transformer -n canonbridge --timeout=5m
+          kubectl rollout status deployment/webhook-receiver -n canonbridge --timeout=5m
 
-      - name: Run smoke tests
+      - name: Smoke tests
         run: |
-          kubectl run smoke-test --image=curlimages/curl:latest --rm -i --restart=Never -- \
-            curl -f http://transformer-service:3000/health/ready
-
-      - name: Notify Slack
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          text: 'Deployed to Staging'
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-        if: always()
+          API_URL=$(kubectl get svc mapping-studio-api -n canonbridge -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          curl -sf "http://$API_URL:8080/health" | jq .status
 
   # ============================================================================
-  # DEPLOY TO PRODUCTION
+  # DEPLOY TO PRODUCTION (tag only)
   # ============================================================================
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
     needs: deploy-staging
+    if: ${{ startsWith(github.ref, 'refs/tags/v') && vars.EKS_CLUSTER_PRODUCTION != '' }}
     environment:
       name: production
-      url: https://etlsolutions.com
-    if: startsWith(github.ref, 'refs/tags/v')
+      url: https://canonbridge.io
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: ${{ vars.AWS_REGION || 'eu-west-1' }}
 
       - name: Setup kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: ${{ env.KUBECTL_VERSION }}
+          version: '1.28.0'
 
       - name: Update kubeconfig
-        run: |
-          aws eks update-kubeconfig --name etl-solutions-production --region us-east-1
+        run: aws eks update-kubeconfig --name ${{ vars.EKS_CLUSTER_PRODUCTION }} --region ${{ vars.AWS_REGION || 'eu-west-1' }}
 
-      - name: Canary deployment (5%)
+      - name: Canary deploy (10%)
         run: |
-          kubectl set image deployment/transformer transformer=etlsolutions/transformer:${{ github.ref_name }} -n etl-solutions
-          kubectl patch deployment transformer -n etl-solutions -p '{"spec":{"replicas":1}}'
-          sleep 60
+          export IMAGE_TAG=${{ github.sha }}
+          envsubst < k8s/production/canary.yaml | kubectl apply -f -
+          sleep 120
 
-      - name: Check canary metrics
+      - name: Validate canary
         run: |
-          # Check error rate
-          ERROR_RATE=$(kubectl exec -n monitoring prometheus-0 -- \
-            promtool query instant 'rate(http_requests_total{status=~"5..",job="transformer"}[5m])' | \
-            jq -r '.data.result[0].value[1]')
-          
-          if (( $(echo "$ERROR_RATE > 0.01" | bc -l) )); then
-            echo "Error rate too high: $ERROR_RATE"
+          ERROR_RATE=$(curl -s "http://prometheus:9090/api/v1/query?query=rate(proxy_errors_total[5m])" | jq -r '.data.result[0].value[1] // "0"')
+          if [ "$(echo "$ERROR_RATE > 0.05" | bc -l)" = "1" ]; then
+            echo "❌ Canary error rate too high: $ERROR_RATE"
+            kubectl rollout undo deployment/mapping-studio-api -n canonbridge
             exit 1
           fi
+          echo "✅ Canary healthy (error rate: $ERROR_RATE)"
 
-      - name: Scale to 25%
+      - name: Full rollout
         run: |
-          kubectl patch deployment transformer -n etl-solutions -p '{"spec":{"replicas":3}}'
-          sleep 120
+          export IMAGE_TAG=${{ github.sha }}
+          envsubst < k8s/production/deployment.yaml | kubectl apply -f -
+          kubectl rollout status deployment/mapping-studio-api -n canonbridge --timeout=10m
+          kubectl rollout status deployment/transformer -n canonbridge --timeout=10m
 
-      - name: Check metrics (25%)
-        run: |
-          # Check error rate and latency
-          ./scripts/check-metrics.sh
-
-      - name: Scale to 50%
-        run: |
-          kubectl patch deployment transformer -n etl-solutions -p '{"spec":{"replicas":6}}'
-          sleep 120
-
-      - name: Check metrics (50%)
-        run: |
-          ./scripts/check-metrics.sh
-
-      - name: Scale to 100%
-        run: |
-          kubectl patch deployment transformer -n etl-solutions -p '{"spec":{"replicas":12}}'
-          kubectl rollout status deployment/transformer -n etl-solutions --timeout=10m
-
-      - name: Deploy business service
-        run: |
-          kubectl set image deployment/business-service business-service=etlsolutions/business-service:${{ github.ref_name }} -n etl-solutions
-          kubectl rollout status deployment/business-service -n etl-solutions --timeout=10m
-
-      - name: Run smoke tests
-        run: |
-          ./scripts/smoke-tests.sh production
-
-      - name: Create GitHub release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create release
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
+          generate_release_notes: true
 
-      - name: Notify Slack
+      - name: Notify
+        if: always()
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
-          text: 'Deployed to Production: ${{ github.ref_name }}'
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-        if: always()
-
-  # ============================================================================
-  # ROLLBACK
-  # ============================================================================
-  rollback:
-    name: Rollback Production
-    runs-on: ubuntu-latest
-    needs: deploy-production
-    if: failure()
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: ${{ env.KUBECTL_VERSION }}
-
-      - name: Update kubeconfig
-        run: |
-          aws eks update-kubeconfig --name etl-solutions-production --region us-east-1
-
-      - name: Rollback deployment
-        run: |
-          kubectl rollout undo deployment/transformer -n etl-solutions
-          kubectl rollout undo deployment/business-service -n etl-solutions
-          kubectl rollout status deployment/transformer -n etl-solutions --timeout=5m
-          kubectl rollout status deployment/business-service -n etl-solutions --timeout=5m
-
-      - name: Notify Slack
-        uses: 8398a7/action-slack@v3
-        with:
-          status: 'failure'
-          text: 'Production deployment failed - Rolled back'
+          text: 'Production deploy: ${{ github.ref_name }} - ${{ job.status }}'
           webhook_url: ${{ secrets.SLACK_WEBHOOK }}

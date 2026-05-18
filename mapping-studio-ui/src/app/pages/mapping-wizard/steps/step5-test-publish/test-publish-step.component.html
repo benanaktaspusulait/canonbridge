@@ -160,6 +160,96 @@
     </div>
   }
 
+  <!-- Recent Executions -->
+  @if (mappingId() && executionLogs().length > 0) {
+    <div class="section executions-section">
+      <div class="section-header">
+        <h3>Recent Executions</h3>
+        <p-button
+          label="Refresh"
+          icon="pi pi-refresh"
+          size="small"
+          [outlined]="true"
+          [loading]="loadingLogs()"
+          (onClick)="loadExecutionLogs()" />
+      </div>
+
+      @if (executionStats()) {
+        <div class="stats-strip">
+          <div class="stat-item">
+            <span class="stat-value">{{ executionStats().total }}</span>
+            <span class="stat-label">Total</span>
+          </div>
+          <div class="stat-item success">
+            <span class="stat-value">{{ executionStats().success }}</span>
+            <span class="stat-label">Success</span>
+          </div>
+          <div class="stat-item error">
+            <span class="stat-value">{{ executionStats().errors }}</span>
+            <span class="stat-label">Errors</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ executionStats().successRate }}%</span>
+            <span class="stat-label">Success Rate</span>
+          </div>
+        </div>
+      }
+
+      <div class="executions-table">
+        <div class="exec-header">
+          <span class="exec-col-id">Correlation</span>
+          <span class="exec-col-status">Status</span>
+          <span class="exec-col-duration">Duration</span>
+          <span class="exec-col-time">Time</span>
+        </div>
+        @for (log of executionLogs(); track log.id) {
+          <div class="exec-row" [class.error]="log.status === 'ERROR'" (click)="selectedLog.set(selectedLog() === log ? null : log)">
+            <span class="exec-col-id"><code>{{ log.correlation_id }}</code></span>
+            <span class="exec-col-status">
+              <span class="status-dot" [class]="'dot-' + log.status.toLowerCase()"></span>
+              {{ log.status }}
+            </span>
+            <span class="exec-col-duration">{{ log.duration_ms }}ms</span>
+            <span class="exec-col-time">{{ formatLogTime(log.request_at) }}</span>
+          </div>
+          @if (selectedLog() === log) {
+            <div class="exec-detail">
+              @if (log.error_message) {
+                <div class="detail-error">
+                  <label>Error</label>
+                  <span>{{ log.error_message }}</span>
+                </div>
+              }
+              @if (log.external_api_url) {
+                <div class="detail-item">
+                  <label>External API</label>
+                  <code>{{ log.external_api_method }} {{ log.external_api_url }}</code>
+                </div>
+              }
+              @if (log.transformed_payload) {
+                <div class="detail-item">
+                  <label>Transformed Response</label>
+                  <pre class="detail-json"><code>{{ formatJson(log.transformed_payload) }}</code></pre>
+                </div>
+              }
+              @if (log.status === 'ERROR') {
+                <div class="detail-actions">
+                  <p-button
+                    label="Retry"
+                    icon="pi pi-refresh"
+                    size="small"
+                    severity="warn"
+                    [loading]="retryingLogId() === log.id"
+                    (onClick)="retryExecution(log); $event.stopPropagation()" />
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+    </div>
+  }
+
   <!-- Bottom Actions -->
   <div class="bottom-actions">
     <p-button

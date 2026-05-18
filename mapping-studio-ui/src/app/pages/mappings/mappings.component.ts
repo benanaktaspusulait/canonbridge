@@ -1,6 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -35,6 +36,9 @@ interface MappingVersion {
   checksum: string;
   notes: string;
   rules: string[];
+  lastTestStatus?: 'SUCCESS' | 'ERROR' | 'NEVER';
+  lastTestAt?: string;
+  successRate?: number;
 }
 
 @Component({
@@ -70,6 +74,7 @@ export class MappingsComponent implements OnInit {
   private readonly mappingService = inject(MappingService);
   private readonly partnerService = inject(PartnerService);
   private readonly router = inject(Router);
+  private readonly http = inject(HttpClient);
 
   readonly loading = signal(false);
   private readonly partners = signal<Map<string, string>>(new Map());
@@ -80,6 +85,7 @@ export class MappingsComponent implements OnInit {
   readonly sourceTypeFilter = signal<string>('all');
   detailVisible = false;
   readonly selectedMapping = signal<MappingVersion | null>(null);
+  readonly mappingVersions = signal<any[]>([]);
 
   readonly statusFilterOptions = [
     { label: 'All statuses', value: 'all' },
@@ -158,12 +164,40 @@ export class MappingsComponent implements OnInit {
         this.sourceTypeFilterOptions.set(sourceTypeOptions);
         
         this.loading.set(false);
+        
+        // Load execution stats for each mapping
+        this.loadExecutionStats(mapped);
       },
       error: () => {
         this._mappings.set([]);
         this.loading.set(false);
       }
     });
+  }
+
+  private loadExecutionStats(mappings: MappingVersion[]): void {
+    for (const mapping of mappings) {
+      if (!mapping.id) continue;
+      this.http.get<any>(`/api/proxy/${mapping.id}/stats`, {
+        headers: { 'X-Tenant-Id': 'tenant-acme' }
+      }).subscribe({
+        next: (stats) => {
+          if (stats && stats.total > 0) {
+            this._mappings.update(list => list.map(m => {
+              if (m.id === mapping.id) {
+                return {
+                  ...m,
+                  lastTestStatus: stats.errors > 0 ? 'ERROR' : 'SUCCESS',
+                  successRate: stats.successRate
+                };
+              }
+              return m;
+            }));
+          }
+        },
+        error: () => {} // Silently ignore stats errors
+      });
+    }
   }
 
   private draftToViewModel(d: MappingDraft): MappingVersion {
@@ -186,7 +220,7 @@ export class MappingsComponent implements OnInit {
       eventType: d.event_type ?? '',
       sourceType: this.formatSourceType(d.source_type),
       method: method,
-      version: d.status === 'DRAFT' ? 'draft' : 'v1.0.0',
+      version: d.status === 'DRAFT' ? 'draft' : d.status === 'READY_TO_PUBLISH' ? 'published' : 'draft',
       status: this.mapDraftStatus(d.status),
       createdAt: d.created_at ? d.created_at.slice(0, 10) : '',
       publishedBy: this.formatUserName(d.created_by),
@@ -247,6 +281,20 @@ export class MappingsComponent implements OnInit {
   openDetails(mapping: MappingVersion): void {
     this.selectedMapping.set(mapping);
     this.detailVisible = true;
+    this.loadMappingVersions(mapping.id);
+  }
+
+  private loadMappingVersions(mappingId: string): void {
+    this.http.get<any[]>(`/api/mapping-versions`, {
+      headers: { 'X-Tenant-Id': 'tenant-acme' }
+    }).subscribe({
+      next: (versions) => {
+        // Filter versions for this draft
+        const filtered = versions.filter((v: any) => v.draft_id === mappingId);
+        this.mappingVersions.set(filtered);
+      },
+      error: () => this.mappingVersions.set([])
+    });
   }
 
   openInStudio(mapping: MappingVersion): void {

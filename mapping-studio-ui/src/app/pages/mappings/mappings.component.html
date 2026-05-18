@@ -65,6 +65,7 @@
         <th pSortableColumn="method">{{ 'table.method' | i18n }} <p-sortIcon field="method" /></th>
         <th pSortableColumn="version">{{ 'table.version' | i18n }} <p-sortIcon field="version" /></th>
         <th pSortableColumn="status">{{ 'table.status' | i18n }} <p-sortIcon field="status" /></th>
+        <th>Health</th>
         <th pSortableColumn="transformations" style="text-align:right">
           {{ 'table.transformations' | i18n }} <p-sortIcon field="transformations" />
         </th>
@@ -85,6 +86,15 @@
         </td>
         <td><span class="version-badge">{{ m.version }}</span></td>
         <td><p-tag [severity]="getSeverity(m.status)" [value]="('status.' + m.status) | i18n" /></td>
+        <td>
+          @if (m.successRate !== undefined) {
+            <span class="health-badge" [class.healthy]="m.successRate >= 95" [class.degraded]="m.successRate >= 50 && m.successRate < 95" [class.unhealthy]="m.successRate < 50">
+              {{ m.successRate }}%
+            </span>
+          } @else {
+            <span class="health-badge untested">—</span>
+          }
+        </td>
         <td style="text-align:right" class="text-sm">{{ m.transformations | number }}</td>
         <td class="text-sm text-color-secondary">{{ m.createdAt }}</td>
         <td class="text-sm text-color-secondary">{{ m.publishedBy }}</td>
@@ -125,7 +135,7 @@
     </ng-template>
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td colspan="10" class="empty-cell">{{ 'mappings.empty' | i18n }}</td>
+        <td colspan="11" class="empty-cell">{{ 'mappings.empty' | i18n }}</td>
       </tr>
     </ng-template>
   </p-table>
@@ -187,6 +197,25 @@
           <li><i class="pi pi-check-circle"></i>{{ rule }}</li>
         }
       </ul>
+    </section>
+
+    <section class="detail-section">
+      <h3>Published Versions</h3>
+      @if (mappingVersions().length === 0) {
+        <p>No published versions yet</p>
+      } @else {
+        <div class="versions-list">
+          @for (v of mappingVersions(); track v.id) {
+            <div class="version-item" [class.deprecated]="v.status === 'DEPRECATED'">
+              <div class="version-info">
+                <strong>v{{ v.version }}</strong>
+                <span class="version-date">{{ v.published_at?.slice(0, 10) }}</span>
+              </div>
+              <p-tag [value]="v.status" [severity]="v.status === 'PUBLISHED' ? 'success' : 'secondary'" />
+            </div>
+          }
+        </div>
+      }
     </section>
 
     <div class="drawer-actions">

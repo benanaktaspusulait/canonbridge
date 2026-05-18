@@ -22,6 +22,8 @@ public class MappingDraftRepository {
     @Inject
     PgPool client;
 
+    public PgPool getClient() { return client; }
+
     public Uni<List<MappingDraft>> findByTenantId(String tenantId) {
         return client.preparedQuery(
             "SELECT * FROM mapping_drafts WHERE tenant_id = $1 ORDER BY updated_at DESC"

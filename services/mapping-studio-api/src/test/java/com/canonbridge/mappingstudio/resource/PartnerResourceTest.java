@@ -10,10 +10,15 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
 @QuarkusTest
 class PartnerResourceTest {
+    private static final String TENANT_ID = "tenant-acme";
+
+    private io.restassured.specification.RequestSpecification request() {
+        return given().header("X-Tenant-Id", TENANT_ID);
+    }
 
     @Test
     void testListPartners() {
-        given()
+        request()
             .when().get("/api/partners")
             .then()
             .statusCode(200)
@@ -32,7 +37,7 @@ class PartnerResourceTest {
             }
             """;
 
-        given()
+        request()
             .contentType(ContentType.JSON)
             .body(partnerJson)
             .when().post("/api/partners")
@@ -53,7 +58,7 @@ class PartnerResourceTest {
             }
             """;
 
-        String partnerId = given()
+        String partnerId = request()
             .contentType(ContentType.JSON)
             .body(partnerJson)
             .when().post("/api/partners")
@@ -62,7 +67,7 @@ class PartnerResourceTest {
             .extract().path("partnerId");
 
         // Then retrieve it
-        given()
+        request()
             .when().get("/api/partners/" + partnerId)
             .then()
             .statusCode(200)
@@ -80,7 +85,7 @@ class PartnerResourceTest {
             }
             """;
 
-        String partnerId = given()
+        String partnerId = request()
             .contentType(ContentType.JSON)
             .body(partnerJson)
             .when().post("/api/partners")
@@ -97,7 +102,7 @@ class PartnerResourceTest {
             }
             """;
 
-        given()
+        request()
             .contentType(ContentType.JSON)
             .body(updatedJson)
             .when().put("/api/partners/" + partnerId)
@@ -116,7 +121,7 @@ class PartnerResourceTest {
             }
             """;
 
-        String partnerId = given()
+        String partnerId = request()
             .contentType(ContentType.JSON)
             .body(partnerJson)
             .when().post("/api/partners")
@@ -125,13 +130,13 @@ class PartnerResourceTest {
             .extract().path("partnerId");
 
         // Delete it
-        given()
+        request()
             .when().delete("/api/partners/" + partnerId)
             .then()
             .statusCode(204);
 
         // Verify it's gone
-        given()
+        request()
             .when().get("/api/partners/" + partnerId)
             .then()
             .statusCode(404);

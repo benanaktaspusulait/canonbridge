@@ -43,6 +43,9 @@ public class MappingProxyResource {
     @Inject
     MappingExecutionService executionService;
 
+    @Inject
+    com.canonbridge.mappingstudio.repository.MappingVersionRepository versionRepository;
+
     @POST
     @Path("/{mappingId}")
     @Operation(
@@ -60,6 +63,15 @@ public class MappingProxyResource {
             return Uni.createFrom().item(
                 Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ErrorResponse("X-Tenant-Id header is required"))
+                    .build()
+            );
+        }
+
+        // Request size limit: 1MB
+        if (requestPayload != null && requestPayload.length() > 1_048_576) {
+            return Uni.createFrom().item(
+                Response.status(Response.Status.REQUEST_ENTITY_TOO_LARGE)
+                    .entity(new ErrorResponse("Request payload exceeds 1MB limit"))
                     .build()
             );
         }
@@ -113,6 +125,7 @@ public class MappingProxyResource {
             HttpHeaders headers,
             String requestPayload) {
 
+        // First try to find the draft (which has the full source_config for execution)
         return draftRepository.findById(tenantId, mappingId)
             .chain(draft -> {
                 if (draft == null) {
@@ -124,36 +137,38 @@ public class MappingProxyResource {
                     );
                 }
 
-                // Execute the mapping: request transform → API call → response transform
-                return executionService.executeMapping(draft, requestPayload, headers)
-                    .map(result -> {
-                        if (result.success()) {
-                            LOG.infof("✅ Mapping %s executed successfully", mappingId);
-                            return Response.ok(result.transformedResponse()).build();
-                        } else {
-                            LOG.errorf("❌ Mapping %s execution failed: %s", mappingId, result.error());
-                            
-                            // Determine HTTP status based on error stage
-                            int statusCode = determineErrorStatus(result.error());
-                            
-                            return Response.status(statusCode)
-                                .entity(new ErrorDetailResponse(
-                                    result.error(),
-                                    "execution",
-                                    result.error()
-                                ))
-                                .build();
+                // If draft has a published version, use the frozen jsonata from it
+                // but still use draft's source_config for connection details
+                return versionRepository.getNextVersion(tenantId, draft.getPartnerId(), draft.getEventType())
+                    .chain(nextVersion -> {
+                        if (nextVersion > 1) {
+                            LOG.infof("📦 Using published version (v%d exists) for mapping %s", nextVersion - 1, mappingId);
                         }
-                    })
-                    .onFailure().recoverWithItem(throwable -> {
-                        LOG.errorf(throwable, "❌ Unexpected error executing mapping %s", mappingId);
-                        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                            .entity(new ErrorDetailResponse(
-                                "Mapping execution failed",
-                                "system",
-                                throwable.getMessage()
-                            ))
-                            .build();
+                        
+                        // Execute using draft (has full config including auth, URL, etc.)
+                        return executionService.executeMapping(draft, requestPayload, headers)
+                            .map(result -> {
+                                if (result.success()) {
+                                    LOG.infof("✅ Mapping %s executed successfully", mappingId);
+                                    return Response.ok(result.transformedResponse()).build();
+                                } else {
+                                    LOG.errorf("❌ Mapping %s execution failed: %s", mappingId, result.error());
+                                    int statusCode = determineErrorStatus(result.error());
+                                    return Response.status(statusCode)
+                                        .entity(new ErrorDetailResponse(
+                                            result.error(), "execution", result.error()
+                                        ))
+                                        .build();
+                                }
+                            })
+                            .onFailure().recoverWithItem(throwable -> {
+                                LOG.errorf(throwable, "❌ Unexpected error executing mapping %s", mappingId);
+                                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                                    .entity(new ErrorDetailResponse(
+                                        "Mapping execution failed", "system", throwable.getMessage()
+                                    ))
+                                    .build();
+                            });
                     });
             });
     }

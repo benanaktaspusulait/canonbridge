@@ -58,6 +58,11 @@ export class TestPublishStepComponent implements OnInit {
   saving = signal(false);
   testSuccess = signal(false);
   hasUnsavedChanges = signal(false);
+  executionLogs = signal<any[]>([]);
+  executionStats = signal<any>(null);
+  loadingLogs = signal(false);
+  selectedLog = signal<any>(null);
+  retryingLogId = signal<string | null>(null);
 
   constructor() {
     // Auto-populate test input when wizard state changes
@@ -108,16 +113,11 @@ export class TestPublishStepComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    console.log('🔧 Test & Publish step initialized');
-    console.log('Wizard State:', this.wizardState());
-    console.log('Mapping ID:', this.mappingId());
-    console.log('Existing Name:', this.existingMappingName());
-    console.log('Existing Description:', this.existingMappingDescription());
-    
-    // Load proxy URL if mapping exists
+    // Load proxy URL and execution logs if mapping exists
     const mappingId = this.mappingId();
     if (mappingId) {
       this.loadProxyInfo(mappingId);
+      this.loadExecutionLogs();
     }
   }
 
@@ -231,6 +231,9 @@ export class TestPublishStepComponent implements OnInit {
     this.testSuccess.set(true);
     this.testing.set(false);
     console.log('✅ Proxy endpoint test completed:', response);
+    
+    // Reload execution logs after test
+    setTimeout(() => this.loadExecutionLogs(), 500);
   }
 
   private resolveTargetUrl(state: WizardState, params: any): string {
@@ -314,6 +317,77 @@ export class TestPublishStepComponent implements OnInit {
     }
   }
 
+  loadExecutionLogs(): void {
+    const mappingId = this.mappingId();
+    if (!mappingId) return;
+
+    this.loadingLogs.set(true);
+    
+    // Load logs
+    this.http.get<any[]>(`/api/proxy/${mappingId}/logs?limit=10`, {
+      headers: { 'X-Tenant-Id': 'tenant-acme' }
+    }).subscribe({
+      next: (logs) => {
+        this.executionLogs.set(logs || []);
+        this.loadingLogs.set(false);
+      },
+      error: () => {
+        this.executionLogs.set([]);
+        this.loadingLogs.set(false);
+      }
+    });
+
+    // Load stats
+    this.http.get<any>(`/api/proxy/${mappingId}/stats`, {
+      headers: { 'X-Tenant-Id': 'tenant-acme' }
+    }).subscribe({
+      next: (stats) => this.executionStats.set(stats),
+      error: () => this.executionStats.set(null)
+    });
+  }
+
+  formatLogTime(isoString: string): string {
+    if (!isoString) return '';
+    try {
+      const date = new Date(isoString);
+      return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    } catch {
+      return isoString;
+    }
+  }
+
+  formatJson(value: string): string {
+    if (!value) return '';
+    try {
+      return JSON.stringify(JSON.parse(value), null, 2);
+    } catch {
+      return value;
+    }
+  }
+
+  retryExecution(log: any): void {
+    const mappingId = this.mappingId();
+    if (!mappingId || !log.id) return;
+
+    this.retryingLogId.set(log.id);
+    this.http.post<any>(`/api/proxy/${mappingId}/retry/${log.id}`, {}, {
+      headers: { 'X-Tenant-Id': 'tenant-acme' }
+    }).subscribe({
+      next: (result) => {
+        this.retryingLogId.set(null);
+        console.log('✅ Retry result:', result);
+        // Reload logs to show the new execution
+        setTimeout(() => this.loadExecutionLogs(), 500);
+      },
+      error: (err) => {
+        this.retryingLogId.set(null);
+        console.error('❌ Retry failed:', err);
+        // Still reload to show the failed retry attempt
+        setTimeout(() => this.loadExecutionLogs(), 500);
+      }
+    });
+  }
+
   saveMapping(status: 'DRAFT' | 'READY_TO_PUBLISH' = 'DRAFT'): void {
     if (!this.mappingName().trim()) {
       this.testError.set('Please provide a mapping name');
@@ -327,22 +401,50 @@ export class TestPublishStepComponent implements OnInit {
     const mappingData = this.buildMappingData(state, status);
 
     const mappingId = this.mappingId();
-    const operation = mappingId
-      ? this.mappingService.update(mappingId, mappingData)
-      : this.mappingService.create(mappingData);
+    
+    if (status === 'READY_TO_PUBLISH' && mappingId) {
+      // First save the draft, then publish as immutable version
+      this.mappingService.update(mappingId, mappingData).subscribe({
+        next: () => {
+          // Now call the publish endpoint
+          this.http.post<any>(`/api/mapping-drafts/${mappingId}/publish`, { notes: '' }, {
+            headers: { 'X-Tenant-Id': 'tenant-acme' }
+          }).subscribe({
+            next: (version) => {
+              this.saving.set(false);
+              this.hasUnsavedChanges.set(false);
+              console.log('✅ Published as version:', version.version);
+              this.router.navigate(['/mappings']);
+            },
+            error: (err) => {
+              this.saving.set(false);
+              this.testError.set('Publish failed: ' + (err.error?.error || err.message));
+            }
+          });
+        },
+        error: (err) => {
+          this.saving.set(false);
+          this.testError.set('Failed to save before publish: ' + (err.error?.message || err.message));
+        }
+      });
+    } else {
+      // Just save as draft
+      const operation = mappingId
+        ? this.mappingService.update(mappingId, mappingData)
+        : this.mappingService.create(mappingData);
 
-    operation.subscribe({
-      next: (result) => {
-        this.saving.set(false);
-        this.hasUnsavedChanges.set(false);
-        // Navigate to mapping list or detail page
-        this.router.navigate(['/mappings']);
-      },
-      error: (err) => {
-        this.saving.set(false);
-        this.testError.set('Failed to save mapping: ' + (err.error?.message || err.message));
-      }
-    });
+      operation.subscribe({
+        next: () => {
+          this.saving.set(false);
+          this.hasUnsavedChanges.set(false);
+          this.router.navigate(['/mappings']);
+        },
+        error: (err) => {
+          this.saving.set(false);
+          this.testError.set('Failed to save mapping: ' + (err.error?.message || err.message));
+        }
+      });
+    }
   }
 
   private buildMappingData(state: WizardState, status: 'DRAFT' | 'READY_TO_PUBLISH' = 'DRAFT'): any {

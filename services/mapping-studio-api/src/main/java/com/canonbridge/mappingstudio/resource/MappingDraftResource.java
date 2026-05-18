@@ -43,6 +43,9 @@ public class MappingDraftResource {
     @Inject
     RequestValidationService requestValidationService;
 
+    @Inject
+    com.canonbridge.mappingstudio.service.MappingPublishService publishService;
+
     @GET
     @Operation(summary = "List all mapping drafts for tenant")
     public Uni<List<MappingDraft>> list(@HeaderParam("X-Tenant-Id") String tenantId) {
@@ -229,6 +232,36 @@ public class MappingDraftResource {
                 : String.format("Validation failed with %d error(s)", errorsJson.size()));
 
         return Uni.createFrom().item(Response.ok(response).build());
+    }
+
+    @POST
+    @Path("/{id}/publish")
+    @Operation(summary = "Publish a mapping draft as an immutable version")
+    public Uni<Response> publish(
+            @HeaderParam("X-Tenant-Id") String tenantId,
+            @HeaderParam("X-User-Id") String userId,
+            @PathParam("id") UUID id,
+            JsonObject body) {
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new BadRequestException("X-Tenant-Id header is required");
+        }
+
+        String publishNotes = body != null ? body.getString("notes", "") : "";
+
+        return draftRepository.findById(tenantId, id)
+            .chain(draft -> {
+                if (draft == null) {
+                    return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND)
+                        .entity(new JsonObject().put("error", "Mapping draft not found")).build());
+                }
+
+                return publishService.publish(draft, userId, publishNotes)
+                    .map(version -> Response.status(Response.Status.CREATED).entity(version).build())
+                    .onFailure().recoverWithItem(err -> 
+                        Response.status(Response.Status.BAD_REQUEST)
+                            .entity(new JsonObject().put("error", err.getMessage())).build()
+                    );
+            });
     }
 
     @DELETE

@@ -1,0 +1,69 @@
+groups:
+  - name: proxy_alerts
+    rules:
+      # P2: High error rate on proxy
+      - alert: ProxyHighErrorRate
+        expr: |
+          (sum(rate(proxy_requests_total{status="error"}[5m])) 
+          / clamp_min(sum(rate(proxy_requests_total[5m])), 1)) * 100 > 5
+        for: 5m
+        labels:
+          severity: high
+          team: application
+        annotations:
+          summary: "Proxy error rate is {{ $value | printf \"%.1f\" }}%"
+          description: "Proxy error rate exceeded 5% for 5 minutes"
+          runbook: "Check execution logs for failing mappings"
+
+      # P2: High proxy latency
+      - alert: ProxyHighLatency
+        expr: |
+          proxy_request_duration_seconds{quantile="0.99"} > 5
+        for: 10m
+        labels:
+          severity: high
+          team: application
+        annotations:
+          summary: "Proxy p99 latency is {{ $value | printf \"%.2f\" }}s for mapping {{ $labels.mapping_id }}"
+          description: "P99 latency exceeded 5s for 10 minutes"
+          runbook: "Check external API response time and JSONata complexity"
+
+      # P1: Service down
+      - alert: ServiceDown
+        expr: up{job=~"mapping-studio-api|transformer"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Service {{ $labels.job }} is DOWN"
+          description: "{{ $labels.job }} has been unreachable for 1 minute"
+          runbook: "Check container logs and restart"
+
+      # P3: External API timeout rate
+      - alert: ExternalAPITimeouts
+        expr: |
+          (sum(rate(proxy_errors_total{error_stage="API_CALL"}[5m])) 
+          / clamp_min(sum(rate(proxy_requests_total[5m])), 1)) * 100 > 10
+        for: 5m
+        labels:
+          severity: medium
+          team: application
+        annotations:
+          summary: "External API timeout rate is {{ $value | printf \"%.1f\" }}%"
+          description: "More than 10% of proxy calls are failing at API_CALL stage"
+          runbook: "Check external API health and network connectivity"
+
+      # P3: No proxy traffic (possible issue)
+      - alert: ProxyNoTraffic
+        expr: |
+          sum(rate(proxy_requests_total[15m])) == 0
+          and sum(proxy_requests_total) > 0
+        for: 30m
+        labels:
+          severity: medium
+          team: application
+        annotations:
+          summary: "No proxy traffic for 30 minutes"
+          description: "Proxy was receiving traffic but stopped. Possible upstream issue."
+          runbook: "Check if clients are still sending requests"

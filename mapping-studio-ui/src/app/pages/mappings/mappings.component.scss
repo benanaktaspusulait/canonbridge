@@ -302,3 +302,65 @@
     p-iconfield { flex: none; }
   }
 }
+
+// Health badge
+.health-badge {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+
+  &.healthy {
+    background: #ecfdf5;
+    color: #059669;
+  }
+  &.degraded {
+    background: #fffbeb;
+    color: #d97706;
+  }
+  &.unhealthy {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+  &.untested {
+    color: #94a3b8;
+  }
+}
+
+// Versions list in drawer
+.versions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  .version-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.625rem 0.75rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+
+    &.deprecated {
+      opacity: 0.6;
+    }
+
+    .version-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+
+      strong {
+        font-size: 0.875rem;
+        color: #1e293b;
+      }
+
+      .version-date {
+        font-size: 0.75rem;
+        color: #64748b;
+      }
+    }
+  }
+}
