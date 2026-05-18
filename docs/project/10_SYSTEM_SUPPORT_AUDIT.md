@@ -37,12 +37,13 @@ Bu hedef henuz kapanmis gorunmuyor.
 - ProfileHub GraphQL API - satir 110
 - CustomerGateway gRPC Profile Service - satir 142
 
-FoodMarket icin endpoint/credential patch'leri var:
+FoodMarket icin endpoint/credential patch'leri ve artik bir sistem template insert'i var:
 
 - `services/mapping-studio-api/src/main/resources/db/migration/V27__fix_foodmarket_endpoints.sql`
 - `services/mapping-studio-api/src/main/resources/db/migration/V33__add_foodmarket_credential.sql`
+- `services/mapping-studio-api/src/main/resources/db/migration/V36__add_foodmarket_system_template.sql`
 
-Fakat FoodMarket icin ayni netlikte bir ilk sistem template insert'i bulunmadi. Bu nedenle guvenli okuma: 5 hazir template + FoodMarket kismi veri. "10 gercek sistem" hedefi icin 4-5 yeni sistem template'i, credential, mock endpoint, fixture ve mapping ornegi daha eklenmeli.
+Bu nedenle guvenli okuma: 6 hazir mock-backed sistem template'i var. "10 gercek sistem" hedefi icin 4 yeni sistem template'i, credential, mock endpoint, fixture ve mapping ornegi daha eklenmeli.
 
 ## 2. Kritik Eksikler
 
@@ -64,7 +65,7 @@ Beklenen karar: Tek kolon stratejisi secilmeli. Ya DB migration ile `webhook_key
 
 `services/webhook-receiver/src/test/java/com/canonbridge/webhook/service/WebhookAuthServiceTest.java` icindeki `rowSet.iterator()` mock'u Vert.x API beklentisiyle uyusmuyor. Test `Iterator<Row>` donduruyor, API `RowIterator<Row>` bekliyor. Bu yuzden `mvn test` compile asamasinda kaliyor.
 
-### 2.3 File/batch sadece authoring seviyesinde guclu
+### 2.3 File/batch runtime artik kismi ingest seviyesinde
 
 UI dosya sample'ini normalize ediyor:
 
@@ -72,29 +73,35 @@ UI dosya sample'ini normalize ediyor:
 - CSV parse: `mapping-studio-ui/src/app/pages/integration-studio/integration-studio.component.ts:2387`
 - JSONL parse: `mapping-studio-ui/src/app/pages/integration-studio/integration-studio.component.ts:2390`
 
-Eksik taraf: Backend'de batch ingest worker, satir bazli hata raporu ve canonical publish akisi net gorunmuyor. Bu haliyle file/batch daha cok no-code tasarim ve sample mapping destegi seviyesinde.
+Backend tarafinda `services/mapping-studio-api/src/main/java/com/canonbridge/mappingstudio/resource/FileBatchResource.java` ile `POST /api/mapping-drafts/{id}/batch/ingest` eklendi. Bu endpoint normalize edilmis JSON array satirlarini mapping'den gecirir, basarili canonical payload'lari Kafka'ya publish eder ve satir bazli basari/hata raporu dondurur.
 
-### 2.4 Scheduled API manual trigger seviyesinde
+Kalan taraf: buyuk dosya upload/streaming, kalici batch job takibi ve dosya seviyesinde retry henuz yok.
 
-`services/mapping-studio-api/src/main/java/com/canonbridge/mappingstudio/resource/ExternalSystemResource.java:171` manuel trigger endpoint'i sagliyor. Ancak schedule metadata'sini periyodik calistiran cron/poller worker bulunmadi. `SCHEDULED_API` icin uctan uca destek tamam sayilamaz.
+### 2.4 Scheduled API poller eklendi
 
-### 2.5 API enrichment transformer'a tam baglanmamis
+`services/mapping-studio-api/src/main/java/com/canonbridge/mappingstudio/resource/ExternalSystemResource.java:171` manuel trigger endpoint'i sagliyor. Buna ek olarak `services/mapping-studio-api/src/main/java/com/canonbridge/mappingstudio/service/ScheduledApiPollerService.java` published/valid `SCHEDULED_API` draft'larini belirlenen aralikla calistirir ve basarili canonical sonucu Kafka'ya publish eder.
+
+Kalan taraf: cron semantigi su an hafif yorumlaniyor (`PT5M`, `5m`, `*/5 * * * *`, `hourly`, `daily`). Kalici next-run/last-run DB state'i ve retry visibility eklenmeli.
+
+### 2.5 API enrichment transformer registry'ye baglandi
 
 Transformer enrichment adimini destekliyor:
 
 - `services/transformer/src/transformEngine.ts:175`
 - `services/transformer/src/transformEngine.ts:271`
 
-Fakat DB registry sadece Kafka draft'larini yukluyor:
+DB registry artik `KAFKA` ve `API_ENRICHMENT` draft'larini yukluyor:
 
 - `services/transformer/src/partnerRegistry.ts:143`
 - `services/transformer/src/partnerRegistry.ts:145`
 
-Sonuc: UI/API tarafinda tanimlanan enrichment konfigunun transformer `enrichmentSteps` formatina donusup runtime'a tasindigina dair net bag bulunmadi.
+`apiEnrichment` veya direct `urlTemplate` config'i transformer `enrichmentSteps` formatina cevriliyor. Transformer enrichment URL/header template'lerinde `{field}` ve `{{field}}` placeholder'larini envelope'dan dolduruyor.
 
-### 2.6 Mapping API proxy schema validation temel kontrol seviyesinde
+### 2.6 Mapping API proxy schema validation eklendi
 
-`services/mapping-studio-api/src/main/java/com/canonbridge/mappingstudio/service/MappingExecutionService.java:954` icinde `validateAgainstSchema` var, fakat `965-968` arasi full JSON Schema validation'in sonradan eklenebilecegini soyluyor ve su an sadece temel object kontrolu yapiliyor. Canonical contract guvencesi icin gercek schema validator eklenmeli.
+`services/mapping-studio-api/src/main/java/com/canonbridge/mappingstudio/service/MappingExecutionService.java:954` icindeki response validation artik inline `target_schema_json` icin recursive JSON Schema subset validation calistiriyor. Desteklenen kontroller: `type`, `required`, nested `properties`, array `items`, `enum`, `additionalProperties: false`.
+
+Kalan taraf: `canonical_schema_ref` ile schema repository'den async fetch ederek validation yapmak ve daha genis JSON Schema keyword kapsamı eklemek.
 
 ### 2.7 Mapping rule fallback transform turlerini yitiriyor
 
@@ -124,10 +131,10 @@ Bu denetimde kosulan kontroller:
 1. Webhook tablo/kolon kararini verip migration + API + receiver kodunu ayni semaya hizala.
 2. Webhook receiver test compile sorununu duzelt.
 3. "10 kaynak tipi" mi "10 gercek external system" mi hedef oldugunu netlestir. Hedef gercek sistem ise eksik 4-5 sistem template'ini ekle.
-4. File/batch icin gercek ingest worker, satir bazli hata raporu ve canonical publish akisi ekle.
-5. Scheduled API icin cron/poller worker ekle.
-6. API enrichment config'ini transformer registry'deki `enrichmentSteps` runtime formatina bagla.
-7. Mapping API proxy'de gercek JSON Schema validation uygula.
+4. File/batch icin buyuk dosya upload/streaming, kalici batch job takibi ve dosya seviyesinde retry ekle.
+5. Scheduled API icin kalici next-run/last-run DB state'i ve retry visibility ekle.
+6. API enrichment icin credential/header cozme ve GraphQL body template destegini genislet.
+7. Mapping API proxy'de `canonical_schema_ref` icin schema repository lookup ve genis JSON Schema keyword kapsami ekle.
 8. `generated_jsonata` yokken fallback rule builder'in transform/default/enum/date gibi rule turlerini desteklemesini sagla.
 9. Acceptance matrix'i CI'da fail eden kanita donustur; UI'da gorunmesi yeterli sayilmasin.
 10. Yeni eklenen her external system icin mock endpoint, credential seed, sample payload, mapping draft ve E2E senaryo ekle.

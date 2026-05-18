@@ -8,6 +8,8 @@ import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @ApplicationScoped
 public class SourcePayloadValidator {
@@ -32,16 +34,26 @@ public class SourcePayloadValidator {
 
     ValidationResult validate(JsonNode schema, JsonNode payload) {
         List<String> errors = new ArrayList<>();
-        if (schema.has("type") && "object".equals(schema.get("type").asText()) && !payload.isObject()) {
-            errors.add("Payload must be a JSON object");
+        validateNode(schema, payload, "$", errors);
+        return new ValidationResult(errors.isEmpty(), errors);
+    }
+
+    private void validateNode(JsonNode schema, JsonNode payload, String path, List<String> errors) {
+        if (schema == null || schema.isMissingNode() || schema.isNull()) {
+            return;
+        }
+
+        if (!matchesType(schema, payload)) {
+            errors.add(String.format("%s must be %s", path, describeType(schema.get("type"))));
+            return;
         }
 
         JsonNode required = schema.get("required");
-        if (required != null && required.isArray()) {
+        if (required != null && required.isArray() && payload.isObject()) {
             for (JsonNode field : required) {
                 String name = field.asText();
                 if (!payload.has(name) || payload.get(name).isNull()) {
-                    errors.add("Missing required field: " + name);
+                    errors.add("Missing required field: " + pathFor(path, name));
                 }
             }
         }
@@ -52,23 +64,72 @@ public class SourcePayloadValidator {
             while (names.hasNext()) {
                 String name = names.next();
                 JsonNode propSchema = properties.get(name);
-                if (payload.has(name) && propSchema != null && !matchesType(propSchema, payload.get(name))) {
-                    JsonNode typeNode = propSchema.get("type");
-                    String expectedType = (typeNode != null && typeNode.isTextual()) ? typeNode.asText() : "unknown";
-                    errors.add(String.format("Field '%s' does not match the expected schema type '%s'.", name, expectedType));
+                if (payload.has(name) && propSchema != null) {
+                    validateNode(propSchema, payload.get(name), pathFor(path, name), errors);
                 }
             }
         }
 
-        return new ValidationResult(errors.isEmpty(), errors);
+        JsonNode items = schema.get("items");
+        if (items != null && payload.isArray()) {
+            for (int i = 0; i < payload.size(); i++) {
+                validateNode(items, payload.get(i), path + "[" + i + "]", errors);
+            }
+        }
+
+        JsonNode enumValues = schema.get("enum");
+        if (enumValues != null && enumValues.isArray()) {
+            boolean matched = false;
+            for (JsonNode enumValue : enumValues) {
+                if (enumValue.equals(payload)) {
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                String allowed = StreamSupport.stream(enumValues.spliterator(), false)
+                        .map(JsonNode::toString)
+                        .collect(Collectors.joining(", "));
+                errors.add(String.format("%s must be one of [%s]", path, allowed));
+            }
+        }
+
+        JsonNode additionalProperties = schema.get("additionalProperties");
+        if (additionalProperties != null && additionalProperties.isBoolean()
+                && !additionalProperties.asBoolean() && properties != null && payload.isObject()) {
+            Iterator<String> payloadNames = payload.fieldNames();
+            while (payloadNames.hasNext()) {
+                String name = payloadNames.next();
+                if (!properties.has(name)) {
+                    errors.add("Unexpected field: " + pathFor(path, name));
+                }
+            }
+        }
     }
 
     private boolean matchesType(JsonNode propertySchema, JsonNode value) {
         JsonNode type = propertySchema.get("type");
-        if (type == null || !type.isTextual()) {
+        if (type == null) {
             return true;
         }
-        return switch (type.asText()) {
+
+        if (type.isArray()) {
+            for (JsonNode option : type) {
+                if (option.isTextual() && matchesType(option.asText(), value)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        if (!type.isTextual()) {
+            return true;
+        }
+        return matchesType(type.asText(), value);
+    }
+
+    private boolean matchesType(String type, JsonNode value) {
+        return switch (type) {
             case "string" -> value.isTextual();
             case "number" -> value.isNumber();
             case "integer" -> value.isIntegralNumber();
@@ -78,6 +139,20 @@ public class SourcePayloadValidator {
             case "null" -> value.isNull();
             default -> true;
         };
+    }
+
+    private String describeType(JsonNode type) {
+        if (type == null) return "the expected schema type";
+        if (type.isArray()) {
+            return StreamSupport.stream(type.spliterator(), false)
+                    .map(JsonNode::asText)
+                    .collect(Collectors.joining(" or "));
+        }
+        return type.asText("the expected schema type");
+    }
+
+    private String pathFor(String parent, String child) {
+        return "$".equals(parent) ? "$." + child : parent + "." + child;
     }
 
     public record ValidationResult(boolean valid, List<String> errors) {}

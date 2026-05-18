@@ -66,6 +66,17 @@ public class MappingDraftRepository {
         });
     }
 
+    public Uni<List<MappingDraft>> findRunnableScheduledApiMappings() {
+        return client.preparedQuery(
+            "SELECT * FROM mapping_drafts " +
+            "WHERE source_type = 'SCHEDULED_API' " +
+            "AND status IN ('VALID', 'READY_TO_PUBLISH') " +
+            "ORDER BY updated_at DESC"
+        )
+        .execute()
+        .map(this::toMappingDraftList);
+    }
+
     public Uni<MappingDraft> create(MappingDraft draft) {
         draft.setId(UUID.randomUUID());
         Instant now = Instant.now();

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { PartnerRegistry } from './partnerRegistry.js';
+import { PartnerRegistry, buildEnrichmentSteps } from './partnerRegistry.js';
 import { writeFile, mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
@@ -221,5 +221,33 @@ describe('PartnerRegistry', () => {
     expect(partners2).toHaveLength(2);
     const partnerKeys2 = partners2.map(p => `${p.partnerId}:${p.eventType}`).sort();
     expect(partnerKeys2).toEqual(['partner-a:order-created', 'partner-b:user-registered']);
+  });
+
+  it('should convert API enrichment source config into transformer enrichment steps', () => {
+    const steps = buildEnrichmentSteps({
+      apiEnrichment: {
+        lookupName: 'customer',
+        method: 'GET',
+        urlTemplate: 'http://profiles.test/customers/{customerId}',
+        failurePolicy: 'SKIP_ENRICHMENT',
+        headers: {
+          Authorization: 'Bearer {{token}}',
+        },
+      },
+    });
+
+    expect(steps).toEqual([
+      {
+        name: 'customer',
+        url: 'http://profiles.test/customers/{customerId}',
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer {{token}}',
+        },
+        timeoutMs: undefined,
+        mergePath: 'enrichment.customer',
+        required: false,
+      },
+    ]);
   });
 });

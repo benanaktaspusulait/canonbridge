@@ -7,6 +7,7 @@ import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.PreparedQuery;
+import io.vertx.mutiny.sqlclient.RowIterator;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -14,7 +15,6 @@ import org.mockito.Mockito;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Base64;
-import java.util.Iterator;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -97,20 +97,20 @@ class WebhookAuthServiceTest {
     private RowSet<Row> mockRowSetWithHash(String hash) {
         RowSet<Row> rowSet = Mockito.mock(RowSet.class);
         Row row = Mockito.mock(Row.class);
-        Iterator<Row> iterator = Mockito.mock(Iterator.class);
+        RowIterator<Row> iterator = Mockito.mock(RowIterator.class);
 
         Mockito.when(rowSet.size()).thenReturn(1);
         Mockito.when(rowSet.iterator()).thenReturn(iterator);
         Mockito.when(iterator.hasNext()).thenReturn(true, false);
         Mockito.when(iterator.next()).thenReturn(row);
-        Mockito.when(row.getString("webhook_key_hash")).thenReturn(hash);
+        Mockito.when(row.getString("secret_hash")).thenReturn(hash);
 
         return rowSet;
     }
 
     private RowSet<Row> mockEmptyRowSet() {
         RowSet<Row> rowSet = Mockito.mock(RowSet.class);
-        Iterator<Row> iterator = Mockito.mock(Iterator.class);
+        RowIterator<Row> iterator = Mockito.mock(RowIterator.class);
 
         Mockito.when(rowSet.size()).thenReturn(0);
         Mockito.when(rowSet.iterator()).thenReturn(iterator);

@@ -23,7 +23,7 @@ public class WebhookAuthService {
         // In production, fetch hashed key from credentials table
         // For now, simple validation
         return client.preparedQuery(
-            "SELECT webhook_key_hash FROM webhook_endpoints " +
+            "SELECT secret_hash FROM webhook_endpoints " +
             "WHERE partner_id = $1::uuid AND status = 'ACTIVE'"
         )
         .execute(Tuple.of(partnerId))
@@ -33,7 +33,7 @@ public class WebhookAuthService {
                 return false;
             }
             
-            String storedHash = rowSet.iterator().next().getString("webhook_key_hash");
+            String storedHash = rowSet.iterator().next().getString("secret_hash");
             String providedHash = hashKey(providedKey);
             
             return storedHash.equals(providedHash);

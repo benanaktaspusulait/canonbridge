@@ -97,11 +97,11 @@ public class MappingPublishService {
             io.vertx.core.json.JsonObject sourceConfig = new io.vertx.core.json.JsonObject(draft.getSourceConfig());
             String webhookPath = sourceConfig.getString("endpoint", "/webhook/" + draft.getPartnerId() + "/" + draft.getEventType());
             String webhookKey = "wh-" + draft.getId().toString().substring(0, 8);
-            String webhookKeyHash = hashWebhookKey(webhookKey);
+            String secretHash = hashWebhookKey(webhookKey);
 
-            String sql = "INSERT INTO webhook_endpoints (tenant_id, partner_id, draft_id, name, path, webhook_key, webhook_key_hash, status) " +
+            String sql = "INSERT INTO webhook_endpoints (tenant_id, partner_id, draft_id, name, path, webhook_key, secret_hash, status) " +
                 "VALUES ($1, $2, $3, $4, $5, $6, $7, 'ACTIVE') " +
-                "ON CONFLICT (tenant_id, path) DO UPDATE SET status = 'ACTIVE', webhook_key = EXCLUDED.webhook_key, webhook_key_hash = EXCLUDED.webhook_key_hash, updated_at = NOW()";
+                "ON CONFLICT (tenant_id, path) DO UPDATE SET status = 'ACTIVE', webhook_key = EXCLUDED.webhook_key, secret_hash = EXCLUDED.secret_hash, updated_at = NOW()";
 
             draftRepository.getClient().preparedQuery(sql)
                 .execute(io.vertx.mutiny.sqlclient.Tuple.tuple()
@@ -111,7 +111,7 @@ public class MappingPublishService {
                     .addString(draft.getName() + " Webhook")
                     .addString(webhookPath)
                     .addString(webhookKey)
-                    .addString(webhookKeyHash)
+                    .addString(secretHash)
                 )
                 .subscribe().with(
                     result -> LOG.infof("🔗 Webhook endpoint registered: %s (key: %s)", webhookPath, webhookKey),

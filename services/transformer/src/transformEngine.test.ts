@@ -375,7 +375,7 @@ describe('TransformEngine', () => {
 
   it('should merge API enrichment data before validation and mapping', async () => {
     const server = http.createServer((req, res) => {
-      if (req.url !== '/risk' || req.method !== 'POST') {
+      if (req.url !== '/risk/ORD-900' || req.method !== 'POST') {
         res.writeHead(404).end();
         return;
       }
@@ -436,7 +436,7 @@ describe('TransformEngine', () => {
         enrichmentSteps: [
           {
             name: 'risk',
-            url: `http://127.0.0.1:${address.port}/risk`,
+            url: `http://127.0.0.1:${address.port}/risk/{orderId}`,
             mergePath: 'risk',
           },
         ],

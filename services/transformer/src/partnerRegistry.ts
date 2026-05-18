@@ -136,13 +136,14 @@ export class PartnerRegistry {
         d.tenant_id,
         COALESCE(p.external_id, p.name, d.partner_id::text) AS partner_key,
         d.event_type,
+        d.source_type,
         d.source_config,
         d.input_schema,
         d.target_schema_json,
         d.generated_jsonata
       FROM mapping_drafts d
       LEFT JOIN partners p ON p.id = d.partner_id AND p.tenant_id = d.tenant_id
-      WHERE d.source_type = 'KAFKA'
+      WHERE d.source_type IN ('KAFKA', 'API_ENRICHMENT')
         AND d.status IN ('DRAFT', 'VALID', 'READY_TO_PUBLISH')
         AND d.generated_jsonata IS NOT NULL
         AND d.generated_jsonata <> ''
@@ -155,6 +156,7 @@ export class PartnerRegistry {
     for (const row of result.rows) {
       const sourceConfig = asObject(row.source_config);
       const rawTopic = stringValue(sourceConfig.topic) ?? `tenant-${row.tenant_id}.raw.${row.partner_key}.${row.event_type}`;
+      const enrichmentSteps = buildEnrichmentSteps(sourceConfig);
       const config: PartnerMappingConfig = {
         partnerId: stringValue(sourceConfig.partnerId) ?? String(row.partner_key),
         eventType: String(row.event_type),
@@ -166,6 +168,7 @@ export class PartnerRegistry {
         inlineInputSchema: asSchema(row.input_schema),
         inlineCanonicalSchema: asSchema(row.target_schema_json),
         inlineMappingText: String(row.generated_jsonata),
+        enrichmentSteps,
         topics: {
           raw: rawTopic,
           canonical: stringValue(sourceConfig.canonicalTopic) ?? this.options.canonicalTopic ?? 'canonical.events',
@@ -253,4 +256,55 @@ function asSchema(value: unknown): unknown {
 
 function stringValue(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+export function buildEnrichmentSteps(sourceConfig: Record<string, unknown>): EnrichmentStepConfig[] | undefined {
+  const explicitSteps = Array.isArray(sourceConfig.enrichmentSteps)
+    ? sourceConfig.enrichmentSteps
+        .map((step) => normalizeEnrichmentStep(asObject(step)))
+        .filter((step): step is EnrichmentStepConfig => step !== undefined)
+    : [];
+
+  const nested = normalizeEnrichmentStep(asObject(sourceConfig.apiEnrichment));
+  const direct = normalizeEnrichmentStep(sourceConfig);
+  const steps = [...explicitSteps];
+
+  if (nested) {
+    steps.push(nested);
+  } else if (direct) {
+    steps.push(direct);
+  }
+
+  return steps.length ? steps : undefined;
+}
+
+function normalizeEnrichmentStep(config: Record<string, unknown>): EnrichmentStepConfig | undefined {
+  const url = stringValue(config.urlTemplate) ?? stringValue(config.url);
+  if (!url) return undefined;
+
+  const name = stringValue(config.lookupName) ?? stringValue(config.name) ?? 'lookup';
+  const method = stringValue(config.method)?.toUpperCase();
+  const failurePolicy = stringValue(config.failurePolicy)?.toUpperCase();
+
+  return {
+    name,
+    url,
+    method,
+    headers: recordOfStrings(config.headers),
+    timeoutMs: numberValue(config.timeoutMs),
+    mergePath: stringValue(config.mergePath) ?? `enrichment.${name}`,
+    required: failurePolicy === 'SKIP_ENRICHMENT' ? false : true,
+  };
+}
+
+function recordOfStrings(value: unknown): Record<string, string> | undefined {
+  const obj = asObject(value);
+  const entries = Object.entries(obj)
+    .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+    .map(([key, val]) => [key, val] as [string, string]);
+  return entries.length ? Object.fromEntries(entries) : undefined;
+}
+
+function numberValue(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }

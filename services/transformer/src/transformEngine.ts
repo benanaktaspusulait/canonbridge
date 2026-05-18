@@ -188,12 +188,12 @@ export class TransformEngine {
       const timeout = setTimeout(() => controller.abort(), step.timeoutMs ?? 5000);
       try {
         const method = (step.method ?? 'POST').toUpperCase();
-        const response = await fetch(step.url, {
+        const response = await fetch(renderTemplate(step.url, enriched), {
           method,
           headers: {
             Accept: 'application/json',
             ...(method === 'GET' ? {} : { 'Content-Type': 'application/json' }),
-            ...(step.headers ?? {}),
+            ...renderRecordTemplates(step.headers ?? {}, enriched),
           },
           body: method === 'GET' || method === 'HEAD' ? undefined : JSON.stringify(enriched),
           signal: controller.signal,
@@ -352,4 +352,26 @@ function mergeAtPath(root: Record<string, unknown>, pathExpression: string, valu
   }
   cursor[parts[parts.length - 1]] = value;
   return next;
+}
+
+function renderRecordTemplates(record: Record<string, string>, context: Record<string, unknown>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(record).map(([key, value]) => [key, renderTemplate(value, context)]),
+  );
+}
+
+function renderTemplate(template: string, context: Record<string, unknown>): string {
+  return template.replace(/\{\{\s*([\w.]+)\s*\}\}|\{\s*([\w.]+)\s*\}/g, (_match, doublePath, singlePath) => {
+    const value = readPath(context, doublePath ?? singlePath);
+    return value === undefined || value === null ? '' : encodeURIComponent(String(value));
+  });
+}
+
+function readPath(context: Record<string, unknown>, pathExpression: string): unknown {
+  return pathExpression.split('.').reduce<unknown>((current, segment) => {
+    if (current && typeof current === 'object' && segment in current) {
+      return (current as Record<string, unknown>)[segment];
+    }
+    return undefined;
+  }, context);
 }

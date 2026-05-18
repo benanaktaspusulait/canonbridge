@@ -8,6 +8,7 @@ import com.canonbridge.mappingstudio.outbound.OutboundHttpService;
 import com.canonbridge.mappingstudio.outbound.RequestTemplateService;
 import com.canonbridge.mappingstudio.outbound.CircuitBreaker;
 import com.canonbridge.mappingstudio.repository.OutboundConnectionRepository;
+import com.canonbridge.mappingstudio.validation.SourcePayloadValidator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.smallrye.mutiny.Uni;
@@ -57,6 +58,9 @@ public class MappingExecutionService {
 
     @Inject
     RequestTemplateService requestTemplateService;
+
+    @Inject
+    SourcePayloadValidator sourcePayloadValidator;
 
     @Inject
     com.canonbridge.mappingstudio.repository.ProxyExecutionLogRepository executionLogRepository;
@@ -952,20 +956,28 @@ public class MappingExecutionService {
      * Validate transformed response against canonical schema (JSON Schema).
      */
     private String validateAgainstSchema(MappingDraft mapping, JsonNode response) {
+        String schemaJson = mapping.getTargetSchemaJson();
         String schemaRef = mapping.getCanonicalSchemaRef();
-        if (schemaRef == null || schemaRef.isBlank()) {
+        if ((schemaJson == null || schemaJson.isBlank()) && (schemaRef == null || schemaRef.isBlank())) {
             return null; // No schema configured
         }
 
-        // Skip schema validation for now if response is not an object
-        if (response == null || !response.isObject()) {
+        if (response == null) {
+            return "Response is null";
+        }
+
+        if (schemaJson == null || schemaJson.isBlank()) {
+            LOG.infof("Response schema reference configured without inline target_schema_json: %s", schemaRef);
             return null;
         }
 
-        // We'd need to fetch the schema from SchemaRepository and validate.
-        // For now, do basic validation: check that response is a valid JSON object.
-        // Full JSON Schema validation can be added with a library like networknt/json-schema-validator.
-        LOG.infof("✓ Response schema reference: %s (basic check passed)", schemaRef);
+        SourcePayloadValidator.ValidationResult result = sourcePayloadValidator.validate(schemaJson, response.toString());
+        if (!result.valid()) {
+            return String.join("; ", result.errors());
+        }
+
+        LOG.infof("✓ Response validated against target schema%s",
+                schemaRef != null && !schemaRef.isBlank() ? " (" + schemaRef + ")" : "");
         return null;
     }
 
