@@ -23,6 +23,7 @@ public class AuthResource {
 
     @POST
     @Path("/login")
+    @io.smallrye.common.annotation.Blocking
     @Operation(summary = "Login with email and password")
     public Uni<Response> login(@Valid LoginRequest request) {
         if (request == null || request.getEmail() == null || request.getPassword() == null) {
