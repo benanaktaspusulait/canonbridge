@@ -7,7 +7,7 @@
 
 CanonBridge now exposes 10 distinct mock-backed external system templates for the single tenant demo path. The platform also models 10 integration source types in the UI and backend enum.
 
-The remaining risk is not system count; it is depth of proof. Several systems are template/mock ready, while only the core demo systems have richer mapping, fixture, and acceptance coverage.
+The remaining risk is not system count or seed coverage; it is automated proof depth. The four newest systems now have mapping drafts, canonical schemas, and source samples, but CI still needs one runtime smoke path per external system.
 
 ## 10 Source Types
 
@@ -47,23 +47,38 @@ Evidence:
 Evidence:
 
 - `services/mapping-studio-api/src/main/resources/db/migration/V38__normalize_ten_system_templates.sql`
+- `services/mapping-studio-api/src/main/resources/db/migration/V39__seed_new_system_mapping_drafts.sql`
 - `services/canonbridge-mock/src/main/java/com/canonbridge/mock/controller/AdditionalSystemsController.java`
+
+## Seed Coverage
+
+| System | Template | Mapping draft / sample evidence |
+|---|---|---|
+| PayFlex Payment System | Present | Existing PayFlex webhook mapping seeds. |
+| ShopMax E-Commerce System | Present | Existing ShopMax Kafka mapping seeds. |
+| FastCargo Logistics System | Present | Existing FastCargo SOAP mapping seeds. |
+| ProfileHub GraphQL API | Present | Existing GraphQL connection and mock coverage. |
+| CustomerGateway gRPC Profile Service | Present | Existing gRPC connection and mock coverage. |
+| FoodMarket Order System | Present | Existing FoodMarket system template and mock coverage. |
+| InventoryPro Warehouse System | Present | `V39` InventoryPro stock mapping draft and sample payload. |
+| TicketDesk Support System | Present | `V39` TicketDesk ticket mapping draft and sample payload. |
+| CloudBill Billing System | Present | `V39` CloudBill invoice mapping draft and sample payload. |
+| PeopleOps HR System | Present | `V39` PeopleOps employee profile mapping draft and sample payload. |
 
 ## Support Depth
 
 | Area | Status | Notes |
 |---|---|---|
 | Source type model | Done | UI and backend both carry 10 source types. |
-| Mock-backed systems | Done | 10 distinct system templates after `V38`. |
+| Mock-backed systems | Done | 10 distinct system templates after `V38`, with a `V39` guard for both row count and distinct names. |
 | Request transformation | Done | `GAP-011` is now closed in the no-code gap register. |
-| Core demo mappings | Partial | PayFlex, ShopMax, FastCargo, ProfileHub, CustomerGateway, and FoodMarket have stronger seeds than the four new template systems. |
-| Runtime proof per system | Partial | New systems have mock endpoints and connection templates, but no dedicated mapping draft, fixture, and E2E scenario yet. |
+| Mapping seeds | Done | The four newest REST systems now have partners, schemas, drafts, connection links, and source samples in `V39`. |
+| Runtime proof per system | Partial | CI still needs one source-to-canonical smoke assertion for each of the 10 systems. |
 | Production proof | Partial | Integration tests still depend on Docker/Testcontainers availability. |
 
 ## Remaining Actions
 
-1. Add mapping drafts, schemas, and sample payloads for InventoryPro, TicketDesk, CloudBill, and PeopleOps.
-2. Extend `docs/testing/ACCEPTANCE_SCENARIOS.md` with one E2E scenario per new system.
-3. Add a database or smoke-test check that asserts exactly 10 distinct `is_system_template = TRUE` names for `tenant-acme`.
-4. Add UI coverage for selecting each template in the mapping wizard.
-5. Keep [Project Gaps](./PROJECT_GAPS.md) as the single living gap register for production readiness.
+1. Add CI-backed E2E smoke tests that execute one source-to-canonical path per external system.
+2. Add expected canonical output fixtures for the four newest systems.
+3. Add UI coverage for selecting each template in the mapping wizard.
+4. Keep [Project Gaps](./PROJECT_GAPS.md) as the single living gap register for production readiness.

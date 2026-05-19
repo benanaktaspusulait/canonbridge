@@ -1,142 +1,52 @@
 # Docker Compose Local Reference
 
-This document describes the prepared local infrastructure in [`_implementation-ready/docker-compose.yml`](../../_implementation-ready/docker-compose.yml). Application containers for the transformer, business service, frontend, and forms UI should be added after those source projects exist.
+This document describes the root [`docker-compose.yml`](../../docker-compose.yml) stack used for local development.
 
-For the fastest setup, use [setup-guide.md](./setup-guide.md).
+For the full setup walkthrough, use [setup-guide.md](./setup-guide.md).
 
 ## Services
 
-| Service | Container | Port(s) | Purpose |
-|---------|-----------|---------|---------|
-| Zookeeper | `etl-zookeeper` | `2181` | Kafka coordination |
-| Kafka | `etl-kafka` | `9092`, `9101` | Event broker and JMX |
-| PostgreSQL | `etl-postgres` | `5432` | Core relational store |
-| Redis | `etl-redis` | `6379` | Cache and coordination support |
-| Prometheus | `etl-prometheus` | `9090` | Metrics collection |
-| Grafana | `etl-grafana` | `3001` | Dashboards, `admin/admin` locally |
-| Jaeger | `etl-jaeger` | `16686`, tracing ports | Distributed tracing |
-| Kafka UI | `etl-kafka-ui` | `8080` | Local Kafka inspection |
-
-## Configuration
-
-PostgreSQL defaults:
-
-```bash
-POSTGRES_DB=etldb
-POSTGRES_USER=etluser
-POSTGRES_PASSWORD=etlpass
-```
-
-Database initialization is mounted from:
-
-```text
-docker/postgres/init.sql
-```
-
-Prometheus configuration is mounted from:
-
-```text
-docker/prometheus/prometheus.yml
-```
-
-Grafana provisioning and dashboards are mounted from:
-
-```text
-docker/grafana/provisioning/
-docker/grafana/dashboards/
-```
+| Service | Purpose |
+|---|---|
+| `postgres` | Mapping Studio API database |
+| `zookeeper` | Kafka coordination |
+| `kafka` | Raw/canonical event broker |
+| `redis` | Cache support |
+| `mapping-studio-api` | Quarkus management API |
+| `transformer` | Node.js/Fastify transformation runtime |
+| `webhook-receiver` | Partner webhook ingestion |
+| `canonbridge-mock` | Mock external systems |
+| `mapping-studio-ui` | Angular Mapping Studio |
+| `prometheus` | Metrics collection |
+| `grafana` | Local dashboards |
 
 ## Common Commands
 
 ```bash
-# Enter the prepared infrastructure package first
-cd _implementation-ready
-
-# Start local infrastructure
-make up
-
-# First-time initialization
-make init
-
-# Stop services
-make down
-
-# Show container status
-make status
-
-# Run health checks
-make health
-
-# Tail all service logs
-make logs
-
-# Open database shell
-make db-shell
-
-# List Kafka topics
-make kafka-topics
+cp .env.example .env
+docker compose up -d postgres kafka zookeeper redis canonbridge-mock
+docker compose up -d mapping-studio-api transformer webhook-receiver mapping-studio-ui
+docker compose ps
+docker compose logs -f mapping-studio-api
+docker compose down
 ```
 
-Equivalent Docker Compose commands:
-
-```bash
-docker-compose up -d
-docker-compose ps
-docker-compose logs -f
-docker-compose down
-```
-
-## Local URLs
+## Useful URLs
 
 | Tool | URL |
-|------|-----|
-| Kafka UI | http://localhost:8080 |
+|---|---|
+| Mapping Studio UI | http://localhost:4200 |
+| Mapping Studio API health | http://localhost:8082/health |
+| Transformer health | http://localhost:3000/health |
+| Mock service health | http://localhost:8080/actuator/health |
 | Prometheus | http://localhost:9090 |
 | Grafana | http://localhost:3001 |
-| Jaeger | http://localhost:16686 |
 
-## Health Checks
-
-The compose file defines container-level health checks for Zookeeper, Kafka, PostgreSQL, Redis, Prometheus, Grafana, and Jaeger.
+## Reset Local State
 
 ```bash
-make health
-docker-compose ps
-docker-compose exec postgres pg_isready -U etluser -d etldb
-docker-compose exec redis redis-cli ping
-docker-compose exec kafka kafka-broker-api-versions --bootstrap-server localhost:9092
+docker compose down -v
+docker compose up -d postgres kafka zookeeper redis canonbridge-mock
 ```
 
-## Data and Volumes
-
-The local stack uses named Docker volumes:
-
-```text
-zookeeper-data
-zookeeper-logs
-kafka-data
-postgres-data
-redis-data
-prometheus-data
-grafana-data
-```
-
-To reset local state:
-
-```bash
-make clean
-make init
-```
-
-`make clean` removes local containers and volumes. Use it only when local development data can be discarded.
-
-## Next Additions
-
-When application code is added, extend the compose file with:
-
-- Transformer service container and worker runtime.
-- Business service container.
-- Frontend and forms UI containers.
-- Service-specific health endpoints.
-- Application metrics scrape targets.
-- Local sample data and mapping fixtures.
+Use the volume reset only when local database and Kafka state can be discarded.

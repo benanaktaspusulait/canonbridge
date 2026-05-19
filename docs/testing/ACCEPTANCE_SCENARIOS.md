@@ -2052,7 +2052,32 @@ curl -X POST http://localhost:3000/v1/transform \
 
 ---
 
-## 20. Acceptance Test Checklist
+## 20. Ten-System Template Smoke Matrix
+**Purpose**: Prove the product can represent and exercise 10 distinct external systems, not only 10 labels in the UI.
+**Seed Evidence**: `V38__normalize_ten_system_templates.sql` creates the 10 distinct system templates. `V39__seed_new_system_mapping_drafts.sql` adds drafts, canonical schemas, and source samples for InventoryPro, TicketDesk, CloudBill, and PeopleOps.
+
+| System | Primary path | Expected smoke proof |
+|---|---|---|
+| PayFlex Payment System | Webhook payment event | Payload maps to canonical payment event. |
+| ShopMax E-Commerce System | Kafka order event | Payload maps to canonical order event. |
+| FastCargo Logistics System | SOAP shipment tracking response | Response maps to canonical shipment event. |
+| ProfileHub GraphQL API | GraphQL profile response | Response maps to canonical profile event. |
+| CustomerGateway gRPC Profile Service | gRPC customer response | Response maps to canonical customer event. |
+| FoodMarket Order System | REST order response | Response maps to canonical food order event. |
+| InventoryPro Warehouse System | REST stock item response | Response maps to `InventoryStockSnapshot`. |
+| TicketDesk Support System | REST ticket response | Response maps to `SupportTicketUpdated`. |
+| CloudBill Billing System | REST invoice response | Response maps to `BillingInvoiceIssued`. |
+| PeopleOps HR System | REST employee response | Response maps to `EmployeeProfileUpdated`. |
+
+**Pass Criteria**:
+- Database contains exactly 10 `tenant-acme` rows with `is_system_template = TRUE` and 10 distinct template names.
+- Each template is backed by a mock endpoint or mock protocol route.
+- Each system has a mapping path and source sample or fixture.
+- CI executes at least one source-to-canonical assertion per system.
+
+---
+
+## 21. Acceptance Test Checklist
 (Complete checkbox list of all critical behaviors)
 - [ ] 01. Services boot (Docker Compose / K8s)
 - [ ] 02. Health endpoints respond 200 OK
@@ -2137,7 +2162,7 @@ curl -X POST http://localhost:3000/v1/transform \
 
 ---
 
-## 21. ROI Validation Summary
+## 22. ROI Validation Summary
 **Purpose**: Final check against the business case core thesis.
 **Analysis**:
 - Do 50 partners require 50 custom adapters? **NO**.
