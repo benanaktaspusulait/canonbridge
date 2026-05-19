@@ -30,14 +30,21 @@ public class WebhookService {
             String partnerId,
             String eventType,
             String webhookKey,
+            String webhookSignature,
             String payload,
             HttpHeaders headers) {
 
-        // Validate webhook key
         return authService.validateWebhookKey(partnerId, webhookKey)
             .flatMap(valid -> {
                 if (!valid) {
                     return Uni.createFrom().failure(new NotAuthorizedException("Invalid webhook key"));
+                }
+
+                if (webhookSignature != null && !webhookSignature.isBlank()) {
+                    if (!authService.verifyHmacSignature(payload, webhookSignature, webhookKey)) {
+                        LOG.warnf("HMAC signature mismatch for partner: %s, event: %s", partnerId, eventType);
+                        return Uni.createFrom().failure(new NotAuthorizedException("Invalid webhook signature"));
+                    }
                 }
 
                 String eventId = UUID.randomUUID().toString();

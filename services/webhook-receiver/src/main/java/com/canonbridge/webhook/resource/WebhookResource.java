@@ -41,6 +41,7 @@ public class WebhookResource {
             @PathParam("partnerId") String partnerId,
             @PathParam("eventType") String eventType,
             @HeaderParam("X-Webhook-Key") String webhookKey,
+            @HeaderParam("X-Webhook-Signature") String webhookSignature,
             @Context HttpHeaders headers,
             String payload) {
 
@@ -52,7 +53,7 @@ public class WebhookResource {
             );
         }
 
-        return webhookService.processWebhook(partnerId, eventType, webhookKey, payload, headers)
+        return webhookService.processWebhook(partnerId, eventType, webhookKey, webhookSignature, payload, headers)
             .map(eventId -> Response.accepted()
                 .entity(new WebhookResponse(eventId, "Webhook received and queued"))
                 .build())

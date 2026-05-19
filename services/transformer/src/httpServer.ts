@@ -36,11 +36,21 @@ export async function buildServer(
 ): Promise<FastifyInstance> {
   const app = Fastify({
     logger: { level: env.logLevel },
+    bodyLimit: 2 * 1024 * 1024,
   });
 
   // G-06: CORS — explicit origins or allow all if empty
   const corsOrigin = env.corsOrigins.length > 0 ? env.corsOrigins : true;
   await app.register(cors, { origin: corsOrigin });
+
+  app.addHook('onSend', async (_request, reply) => {
+    reply.header('X-Content-Type-Options', 'nosniff');
+    reply.header('X-Frame-Options', 'DENY');
+    reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+    reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    reply.header('X-Permitted-Cross-Domain-Policies', 'none');
+  });
 
   // G-15: OpenAPI/Swagger documentation
   await app.register(swagger, {

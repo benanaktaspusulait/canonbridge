@@ -46,7 +46,7 @@ class WebhookResourceTest {
     @Test
     void givenValidWebhookKey_thenReturn202() {
         String eventId = "evt-12345";
-        Mockito.when(webhookService.processWebhook(anyString(), anyString(), anyString(), anyString(), any()))
+        Mockito.when(webhookService.processWebhook(anyString(), anyString(), anyString(), any(), anyString(), any()))
             .thenReturn(Uni.createFrom().item(eventId));
 
         given()
@@ -63,7 +63,7 @@ class WebhookResourceTest {
 
     @Test
     void givenInvalidWebhookKey_thenReturn401() {
-        Mockito.when(webhookService.processWebhook(anyString(), anyString(), anyString(), anyString(), any()))
+        Mockito.when(webhookService.processWebhook(anyString(), anyString(), anyString(), any(), anyString(), any()))
             .thenReturn(Uni.createFrom().failure(new NotAuthorizedException("Invalid webhook key")));
 
         given()
@@ -79,7 +79,7 @@ class WebhookResourceTest {
 
     @Test
     void givenServiceFailure_thenReturn500() {
-        Mockito.when(webhookService.processWebhook(anyString(), anyString(), anyString(), anyString(), any()))
+        Mockito.when(webhookService.processWebhook(anyString(), anyString(), anyString(), any(), anyString(), any()))
             .thenReturn(Uni.createFrom().failure(new RuntimeException("Kafka unavailable")));
 
         given()
@@ -96,7 +96,7 @@ class WebhookResourceTest {
     @Test
     void givenDifferentPartnerAndEventType_thenRoutedCorrectly() {
         String eventId = "evt-99999";
-        Mockito.when(webhookService.processWebhook(eq("fastcargo"), eq("SHIPMENT_DELIVERED"), anyString(), anyString(), any()))
+        Mockito.when(webhookService.processWebhook(eq("fastcargo"), eq("SHIPMENT_DELIVERED"), anyString(), any(), anyString(), any()))
             .thenReturn(Uni.createFrom().item(eventId));
 
         given()

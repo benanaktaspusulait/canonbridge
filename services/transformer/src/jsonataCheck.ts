@@ -10,6 +10,34 @@ const MAX_EXPRESSION_LENGTH = 500_000;
 /** Hard cap enforced at HTTP layer — exported for reuse in validators. */
 export const JSONATA_BATCH_MAX_ITEMS = 64;
 
+const BLOCKED_FUNCTIONS = new Set([
+  '$eval',
+  '$environment',
+  '$import',
+  '$require',
+  '$fetch',
+  '$http',
+  '$readFile',
+  '$writeFile',
+  '$exec',
+  '$spawn',
+]);
+
+const BLOCKED_PATTERN = new RegExp(
+  Array.from(BLOCKED_FUNCTIONS)
+    .map(fn => fn.replace('$', '\\$'))
+    .join('|'),
+  'g',
+);
+
+function containsBlockedFunction(expression: string): string | null {
+  const match = expression.match(BLOCKED_PATTERN);
+  if (match) {
+    return match[0];
+  }
+  return null;
+}
+
 function payloadByteSize(payload: unknown): number {
   try {
     return new TextEncoder().encode(JSON.stringify(payload)).length;
@@ -25,6 +53,10 @@ export async function checkJsonataExpression(
 ): Promise<JsonataCheckOk | JsonataCheckErr> {
   if (expression.length > MAX_EXPRESSION_LENGTH) {
     return { ok: false, stage: 'compile', message: 'Expression exceeds maximum length' };
+  }
+  const blocked = containsBlockedFunction(expression);
+  if (blocked) {
+    return { ok: false, stage: 'compile', message: `Blocked function detected: ${blocked}` };
   }
   if (payloadByteSize(payload) > MAX_PAYLOAD_BYTES) {
     return { ok: false, stage: 'evaluate', message: 'Payload exceeds maximum size for JSONata check' };

@@ -46,7 +46,7 @@ class WebhookServiceTest {
             .thenReturn(Uni.createFrom().item(true));
 
         String result = webhookService
-            .processWebhook("partner-001", "ORDER_CREATED", "valid-key", "{\"orderId\":\"ORD-001\"}", mockHeaders)
+            .processWebhook("partner-001", "ORDER_CREATED", "valid-key", null, "{\"orderId\":\"ORD-001\"}", mockHeaders)
             .await().indefinitely();
 
         assertNotNull(result);
@@ -60,7 +60,7 @@ class WebhookServiceTest {
 
         assertThrows(NotAuthorizedException.class, () ->
             webhookService
-                .processWebhook("partner-001", "ORDER_CREATED", "wrong-key", "{}", mockHeaders)
+                .processWebhook("partner-001", "ORDER_CREATED", "wrong-key", null, "{}", mockHeaders)
                 .await().indefinitely()
         );
     }
@@ -71,7 +71,7 @@ class WebhookServiceTest {
             .thenReturn(Uni.createFrom().item(true));
 
         webhookService
-            .processWebhook("shopmax", "PAYMENT_CAPTURED", "shopmax-key", "{\"amount\":99.99}", mockHeaders)
+            .processWebhook("shopmax", "PAYMENT_CAPTURED", "shopmax-key", null, "{\"amount\":99.99}", mockHeaders)
             .await().indefinitely();
 
         InMemorySink<Record<String, String>> sink = connector.sink("raw-events");
@@ -85,7 +85,7 @@ class WebhookServiceTest {
 
         assertThrows(RuntimeException.class, () ->
             webhookService
-                .processWebhook("partner-001", "ORDER_CREATED", "any-key", "{}", mockHeaders)
+                .processWebhook("partner-001", "ORDER_CREATED", "any-key", null, "{}", mockHeaders)
                 .await().indefinitely()
         );
     }
