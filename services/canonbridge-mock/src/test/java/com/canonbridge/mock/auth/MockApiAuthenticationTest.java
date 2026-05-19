@@ -1,6 +1,7 @@
 package com.canonbridge.mock.auth;
 
 import com.canonbridge.mock.config.MockConfiguration;
+import com.canonbridge.mock.controller.AdditionalSystemsController;
 import com.canonbridge.mock.controller.FastCargoSoapController;
 import com.canonbridge.mock.controller.GraphQlController;
 import com.canonbridge.mock.controller.GrpcMockController;
@@ -117,5 +118,25 @@ class MockApiAuthenticationTest {
         String authorization = "Basic " + Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
         ResponseEntity<String> accepted = controller.getWsdl(authorization);
         assertEquals(HttpStatus.OK, accepted.getStatusCode());
+    }
+
+    @Test
+    void additionalDemoSystemsRequireBearerToken() {
+        AdditionalSystemsController controller = new AdditionalSystemsController();
+
+        ResponseEntity<?> rejected = controller.getInventoryItem(null, "SKU-1001");
+        assertEquals(HttpStatus.UNAUTHORIZED, rejected.getStatusCode());
+
+        ResponseEntity<?> inventory = controller.getInventoryItem("Bearer demo-token", "SKU-1001");
+        assertEquals(HttpStatus.OK, inventory.getStatusCode());
+
+        ResponseEntity<?> ticket = controller.getTicket("Bearer demo-token", "TCK-1001");
+        assertEquals(HttpStatus.OK, ticket.getStatusCode());
+
+        ResponseEntity<?> invoice = controller.getInvoice("Bearer demo-token", "INV-1001");
+        assertEquals(HttpStatus.OK, invoice.getStatusCode());
+
+        ResponseEntity<?> employee = controller.getEmployee("Bearer demo-token", "EMP-1001");
+        assertEquals(HttpStatus.OK, employee.getStatusCode());
     }
 }
