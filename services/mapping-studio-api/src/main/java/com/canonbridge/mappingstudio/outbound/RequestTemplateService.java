@@ -81,6 +81,13 @@ public class RequestTemplateService {
         throw new BadRequestException("Request template must render to a JSON object");
     }
 
+    public Uni<JsonObject> evaluate(String expression, JsonObject payload, int timeoutMs) {
+        JsonObject request = new JsonObject()
+                .put("jsonata", expression)
+                .put("timeoutMs", timeoutMs);
+        return renderJsonata(request, payload != null ? payload : new JsonObject());
+    }
+
     private Uni<JsonObject> renderJsonata(JsonObject request, JsonObject context) {
         String expression = request.getString("jsonata", "").trim();
         if (expression.isEmpty()) {

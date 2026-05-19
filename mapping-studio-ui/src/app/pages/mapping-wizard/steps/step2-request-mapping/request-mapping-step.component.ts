@@ -13,6 +13,7 @@ import { I18nPipe } from '../../../../core/i18n/i18n.pipe';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { RequestTransformationConfig } from '../../models/mapping-wizard.models';
 import { MappingService, FieldValidationRule, ValidationError } from '../../../../core/services/mapping.service';
+import { JsonataCheckService } from '../../../../core/services/jsonata-check.service';
 
 interface FieldValidationRules {
   minValue?: number | null;
@@ -69,6 +70,7 @@ export class RequestMappingStepComponent implements OnInit {
 
   private mappingService = inject(MappingService);
   private i18n = inject(I18nService);
+  private jsonataCheckService = inject(JsonataCheckService);
 
   useVisualMode = signal(true);
   fieldMappings = signal<FieldMapping[]>([]);
@@ -746,19 +748,39 @@ export class RequestMappingStepComponent implements OnInit {
     this.previewOutput.set(null);
     this.previewLoading.set(true);
 
-    try {
-      if (this.mode() === 'template') {
+    if (this.mode() === 'template') {
+      try {
         const template = this.parseJsonSafe(this.templateJson());
         const canonical = this.parseJsonSafe(this.canonicalSampleJson());
         const result = this.renderTemplate(template, canonical);
         this.previewOutput.set(JSON.stringify(result, null, 2));
-      } else {
-        this.previewOutput.set('JSONata preview requires backend evaluation');
+      } catch (e: any) {
+        this.previewError.set(e.message);
+      } finally {
+        this.previewLoading.set(false);
       }
-    } catch (e: any) {
-      this.previewError.set(e.message);
-    } finally {
-      this.previewLoading.set(false);
+    } else {
+      const expression = this.jsonataExpression().trim();
+      if (!expression) {
+        this.previewError.set(this.i18n.translate('studio.sourceValidation.error.jsonataRequired'));
+        this.previewLoading.set(false);
+        return;
+      }
+      let payload: unknown;
+      try {
+        payload = this.parseJsonSafe(this.canonicalSampleJson());
+      } catch {
+        payload = {};
+      }
+      this.jsonataCheckService.evaluate(payload, expression).then(res => {
+        if (res.ok) {
+          this.previewOutput.set(JSON.stringify(res.result, null, 2));
+        } else {
+          this.previewError.set(res.message ?? 'JSONata evaluation failed');
+        }
+      }).finally(() => {
+        this.previewLoading.set(false);
+      });
     }
   }
 

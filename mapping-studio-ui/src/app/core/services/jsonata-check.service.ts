@@ -3,6 +3,12 @@ import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
+export interface JsonataEvaluateResult {
+  ok: boolean;
+  result?: unknown;
+  message?: string;
+}
+
 export type JsonataBatchExpression = { ruleId: string; expression: string };
 
 export type JsonataBatchResultEntry =
@@ -30,6 +36,23 @@ export class JsonataCheckService {
   /**
    * Returns null when transformer URL is not configured (checks are skipped).
    */
+  async evaluate(
+    payload: unknown,
+    expression: string,
+    timeoutMs = 500,
+  ): Promise<JsonataEvaluateResult> {
+    const base = environment.api.baseUrl.replace(/\/$/, '');
+    const url = `${base}/jsonata/evaluate`;
+    try {
+      return await firstValueFrom(
+        this.http.post<JsonataEvaluateResult>(url, { payload, expression, timeoutMs }),
+      );
+    } catch (e: any) {
+      const message = e?.error?.message ?? e?.message ?? 'JSONata evaluation failed';
+      return { ok: false, message };
+    }
+  }
+
   async checkBatch(
     payload: unknown,
     expressions: JsonataBatchExpression[],
