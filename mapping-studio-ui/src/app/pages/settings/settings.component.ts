@@ -92,8 +92,6 @@ export class SettingsComponent implements OnInit {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const saved = JSON.parse(raw);
-      if (saved.tenantName  !== undefined) this.tenantName  = saved.tenantName;
-      if (saved.tenantSlug  !== undefined) this.tenantSlug  = saved.tenantSlug;
       if (saved.webhookUrl  !== undefined) this.webhookUrl  = saved.webhookUrl;
       if (saved.dlqAlerts   !== undefined) this.dlqAlerts   = saved.dlqAlerts;
       if (saved.lagAlerts   !== undefined) this.lagAlerts   = saved.lagAlerts;
@@ -106,14 +104,7 @@ export class SettingsComponent implements OnInit {
   // ── Tenant save ───────────────────────────────────────────────────────────
 
   saveSettings(): void {
-    if (!this.tenantName.trim() || !this.tenantSlug.trim()) {
-      this.toast.add({ severity: 'warn', summary: this.t('settings.toast.invalidTitle'), detail: this.t('settings.toast.invalidDetail') });
-      return;
-    }
-
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      tenantName:  this.tenantName,
-      tenantSlug:  this.tenantSlug,
       webhookUrl:  this.webhookUrl,
       dlqAlerts:   this.dlqAlerts,
       lagAlerts:   this.lagAlerts,

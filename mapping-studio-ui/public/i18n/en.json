@@ -28,6 +28,7 @@
     "dlq": "DLQ",
     "monitoring": "Monitoring",
     "audit": "Audit Log",
+    "tenant": "Tenant",
     "settings": "Settings"
   },
   "sidebar": {
@@ -56,6 +57,7 @@
     "feature4": "Optional advanced mode for precise transformation control",
     "signIn": "Sign in",
     "welcome": "Welcome back. Please enter your credentials.",
+    "tenantLocked": "Single tenant environment",
     "demoMode": "Demo mode",
     "demoModeHint": "— select a test account below",
     "quickFill": "Quick fill — demo account",
@@ -71,6 +73,53 @@
   "auth": {
     "invalidCredentials": "Invalid email or password.",
     "enterCredentials": "Please enter your email and password."
+  },
+  "tenant": {
+    "title": "Tenant",
+    "subtitle": "Current tenant scope and request context for this single-tenant Studio instance.",
+    "currentTenant": "Current tenant",
+    "copyId": "Copy tenant ID",
+    "enforcement": "Enforcement",
+    "enforced": "Locked by API and database",
+    "mode": {
+      "single": "Single tenant"
+    },
+    "identity": {
+      "title": "Tenant Identity",
+      "subtitle": "The user session is bound to this tenant after login.",
+      "mode": "Mode",
+      "user": "Signed-in user",
+      "role": "Role"
+    },
+    "requestContext": {
+      "title": "Request Context",
+      "subtitle": "Headers attached to tenant-scoped API calls."
+    },
+    "controls": {
+      "title": "Isolation Controls",
+      "subtitle": "Runtime and storage boundaries now point to the same tenant source.",
+      "database": {
+        "title": "Database tenant row",
+        "description": "The tenants table contains the single active tenant and rejects a second tenant.",
+        "status": "Enforced"
+      },
+      "api": {
+        "title": "API tenant filter",
+        "description": "Missing tenant headers are normalized and non-default tenants are rejected.",
+        "status": "Enforced"
+      },
+      "rbac": {
+        "title": "Role access",
+        "description": "User role still controls access to tenant-scoped operations.",
+        "status": "Active"
+      },
+      "audit": {
+        "title": "Audit trail",
+        "description": "Tenant denials and security failures are written as audit events.",
+        "status": "Tracked"
+      }
+    },
+    "note": "Tenant switching is intentionally unavailable in this build. The current platform goal is one tenant only, backed by the tenants table and the API SingleTenantContextFilter."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -450,6 +499,7 @@
     "tenantName": "Tenant Name",
     "tenantSlug": "Tenant Slug",
     "tenantSlugHint": "Used in Kafka topic names and API paths",
+    "tenantLockedHint": "Managed by the single-tenant backend; change it from deployment config only.",
     "webhookUrl": "Webhook URL",
     "webhookHint": "Receives platform event notifications",
     "saveChanges": "Save Changes",

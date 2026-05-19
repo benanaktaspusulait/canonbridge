@@ -28,6 +28,7 @@
     "dlq": "DLQ",
     "monitoring": "İzleme",
     "audit": "Denetim kaydı",
+    "tenant": "Tenant",
     "settings": "Ayarlar"
   },
   "sidebar": {
@@ -56,6 +57,7 @@
     "feature4": "Dönüşümleri ince ayar için isteğe bağlı gelişmiş mod",
     "signIn": "Giriş yap",
     "welcome": "Tekrar hoş geldiniz. Kimlik bilgilerinizi girin.",
+    "tenantLocked": "Tek tenant ortamı",
     "demoMode": "Demo modu",
     "demoModeHint": "— aşağıdan bir test hesabı seçin",
     "quickFill": "Hızlı doldur — demo hesabı",
@@ -71,6 +73,53 @@
   "auth": {
     "invalidCredentials": "Geçersiz e-posta veya şifre.",
     "enterCredentials": "Lütfen e-posta ve şifrenizi girin."
+  },
+  "tenant": {
+    "title": "Tenant",
+    "subtitle": "Bu tek tenant Studio kurulumundaki aktif tenant kapsamı ve istek bağlamı.",
+    "currentTenant": "Aktif tenant",
+    "copyId": "Tenant ID kopyala",
+    "enforcement": "Zorlama",
+    "enforced": "API ve veritabanı tarafından kilitli",
+    "mode": {
+      "single": "Tek tenant"
+    },
+    "identity": {
+      "title": "Tenant Kimliği",
+      "subtitle": "Kullanıcı oturumu girişten sonra bu tenant'a bağlanır.",
+      "mode": "Mod",
+      "user": "Giriş yapan kullanıcı",
+      "role": "Rol"
+    },
+    "requestContext": {
+      "title": "İstek Bağlamı",
+      "subtitle": "Tenant kapsamlı API çağrılarına eklenen header'lar."
+    },
+    "controls": {
+      "title": "İzolasyon Kontrolleri",
+      "subtitle": "Runtime ve veri sınırları artık aynı tenant kaynağına bakıyor.",
+      "database": {
+        "title": "Veritabanı tenant satırı",
+        "description": "tenants tablosu tek aktif tenant içerir ve ikinci tenant'ı reddeder.",
+        "status": "Zorunlu"
+      },
+      "api": {
+        "title": "API tenant filtresi",
+        "description": "Eksik tenant header'ları normalize edilir, farklı tenant istekleri reddedilir.",
+        "status": "Zorunlu"
+      },
+      "rbac": {
+        "title": "Rol erişimi",
+        "description": "Kullanıcı rolü tenant kapsamlı işlemlere erişimi belirlemeye devam eder.",
+        "status": "Aktif"
+      },
+      "audit": {
+        "title": "Denetim izi",
+        "description": "Tenant reddi ve güvenlik hataları audit event olarak yazılır.",
+        "status": "İzleniyor"
+      }
+    },
+    "note": "Bu sürümde tenant değiştirme bilerek kapalıdır. Platform hedefi tek tenant'tır; bu davranış tenants tablosu ve API SingleTenantContextFilter ile desteklenir."
   },
   "dashboard": {
     "title": "Kontrol paneli",
@@ -450,6 +499,7 @@
     "tenantName": "Kiracı adı",
     "tenantSlug": "Kiracı kısa adı",
     "tenantSlugHint": "Kafka konu adları ve API yollarında kullanılır",
+    "tenantLockedHint": "Tek tenant backend tarafından yönetilir; yalnızca deployment konfigürasyonundan değişir.",
     "webhookUrl": "Webhook URL",
     "webhookHint": "Platform olay bildirimlerini alır",
     "saveChanges": "Değişiklikleri kaydet",

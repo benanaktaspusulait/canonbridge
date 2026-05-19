@@ -5,6 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { AuthService } from '../../core/services/auth.service';
 
 interface AuditLog {
   id?: string;
@@ -27,6 +28,7 @@ interface AuditLog {
 })
 export class AuditComponent implements OnInit {
   private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
 
   readonly loading = signal(false);
   readonly logs = signal<AuditLog[]>([]);
@@ -40,7 +42,7 @@ export class AuditComponent implements OnInit {
     const params = new HttpParams().set('limit', '100').set('offset', '0');
     this.http.get<AuditLog[]>(`/api/audit-logs`, {
       params,
-      headers: { 'X-Tenant-Id': 'tenant-acme' }
+      headers: this.tenantHeaders()
     }).subscribe({
       next: (logs) => {
         this.logs.set(logs ?? []);
@@ -58,5 +60,9 @@ export class AuditComponent implements OnInit {
     if (outcome === 'DENIED') return 'warn';
     if (outcome === 'FAILURE') return 'danger';
     return 'secondary';
+  }
+
+  private tenantHeaders(): Record<string, string> {
+    return { 'X-Tenant-Id': this.auth.currentTenant().id };
   }
 }

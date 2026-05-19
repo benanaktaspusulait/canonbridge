@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const apiBase = environment.api.baseUrl;
 
-  if (!req.url.startsWith(apiBase)) {
+  if (!req.url.startsWith(apiBase) && !req.url.startsWith('/api')) {
     return next(req);
   }
 

@@ -1,0 +1,117 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ 'tenant.title' | i18n }}</h1>
+    <p class="page-subtitle">{{ 'tenant.subtitle' | i18n }}</p>
+  </div>
+  <div class="page-actions">
+    <p-tag severity="success" [value]="'tenant.mode.single' | i18n" />
+  </div>
+</div>
+
+<section class="tenant-hero" aria-labelledby="tenant-name">
+  <div class="tenant-hero-main">
+    <div class="tenant-avatar" aria-hidden="true">
+      <i class="pi pi-building"></i>
+    </div>
+    <div>
+      <div class="tenant-eyebrow">{{ 'tenant.currentTenant' | i18n }}</div>
+      <h2 id="tenant-name">{{ tenant().name }}</h2>
+      <div class="tenant-id-row">
+        <code>{{ tenant().id }}</code>
+        <p-button
+          icon="pi pi-copy"
+          severity="secondary"
+          variant="text"
+          size="small"
+          [pTooltip]="'tenant.copyId' | i18n"
+          (onClick)="copyTenantId()" />
+      </div>
+    </div>
+  </div>
+
+  <div class="tenant-hero-state">
+    <span>{{ 'tenant.enforcement' | i18n }}</span>
+    <strong>{{ 'tenant.enforced' | i18n }}</strong>
+  </div>
+</section>
+
+<div class="tenant-grid">
+  <p-card>
+    <ng-template pTemplate="header">
+      <div class="card-header-row">
+        <div>
+          <h2 class="card-title">{{ 'tenant.identity.title' | i18n }}</h2>
+          <p class="card-subtitle">{{ 'tenant.identity.subtitle' | i18n }}</p>
+        </div>
+      </div>
+    </ng-template>
+
+    <div class="tenant-facts">
+      <div class="tenant-fact">
+        <span>{{ 'tenant.identity.mode' | i18n }}</span>
+        <strong>{{ 'tenant.mode.single' | i18n }}</strong>
+      </div>
+      <div class="tenant-fact">
+        <span>{{ 'tenant.identity.user' | i18n }}</span>
+        <strong>{{ user()?.name ?? 'n/a' }}</strong>
+      </div>
+      <div class="tenant-fact">
+        <span>{{ 'tenant.identity.role' | i18n }}</span>
+        <strong>{{ user()?.role ?? 'n/a' }}</strong>
+      </div>
+    </div>
+  </p-card>
+
+  <p-card>
+    <ng-template pTemplate="header">
+      <div class="card-header-row">
+        <div>
+          <h2 class="card-title">{{ 'tenant.requestContext.title' | i18n }}</h2>
+          <p class="card-subtitle">{{ 'tenant.requestContext.subtitle' | i18n }}</p>
+        </div>
+      </div>
+    </ng-template>
+
+    <div class="header-list">
+      @for (header of requestHeaders(); track header.name) {
+        <div class="header-row">
+          <span>{{ header.name }}</span>
+          <code>{{ header.value }}</code>
+        </div>
+      }
+    </div>
+  </p-card>
+</div>
+
+<p-card styleClass="tenant-controls-card">
+  <ng-template pTemplate="header">
+    <div class="card-header-row">
+      <div>
+        <h2 class="card-title">{{ 'tenant.controls.title' | i18n }}</h2>
+        <p class="card-subtitle">{{ 'tenant.controls.subtitle' | i18n }}</p>
+      </div>
+    </div>
+  </ng-template>
+
+  <div class="control-grid">
+    @for (control of controls; track control.titleKey) {
+      <section class="control-item">
+        <div class="control-icon" aria-hidden="true">
+          <i [class]="control.icon"></i>
+        </div>
+        <div class="control-copy">
+          <h3>{{ control.titleKey | i18n }}</h3>
+          <p>{{ control.descriptionKey | i18n }}</p>
+        </div>
+        <p-tag [severity]="control.severity" [value]="control.statusKey | i18n" />
+      </section>
+    }
+  </div>
+
+  <p-divider />
+
+  <div class="tenant-note">
+    <i class="pi pi-info-circle" aria-hidden="true"></i>
+    <span>{{ 'tenant.note' | i18n }}</span>
+  </div>
+</p-card>

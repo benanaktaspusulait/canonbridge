@@ -35,6 +35,16 @@
         <p>{{ 'login.welcome' | i18n }}</p>
       </div>
 
+      <div class="tenant-lock-banner">
+        <div class="tenant-lock-icon" aria-hidden="true">
+          <i class="pi pi-lock"></i>
+        </div>
+        <div>
+          <strong>{{ 'login.tenantLocked' | i18n }}</strong>
+          <span>{{ tenant().name }} · {{ tenant().id }}</span>
+        </div>
+      </div>
+
       @if (demoAccounts.length) {
         <div class="demo-banner">
           <i class="pi pi-info-circle"></i>

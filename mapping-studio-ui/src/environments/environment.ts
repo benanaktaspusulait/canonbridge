@@ -36,6 +36,13 @@ export const environment = {
       { label: 'Platform Operator', email: 'operator@canonbridge.io', roleLabel: 'operator' },
     ],
   },
+
+  // Tenant Configuration
+  tenant: {
+    id: 'tenant-acme',
+    name: 'Acme Demo Tenant',
+    mode: 'single',
+  },
   
   // Feature Flags
   features: {

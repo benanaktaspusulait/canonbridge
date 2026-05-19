@@ -17,6 +17,13 @@ interface LoginResponse {
   };
 }
 
+export interface TenantSession {
+  id: string;
+  name: string;
+  mode: 'single';
+  enforced: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
@@ -31,6 +38,17 @@ export class AuthService {
   readonly currentUser = this._currentUser.asReadonly();
   readonly isAuthenticated = computed(() => this._currentUser() !== null);
   readonly userRole = computed(() => this._currentUser()?.role ?? null);
+  readonly currentTenant = computed<TenantSession>(() => {
+    const user = this._currentUser();
+    const configuredTenant = environment.tenant;
+
+    return {
+      id: user?.tenantId ?? configuredTenant.id,
+      name: user?.tenantName ?? configuredTenant.name,
+      mode: 'single',
+      enforced: true
+    };
+  });
 
   async login(credentials: LoginCredentials): Promise<{ success: boolean; error?: string }> {
     try {
@@ -49,7 +67,7 @@ export class AuthService {
         name: response.user.name,
         role: response.user.role as User['role'],
         tenantId: response.user.tenant_id,  // Map from snake_case to camelCase
-        tenantName: response.user.tenant_name ?? this.formatTenantName(response.user.tenant_id),
+        tenantName: this.resolveTenantName(response.user.tenant_id, response.user.tenant_name),
         avatarInitials: this.getInitials(response.user.name)
       };
 
@@ -101,7 +119,7 @@ export class AuthService {
 
   private normalizeStoredUser(user: User): User {
     if (!user.tenantName || user.tenantName === 'Acme Corp') {
-      user.tenantName = this.formatTenantName(user.tenantId);
+      user.tenantName = this.resolveTenantName(user.tenantId, user.tenantName);
       sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
     }
 
@@ -114,5 +132,15 @@ export class AuthService {
       .filter(Boolean)
       .map(part => part.charAt(0).toUpperCase() + part.slice(1))
       .join(' ');
+  }
+
+  private resolveTenantName(tenantId: string, tenantName?: string): string {
+    if (tenantName && tenantName !== 'Acme Corp') {
+      return tenantName;
+    }
+
+    return tenantId === environment.tenant.id
+      ? environment.tenant.name
+      : this.formatTenantName(tenantId);
   }
 }

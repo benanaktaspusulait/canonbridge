@@ -10,6 +10,7 @@ import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { TextareaModule } from 'primeng/textarea';
 import { MappingService } from '../../../../core/services/mapping.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { WizardState } from '../../models/mapping-wizard.models';
 import { buildCombinedMappingExpression } from '../step4-field-mapping/rule-to-jsonata';
 import mappingEngine from 'jsonata';
@@ -43,6 +44,7 @@ export class TestPublishStepComponent implements OnInit {
   private mappingService = inject(MappingService);
   private router = inject(Router);
   private http = inject(HttpClient);
+  private auth = inject(AuthService);
 
   mappingName = signal('');
   mappingDescription = signal('');
@@ -249,7 +251,7 @@ export class TestPublishStepComponent implements OnInit {
     const response = await firstValueFrom(this.http.post<any>(`/api/mapping-drafts/${mappingId}/kafka-test`, {
       payload: inputJson
     }, {
-      headers: { 'X-Tenant-Id': 'tenant-acme' }
+      headers: this.tenantHeaders()
     }));
 
     this.testEndpoint.set(String(state.sourceConfig['topic'] ?? response.topic ?? 'Kafka topic'));
@@ -352,7 +354,7 @@ export class TestPublishStepComponent implements OnInit {
     
     // Load logs
     this.http.get<any[]>(`/api/proxy/${mappingId}/logs?limit=10`, {
-      headers: { 'X-Tenant-Id': 'tenant-acme' }
+      headers: this.tenantHeaders()
     }).subscribe({
       next: (logs) => {
         this.executionLogs.set(logs || []);
@@ -366,7 +368,7 @@ export class TestPublishStepComponent implements OnInit {
 
     // Load stats
     this.http.get<any>(`/api/proxy/${mappingId}/stats`, {
-      headers: { 'X-Tenant-Id': 'tenant-acme' }
+      headers: this.tenantHeaders()
     }).subscribe({
       next: (stats) => this.executionStats.set(stats),
       error: () => this.executionStats.set(null)
@@ -398,7 +400,7 @@ export class TestPublishStepComponent implements OnInit {
 
     this.retryingLogId.set(log.id);
     this.http.post<any>(`/api/proxy/${mappingId}/retry/${log.id}`, {}, {
-      headers: { 'X-Tenant-Id': 'tenant-acme' }
+      headers: this.tenantHeaders()
     }).subscribe({
       next: (result) => {
         this.retryingLogId.set(null);
@@ -435,7 +437,7 @@ export class TestPublishStepComponent implements OnInit {
         next: () => {
           // Now call the publish endpoint
           this.http.post<any>(`/api/mapping-drafts/${mappingId}/publish`, { notes: '' }, {
-            headers: { 'X-Tenant-Id': 'tenant-acme' }
+            headers: this.tenantHeaders()
           }).subscribe({
             next: (version) => {
               this.saving.set(false);
@@ -604,9 +606,13 @@ export class TestPublishStepComponent implements OnInit {
   }
 
   getTestHeaders(): Record<string, string> {
+    return this.tenantHeaders({ 'Content-Type': 'application/json' });
+  }
+
+  private tenantHeaders(extra: Record<string, string> = {}): Record<string, string> {
     return {
-      'Content-Type': 'application/json',
-      'X-Tenant-Id': 'tenant-acme'
+      ...extra,
+      'X-Tenant-Id': this.auth.currentTenant().id
     };
   }
 
@@ -666,9 +672,9 @@ export class TestPublishStepComponent implements OnInit {
       return;
     }
 
-    // Build proxy URL with tenant ID
+    // Build proxy URL with the active tenant ID
     const baseUrl = window.location.origin;
-    const tenantId = 'tenant-acme'; // TODO: Get from auth service
+    const tenantId = this.auth.currentTenant().id;
     
     // Check if it's a GET mapping
     const sourceConfig = state.sourceConfig || {};

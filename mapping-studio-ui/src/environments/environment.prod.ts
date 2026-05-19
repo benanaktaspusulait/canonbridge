@@ -32,6 +32,13 @@ export const environment = {
     tokenRefreshThreshold: 300, // 5 minutes before expiry
     demoAccounts: [],
   },
+
+  // Tenant Configuration
+  tenant: {
+    id: 'tenant-acme',
+    name: 'Acme Tenant',
+    mode: 'single',
+  },
   
   // Feature Flags
   features: {

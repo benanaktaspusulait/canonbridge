@@ -22,12 +22,12 @@
 
     <div class="field">
       <label class="field-label">{{ 'settings.tenantName' | i18n }}</label>
-      <input pInputText [(ngModel)]="tenantName" class="w-full" />
+      <input pInputText [(ngModel)]="tenantName" class="w-full" [disabled]="true" [readonly]="true" />
     </div>
     <div class="field">
       <label class="field-label">{{ 'settings.tenantSlug' | i18n }}</label>
-      <input pInputText [(ngModel)]="tenantSlug" class="w-full" />
-      <small class="field-hint">{{ 'settings.tenantSlugHint' | i18n }}</small>
+      <input pInputText [(ngModel)]="tenantSlug" class="w-full" [disabled]="true" [readonly]="true" />
+      <small class="field-hint">{{ 'settings.tenantLockedHint' | i18n }}</small>
     </div>
     <div class="field">
       <label class="field-label">{{ 'settings.webhookUrl' | i18n }}</label>

@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NgIf } from '@angular/common';
@@ -39,16 +39,19 @@ interface DemoAccount {
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {
+  private readonly auth = inject(AuthService);
+
   email = '';
   password = '';
   loading = signal(false);
   errorKey = signal<string | null>(null);
 
   readonly demoAccounts: DemoAccount[] = environment.auth.demoAccounts;
+  readonly tenant = this.auth.currentTenant;
 
   selectedDemo: DemoAccount | null = null;
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private router: Router) {}
 
   onDemoSelect(account: DemoAccount | null): void {
     if (!account) return;

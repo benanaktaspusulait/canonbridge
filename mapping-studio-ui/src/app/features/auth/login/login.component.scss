@@ -148,6 +148,49 @@ html.dark-mode :host ::ng-deep .login-card.p-card {
   }
 }
 
+.tenant-lock-banner {
+  display: grid;
+  grid-template-columns: 2.3rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-card) 84%, var(--teal-50, #f0fdfa));
+  padding: 0.8rem 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.tenant-lock-icon {
+  display: grid;
+  place-items: center;
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--teal-500, #14b8a6) 14%, var(--surface-card));
+  color: var(--teal-700, #0f766e);
+}
+
+.tenant-lock-banner strong,
+.tenant-lock-banner span {
+  display: block;
+  min-width: 0;
+}
+
+.tenant-lock-banner strong {
+  color: var(--text-color);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.tenant-lock-banner span {
+  color: var(--text-color-secondary);
+  font-size: 0.78rem;
+  margin-top: 0.15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Demo banner */
 .demo-banner {
   display: flex;

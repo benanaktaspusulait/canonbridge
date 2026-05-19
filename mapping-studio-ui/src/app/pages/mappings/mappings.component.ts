@@ -22,6 +22,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
 import { EmptyStateComponent } from '../../core/components/empty-state.component';
 import { MappingService, MappingDraft } from '../../core/services/mapping.service';
 import { PartnerService, Partner } from '../../core/services/partner.service';
+import { AuthService } from '../../core/services/auth.service';
 
 interface MappingVersion {
   id: string;
@@ -78,6 +79,7 @@ export class MappingsComponent implements OnInit {
   private readonly partnerService = inject(PartnerService);
   private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
 
   readonly loading = signal(false);
   private readonly partners = signal<Map<string, string>>(new Map());
@@ -189,7 +191,7 @@ export class MappingsComponent implements OnInit {
     for (const mapping of mappings) {
       if (!mapping.id) continue;
       this.http.get<any>(`/api/proxy/${mapping.id}/stats`, {
-        headers: { 'X-Tenant-Id': 'tenant-acme' }
+        headers: this.tenantHeaders()
       }).subscribe({
         next: (stats) => {
           if (stats && stats.total > 0) {
@@ -298,7 +300,7 @@ export class MappingsComponent implements OnInit {
 
   private loadMappingVersions(mappingId: string): void {
     this.http.get<any[]>(`/api/mapping-versions`, {
-      headers: { 'X-Tenant-Id': 'tenant-acme' }
+      headers: this.tenantHeaders()
     }).subscribe({
       next: (versions) => {
         // Filter versions for this draft
@@ -311,14 +313,14 @@ export class MappingsComponent implements OnInit {
 
   private loadMappingHealthDetail(mappingId: string): void {
     this.http.get<any[]>(`/api/proxy/${mappingId}/series`, {
-      headers: { 'X-Tenant-Id': 'tenant-acme' }
+      headers: this.tenantHeaders()
     }).subscribe({
       next: (series) => this.executionSeries.set(series ?? []),
       error: () => this.executionSeries.set([])
     });
 
     this.http.get<any[]>(`/api/proxy/${mappingId}/logs`, {
-      headers: { 'X-Tenant-Id': 'tenant-acme' }
+      headers: this.tenantHeaders()
     }).subscribe({
       next: (logs) => this.executionLogs.set((logs ?? []).slice(0, 50)),
       error: () => this.executionLogs.set([])
@@ -339,7 +341,7 @@ export class MappingsComponent implements OnInit {
       rejectLabel: this.t('mappings.cancel'),
       accept: () => {
         this.http.post(`/api/mapping-drafts/bulk/deprecate`, { ids: [mapping.id] }, {
-          headers: { 'X-Tenant-Id': 'tenant-acme' }
+          headers: this.tenantHeaders()
         }).subscribe({
           next: () => {
             this._mappings.update(list => list.map(m => m.id === mapping.id ? { ...m, status: 'deprecated' } : m));
@@ -361,7 +363,7 @@ export class MappingsComponent implements OnInit {
     file.text().then(content => {
       const payload = JSON.parse(content);
       this.http.post(`/api/mapping-drafts/import`, payload, {
-        headers: { 'X-Tenant-Id': 'tenant-acme' }
+        headers: this.tenantHeaders()
       }).subscribe({
         next: () => {
           this.toast.add({ severity: 'success', summary: 'Imported', detail: file.name });
@@ -375,7 +377,7 @@ export class MappingsComponent implements OnInit {
 
   exportMapping(mapping: MappingVersion): void {
     this.http.get<any>(`/api/mapping-drafts/${mapping.id}/export`, {
-      headers: { 'X-Tenant-Id': 'tenant-acme' }
+      headers: this.tenantHeaders()
     }).subscribe({
       next: (draft) => this.downloadJson(draft, `mapping-${mapping.eventType || mapping.id}.json`),
       error: () => this.toast.add({ severity: 'error', summary: 'Export failed', detail: mapping.eventType })
@@ -384,7 +386,7 @@ export class MappingsComponent implements OnInit {
 
   cloneMapping(mapping: MappingVersion): void {
     this.http.post(`/api/mapping-drafts/${mapping.id}/clone`, {}, {
-      headers: { 'X-Tenant-Id': 'tenant-acme' }
+      headers: this.tenantHeaders()
     }).subscribe({
       next: () => {
         this.toast.add({ severity: 'success', summary: 'Cloned', detail: mapping.eventType });
@@ -398,7 +400,7 @@ export class MappingsComponent implements OnInit {
     const ids = this.selectedMappings().map(m => m.id);
     if (ids.length === 0) return;
     this.http.post(`/api/mapping-drafts/bulk/publish`, { ids }, {
-      headers: { 'X-Tenant-Id': 'tenant-acme' }
+      headers: this.tenantHeaders()
     }).subscribe({
       next: () => {
         this.toast.add({ severity: 'success', summary: 'Published', detail: `${ids.length} mappings` });
@@ -412,7 +414,7 @@ export class MappingsComponent implements OnInit {
     const ids = this.selectedMappings().map(m => m.id);
     if (ids.length === 0) return;
     this.http.post(`/api/mapping-drafts/bulk/deprecate`, { ids }, {
-      headers: { 'X-Tenant-Id': 'tenant-acme' }
+      headers: this.tenantHeaders()
     }).subscribe({
       next: () => {
         this.toast.add({ severity: 'warn', summary: 'Deprecated', detail: `${ids.length} mappings` });
@@ -434,7 +436,7 @@ export class MappingsComponent implements OnInit {
 
   createFromTemplate(template: any): void {
     this.http.post(`/api/mapping-drafts/import`, template.draft, {
-      headers: { 'X-Tenant-Id': 'tenant-acme' }
+      headers: this.tenantHeaders()
     }).subscribe({
       next: () => {
         this.templateDialogVisible = false;
@@ -449,7 +451,7 @@ export class MappingsComponent implements OnInit {
     const versions = [...this.mappingVersions()].sort((a, b) => Number(b.version ?? 0) - Number(a.version ?? 0));
     if (versions.length < 2) return;
     this.http.get<any>(`/api/mapping-versions/${versions[0].id}/diff/${versions[1].id}`, {
-      headers: { 'X-Tenant-Id': 'tenant-acme' }
+      headers: this.tenantHeaders()
     }).subscribe({
       next: (diff) => this.versionDiff.set(diff),
       error: () => this.toast.add({ severity: 'error', summary: 'Diff failed' })
@@ -514,5 +516,9 @@ export class MappingsComponent implements OnInit {
 
   private t(key: string, params?: Record<string, unknown>): string {
     return this.i18n.translate(key, params);
+  }
+
+  private tenantHeaders(): Record<string, string> {
+    return { 'X-Tenant-Id': this.auth.currentTenant().id };
   }
 }
