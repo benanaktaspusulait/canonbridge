@@ -4,7 +4,7 @@
 
 CanonBridge is an event transformation platform for teams that repeatedly onboard partner payloads into a shared canonical event model.
 
-> Current status: this repository is primarily a documentation, architecture, and prepared-infrastructure package. Product implementation, runnable application source code, automated tests, and performance benchmarks still need to be added before production-readiness claims can be treated as proven.
+> Current status: core platform services, Mapping Studio UI, transformer, mock systems, tests, Docker Compose, Kubernetes manifests, and CI workflows exist. Production-readiness claims still depend on the gaps tracked in [Project Gaps](../project/PROJECT_GAPS.md).
 
 [![Status](https://img.shields.io/badge/status-MVP-yellow.svg)](roadmap.md)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-green.svg)](https://nodejs.org/)
@@ -62,22 +62,20 @@ Start with [Mapping Studio Docs](./README.md).
 - [Getting Started](../getting-started.md)
 - [Mapping Studio Docs](./README.md)
 
-### 2. Evaluate Prepared Infrastructure
+### 2. Start The Local Stack
 
-The prepared infrastructure package lives under `_implementation-ready/`.
+Use the repository root Docker Compose stack for local dependencies and mock systems.
 
 ```bash
-cd _implementation-ready
 cp .env.example .env
-make init
-make health
+docker compose up -d postgres kafka zookeeper redis canonbridge-mock
 ```
 
-This brings up the prepared Kafka, PostgreSQL, Redis, Prometheus, Grafana, Jaeger, and Kafka UI stack. Application service builds should be added after the transformer, business service, and UI projects exist.
+Then start the service you are working on from its own folder.
 
-### 3. Build the Product Incrementally
+### 3. Track Product Gaps
 
-Follow [Implementation Roadmap](../implementation/roadmap.md), [Implementation Status](../implementation/status.md), and [Implementation-Ready Assets](../implementation/implementation-ready-assets.md). Create the transformer, business service, Mapping Studio UI, schemas, and tests before treating runtime commands as production-ready.
+Follow [Project Gaps](../project/PROJECT_GAPS.md) and [10 System Support Audit](../project/10_SYSTEM_SUPPORT_AUDIT.md) before treating runtime commands as production-ready.
 
 ## Documentation
 

@@ -489,10 +489,10 @@ NODE_OPTIONS=--max_old_space_size=4096 npm run build
 
 ## 📚 Documentation
 
-- [Documentation hub](../../docs/README.md) - CanonBridge docs index
-- [Mapping Studio (product)](../../docs/product/README.md) - Requirements, UX, API model
-- [Design system](../../docs/product/mapping-studio-design-system.md) - Tokens, components, layout
-- [Architecture](../../docs/architecture/tech-stack.md) - System technology stack
+- [Documentation hub](../docs/README.md) - CanonBridge docs index
+- [Mapping Studio (product)](../docs/product/README.md) - Requirements, UX, API model
+- [Design system](../docs/product/mapping-studio-design-system.md) - Tokens, components, layout
+- [Architecture](../docs/architecture/tech-stack.md) - System technology stack
 
 ---
 
@@ -531,10 +531,10 @@ Copyright © 2026 CanonBridge
 
 ## 🔗 Links
 
-- **Project**: [CanonBridge](../../README.md)
-- **Documentation**: [docs/](../../docs/)
-- **Architecture**: [docs/architecture/](../../docs/architecture/)
-- **Roadmap**: [docs/project/MASTER_ROADMAP.md](../../docs/project/MASTER_ROADMAP.md)
+- **Project**: [CanonBridge](../README.md)
+- **Documentation**: [docs/](../docs/)
+- **Architecture**: [docs/architecture/](../docs/architecture/)
+- **Roadmap**: [docs/project/MASTER_ROADMAP.md](../docs/project/MASTER_ROADMAP.md)
 
 ---
 
@@ -547,4 +547,3 @@ Copyright © 2026 CanonBridge
 ---
 
 **Made with ❤️ by the CanonBridge Team**
-

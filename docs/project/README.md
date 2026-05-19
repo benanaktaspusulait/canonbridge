@@ -17,7 +17,7 @@ This folder contains core project planning and strategy documents.
 4. **[BRAND_IDENTITY.md](./BRAND_IDENTITY.md)** - Project name, vision, and messaging
 5. **[MVP_DEFINITION.md](./MVP_DEFINITION.md)** - Minimum viable product scope
 6. **[STRATEGY.md](./STRATEGY.md)** - Customer validation and go-to-market plan
-7. **[EXECUTION_BACKLOG.md](./EXECUTION_BACKLOG.md)** - Execution backlog, done criteria, and quick links
+7. **[PROJECT_GAPS.md](./PROJECT_GAPS.md)** - Active gap register, done criteria, and quick links
 8. **[CUSTOMER_DISCOVERY_KIT.md](./CUSTOMER_DISCOVERY_KIT.md)** - Phase 0 customer interview kit and templates
 9. **[PERFORMANCE_TARGETS.md](./PERFORMANCE_TARGETS.md)** - Performance goals by phase
 

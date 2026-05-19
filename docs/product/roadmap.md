@@ -1,6 +1,6 @@
 # Product Roadmap - From Architecture to Production
 
-> ⚠️ **DEPRECATED**: This document is deprecated. Please refer to [MASTER_ROADMAP.md](../../MASTER_ROADMAP.md) for the official project roadmap.
+> Deprecated: This document is historical. Use [MASTER_ROADMAP.md](../project/MASTER_ROADMAP.md) for the official project roadmap.
 > 
 > This file is kept for historical reference only.
 

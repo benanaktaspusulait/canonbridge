@@ -73,7 +73,7 @@ Align with [STRATEGY.md](./STRATEGY.md); for example:
 - At least **3 customers** rate pain at 8+/10.
 - At least **2** concrete “let’s continue / consider a pilot” signals (LOI not required; clear interest is enough).
 
-Record the decision on [MASTER_ROADMAP.md](./MASTER_ROADMAP.md) and [EXECUTION_BACKLOG.md](./EXECUTION_BACKLOG.md) as go / no-go.
+Record the decision on [MASTER_ROADMAP.md](./MASTER_ROADMAP.md) and [PROJECT_GAPS.md](./PROJECT_GAPS.md) as go / no-go.
 
 ---
 

@@ -2,7 +2,7 @@
 
 CanonBridge is a partner-event transformation platform. Its job is to turn many partner-specific JSON payloads into trusted canonical business events without writing a custom adapter for every partner.
 
-> Current repository status: documentation, architecture, and prepared infrastructure assets exist. Application services, APIs, UI code, package manifests, automated tests, and production benchmarks are still implementation work.
+> Current repository status: core services, Mapping Studio UI, transformer, mock service, Docker Compose, Kubernetes manifests, and automated tests exist. Production readiness still depends on the gaps tracked in [Project Gaps](./project/PROJECT_GAPS.md).
 
 ## Quick Start
 
@@ -19,24 +19,21 @@ Partner JSON
   -> Database and outbox events
 ```
 
-### 2. Evaluate Prepared Infrastructure
+### 2. Start Local Infrastructure
 
 Prerequisites:
 
 - Docker Desktop or Docker with Docker Compose
 - Git
-- Make
+- Node.js 20+
+- Java 21
 
 ```bash
-git clone <repo-url>
-cd etlsolutions
-cd _implementation-ready
 cp .env.example .env
-make init
-make health
+docker compose up -d postgres kafka zookeeper redis canonbridge-mock
 ```
 
-This starts the prepared supporting infrastructure package: Kafka, PostgreSQL, Redis, Prometheus, Grafana, Jaeger, and Kafka UI. See [Implementation-Ready Assets](./implementation/implementation-ready-assets.md) before promoting these files into the root runtime path.
+This starts the core local dependencies plus the mock external systems.
 
 Useful local URLs:
 
@@ -47,15 +44,15 @@ Useful local URLs:
 | Grafana | http://localhost:3001 |
 | Jaeger | http://localhost:16686 |
 
-Application health endpoints such as `/health/live`, `/health/ready`, and `/metrics` become relevant after the transformer and business services are implemented.
+Application health endpoints such as `/health/live`, `/health/ready`, and `/metrics` become relevant after the API and transformer services are started.
 
 ### 3. Read the Core Product Docs
 
 - [Documentation Index](./README.md)
 - [Product Overview](./product/overview.md)
 - [Mapping Studio Docs](./product/README.md)
-- [Implementation Roadmap](./implementation/roadmap.md)
-- [Implementation Status](./implementation/status.md)
+- [Project Gaps](./project/PROJECT_GAPS.md)
+- [10 System Support Audit](./project/10_SYSTEM_SUPPORT_AUDIT.md)
 
 ## Key Concepts
 
@@ -71,7 +68,7 @@ Application health endpoints such as `/health/live`, `/health/ready`, and `/metr
 
 ## First Mapping Package
 
-Until the Mapping Studio UI and transformer service are implemented, use this as the target package shape for the first partner event.
+For static transformer mapping packages, use this package shape.
 
 ```text
 partners/my-partner/order-created/
@@ -94,7 +91,7 @@ Example `config.json`:
   "direction": "inbound",
   "inputSchema": "partners/my-partner/order-created/input.v1.schema.json",
   "mapping": "partners/my-partner/order-created/inbound.v1.jsonata",
-  "canonicalSchema": "schemas/canonical/order-created.v1.schema.json",
+  "canonicalSchema": "services/transformer/schemas/canonical/order-created.v1.schema.json",
   "kafka": {
     "inputTopic": "partner.raw.events",
     "outputTopic": "canonical.events",
@@ -162,15 +159,15 @@ See [Mapping Studio Product Requirements](./product/01-mapping-studio-product-re
 | Role | Next docs |
 |------|-----------|
 | Product | [Product Roadmap](./product/roadmap.md), [SaaS Requirements](./product/saas-requirements.md) |
-| Frontend | [Mapping Studio UX Flow](./product/02-mapping-studio-ux-flow.md), [Frontend React Guide](./implementation/FRONTEND_REACT_GUIDE.md) |
+| Frontend | [Mapping Studio UX Flow](./product/02-mapping-studio-ux-flow.md), [Angular UI README](../mapping-studio-ui/README.md) |
 | Backend | [Transformation Layer](./architecture/05-transformation-layer.md), [Transformer Node.js Guide](./implementation/TRANSFORMER_NODEJS_GUIDE.md) |
 | DevOps | [Setup Guide](./deployment/setup-guide.md), [Docker Compose Local](./deployment/DOCKER_COMPOSE_LOCAL.md) |
 | QA | [Test Environment](./testing/07-test-environment.md), [Contract Tests](./testing/06-contract-tests.md) |
 
 ## Readiness Checklist
 
-- [ ] Local infrastructure starts with `make init`.
-- [ ] Health checks pass with `make health`.
+- [ ] Local infrastructure starts with `docker compose up`.
+- [ ] Health checks pass for Mapping Studio API, transformer, webhook receiver, and mock service.
 - [ ] First partner mapping package is drafted.
 - [ ] Transformer service can dry-run mappings.
 - [ ] Mapping Studio can upload sample JSON and publish versions.
@@ -178,4 +175,4 @@ See [Mapping Studio Product Requirements](./product/01-mapping-studio-product-re
 - [ ] Monitoring dashboards and alerts are connected to live metrics.
 - [ ] Deployment and rollback procedures are tested in staging.
 
-**Last Updated**: May 10, 2026
+**Last Updated**: May 19, 2026

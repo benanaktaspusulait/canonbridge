@@ -10,7 +10,7 @@
 > - **Infrastructure**: Docker Compose, Kubernetes manifests, CI/CD pipelines ready
 > - **Production Ready**: 2-3 weeks (pending auth integration, outbox consumer, and integration tests)
 >
-> See [10_SYSTEM_SUPPORT_AUDIT.md](docs/project/10_SYSTEM_SUPPORT_AUDIT.md) for the latest 10-system support audit and remaining gaps.
+> See [10_SYSTEM_SUPPORT_AUDIT.md](docs/project/10_SYSTEM_SUPPORT_AUDIT.md) and [PROJECT_GAPS.md](docs/project/PROJECT_GAPS.md) for the latest support audit and remaining gaps.
 
 CanonBridge eliminates the engineering bottleneck of multi-partner integrations. Instead of writing custom adapter code for every new partner, business users define field mappings visually and publish in minutes. The platform handles transformation, validation, ordering, retry, and observability automatically.
 
@@ -115,7 +115,7 @@ flowchart TD
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│                     Mapping Studio (React UI)                    │
+│                    Mapping Studio (Angular UI)                   │
 │   Upload sample ─► Drag-and-drop fields ─► Preview ─► Publish  │
 │   Immutable versions · Semantic versioning · Audit trail        │
 └─────────────────────────────────────────────────────────────────┘
@@ -132,10 +132,10 @@ flowchart TD
 
 The repository now includes a complete sample mapping package:
 
-- Raw input schema: [`partners/acme-marketplace/order-created/input.v1.schema.json`](./partners/acme-marketplace/order-created/input.v1.schema.json)
-- JSONata mapping: [`partners/acme-marketplace/order-created/inbound.v1.jsonata`](./partners/acme-marketplace/order-created/inbound.v1.jsonata)
-- Canonical schema: [`schemas/canonical/order-created.v1.schema.json`](./schemas/canonical/order-created.v1.schema.json)
-- Fixture pair: [`valid-order.input.json`](./partners/acme-marketplace/order-created/fixtures/valid-order.input.json) → [`valid-order.expected.json`](./partners/acme-marketplace/order-created/fixtures/valid-order.expected.json)
+- Raw input schema: [`services/transformer/partners/acme-marketplace/order-created/input.v1.schema.json`](./services/transformer/partners/acme-marketplace/order-created/input.v1.schema.json)
+- JSONata mapping: [`services/transformer/partners/acme-marketplace/order-created/inbound.v1.jsonata`](./services/transformer/partners/acme-marketplace/order-created/inbound.v1.jsonata)
+- Canonical schema: [`services/transformer/schemas/canonical/order-created.v1.schema.json`](./services/transformer/schemas/canonical/order-created.v1.schema.json)
+- Fixture pair: [`valid-order.input.json`](./services/transformer/partners/acme-marketplace/order-created/fixtures/valid-order.input.json) -> [`valid-order.expected.json`](./services/transformer/partners/acme-marketplace/order-created/fixtures/valid-order.expected.json)
 
 **Before: partner-specific payload**
 
@@ -281,13 +281,14 @@ See [10_SYSTEM_SUPPORT_AUDIT.md](docs/project/10_SYSTEM_SUPPORT_AUDIT.md) for th
 | **Product Managers** | [Strategy](./docs/project/STRATEGY.md) · [Product Overview](./docs/product/overview.md) |
 | **Architects / CTOs** | [Architecture Overview](./docs/architecture/01-overview.md) · [ADRs](./docs/adr/) |
 | **Backend Engineers** | [MVP Definition](./docs/project/MVP_DEFINITION.md) · [Transformer Guide](./docs/implementation/TRANSFORMER_NODEJS_GUIDE.md) |
-| **Frontend Engineers** | [Mapping Studio](./docs/product/README.md) · [React Guide](./docs/implementation/FRONTEND_REACT_GUIDE.md) |
+| **Frontend Engineers** | [Mapping Studio](./docs/product/README.md) · [Angular UI](./mapping-studio-ui/README.md) |
 | **DevOps / SRE** | [Deployment Guide](./docs/deployment/setup-guide.md) · [Runbook](./docs/operations/08-runbook.md) |
-| **By Phase** | [Documentation by Phase](./docs/DOCUMENTATION_BY_PHASE.md) - Which docs to read for each phase |
+| **Project Gaps** | [Project Gaps](./docs/project/PROJECT_GAPS.md) · [10 System Support Audit](./docs/project/10_SYSTEM_SUPPORT_AUDIT.md) |
 | **Everyone** | [Master Roadmap](./docs/project/MASTER_ROADMAP.md) · [Documentation Hub](./docs/README.md) |
 
 **Core Documents**:
 - [10 System Support Audit](./docs/project/10_SYSTEM_SUPPORT_AUDIT.md) - Current support gaps and next steps
+- [Project Gaps](./docs/project/PROJECT_GAPS.md) - Consolidated gap register for production and 10-system readiness
 - [Master Roadmap](./docs/project/MASTER_ROADMAP.md) - Official project plan
 - [Project Summary](./docs/project/PROJECT_SUMMARY.md) - Quick overview
 - [Brand Identity](./docs/project/BRAND_IDENTITY.md) - Name, vision, messaging
@@ -320,7 +321,7 @@ docker-compose down
 ### Running the Mock Demo
 
 ```bash
-cd canonbridge-mock
+cd services/canonbridge-mock
 docker-compose up -d
 
 # Run the sales demonstration script
@@ -341,7 +342,7 @@ cd services/mapping-studio-api
 
 **Frontend (Mapping Studio UI)**:
 ```bash
-cd services/mapping-studio-ui
+cd mapping-studio-ui
 npm install
 npm start
 # Open http://localhost:4200
@@ -365,7 +366,7 @@ See [docs/deployment/setup-guide.md](./docs/deployment/setup-guide.md) for detai
 | Transformation | Node.js + TypeScript | 20 LTS |
 | Transformation DSL | JSONata | 2.x |
 | Schema Validation | Ajv | 8.x |
-| HTTP Framework | Fastify | 4.x |
+| HTTP Framework | Fastify | 5.x |
 | Business Services | Java + Quarkus | 3.x |
 | Message Broker | Apache Kafka | 3.x |
 | Database | PostgreSQL | 15+ |
@@ -373,7 +374,7 @@ See [docs/deployment/setup-guide.md](./docs/deployment/setup-guide.md) for detai
 | Service Mesh | Istio (optional) | 1.19+ |
 | Metrics | Prometheus + Grafana | Latest |
 | Tracing | OpenTelemetry | Latest |
-| Frontend | React + TypeScript | 18+ |
+| Frontend | Angular + TypeScript | 21.x |
 
 ---
 

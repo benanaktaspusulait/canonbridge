@@ -365,8 +365,8 @@
 
 - [MASTER_ROADMAP.md](./MASTER_ROADMAP.md) - When targets will be validated
 - [MVP_DEFINITION.md](./MVP_DEFINITION.md) - Phase 1 targets
-- [docs/operations/07-performance-tuning.md](./docs/operations/07-performance-tuning.md) - Optimization guide
-- [docs/testing/04-load-tests.md](./docs/testing/04-load-tests.md) - Load testing strategy
+- [Operations performance tuning](../operations/07-performance-tuning.md) - Optimization guide
+- [Load testing strategy](../testing/04-load-tests.md) - Load testing strategy
 
 ---
 

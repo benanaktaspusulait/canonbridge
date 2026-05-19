@@ -93,7 +93,7 @@ kubectl logs -n canonbridge -l app=transformer --tail=100 -f
 
 ### Environment Variables
 
-All environment variables are defined in `configmap.yaml` and `secret.yaml`. See the main [README.md](../README.md) for full list.
+All environment variables are defined in `configmap.yaml` and `secret.yaml`. See the transformer [README.md](../../../services/transformer/README.md) for the service-level configuration list.
 
 ### Resource Limits
 
