@@ -45,5 +45,7 @@ Sıradaki kritik ürün işi, request dönüşümünün JSONata modunu server-si
 ## Doğrulama Notu
 
 - Mapping Studio UI production build geçti.
-- Mapping Studio API compile aşaması geçti; tam `mvn test` mevcut test-suite kaynaklı rate-limit header ve PartnerResource 400 hatalarıyla düşüyor. Bu hatalar no-code source type değişikliğinden bağımsız görünüyor ve ayrı kalite borcu olarak ele alınmalı.
+- Mapping Studio API tenant/security test seti ve `mvn clean -DskipTests package` geçti.
+- Webhook receiver `mvn test` 2026-05-19 tarihinde geçti: 14 test, 0 failure, 0 error.
+- Coverage komutu hâlâ `GAP-011` için `PARTIAL` döndürüyor: `node scripts/no-code-acceptance-coverage.mjs --markdown`.
 - Yeni doğrulama komutları: `npm test -- --run src/transformEngine.test.ts`, `./mvnw test -Dtest=SourcePayloadValidatorTest`, `node scripts/no-code-acceptance-coverage.mjs --markdown`.

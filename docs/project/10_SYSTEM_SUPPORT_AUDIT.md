@@ -1,8 +1,8 @@
 # CanonBridge 10 Sistem Destek Denetimi
 
-**Tarih**: 2026-05-18  
+**Tarih**: 2026-05-19  
 **Kapsam**: Repository genelinde kaynak tipi, runtime, seed/template, test ve dokumantasyon denetimi.  
-**Kisa sonuc**: 10 kaynak tipi isim olarak UI ve backend modelinde var; ancak "10 gercek sistem/template uctan uca hazir" hedefi henuz kapanmis degil. En kritik eksikler webhook runtime sema uyumsuzlugu, file/scheduled/enrichment akislari icin eksik worker baglantilari ve seed/template sayisinin 10 sisteme ulasmamasi.
+**Kisa sonuc**: 10 kaynak tipi isim olarak UI ve backend modelinde var; ancak "10 gercek sistem/template uctan uca hazir" hedefi henuz kapanmis degil. Webhook sema/test kiriklari kapandi; kalan ana eksikler seed/template sayisinin 10 sisteme ulasmamasi, request JSONata modunun server-side runtime'a baglanmasi ve file/scheduled/enrichment akislari icin ileri operasyonel kanitlarin tamamlanmasi.
 
 ## 1. 10 Cesit Destek Durumu
 
@@ -47,25 +47,17 @@ Bu nedenle guvenli okuma: 6 hazir mock-backed sistem template'i var. "10 gercek 
 
 ## 2. Kritik Eksikler
 
-### 2.1 Webhook endpoint semasi runtime ile uyumsuz
+### 2.1 Webhook publish/receive semasi kapandi
 
-Risk: Webhook publish/receive akisi runtime'da kirilabilir.
+Webhook endpoint semasi artik `secret_hash` uzerinden hizali:
 
-Bulgular:
+- `MappingPublishService.java` publish sirasinda `secret_hash` yazar.
+- `WebhookEndpointRepository.java` API CRUD tarafinda `secret_hash` okur/yazar.
+- `WebhookAuthService.java` receiver runtime tarafinda `secret_hash` secer ve dogrular.
 
-- `V8__create_webhook_endpoints_table.sql:7` kolonu `secret_hash` olarak olusturuyor.
-- `V31__add_draft_id_to_webhook_endpoints.sql:3` sadece `webhook_key` ekliyor.
-- `MappingPublishService.java:102` `webhook_key_hash` kolonuna insert/update yapiyor.
-- `services/webhook-receiver/src/main/java/com/canonbridge/webhook/service/WebhookAuthService.java:26` `webhook_key_hash` seciyor.
-- Ayni tabloda API repository hala `secret_hash` okuyor/yaziyor: `WebhookEndpointRepository.java:27`.
+`services/webhook-receiver` icin `mvn test` 2026-05-19 tarihinde basariyla gecti: 14 test, 0 failure, 0 error.
 
-Beklenen karar: Tek kolon stratejisi secilmeli. Ya DB migration ile `webhook_key_hash` eklenmeli ve tum servisler buna gecmeli, ya da runtime kodu mevcut `secret_hash` kolonuna hizalanmali.
-
-### 2.2 Webhook receiver testleri compile olmuyor
-
-`services/webhook-receiver/src/test/java/com/canonbridge/webhook/service/WebhookAuthServiceTest.java` icindeki `rowSet.iterator()` mock'u Vert.x API beklentisiyle uyusmuyor. Test `Iterator<Row>` donduruyor, API `RowIterator<Row>` bekliyor. Bu yuzden `mvn test` compile asamasinda kaliyor.
-
-### 2.3 File/batch runtime artik kismi ingest seviyesinde
+### 2.2 File/batch runtime artik kismi ingest seviyesinde
 
 UI dosya sample'ini normalize ediyor:
 
@@ -77,13 +69,13 @@ Backend tarafinda `services/mapping-studio-api/src/main/java/com/canonbridge/map
 
 Kalan taraf: buyuk dosya upload/streaming, kalici batch job takibi ve dosya seviyesinde retry henuz yok.
 
-### 2.4 Scheduled API poller eklendi
+### 2.3 Scheduled API poller eklendi
 
 `services/mapping-studio-api/src/main/java/com/canonbridge/mappingstudio/resource/ExternalSystemResource.java:171` manuel trigger endpoint'i sagliyor. Buna ek olarak `services/mapping-studio-api/src/main/java/com/canonbridge/mappingstudio/service/ScheduledApiPollerService.java` published/valid `SCHEDULED_API` draft'larini belirlenen aralikla calistirir ve basarili canonical sonucu Kafka'ya publish eder.
 
 Kalan taraf: cron semantigi su an hafif yorumlaniyor (`PT5M`, `5m`, `*/5 * * * *`, `hourly`, `daily`). Kalici next-run/last-run DB state'i ve retry visibility eklenmeli.
 
-### 2.5 API enrichment transformer registry'ye baglandi
+### 2.4 API enrichment transformer registry'ye baglandi
 
 Transformer enrichment adimini destekliyor:
 
@@ -96,6 +88,10 @@ DB registry artik `KAFKA` ve `API_ENRICHMENT` draft'larini yukluyor:
 - `services/transformer/src/partnerRegistry.ts:145`
 
 `apiEnrichment` veya direct `urlTemplate` config'i transformer `enrichmentSteps` formatina cevriliyor. Transformer enrichment URL/header template'lerinde `{field}` ve `{{field}}` placeholder'larini envelope'dan dolduruyor.
+
+### 2.5 Request donusumu JSONata modu kismi
+
+Request donusumu icin UI ve template render akisi var; ancak no-code gap register'da `GAP-011` halen `PARTIAL`. Kalan nokta: JSONata request modunun server-side runtime execution'a baglanmasi.
 
 ### 2.6 Mapping API proxy schema validation eklendi
 
@@ -126,21 +122,20 @@ Bu denetimde kosulan kontroller:
 - `mvn test` - `services/canonbridge-mock`: 6 test gecti.
 - `mvn test` - `services/mapping-studio-api`: Testcontainers Docker ortam bulamadigi icin `KafkaProducerServiceTest` hata verdi. Ozet: 56 test, 0 failure, 1 error, 35 skipped.
 - Docker socket env ile tekrar `mvn test` - `services/mapping-studio-api`: ayni Testcontainers/Docker hatasi devam etti.
-- `mvn test` - `services/webhook-receiver`: compile failure; `RowIterator<Row>` mock uyumsuzlugu.
+- `mvn test` - `services/webhook-receiver`: 14 test gecti.
 
 ## 5. Oncelik Sirasi
 
-1. Webhook tablo/kolon kararini verip migration + API + receiver kodunu ayni semaya hizala.
-2. Webhook receiver test compile sorununu duzelt.
-3. "10 kaynak tipi" mi "10 gercek external system" mi hedef oldugunu netlestir. Hedef gercek sistem ise eksik 4-5 sistem template'ini ekle.
-4. File/batch icin buyuk dosya upload/streaming, kalici batch job takibi ve dosya seviyesinde retry ekle.
-5. Scheduled API icin kalici next-run/last-run DB state'i ve retry visibility ekle.
-6. API enrichment icin credential/header cozme ve GraphQL body template destegini genislet.
-7. Mapping API proxy'de `canonical_schema_ref` icin schema repository lookup ve genis JSON Schema keyword kapsami ekle.
-8. Fallback rule builder icin frontend `rule-to-jsonata.ts` ile esdeger unit testleri ekle.
-9. Acceptance matrix CI gate'e baglandi: `.github/workflows/ci.yml` icinde `No-Code Acceptance Coverage` job'i `scripts/no-code-acceptance-coverage.mjs --strict --markdown` calistiriyor. Strict mod `PARTIAL`, `OPEN`, `BLOCKED`, `IN_PROGRESS` gap'lerde CI'i fail eder.
-10. Yeni eklenen her external system icin mock endpoint, credential seed, sample payload, mapping draft ve E2E senaryo ekle.
+1. `GAP-011` icin JSONata request modunu server-side runtime execution'a bagla.
+2. "10 kaynak tipi" mi "10 gercek external system" mi hedef oldugunu netlestir. Hedef gercek sistem ise eksik 4 sistem template'ini ekle.
+3. File/batch icin buyuk dosya upload/streaming, kalici batch job takibi ve dosya seviyesinde retry ekle.
+4. Scheduled API icin kalici next-run/last-run DB state'i ve retry visibility ekle.
+5. API enrichment icin credential/header cozme ve GraphQL body template destegini genislet.
+6. Mapping API proxy'de `canonical_schema_ref` icin schema repository lookup ve genis JSON Schema keyword kapsami ekle.
+7. Fallback rule builder icin frontend `rule-to-jsonata.ts` ile esdeger unit testleri ekle.
+8. Acceptance matrix CI gate'e baglandi: `.github/workflows/ci.yml` icinde `No-Code Acceptance Coverage` job'i `scripts/no-code-acceptance-coverage.mjs --strict --markdown` calistiriyor. Strict mod `PARTIAL`, `OPEN`, `BLOCKED`, `IN_PROGRESS` gap'lerde CI'i fail eder.
+9. Yeni eklenen her external system icin mock endpoint, credential seed, sample payload, mapping draft ve E2E senaryo ekle.
 
 ## 6. Kapanis Karari
 
-Bugunku durumla platform 10 kaynak tipini isim/model olarak tasiyor; fakat uctan uca kanit ve gercek sistem sayisi acisindan hala aciklar var. Beta icin once webhook sema/test kiriklari, sonra scheduled/file/enrichment runtime baglantilari kapatilmali. "10 sistem destekliyoruz" cumlesi ancak 10 sistemin her biri icin seed + mock + mapping + runtime execution + acceptance test zinciri tamamlandiginda guvenle soylenebilir.
+Bugunku durumla platform 10 kaynak tipini isim/model olarak tasiyor; fakat uctan uca kanit ve gercek sistem sayisi acisindan hala aciklar var. Beta icin once `GAP-011` server-side JSONata request runtime baglantisi, sonra scheduled/file/enrichment operasyonel kanitlari kapatilmali. "10 sistem destekliyoruz" cumlesi ancak 10 sistemin her biri icin seed + mock + mapping + runtime execution + acceptance test zinciri tamamlandiginda guvenle soylenebilir.
