@@ -70,10 +70,10 @@ public class ProxyExecutionLogResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("mappingId") UUID mappingId) {
 
-        tenantId = tenantContext.requireTenantId(tenantId);
+        String requiredTenantId = tenantContext.requireTenantId(tenantId);
 
-        return logRepository.countByMappingAndStatus(tenantId, mappingId, "SUCCESS")
-            .chain(successCount -> logRepository.countByMappingAndStatus(tenantId, mappingId, "ERROR")
+        return logRepository.countByMappingAndStatus(requiredTenantId, mappingId, "SUCCESS")
+            .chain(successCount -> logRepository.countByMappingAndStatus(requiredTenantId, mappingId, "ERROR")
                 .map(errorCount -> {
                     long total = successCount + errorCount;
                     double successRate = total > 0 ? (double) successCount / total * 100 : 0;
@@ -105,9 +105,9 @@ public class ProxyExecutionLogResource {
             @PathParam("mappingId") UUID mappingId,
             @PathParam("logId") UUID logId) {
 
-        tenantId = tenantContext.requireTenantId(tenantId);
+        String requiredTenantId = tenantContext.requireTenantId(tenantId);
 
-        return logRepository.findById(tenantId, logId)
+        return logRepository.findById(requiredTenantId, logId)
             .chain(log -> {
                 if (log == null) {
                     return Uni.createFrom().item(
@@ -125,7 +125,7 @@ public class ProxyExecutionLogResource {
                 }
 
                 // Re-execute the proxy call
-                return draftRepository.findById(tenantId, mappingId)
+                return draftRepository.findById(requiredTenantId, mappingId)
                     .chain(draft -> {
                         if (draft == null) {
                             return Uni.createFrom().item(

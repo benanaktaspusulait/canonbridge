@@ -45,9 +45,9 @@ public class RestInboundResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("draftId") UUID draftId,
             String rawPayload) {
-        tenantId = tenantContext.requireTenantId(tenantId);
+        String requiredTenantId = tenantContext.requireTenantId(tenantId);
 
-        return draftRepository.findById(tenantId, draftId)
+        return draftRepository.findById(requiredTenantId, draftId)
                 .chain(draft -> {
                     if (draft == null) {
                         return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND).build());
@@ -66,7 +66,7 @@ public class RestInboundResource {
                                 .build());
                     }
 
-                    String key = tenantId + ":" + draftId;
+                    String key = requiredTenantId + ":" + draftId;
                     return kafkaProducerService.publishCanonicalEvent(key, rawPayload)
                             .map(ignored -> Response.accepted()
                                     .entity(new AcceptedResponse("accepted", draftId))

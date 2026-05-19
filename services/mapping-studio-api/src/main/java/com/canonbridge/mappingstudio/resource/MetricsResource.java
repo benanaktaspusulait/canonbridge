@@ -32,10 +32,10 @@ public class MetricsResource {
     public Uni<Map<String, Object>> getDashboardStats(
             @HeaderParam("X-Tenant-Id") String tenantId) {
         
-        tenantId = tenantContext.requireTenantId(tenantId);
+        String requiredTenantId = tenantContext.requireTenantId(tenantId);
 
-        return draftRepository.findByTenantId(tenantId)
-            .chain(drafts -> logRepository.dashboardStats(tenantId).map(proxyStats -> {
+        return draftRepository.findByTenantId(requiredTenantId)
+            .chain(drafts -> logRepository.dashboardStats(requiredTenantId).map(proxyStats -> {
                 Map<String, Object> stats = new HashMap<>();
                 stats.putAll(proxyStats);
                 stats.put("activeMappings", drafts.size());
@@ -45,7 +45,7 @@ public class MetricsResource {
                 stats.put("timestamp", System.currentTimeMillis());
                 return stats;
             }))
-            .chain(stats -> logRepository.topMappings(tenantId, 5).map(top -> {
+            .chain(stats -> logRepository.topMappings(requiredTenantId, 5).map(top -> {
                 stats.put("topMappings", top);
                 return stats;
             }));

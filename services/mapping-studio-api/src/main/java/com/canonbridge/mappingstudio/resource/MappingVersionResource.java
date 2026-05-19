@@ -101,7 +101,7 @@ public class MappingVersionResource {
     public Uni<Response> bulkDeprecate(
             @HeaderParam("X-Tenant-Id") String tenantId,
             JsonObject body) {
-        tenantId = tenantContext.requireTenantId(tenantId);
+        String requiredTenantId = tenantContext.requireTenantId(tenantId);
         JsonArray ids = body != null ? body.getJsonArray("ids", new JsonArray()) : new JsonArray();
         if (ids.isEmpty()) {
             throw new BadRequestException("ids array is required");
@@ -110,7 +110,7 @@ public class MappingVersionResource {
         List<Uni<JsonObject>> updates = ids.stream()
             .map(String::valueOf)
             .map(raw -> UUID.fromString(raw.replace("\"", "")))
-            .map(id -> versionRepository.deprecate(tenantId, id)
+            .map(id -> versionRepository.deprecate(requiredTenantId, id)
                 .map(version -> new JsonObject()
                     .put("id", id.toString())
                     .put("status", version == null ? "NOT_FOUND" : "DEPRECATED")))
@@ -127,10 +127,10 @@ public class MappingVersionResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("leftId") UUID leftId,
             @PathParam("rightId") UUID rightId) {
-        tenantId = tenantContext.requireTenantId(tenantId);
+        String requiredTenantId = tenantContext.requireTenantId(tenantId);
 
-        return versionRepository.findById(tenantId, leftId)
-            .chain(left -> versionRepository.findById(tenantId, rightId)
+        return versionRepository.findById(requiredTenantId, leftId)
+            .chain(left -> versionRepository.findById(requiredTenantId, rightId)
                 .map(right -> {
                     if (left == null || right == null) {
                         return Response.status(Response.Status.NOT_FOUND).build();

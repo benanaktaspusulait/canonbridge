@@ -1,7 +1,9 @@
 package com.canonbridge.mappingstudio.resource;
 
 import com.canonbridge.mappingstudio.security.TenantContext;
+import com.canonbridge.mappingstudio.audit.AuditLogService;
 import com.canonbridge.mappingstudio.credential.CredentialSecretCodec;
+import com.canonbridge.mappingstudio.domain.AuditLog;
 import com.canonbridge.mappingstudio.domain.Credential;
 import com.canonbridge.mappingstudio.repository.CredentialRepository;
 import io.smallrye.mutiny.Uni;
@@ -30,6 +32,9 @@ public class CredentialResource {
 
     @Inject
     CredentialSecretCodec secretCodec;
+
+    @Inject
+    AuditLogService auditLogService;
 
     @GET
     @Operation(summary = "List all credentials (metadata only, no secrets)")
@@ -63,27 +68,40 @@ public class CredentialResource {
             @HeaderParam("X-User-Id") String userId,
             CreateCredentialRequest request) {
         
-        tenantId = tenantContext.requireTenantId(tenantId);
+        String requiredTenantId = tenantContext.requireTenantId(tenantId);
+        String actor = actor(userId);
 
         String encryptedSecret = secretCodec.encrypt(normalizeSecret(request.secret(), request.authType()));
 
         Credential credential = new Credential(
                 null, // Will be generated
-                tenantId,
+                requiredTenantId,
                 request.displayName(),
                 request.authType(),
                 request.environment(),
                 Credential.CredentialStatus.ACTIVE,
                 request.rotationDueAt(),
                 null,
-                userId != null ? userId : "system",
+                actor,
                 null,
                 null,
                 null
         );
 
         return credentialRepository.create(credential, encryptedSecret)
-                .map(created -> Response.status(Response.Status.CREATED).entity(created).build());
+                .chain(created -> auditCredentialSuccess(
+                                requiredTenantId,
+                                actor,
+                                AuditLog.AuditAction.CREDENTIAL_CREATED,
+                                created.credentialId(),
+                                "Created credential metadata")
+                        .replaceWith(Response.status(Response.Status.CREATED).entity(created).build()))
+                .onFailure().call(error -> auditCredentialFailure(
+                        requiredTenantId,
+                        actor,
+                        AuditLog.AuditAction.CREDENTIAL_CREATED,
+                        null,
+                        "Credential create failed: " + safeMessage(error)));
     }
 
     @POST
@@ -94,19 +112,37 @@ public class CredentialResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @HeaderParam("X-User-Id") String userId) {
         
-        tenantId = tenantContext.requireTenantId(tenantId);
+        String requiredTenantId = tenantContext.requireTenantId(tenantId);
+        String actor = actor(userId);
 
         return credentialRepository.updateStatus(
                 credentialId, 
-                tenantId, 
+                requiredTenantId,
                 Credential.CredentialStatus.INACTIVE,
-                userId != null ? userId : "system"
-        ).map(updated -> {
+                actor
+        ).chain(updated -> {
             if (updated == null) {
-                return Response.status(Response.Status.NOT_FOUND).build();
+                return auditCredentialFailure(
+                                requiredTenantId,
+                                actor,
+                                AuditLog.AuditAction.CREDENTIAL_UPDATED,
+                                credentialId,
+                                "Credential disable failed: credential not found")
+                        .replaceWith(Response.status(Response.Status.NOT_FOUND).build());
             }
-            return Response.ok(updated).build();
-        });
+            return auditCredentialSuccess(
+                            requiredTenantId,
+                            actor,
+                            AuditLog.AuditAction.CREDENTIAL_UPDATED,
+                            credentialId,
+                            "Disabled credential")
+                    .replaceWith(Response.ok(updated).build());
+        }).onFailure().call(error -> auditCredentialFailure(
+                requiredTenantId,
+                actor,
+                AuditLog.AuditAction.CREDENTIAL_UPDATED,
+                credentialId,
+                "Credential disable failed: " + safeMessage(error)));
     }
 
     @POST
@@ -118,26 +154,44 @@ public class CredentialResource {
             @HeaderParam("X-User-Id") String userId,
             RotateCredentialRequest request) {
 
-        tenantId = tenantContext.requireTenantId(tenantId);
+        String requiredTenantId = tenantContext.requireTenantId(tenantId);
+        String actor = actor(userId);
         if (request == null) {
             throw new BadRequestException("Request body is required");
         }
 
-        return credentialRepository.findById(credentialId, tenantId)
+        return credentialRepository.findById(credentialId, requiredTenantId)
                 .chain(existing -> {
                     if (existing == null) {
-                        return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND).build());
+                        return auditCredentialFailure(
+                                        requiredTenantId,
+                                        actor,
+                                        AuditLog.AuditAction.CREDENTIAL_UPDATED,
+                                        credentialId,
+                                        "Credential rotation failed: credential not found")
+                                .replaceWith(Response.status(Response.Status.NOT_FOUND).build());
                     }
                     Credential.AuthType authType = request.authType() != null ? request.authType() : existing.authType();
                     String encryptedSecret = secretCodec.encrypt(normalizeSecret(request.secret(), authType));
                     return credentialRepository.rotateSecret(
                             credentialId,
-                            tenantId,
+                            requiredTenantId,
                             encryptedSecret,
                             request.rotationDueAt(),
-                            userId != null ? userId : "system"
-                    ).map(updated -> Response.ok(updated).build());
-                });
+                            actor
+                    ).chain(updated -> auditCredentialSuccess(
+                                    requiredTenantId,
+                                    actor,
+                                    AuditLog.AuditAction.CREDENTIAL_UPDATED,
+                                    credentialId,
+                                    "Rotated credential secret")
+                            .replaceWith(Response.ok(updated).build()));
+                }).onFailure().call(error -> auditCredentialFailure(
+                        requiredTenantId,
+                        actor,
+                        AuditLog.AuditAction.CREDENTIAL_UPDATED,
+                        credentialId,
+                        "Credential rotation failed: " + safeMessage(error)));
     }
 
 
@@ -164,6 +218,36 @@ public class CredentialResource {
         }
 
         throw new BadRequestException("Credential secret must be a non-empty string or JSON object");
+    }
+
+    private Uni<Void> auditCredentialSuccess(
+            String tenantId,
+            String userId,
+            AuditLog.AuditAction action,
+            UUID credentialId,
+            String details) {
+        return auditLogService.logSuccess(tenantId, userId, action, "credential", resourceId(credentialId), details, null);
+    }
+
+    private Uni<Void> auditCredentialFailure(
+            String tenantId,
+            String userId,
+            AuditLog.AuditAction action,
+            UUID credentialId,
+            String details) {
+        return auditLogService.logFailure(tenantId, userId, action, "credential", resourceId(credentialId), details, null);
+    }
+
+    private static String actor(String userId) {
+        return userId != null && !userId.isBlank() ? userId : "system";
+    }
+
+    private static String resourceId(UUID credentialId) {
+        return credentialId != null ? credentialId.toString() : "";
+    }
+
+    private static String safeMessage(Throwable error) {
+        return error != null && error.getMessage() != null ? error.getMessage() : "unknown error";
     }
 
     public record CreateCredentialRequest(
