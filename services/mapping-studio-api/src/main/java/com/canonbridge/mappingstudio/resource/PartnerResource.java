@@ -1,5 +1,6 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.security.TenantContext;
 import com.canonbridge.mappingstudio.domain.Partner;
 import com.canonbridge.mappingstudio.repository.PartnerRepository;
 import io.smallrye.mutiny.Uni;
@@ -19,6 +20,8 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Partners", description = "Partner management operations")
 public class PartnerResource {
+    @Inject
+    TenantContext tenantContext;
 
     @Inject
     PartnerRepository partnerRepository;
@@ -26,9 +29,7 @@ public class PartnerResource {
     @GET
     @Operation(summary = "List all partners for tenant")
     public Uni<List<Partner>> list(@HeaderParam("X-Tenant-Id") String tenantId) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return partnerRepository.findByTenantId(tenantId);
     }
 
@@ -38,9 +39,7 @@ public class PartnerResource {
     public Uni<Response> get(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("id") UUID id) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return partnerRepository.findById(tenantId, id)
             .map(partner -> {
                 if (partner == null) {
@@ -56,9 +55,7 @@ public class PartnerResource {
     public Uni<Response> getByExternalId(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("externalId") String externalId) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return partnerRepository.findByExternalId(tenantId, externalId)
             .map(partner -> {
                 if (partner == null) {
@@ -74,9 +71,7 @@ public class PartnerResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @HeaderParam("X-User-Id") String userId,
             @Valid Partner partner) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         
         partner.setTenantId(tenantId);
         partner.setCreatedBy(userId);
@@ -94,9 +89,7 @@ public class PartnerResource {
             @HeaderParam("X-User-Id") String userId,
             @PathParam("id") UUID id,
             @Valid Partner partner) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         
         partner.setId(id);
         partner.setTenantId(tenantId);
@@ -117,9 +110,7 @@ public class PartnerResource {
     public Uni<Response> delete(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("id") UUID id) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         
         return partnerRepository.delete(tenantId, id)
             .map(deleted -> {

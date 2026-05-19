@@ -1,7 +1,5 @@
 package com.canonbridge.mappingstudio.ratelimit;
 
-import com.canonbridge.mappingstudio.repository.PartnerRepository;
-import io.quarkus.logging.Log;
 import io.smallrye.common.annotation.Blocking;
 import io.vertx.core.http.HttpServerRequest;
 import jakarta.annotation.Priority;
@@ -16,8 +14,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 
-import java.security.Principal;
 import java.security.MessageDigest;
+import java.security.Principal;
 import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
 import java.util.HashMap;
@@ -29,8 +27,6 @@ import java.util.Map;
  * Rate limits are applied based on:
  * - Authenticated requests: client identifier from JWT subject or API key
  * - Unauthenticated requests: client IP address
- * 
- * Per-tenant overrides are supported via the partners table.
  */
 @Provider
 @Priority(Priorities.AUTHORIZATION + 10)
@@ -46,9 +42,6 @@ public class RateLimitFilter implements ContainerRequestFilter, ContainerRespons
     @Inject
     RateLimitConfig config;
 
-    @Inject
-    PartnerRepository partnerRepository;
-
     @Context
     HttpServerRequest request;
 
@@ -58,11 +51,10 @@ public class RateLimitFilter implements ContainerRequestFilter, ContainerRespons
             return;
         }
 
-        // Skip only infrastructure and authentication endpoints.
+        // Skip only infrastructure and documentation endpoints.
         String path = requestContext.getUriInfo().getPath();
         if (path.startsWith("health") || path.startsWith("metrics") || 
-            path.startsWith("openapi") || path.startsWith("swagger-ui") ||
-            path.equals("api/auth/login") || path.startsWith("api/auth/")) {
+            path.startsWith("openapi") || path.startsWith("swagger-ui")) {
             return;
         }
 
@@ -70,31 +62,21 @@ public class RateLimitFilter implements ContainerRequestFilter, ContainerRespons
         String clientId;
         int limit;
         int windowSeconds;
-        boolean isAuthenticated = requestContext.getSecurityContext().getUserPrincipal() != null;
+        Principal principal = requestContext.getSecurityContext() != null
+                ? requestContext.getSecurityContext().getUserPrincipal()
+                : null;
+        boolean isAuthenticated = principal != null;
 
         if (isAuthenticated) {
-            // Authenticated request - use principal name (JWT subject or API key)
-            Principal principal = requestContext.getSecurityContext().getUserPrincipal();
+            // Authenticated request - use principal name (JWT subject or API key).
             clientId = principal.getName();
-            
-            // Check for per-tenant override
-            String tenantId = requestContext.getHeaderString("X-Tenant-Id");
-            if (tenantId != null && !tenantId.isBlank()) {
-                Integer tenantLimit = getTenantRateLimit(tenantId);
-                if (tenantLimit != null && tenantLimit > 0) {
-                    limit = tenantLimit;
-                } else {
-                    limit = config.authenticated().defaultLimit();
-                }
-            } else {
-                limit = config.authenticated().defaultLimit();
-            }
+            limit = config.authenticated().defaultLimit();
             windowSeconds = config.authenticated().windowSeconds();
         } else {
             // Unauthenticated request - prefer a presented API key as a stable client id in test/dev,
             // then fall back to IP address.
             String apiKey = requestContext.getHeaderString("X-API-Key");
-            clientId = apiKey != null && !apiKey.isBlank() ? "api-key:" + fingerprint(apiKey) : getClientIp();
+            clientId = apiKey != null && !apiKey.isBlank() ? "api-key:" + fingerprint(apiKey) : "ip:" + getClientIp();
             limit = config.unauthenticated().defaultLimit();
             windowSeconds = config.unauthenticated().windowSeconds();
         }
@@ -141,27 +123,6 @@ public class RateLimitFilter implements ContainerRequestFilter, ContainerRespons
         responseContext.getHeaders().putSingle("X-RateLimit-Limit", String.valueOf(result.getLimit()));
         responseContext.getHeaders().putSingle("X-RateLimit-Remaining", String.valueOf(result.getRemaining()));
         responseContext.getHeaders().putSingle("X-RateLimit-Reset", String.valueOf(result.getResetTime()));
-    }
-
-    /**
-     * Get per-tenant rate limit override from database.
-     */
-    private Integer getTenantRateLimit(String tenantId) {
-        try {
-            // Query the first partner for this tenant to get rate limit override
-            // In a real implementation, this might be cached or stored separately
-            return partnerRepository.findByTenantId(tenantId)
-                    .map(partners -> {
-                        if (!partners.isEmpty()) {
-                            return partners.get(0).getRateLimitPerMinute();
-                        }
-                        return null;
-                    })
-                    .await().atMost(java.time.Duration.ofSeconds(1));
-        } catch (Exception e) {
-            Log.warnf(e, "Error fetching tenant rate limit for %s, using default", tenantId);
-            return null;
-        }
     }
 
     /**

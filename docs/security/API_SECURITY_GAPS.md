@@ -11,28 +11,35 @@ Kapsam: `services/mapping-studio-api`, UI'nin API kullanim sekli, mevcut Docker/
 - Tum tenant-scoped tablolarin `tenant_id` kolonlari `tenants(id)` foreign key'i ile baglandi.
 - Cocuk kayitlarda cross-tenant referans riskini azaltmak icin mapping, partner, credential ve log iliskilerine composite tenant foreign key'leri eklendi.
 - `X-Tenant-Id` bos geldiginde tek tenant olarak `tenant-acme` enjekte eden, farkli tenant denenirse 403 donduren `SingleTenantContextFilter` eklendi.
+- Runtime proxy endpointleri artik genel auth bypass listesinde degil; JWT veya API key gerektiriyor.
+- Login token'i imzasiz base64 yerine HS256 imzali compact JWT formatina tasindi.
+- Production ortaminda default API key, default JWT secret, default credential encryption key, localhost/wildcard CORS ve public docs ile startup fail-fast yapacak validator eklendi.
+- RBAC filter eklendi; admin, integration_author, operator ve viewer rolleri endpoint/method bazinda ayrildi.
+- Rate limit filter tekrar aktif hale getirildi; proxy endpointleri de rate limit kapsaminda.
+- Swagger/OpenAPI public docs default kapali hale getirildi, sadece dev/test profillerinde acik.
+- HTTP request body limiti `HTTP_MAX_BODY_SIZE` ile default `1M` olarak tanimlandi.
+- Auth failure, tenant mismatch ve RBAC denial olaylari audit log'a failure olarak yaziliyor.
 
-## Kritik Eksikler
+## Kapatilan Kritik Eksikler
 
-| Oncelik | Alan | Bulgu | Risk | Onerilen aksiyon |
-| --- | --- | --- | --- | --- |
-| P0 | Runtime proxy auth | `ApiAuthenticationFilter` su an `api/proxy/` path'lerini auth bypass ediyor. | Mapping proxy endpointleri tenant header bilen herhangi bir istemciden tetiklenebilir. | Proxy endpointlerini de API key/JWT veya mapping-level inbound credential ile koru. Public webhook gibi gercekten acik endpointleri ayri path ve imza dogrulama ile ayir. |
-| P0 | JWT | `JwtService` base64 formatinda imzasiz/ev yapimi token uretiyor; `SECRET` sabiti kullanilmiyor. | Token icerigi degistirilebilir, roller/tenant taklit edilebilir. | SmallRye JWT/OIDC dogrulamasina gec; HS256 kullanilacaksa HMAC imza zorunlu olsun, tercihen RS256/JWKS. |
-| P0 | Prod secret defaults | `JWT_SECRET_KEY`, credential encryption key ve `dev-api-key` defaultlari production'da calisir durumda. | Zayif varsayilanlarla deployment acilabilir. | Production profile'da bu degerler bos/default ise startup fail etsin. Secretlari env/secret manager uzerinden zorunlu kil. |
-| P1 | RBAC | SecurityContext role tasiyor ama resource metodlarinda `@RolesAllowed` yok. | Authenticated her kullanici admin yuzeylerine erisebilir. | Admin/editor/viewer permission matrisini resource metodlarina uygula. |
-| P1 | Rate limit | `canonbridge.ratelimit.enabled=false` default. Proxy endpointleri de rate limitten muaf. | Brute force, proxy abuse ve maliyetli outbound cagri riski. | Production'da default true yap; proxy icin mapping/API-key bazli limit uygula. |
-| P1 | Swagger/OpenAPI | Swagger UI her ortamda include ediliyor ve auth bypass listesinde. | Prod API yuzeyi kolayca kesfedilir. | Prod'da swagger kapali olsun veya admin auth arkasina alinsin. |
-| P1 | Tenant kaynagi | Bir cok resource `@HeaderParam("X-Tenant-Id")` okuyor. Yeni filter tek tenant icin normalize ediyor, fakat uzun vadede tenant request header'dan degil token/context'ten gelmeli. | Multi-tenant'a donuste header spoofing riski geri gelir. | Tenant okumasini merkezi `TenantContext` servisine tasi; resource'lar header okumayi biraksin. |
-| P2 | CORS | Default originler localhost icin dogru, ancak production'da env verilmezse dev originleri acik kalir. | Yanlis prod konfigunde tarayici tabanli kotuye kullanim yuzeyi buyur. | Prod profile'da `CORS_ALLOWED_ORIGINS` zorunlu olsun; wildcard kabul edilmesin. |
-| P2 | Request body limit | Uygulama configinde Quarkus HTTP body limitleri gorunmuyor. | Buyuk payload ile memory/CPU baskisi. | `quarkus.http.limits.max-body-size` ve endpoint bazli payload limitleri ekle. |
-| P2 | Audit coverage | Basarili/hatali kritik security olaylari tam auditlenmiyor: auth failure, tenant mismatch, credential rotation failure. | Olay sonrasi inceleme eksik kalir. | Security filter ve credential islemlerine audit event ekle. |
+| Oncelik | Alan | Durum |
+| --- | --- | --- |
+| P0 | Runtime proxy auth | Kapandi. `api/proxy/` artik auth filter bypass listesinde degil. |
+| P0 | JWT | Kapandi. Login tokenlari HS256 imzali JWT olarak uretilip signature/issuer/expiry ile dogrulaniyor. |
+| P0 | Prod secret defaults | Kapandi. Production environment'ta insecure defaultlar startup'i durduruyor. |
+| P1 | RBAC | Kapandi. Merkezi `RoleAuthorizationFilter` admin/author/operator/viewer ayrimini uyguluyor. |
+| P1 | Rate limit | Kapandi. Filter provider olarak aktif ve proxy endpointleri de limitleniyor. |
+| P1 | Swagger/OpenAPI | Kapandi. Public docs default kapali; dev/test disinda env ile bilincli acilmasi gerekiyor. |
+| P1 | Tenant kaynagi | Tek tenant icin kapandi. Header bos olsa bile API context'i `tenant-acme` olarak normalize ediyor; farkli tenant reddediliyor. |
+| P2 | CORS | Kapandi. Production validator wildcard/localhost/bos origin konfigurasyonunu reddediyor. |
+| P2 | Request body limit | Kapandi. Default body limit `1M`; `HTTP_MAX_BODY_SIZE` ile degistirilebilir. |
+| P2 | Audit coverage | Kapandi. Auth failure, tenant denial ve RBAC denial audit event'i olarak kaydediliyor. |
 
-## Tavsiye Edilen Siralama
+## Kalan Bilincli Backlog
 
-1. P0: Proxy auth bypass'i kapat, gercek JWT/OIDC dogrulamasina gec, production secret defaultlarini fail-closed yap.
-2. P1: RBAC annotationlarini ve proxy rate limiting'i ekle.
-3. P1/P2: Swagger, CORS ve body limitlerini production profile'a bagla.
-4. P2: TenantContext refactor'u ve audit coverage iyilestirmeleri.
+- OIDC/JWKS entegrasyonu halen opsiyonel. Lokal login tokenlari HS256 ile guvenli hale geldi; enterprise ortam icin RS256/JWKS/OIDC zorunlu hale getirilebilir.
+- Resource metodlari halen `@HeaderParam("X-Tenant-Id")` okuyor; single-tenant filter bunu normalize ettigi icin pratik risk kapandi. Uzun vadede merkezi `TenantContext` servisine refactor daha temiz olur.
+- Credential rotation failure audit coverage'i mevcut resource akislarina daha ayrintili islenebilir; bu calisma security filter kaynakli kritik denial olaylarini auditliyor.
 
 ## Notlar
 

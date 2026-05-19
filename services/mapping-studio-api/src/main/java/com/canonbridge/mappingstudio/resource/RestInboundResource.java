@@ -1,5 +1,6 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.security.TenantContext;
 import com.canonbridge.mappingstudio.domain.MappingDraft;
 import com.canonbridge.mappingstudio.kafka.KafkaProducerService;
 import com.canonbridge.mappingstudio.repository.MappingDraftRepository;
@@ -25,6 +26,8 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "REST Inbound", description = "No-code REST inbound contract ingestion")
 public class RestInboundResource {
+    @Inject
+    TenantContext tenantContext;
 
     @Inject
     MappingDraftRepository draftRepository;
@@ -42,9 +45,7 @@ public class RestInboundResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("draftId") UUID draftId,
             String rawPayload) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
 
         return draftRepository.findById(tenantId, draftId)
                 .chain(draft -> {

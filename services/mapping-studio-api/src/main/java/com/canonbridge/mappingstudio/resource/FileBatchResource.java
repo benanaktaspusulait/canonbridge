@@ -1,5 +1,6 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.security.TenantContext;
 import com.canonbridge.mappingstudio.domain.MappingDraft;
 import com.canonbridge.mappingstudio.kafka.KafkaProducerService;
 import com.canonbridge.mappingstudio.repository.MappingDraftRepository;
@@ -31,6 +32,8 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "File Batch", description = "Batch payload ingestion for FILE_BATCH mappings")
 public class FileBatchResource {
+    @Inject
+    TenantContext tenantContext;
 
     @Inject
     MappingDraftRepository draftRepository;
@@ -51,9 +54,7 @@ public class FileBatchResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("id") UUID id,
             String requestBody) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
 
         JsonNode rowsNode;
         try {

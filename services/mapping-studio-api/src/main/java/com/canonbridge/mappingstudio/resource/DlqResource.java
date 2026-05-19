@@ -1,5 +1,6 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.security.TenantContext;
 import com.canonbridge.mappingstudio.audit.AuditLogService;
 import com.canonbridge.mappingstudio.domain.AuditLog;
 import com.canonbridge.mappingstudio.domain.DlqMessage;
@@ -25,6 +26,8 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "DLQ Management", description = "Dead Letter Queue message management")
 public class DlqResource {
+    @Inject
+    TenantContext tenantContext;
 
     private static final Logger LOG = Logger.getLogger(DlqResource.class);
 

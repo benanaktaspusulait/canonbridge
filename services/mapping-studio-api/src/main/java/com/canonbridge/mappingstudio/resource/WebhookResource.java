@@ -1,5 +1,6 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.security.TenantContext;
 import com.canonbridge.mappingstudio.domain.WebhookEndpoint;
 import com.canonbridge.mappingstudio.kafka.KafkaProducerService;
 import com.canonbridge.mappingstudio.repository.WebhookEndpointRepository;
@@ -25,6 +26,8 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Webhooks", description = "Webhook endpoint management and ingestion")
 public class WebhookResource {
+    @Inject
+    TenantContext tenantContext;
 
     private static final Logger LOG = Logger.getLogger(WebhookResource.class);
 
@@ -37,9 +40,7 @@ public class WebhookResource {
     @GET
     @Operation(summary = "List webhook endpoints")
     public Uni<List<WebhookEndpoint>> list(@HeaderParam("X-Tenant-Id") String tenantId) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return webhookRepository.findByTenantId(tenantId);
     }
 
@@ -49,9 +50,7 @@ public class WebhookResource {
     public Uni<Response> get(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("id") UUID id) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return webhookRepository.findById(tenantId, id)
             .map(endpoint -> {
                 if (endpoint == null) {
@@ -69,9 +68,7 @@ public class WebhookResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @HeaderParam("X-User-Id") String userId,
             WebhookEndpoint endpoint) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         if (endpoint.getName() == null || endpoint.getName().isBlank()) {
             throw new BadRequestException("Webhook name is required");
         }
@@ -94,9 +91,7 @@ public class WebhookResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("id") UUID id,
             WebhookStatusRequest request) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return webhookRepository.updateStatus(tenantId, id, request.status())
             .map(updated -> {
                 if (updated == null) {
@@ -114,9 +109,7 @@ public class WebhookResource {
     public Uni<Response> delete(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("id") UUID id) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return webhookRepository.delete(tenantId, id)
             .map(deleted -> {
                 if (!deleted) {

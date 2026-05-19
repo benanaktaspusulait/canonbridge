@@ -1,5 +1,6 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.security.TenantContext;
 import com.canonbridge.mappingstudio.domain.SchemaDefinition;
 import com.canonbridge.mappingstudio.repository.SchemaRepository;
 import io.smallrye.mutiny.Uni;
@@ -27,6 +28,8 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Schemas", description = "JSON schema management operations")
 public class SchemaResource {
+    @Inject
+    TenantContext tenantContext;
 
     @Inject
     SchemaRepository schemaRepository;
@@ -214,10 +217,7 @@ public class SchemaResource {
     }
 
     private String requireTenantId(String tenantId) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
-        return tenantId;
+        return tenantContext.requireTenantId(tenantId);
     }
 
     private Response okOrNotFound(SchemaDefinition schema) {

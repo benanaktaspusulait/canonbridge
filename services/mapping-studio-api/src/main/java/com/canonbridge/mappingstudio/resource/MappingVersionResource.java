@@ -1,5 +1,6 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.security.TenantContext;
 import com.canonbridge.mappingstudio.domain.MappingVersion;
 import com.canonbridge.mappingstudio.repository.MappingVersionRepository;
 import io.smallrye.mutiny.Uni;
@@ -21,6 +22,8 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Mapping Versions", description = "Published mapping version operations")
 public class MappingVersionResource {
+    @Inject
+    TenantContext tenantContext;
 
     @Inject
     MappingVersionRepository versionRepository;
@@ -28,9 +31,7 @@ public class MappingVersionResource {
     @GET
     @Operation(summary = "List all mapping versions for tenant")
     public Uni<List<MappingVersion>> list(@HeaderParam("X-Tenant-Id") String tenantId) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return versionRepository.findByTenantId(tenantId);
     }
 
@@ -40,9 +41,7 @@ public class MappingVersionResource {
     public Uni<List<MappingVersion>> listByPartner(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("partnerId") UUID partnerId) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return versionRepository.findByPartner(tenantId, partnerId);
     }
 
@@ -52,9 +51,7 @@ public class MappingVersionResource {
     public Uni<Response> get(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("id") UUID id) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return versionRepository.findById(tenantId, id)
             .map(version -> {
                 if (version == null) {
@@ -71,9 +68,7 @@ public class MappingVersionResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("partnerId") UUID partnerId,
             @PathParam("eventType") String eventType) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return versionRepository.findActiveByPartnerAndEventType(tenantId, partnerId, eventType)
             .map(version -> {
                 if (version == null) {
@@ -89,9 +84,7 @@ public class MappingVersionResource {
     public Uni<Response> deprecate(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("id") UUID id) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         
         return versionRepository.deprecate(tenantId, id)
             .map(version -> {
@@ -108,9 +101,7 @@ public class MappingVersionResource {
     public Uni<Response> bulkDeprecate(
             @HeaderParam("X-Tenant-Id") String tenantId,
             JsonObject body) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         JsonArray ids = body != null ? body.getJsonArray("ids", new JsonArray()) : new JsonArray();
         if (ids.isEmpty()) {
             throw new BadRequestException("ids array is required");
@@ -136,9 +127,7 @@ public class MappingVersionResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("leftId") UUID leftId,
             @PathParam("rightId") UUID rightId) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
 
         return versionRepository.findById(tenantId, leftId)
             .chain(left -> versionRepository.findById(tenantId, rightId)

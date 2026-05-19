@@ -1,5 +1,6 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.security.TenantContext;
 import com.canonbridge.mappingstudio.domain.AuditLog;
 import com.canonbridge.mappingstudio.repository.AuditLogRepository;
 import io.smallrye.mutiny.Uni;
@@ -15,6 +16,8 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "Audit Logs", description = "Audit log query endpoints")
 public class AuditLogResource {
+    @Inject
+    TenantContext tenantContext;
 
     @Inject
     AuditLogRepository auditLogRepository;
@@ -25,9 +28,7 @@ public class AuditLogResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @QueryParam("limit") @DefaultValue("100") int limit,
             @QueryParam("offset") @DefaultValue("0") int offset) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return auditLogRepository.findByTenantId(tenantId, limit, offset);
     }
 
@@ -37,9 +38,7 @@ public class AuditLogResource {
     public Uni<List<AuditLog>> getByResource(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("resourceId") String resourceId) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return auditLogRepository.findByResourceId(tenantId, resourceId);
     }
 }

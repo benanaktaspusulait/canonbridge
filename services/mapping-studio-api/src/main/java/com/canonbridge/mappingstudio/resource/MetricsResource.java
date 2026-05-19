@@ -1,5 +1,6 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.security.TenantContext;
 import com.canonbridge.mappingstudio.repository.ProxyExecutionLogRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
@@ -16,6 +17,8 @@ import java.util.Map;
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "Metrics", description = "System metrics and statistics")
 public class MetricsResource {
+    @Inject
+    TenantContext tenantContext;
 
     @Inject
     ProxyExecutionLogRepository logRepository;
@@ -29,9 +32,7 @@ public class MetricsResource {
     public Uni<Map<String, Object>> getDashboardStats(
             @HeaderParam("X-Tenant-Id") String tenantId) {
         
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
 
         return draftRepository.findByTenantId(tenantId)
             .chain(drafts -> logRepository.dashboardStats(tenantId).map(proxyStats -> {
@@ -57,9 +58,7 @@ public class MetricsResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @QueryParam("window") @DefaultValue("1h") String window) {
         
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
 
         return logRepository.dashboardStats(tenantId).map(proxyStats -> {
             Map<String, Object> metrics = new HashMap<>();
@@ -86,9 +85,7 @@ public class MetricsResource {
     public Uni<Map<String, Object>> getPartnerHealth(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @QueryParam("window") @DefaultValue("1h") String window) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
 
         return logRepository.healthByMapping(tenantId).map(rows -> {
             List<Map<String, Object>> partners = rows.stream().map(row -> {

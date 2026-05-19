@@ -1,5 +1,6 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.security.TenantContext;
 import com.canonbridge.mappingstudio.domain.MappingDraft;
 import com.canonbridge.mappingstudio.repository.MappingDraftRepository;
 import com.canonbridge.mappingstudio.service.MappingExecutionService;
@@ -34,6 +35,8 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Mapping Proxy", description = "Dynamic API proxy for seamless integration migration")
 public class MappingProxyResource {
+    @Inject
+    TenantContext tenantContext;
 
     private static final Logger LOG = Logger.getLogger(MappingProxyResource.class);
 
@@ -59,13 +62,7 @@ public class MappingProxyResource {
             @Context HttpHeaders headers,
             String requestPayload) {
 
-        if (tenantId == null || tenantId.isBlank()) {
-            return Uni.createFrom().item(
-                Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErrorResponse("X-Tenant-Id header is required"))
-                    .build()
-            );
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
 
         // Request size limit: 1MB
         if (requestPayload != null && requestPayload.length() > 1_048_576) {
@@ -94,13 +91,7 @@ public class MappingProxyResource {
             @Context HttpHeaders headers,
             @Context jakarta.ws.rs.core.UriInfo uriInfo) {
 
-        if (tenantId == null || tenantId.isBlank()) {
-            return Uni.createFrom().item(
-                Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErrorResponse("X-Tenant-Id header is required"))
-                    .build()
-            );
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
 
         LOG.infof("🔄 Proxy GET request for mapping %s from tenant %s", mappingId, tenantId);
 
@@ -174,13 +165,7 @@ public class MappingProxyResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("mappingId") UUID mappingId) {
 
-        if (tenantId == null || tenantId.isBlank()) {
-            return Uni.createFrom().item(
-                Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ErrorResponse("X-Tenant-Id header is required"))
-                    .build()
-            );
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
 
         return draftRepository.findById(tenantId, mappingId)
             .map(draft -> {

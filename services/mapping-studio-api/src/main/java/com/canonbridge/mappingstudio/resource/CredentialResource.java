@@ -1,5 +1,6 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.security.TenantContext;
 import com.canonbridge.mappingstudio.credential.CredentialSecretCodec;
 import com.canonbridge.mappingstudio.domain.Credential;
 import com.canonbridge.mappingstudio.repository.CredentialRepository;
@@ -21,6 +22,8 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Credentials", description = "Credential management operations")
 public class CredentialResource {
+    @Inject
+    TenantContext tenantContext;
 
     @Inject
     CredentialRepository credentialRepository;
@@ -31,9 +34,7 @@ public class CredentialResource {
     @GET
     @Operation(summary = "List all credentials (metadata only, no secrets)")
     public Uni<List<Credential>> list(@HeaderParam("X-Tenant-Id") String tenantId) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return credentialRepository.findByTenant(tenantId);
     }
 
@@ -44,9 +45,7 @@ public class CredentialResource {
             @PathParam("credentialId") UUID credentialId,
             @HeaderParam("X-Tenant-Id") String tenantId) {
         
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
 
         return credentialRepository.findById(credentialId, tenantId)
                 .map(credential -> {
@@ -64,9 +63,7 @@ public class CredentialResource {
             @HeaderParam("X-User-Id") String userId,
             CreateCredentialRequest request) {
         
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
 
         String encryptedSecret = secretCodec.encrypt(normalizeSecret(request.secret(), request.authType()));
 
@@ -97,9 +94,7 @@ public class CredentialResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @HeaderParam("X-User-Id") String userId) {
         
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
 
         return credentialRepository.updateStatus(
                 credentialId, 
@@ -123,9 +118,7 @@ public class CredentialResource {
             @HeaderParam("X-User-Id") String userId,
             RotateCredentialRequest request) {
 
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         if (request == null) {
             throw new BadRequestException("Request body is required");
         }

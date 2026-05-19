@@ -1,5 +1,6 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.security.TenantContext;
 import com.canonbridge.mappingstudio.audit.AuditLogService;
 import com.canonbridge.mappingstudio.domain.AuditLog;
 import com.canonbridge.mappingstudio.domain.MappingDraft;
@@ -29,6 +30,8 @@ import org.jboss.logging.Logger;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Mapping Drafts", description = "Mapping draft management operations")
 public class MappingDraftResource {
+    @Inject
+    TenantContext tenantContext;
 
     private static final Logger LOG = Logger.getLogger(MappingDraftResource.class);
 
@@ -56,9 +59,7 @@ public class MappingDraftResource {
     @GET
     @Operation(summary = "List all mapping drafts for tenant")
     public Uni<List<MappingDraft>> list(@HeaderParam("X-Tenant-Id") String tenantId) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return draftRepository.findByTenantId(tenantId);
     }
 
@@ -68,9 +69,7 @@ public class MappingDraftResource {
     public Uni<List<MappingDraft>> listByPartner(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("partnerId") UUID partnerId) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return draftRepository.findByPartner(tenantId, partnerId);
     }
 
@@ -80,9 +79,7 @@ public class MappingDraftResource {
     public Uni<Response> get(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("id") UUID id) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return draftRepository.findById(tenantId, id)
             .map(draft -> {
                 if (draft == null) {
@@ -98,9 +95,7 @@ public class MappingDraftResource {
     public Uni<Response> exportDraft(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("id") UUID id) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return draftRepository.findById(tenantId, id)
             .map(draft -> {
                 if (draft == null) {
@@ -117,9 +112,7 @@ public class MappingDraftResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("id") UUID id,
             JsonObject request) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return draftRepository.findById(tenantId, id)
                 .chain(draft -> {
                     if (draft == null) {
@@ -145,9 +138,7 @@ public class MappingDraftResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("id") UUID id,
             JsonObject request) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         JsonObject payload = request != null ? request.getJsonObject("payload", request) : new JsonObject();
 
         return draftRepository.findById(tenantId, id)
@@ -180,17 +171,15 @@ public class MappingDraftResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @HeaderParam("X-User-Id") String userId,
             MappingDraft draft) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        String requiredTenantId = tenantContext.requireTenantId(tenantId);
         
-        draft.setTenantId(tenantId);
+        draft.setTenantId(requiredTenantId);
         draft.setCreatedBy(userId);
         draft.setUpdatedBy(userId);
         
         return draftRepository.create(draft)
             .flatMap(created -> auditLogService.logSuccess(
-                tenantId, userId,
+                requiredTenantId, userId,
                 AuditLog.AuditAction.MAPPING_CREATED,
                 "mapping_draft", created.getId() != null ? created.getId().toString() : "",
                 "Created mapping draft: " + created.getName(),
@@ -205,15 +194,13 @@ public class MappingDraftResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @HeaderParam("X-User-Id") String userId,
             MappingDraft draft) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        String requiredTenantId = tenantContext.requireTenantId(tenantId);
         if (draft == null) {
             throw new BadRequestException("Request body is required");
         }
 
         draft.setId(null);
-        draft.setTenantId(tenantId);
+        draft.setTenantId(requiredTenantId);
         draft.setStatus(MappingDraft.DraftStatus.DRAFT);
         draft.setCreatedBy(userId);
         draft.setUpdatedBy(userId);
@@ -223,7 +210,7 @@ public class MappingDraftResource {
 
         return draftRepository.create(draft)
             .flatMap(created -> auditLogService.logSuccess(
-                tenantId, userId,
+                requiredTenantId, userId,
                 AuditLog.AuditAction.MAPPING_CREATED,
                 "mapping_draft", created.getId() != null ? created.getId().toString() : "",
                 "Imported mapping draft: " + created.getName(),
@@ -238,9 +225,7 @@ public class MappingDraftResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @HeaderParam("X-User-Id") String userId,
             @PathParam("id") UUID id) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
 
         return draftRepository.findById(tenantId, id)
             .chain(source -> {
@@ -264,9 +249,7 @@ public class MappingDraftResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @HeaderParam("X-User-Id") String userId,
             JsonObject body) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        String requiredTenantId = tenantContext.requireTenantId(tenantId);
         JsonArray ids = body != null ? body.getJsonArray("ids", new JsonArray()) : new JsonArray();
         if (ids.isEmpty()) {
             throw new BadRequestException("ids array is required");
@@ -275,7 +258,7 @@ public class MappingDraftResource {
         List<Uni<JsonObject>> publishes = ids.stream()
             .map(String::valueOf)
             .map(raw -> UUID.fromString(raw.replace("\"", "")))
-            .map(id -> draftRepository.findById(tenantId, id)
+            .map(id -> draftRepository.findById(requiredTenantId, id)
                 .chain(draft -> {
                     if (draft == null) {
                         return Uni.createFrom().item(new JsonObject()
@@ -284,7 +267,7 @@ public class MappingDraftResource {
                     }
                     return publishService.publish(draft, userId, "Bulk publish")
                         .invoke(version -> notificationService.mappingPublished(
-                            tenantId,
+                            requiredTenantId,
                             draft.getId().toString(),
                             draft.getName(),
                             version.getVersion()
@@ -311,9 +294,7 @@ public class MappingDraftResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @HeaderParam("X-User-Id") String userId,
             JsonObject body) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        String requiredTenantId = tenantContext.requireTenantId(tenantId);
         JsonArray ids = body != null ? body.getJsonArray("ids", new JsonArray()) : new JsonArray();
         if (ids.isEmpty()) {
             throw new BadRequestException("ids array is required");
@@ -322,7 +303,7 @@ public class MappingDraftResource {
         List<Uni<JsonObject>> updates = ids.stream()
             .map(String::valueOf)
             .map(raw -> UUID.fromString(raw.replace("\"", "")))
-            .map(id -> draftRepository.updateStatus(tenantId, id, MappingDraft.DraftStatus.INVALID, userId)
+            .map(id -> draftRepository.updateStatus(requiredTenantId, id, MappingDraft.DraftStatus.INVALID, userId)
                 .map(updated -> new JsonObject()
                     .put("id", id.toString())
                     .put("status", updated == null ? "NOT_FOUND" : "DEPRECATED")))
@@ -340,15 +321,13 @@ public class MappingDraftResource {
             @HeaderParam("X-User-Id") String userId,
             @PathParam("id") UUID id,
             JsonObject request) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        String requiredTenantId = tenantContext.requireTenantId(tenantId);
 
         if (request == null) {
             throw new BadRequestException("Request body is required");
         }
 
-        return draftRepository.findById(tenantId, id)
+        return draftRepository.findById(requiredTenantId, id)
             .chain(existing -> {
                 if (existing == null) {
                     return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND).build());
@@ -361,7 +340,7 @@ public class MappingDraftResource {
                 }
 
                 existing.setId(id);
-                existing.setTenantId(tenantId);
+                existing.setTenantId(requiredTenantId);
                 existing.setUpdatedBy(userId);
 
                 return draftRepository.update(existing)
@@ -381,9 +360,7 @@ public class MappingDraftResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("id") UUID id,
             JsonObject body) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         if (body == null) {
             throw new BadRequestException("Request body is required");
         }
@@ -437,13 +414,11 @@ public class MappingDraftResource {
             @HeaderParam("X-User-Id") String userId,
             @PathParam("id") UUID id,
             JsonObject body) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        String requiredTenantId = tenantContext.requireTenantId(tenantId);
 
         String publishNotes = body != null ? body.getString("notes", "") : "";
 
-        return draftRepository.findById(tenantId, id)
+        return draftRepository.findById(requiredTenantId, id)
             .chain(draft -> {
                 if (draft == null) {
                     return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND)
@@ -452,7 +427,7 @@ public class MappingDraftResource {
 
                 return publishService.publish(draft, userId, publishNotes)
                     .invoke(version -> notificationService.mappingPublished(
-                        tenantId,
+                        requiredTenantId,
                         draft.getId().toString(),
                         draft.getName(),
                         version.getVersion()
@@ -471,9 +446,7 @@ public class MappingDraftResource {
     public Uni<Response> delete(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("id") UUID id) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         
         return draftRepository.delete(tenantId, id)
             .map(deleted -> {

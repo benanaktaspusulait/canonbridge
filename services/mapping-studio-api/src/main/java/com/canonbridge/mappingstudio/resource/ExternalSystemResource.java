@@ -1,5 +1,6 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.security.TenantContext;
 import com.canonbridge.mappingstudio.domain.OutboundConnection;
 import com.canonbridge.mappingstudio.outbound.OutboundHttpRequest;
 import com.canonbridge.mappingstudio.outbound.OutboundHttpResult;
@@ -33,6 +34,8 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "External Systems", description = "External system connection management operations")
 public class ExternalSystemResource {
+    @Inject
+    TenantContext tenantContext;
 
     @Inject
     OutboundConnectionRepository connectionRepository;
@@ -197,10 +200,7 @@ public class ExternalSystemResource {
     }
 
     private String requireTenantId(String tenantId) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
-        return tenantId;
+        return tenantContext.requireTenantId(tenantId);
     }
 
     private Response okOrNotFound(OutboundConnection connection) {

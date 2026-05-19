@@ -1,5 +1,6 @@
 package com.canonbridge.mappingstudio.resource;
 
+import com.canonbridge.mappingstudio.security.TenantContext;
 import com.canonbridge.mappingstudio.domain.ProxyExecutionLog;
 import com.canonbridge.mappingstudio.repository.ProxyExecutionLogRepository;
 import io.smallrye.mutiny.Uni;
@@ -18,6 +19,8 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Proxy Execution Logs", description = "Audit trail for proxy executions")
 public class ProxyExecutionLogResource {
+    @Inject
+    TenantContext tenantContext;
 
     @Inject
     ProxyExecutionLogRepository logRepository;
@@ -36,9 +39,7 @@ public class ProxyExecutionLogResource {
             @PathParam("mappingId") UUID mappingId,
             @QueryParam("limit") @DefaultValue("20") int limit) {
 
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
 
         return logRepository.findByMappingId(tenantId, mappingId, Math.min(limit, 100));
     }
@@ -51,9 +52,7 @@ public class ProxyExecutionLogResource {
             @PathParam("mappingId") UUID mappingId,
             @PathParam("logId") UUID logId) {
 
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
 
         return logRepository.findById(tenantId, logId)
             .map(log -> {
@@ -71,9 +70,7 @@ public class ProxyExecutionLogResource {
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("mappingId") UUID mappingId) {
 
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
 
         return logRepository.countByMappingAndStatus(tenantId, mappingId, "SUCCESS")
             .chain(successCount -> logRepository.countByMappingAndStatus(tenantId, mappingId, "ERROR")
@@ -96,9 +93,7 @@ public class ProxyExecutionLogResource {
     public Uni<List<java.util.Map<String, Object>>> getSeries(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @PathParam("mappingId") UUID mappingId) {
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
         return logRepository.executionSeries(tenantId, mappingId);
     }
 
@@ -110,9 +105,7 @@ public class ProxyExecutionLogResource {
             @PathParam("mappingId") UUID mappingId,
             @PathParam("logId") UUID logId) {
 
-        if (tenantId == null || tenantId.isBlank()) {
-            throw new BadRequestException("X-Tenant-Id header is required");
-        }
+        tenantId = tenantContext.requireTenantId(tenantId);
 
         return logRepository.findById(tenantId, logId)
             .chain(log -> {
