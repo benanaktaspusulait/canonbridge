@@ -88,6 +88,38 @@ public class RequestTemplateService {
         return renderJsonata(request, payload != null ? payload : new JsonObject());
     }
 
+    public JsonObject evaluateBlocking(String expression, JsonObject payload, int timeoutMs) {
+        if (expression == null || expression.trim().isEmpty()) {
+            throw new BadRequestException("expression is required");
+        }
+        String baseUrl = transformerUrl == null ? "" : transformerUrl.trim();
+        if (baseUrl.isEmpty()) {
+            throw new BadRequestException("Transformer URL is not configured");
+        }
+        JsonObject context = payload != null ? payload : new JsonObject();
+        JsonObject body = new JsonObject()
+                .put("payload", context)
+                .put("expression", expression.trim())
+                .put("timeoutMs", timeoutMs);
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl.replaceAll("/+$", "") + "/v1/jsonata/evaluate"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body.encode()))
+                .build();
+        try {
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            JsonObject responseBody = parseJson(response.body());
+            if (response.statusCode() >= 400) {
+                throw new BadRequestException(responseBody.getString("message", "JSONata evaluation failed"));
+            }
+            return responseBody;
+        } catch (BadRequestException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BadRequestException("Transformer service unavailable: " + e.getMessage());
+        }
+    }
+
     private Uni<JsonObject> renderJsonata(JsonObject request, JsonObject context) {
         String expression = request.getString("jsonata", "").trim();
         if (expression.isEmpty()) {

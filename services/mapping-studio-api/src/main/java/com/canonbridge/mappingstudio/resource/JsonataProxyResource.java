@@ -1,9 +1,10 @@
 package com.canonbridge.mappingstudio.resource;
 
 import com.canonbridge.mappingstudio.outbound.RequestTemplateService;
-import io.smallrye.mutiny.Uni;
+import io.smallrye.common.annotation.Blocking;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -24,30 +25,36 @@ public class JsonataProxyResource {
 
     @POST
     @Path("/evaluate")
+    @Blocking
     @Operation(summary = "Evaluate a JSONata expression against a payload via the transformer service")
-    public Uni<Response> evaluate(JsonObject body) {
+    public Response evaluate(JsonObject body) {
         if (body == null) {
-            return Uni.createFrom().item(Response.status(400)
+            return Response.status(400)
                     .entity(new JsonObject().put("ok", false).put("message", "Request body is required"))
-                    .build());
+                    .build();
         }
 
         String expression = body.getString("expression", "").trim();
         if (expression.isEmpty()) {
-            return Uni.createFrom().item(Response.status(400)
+            return Response.status(400)
                     .entity(new JsonObject().put("ok", false).put("message", "expression is required"))
-                    .build());
+                    .build();
         }
 
         JsonObject payload = body.getJsonObject("payload");
         int timeoutMs = body.getInteger("timeoutMs", 500);
 
-        return requestTemplateService.evaluate(expression, payload, timeoutMs)
-                .map(result -> Response.ok(
-                        new JsonObject().put("ok", true).put("result", result)
-                ).build())
-                .onFailure().recoverWithItem(e -> Response.status(422)
-                        .entity(new JsonObject().put("ok", false).put("message", e.getMessage()))
-                        .build());
+        try {
+            JsonObject result = requestTemplateService.evaluateBlocking(expression, payload, timeoutMs);
+            return Response.ok(new JsonObject().put("ok", true).put("result", result.getValue("result"))).build();
+        } catch (BadRequestException e) {
+            return Response.status(422)
+                    .entity(new JsonObject().put("ok", false).put("message", e.getMessage()))
+                    .build();
+        } catch (Exception e) {
+            return Response.status(500)
+                    .entity(new JsonObject().put("ok", false).put("message", "Internal error: " + e.getMessage()))
+                    .build();
+        }
     }
 }
