@@ -1,6 +1,5 @@
 package com.canonbridge.mappingstudio.ratelimit;
 
-import io.smallrye.mutiny.Uni;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -31,7 +30,7 @@ class RateLimitFilterUnitTest {
 
         fixture.filter.filter(fixture.requestContext);
 
-        verify(fixture.rateLimitService).checkRateLimit("ip:127.0.0.1", 10, 60);
+        verify(fixture.rateLimitService).checkRateLimitNow("ip:127.0.0.1", 10, 60);
         verify(fixture.requestContext).setProperty(anyString(), org.mockito.ArgumentMatchers.any(RateLimitResult.class));
     }
 
@@ -45,7 +44,7 @@ class RateLimitFilterUnitTest {
 
         fixture.filter.filter(fixture.requestContext);
 
-        verify(fixture.rateLimitService).checkRateLimit("jwt:user-123", 100, 60);
+        verify(fixture.rateLimitService).checkRateLimitNow("jwt:user-123", 100, 60);
     }
 
     @Test
@@ -54,7 +53,7 @@ class RateLimitFilterUnitTest {
 
         fixture.filter.filter(fixture.requestContext);
 
-        verify(fixture.rateLimitService, never()).checkRateLimit(anyString(), anyInt(), anyInt());
+        verify(fixture.rateLimitService, never()).checkRateLimitNow(anyString(), anyInt(), anyInt());
     }
 
     @Test
@@ -65,7 +64,7 @@ class RateLimitFilterUnitTest {
         fixture.filter.filter(fixture.requestContext);
 
         ArgumentCaptor<String> clientId = ArgumentCaptor.forClass(String.class);
-        verify(fixture.rateLimitService).checkRateLimit(clientId.capture(), anyInt(), anyInt());
+        verify(fixture.rateLimitService).checkRateLimitNow(clientId.capture(), anyInt(), anyInt());
         assertTrue(clientId.getValue().startsWith("api-key:"));
         assertFalse(clientId.getValue().contains("plain-secret-key"));
     }
@@ -122,8 +121,8 @@ class RateLimitFilterUnitTest {
         when(authenticated.windowSeconds()).thenReturn(60);
         when(unauthenticated.defaultLimit()).thenReturn(10);
         when(unauthenticated.windowSeconds()).thenReturn(60);
-        when(rateLimitService.checkRateLimit(anyString(), anyInt(), anyInt()))
-                .thenReturn(Uni.createFrom().item(result));
+        when(rateLimitService.checkRateLimitNow(anyString(), anyInt(), anyInt()))
+                .thenReturn(result);
         when(uriInfo.getPath()).thenReturn(path);
         when(requestContext.getUriInfo()).thenReturn(uriInfo);
         when(requestContext.getSecurityContext()).thenReturn(securityContext);

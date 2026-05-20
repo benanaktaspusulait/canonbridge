@@ -13,7 +13,9 @@ class PartnerResourceTest {
     private static final String TENANT_ID = "tenant-acme";
 
     private io.restassured.specification.RequestSpecification request() {
-        return given().header("X-Tenant-Id", TENANT_ID);
+        return given()
+                .header("X-Tenant-Id", TENANT_ID)
+                .header("X-API-Key", "partner-resource-test-" + System.nanoTime());
     }
 
     @Test
@@ -30,10 +32,9 @@ class PartnerResourceTest {
     void testCreatePartner() {
         String partnerJson = """
             {
-                "partnerId": "test-partner",
+                "external_id": "test-partner",
                 "name": "Test Partner",
-                "description": "Test partner for unit testing",
-                "active": true
+                "description": "Test partner for unit testing"
             }
             """;
 
@@ -43,7 +44,8 @@ class PartnerResourceTest {
             .when().post("/api/partners")
             .then()
             .statusCode(201)
-            .body("partnerId", notNullValue())
+            .body("id", notNullValue())
+            .body("external_id", notNullValue())
             .body("name", notNullValue());
     }
 
@@ -52,26 +54,25 @@ class PartnerResourceTest {
         // First create a partner
         String partnerJson = """
             {
-                "partnerId": "get-test-partner",
-                "name": "Get Test Partner",
-                "active": true
+                "external_id": "get-test-partner",
+                "name": "Get Test Partner"
             }
             """;
 
-        String partnerId = request()
+        String id = request()
             .contentType(ContentType.JSON)
             .body(partnerJson)
             .when().post("/api/partners")
             .then()
             .statusCode(201)
-            .extract().path("partnerId");
+            .extract().path("id");
 
         // Then retrieve it
         request()
-            .when().get("/api/partners/" + partnerId)
+            .when().get("/api/partners/" + id)
             .then()
             .statusCode(200)
-            .body("partnerId", notNullValue());
+            .body("id", notNullValue());
     }
 
     @Test
@@ -79,33 +80,32 @@ class PartnerResourceTest {
         // Create a partner first
         String partnerJson = """
             {
-                "partnerId": "update-test-partner",
-                "name": "Update Test Partner",
-                "active": true
+                "external_id": "update-test-partner",
+                "name": "Update Test Partner"
             }
             """;
 
-        String partnerId = request()
+        String id = request()
             .contentType(ContentType.JSON)
             .body(partnerJson)
             .when().post("/api/partners")
             .then()
             .statusCode(201)
-            .extract().path("partnerId");
+            .extract().path("id");
 
         // Update it
         String updatedJson = """
             {
-                "partnerId": "update-test-partner",
+                "external_id": "update-test-partner",
                 "name": "Updated Partner Name",
-                "active": false
+                "status": "INACTIVE"
             }
             """;
 
         request()
             .contentType(ContentType.JSON)
             .body(updatedJson)
-            .when().put("/api/partners/" + partnerId)
+            .when().put("/api/partners/" + id)
             .then()
             .statusCode(200);
     }
@@ -115,29 +115,28 @@ class PartnerResourceTest {
         // Create a partner first
         String partnerJson = """
             {
-                "partnerId": "delete-test-partner",
-                "name": "Delete Test Partner",
-                "active": true
+                "external_id": "delete-test-partner",
+                "name": "Delete Test Partner"
             }
             """;
 
-        String partnerId = request()
+        String id = request()
             .contentType(ContentType.JSON)
             .body(partnerJson)
             .when().post("/api/partners")
             .then()
             .statusCode(201)
-            .extract().path("partnerId");
+            .extract().path("id");
 
         // Delete it
         request()
-            .when().delete("/api/partners/" + partnerId)
+            .when().delete("/api/partners/" + id)
             .then()
             .statusCode(204);
 
         // Verify it's gone
         request()
-            .when().get("/api/partners/" + partnerId)
+            .when().get("/api/partners/" + id)
             .then()
             .statusCode(404);
     }
