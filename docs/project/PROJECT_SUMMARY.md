@@ -23,10 +23,10 @@ The platform combines:
 | Source types | Implemented | UI/backend model includes 10 integration source types. |
 | External systems | Implemented with deterministic and live protocol proof | 10 distinct mock-backed templates are normalized by migration `V38`; `V39` seeds the newest four systems; transformer tests assert one canonical output per system; opt-in Docker/Testcontainers E2E calls all 10 live mock protocols. |
 | Mapping Studio UI | Active | Angular app with wizard, Integration Studio, preview, autosave, DLQ handoff, and i18n. |
-| Mapping Studio API | Active | Quarkus API with Flyway schema, repositories, security filters, OIDC production guardrails, outbound execution, batch status/retry, scheduled run history, outbox replay, and tests. |
+| Mapping Studio API | Active | Quarkus API with Flyway schema, repositories, security filters, OIDC production guardrails, outbound execution, batch status/retry/chunked upload sessions, scheduled run history, outbox replay, and tests. |
 | Transformer | Active | JSONata, Ajv, Kafka runner, enrichment support, metrics, and tests. |
 | Webhook receiver | Active | Webhook auth, event envelope creation, Kafka publish path. |
-| Production readiness | In progress | Core guardrails and replay paths are implemented; see [Project Gaps](./PROJECT_GAPS.md) for remaining ops follow-through. |
+| Production readiness | Hardened for local/staging proof | Core guardrails, replay paths, CI protocol E2E, runtime dashboards, and alert rules are implemented; real environment IdP/secrets remain deployment inputs. |
 
 ## Key Documents
 
@@ -58,9 +58,8 @@ etlsolutions/
 
 ## Top Remaining Follow-Ups
 
-1. Wire real production IdP/secrets and keep local demo auth disabled in production environments.
-2. Add chunked upload/session APIs for very large file batch ingestion.
-3. Run the opt-in Docker/Testcontainers protocol E2E in CI.
-4. Add Grafana/alert panels for outbox replay counters and batch/scheduled failure rates.
+1. Supply real production IdP/secrets through each target deployment secret manager.
+2. Add browser resumable-upload UX on top of the batch session APIs when large-file workflows are prioritized.
+3. Tune Grafana/Prometheus alert thresholds after staging traffic establishes baselines.
 
 The canonical gap list is [Project Gaps](./PROJECT_GAPS.md).

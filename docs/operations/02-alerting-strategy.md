@@ -140,6 +140,48 @@ This document defines the alerting strategy for CanonBridge platform, including 
     runbook: "https://docs.etl-solutions.example.com/runbook#dlq-accumulation"
 ```
 
+#### Outbox Replay Failures (P2)
+
+```yaml
+- alert: OutboxReplayFailures
+  expr: sum(increase(canonbridge_outbox_publish_failure_total[10m])) + sum(increase(canonbridge_outbox_replay_failure_total[10m])) > 0
+  for: 5m
+  labels:
+    severity: high
+    team: application
+  annotations:
+    summary: "Outbox publish/replay failures detected"
+    runbook: "Check outbox events, Kafka health, and trigger manual replay after recovery"
+```
+
+#### Batch Job Failures (P2)
+
+```yaml
+- alert: BatchJobFailures
+  expr: sum(increase(canonbridge_batch_jobs_completed_total{status=~"FAILED|COMPLETED_WITH_ERRORS"}[15m])) > 0
+  for: 5m
+  labels:
+    severity: high
+    team: application
+  annotations:
+    summary: "Batch jobs are finishing with failures"
+    runbook: "Inspect batch job row results and redrive failed rows"
+```
+
+#### Scheduled API Run Failures (P2)
+
+```yaml
+- alert: ScheduledApiRunFailures
+  expr: sum(increase(canonbridge_scheduled_runs_completed_total{result="failure"}[15m])) > 0
+  for: 5m
+  labels:
+    severity: high
+    team: application
+  annotations:
+    summary: "Scheduled API runs are failing"
+    runbook: "Check scheduled run history, outbound credentials, and upstream partner availability"
+```
+
 #### Transformation Latency High (P3)
 
 ```yaml

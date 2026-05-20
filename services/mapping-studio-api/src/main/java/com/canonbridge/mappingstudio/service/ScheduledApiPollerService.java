@@ -6,6 +6,7 @@ import com.canonbridge.mappingstudio.repository.MappingDraftRepository;
 import com.canonbridge.mappingstudio.repository.ScheduledApiRunRepository;
 import com.canonbridge.mappingstudio.security.TenantContext;
 import com.fasterxml.jackson.databind.JsonNode;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
@@ -42,6 +43,9 @@ public class ScheduledApiPollerService {
 
     @Inject
     TenantContext tenantContext;
+
+    @Inject
+    MeterRegistry meterRegistry;
 
     @ConfigProperty(name = "canonbridge.scheduled-poller.enabled", defaultValue = "true")
     boolean enabled;
@@ -148,7 +152,8 @@ public class ScheduledApiPollerService {
                                 startedAt,
                                 false,
                                 null,
-                                result.error());
+                                result.error())
+                                .invoke(() -> recordScheduledRun("failure"));
                     }
                     JsonNode canonical = result.transformedResponse();
                     if (canonical == null) {
@@ -159,7 +164,8 @@ public class ScheduledApiPollerService {
                                 startedAt,
                                 false,
                                 null,
-                                "Mapping produced no canonical payload");
+                                "Mapping produced no canonical payload")
+                                .invoke(() -> recordScheduledRun("failure"));
                     }
                     String key = buildMessageKey(mapping, canonical);
                     return kafkaProducerService.publishCanonicalEvent(
@@ -175,7 +181,8 @@ public class ScheduledApiPollerService {
                                     startedAt,
                                     true,
                                     canonical,
-                                    null));
+                                    null)
+                                    .invoke(() -> recordScheduledRun("success")));
                 })
                 .onFailure().recoverWithUni(error -> {
                     LOG.warnf("Scheduled API mapping execution failed for %s: %s", mapping.getName(), error.getMessage());
@@ -187,6 +194,7 @@ public class ScheduledApiPollerService {
                                     false,
                                     null,
                                     error.getMessage())
+                            .invoke(() -> recordScheduledRun("failure"))
                             .onFailure().invoke(markError ->
                                     LOG.warnf("Failed to persist scheduled API failure for %s: %s", mapping.getName(), markError.getMessage()))
                             .replaceWithVoid();
@@ -250,5 +258,11 @@ public class ScheduledApiPollerService {
             }
         }
         return null;
+    }
+
+    private void recordScheduledRun(String result) {
+        if (meterRegistry != null) {
+            meterRegistry.counter("canonbridge.scheduled.runs.completed", "result", result).increment();
+        }
     }
 }

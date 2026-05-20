@@ -78,6 +78,6 @@ Evidence:
 
 ## Remaining Actions
 
-1. Run the opt-in Docker/Testcontainers protocol E2E in CI once Docker capacity is available.
+1. Keep the CI `mock-protocol-e2e` Docker job healthy.
 2. Add UI coverage for selecting each template in the mapping wizard.
 3. Keep [Project Gaps](./PROJECT_GAPS.md) as the single living gap register for production readiness.

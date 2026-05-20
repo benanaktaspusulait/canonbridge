@@ -67,3 +67,43 @@ groups:
           summary: "No proxy traffic for 30 minutes"
           description: "Proxy was receiving traffic but stopped. Possible upstream issue."
           runbook: "Check if clients are still sending requests"
+
+      # P2: Outbox publish or replay failures
+      - alert: OutboxReplayFailures
+        expr: |
+          sum(increase(canonbridge_outbox_publish_failure_total[10m]))
+          + sum(increase(canonbridge_outbox_replay_failure_total[10m])) > 0
+        for: 5m
+        labels:
+          severity: high
+          team: application
+        annotations:
+          summary: "Outbox publish/replay failures detected"
+          description: "At least one outbox publish or replay failed in the last 10 minutes"
+          runbook: "Open the outbox events API, inspect FAILED rows, then trigger manual replay after the broker is healthy"
+
+      # P2: Batch runtime failures
+      - alert: BatchJobFailures
+        expr: |
+          sum(increase(canonbridge_batch_jobs_completed_total{status=~"FAILED|COMPLETED_WITH_ERRORS"}[15m])) > 0
+        for: 5m
+        labels:
+          severity: high
+          team: application
+        annotations:
+          summary: "Batch jobs are finishing with failures"
+          description: "One or more FILE_BATCH jobs completed with failed rows in the last 15 minutes"
+          runbook: "Use batch job detail, redrive failed rows, and inspect mapping validation errors"
+
+      # P2: Scheduled API runtime failures
+      - alert: ScheduledApiRunFailures
+        expr: |
+          sum(increase(canonbridge_scheduled_runs_completed_total{result="failure"}[15m])) > 0
+        for: 5m
+        labels:
+          severity: high
+          team: application
+        annotations:
+          summary: "Scheduled API runs are failing"
+          description: "One or more scheduled API mappings failed in the last 15 minutes"
+          runbook: "Check scheduled run history, outbound credentials, and upstream partner availability"

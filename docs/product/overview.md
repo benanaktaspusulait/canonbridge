@@ -159,19 +159,15 @@ Database + Business Events
 ```text
 etlsolutions/
 ├── docs/                         # Documentation
-├── _implementation-ready/         # Prepared infrastructure assets
-├── src/                          # Source code to be implemented
-├── partners/                     # Partner configuration packages
-├── schemas/                      # Canonical schemas
-├── test/                         # Tests
-├── docker/                       # Draft Docker assets
-├── k8s/                          # Draft Kubernetes manifests
+├── services/                     # Mapping API, transformer, webhook receiver, mock systems
+├── mapping-studio-ui/            # Angular Mapping Studio
+├── infrastructure/               # Docker, Kubernetes, Prometheus, Grafana assets
 └── scripts/                      # Utility scripts
 ```
 
 ## Testing Status
 
-The test strategy is documented, but executable test suites are still pending with the service implementations. Use [../testing/](../testing/) as the acceptance plan for unit, integration, contract, load, and chaos tests.
+Executable service tests, transformer smoke tests, no-code coverage checks, and opt-in Docker protocol E2E are present. Use [../testing/](../testing/) as the acceptance plan for broadening unit, integration, contract, load, and chaos coverage.
 
 ## Product Status
 

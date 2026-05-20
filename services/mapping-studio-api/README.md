@@ -73,6 +73,12 @@ This service is fully reactive using:
 ### Runtime Operations
 - `POST /api/rest-inbound/{draftId}` - Validate, transform, and publish inbound REST payloads
 - `POST /api/mapping-drafts/{id}/batch/ingest` - Ingest normalized file/batch rows and publish canonical events
+- `POST /api/mapping-drafts/{id}/batch/sessions` - Create a chunked upload session for large files
+- `POST /api/mapping-drafts/{id}/batch/sessions/{sessionId}/chunks` - Upload or replace one rows/records chunk
+- `GET /api/mapping-drafts/{id}/batch/sessions` - List chunked upload sessions
+- `GET /api/mapping-drafts/{id}/batch/sessions/{sessionId}` - Get chunked upload progress and chunk metadata
+- `POST /api/mapping-drafts/{id}/batch/sessions/{sessionId}/complete` - Assemble uploaded chunks and run the batch job
+- `POST /api/mapping-drafts/{id}/batch/sessions/{sessionId}/cancel` - Cancel an open or failed upload session
 - `GET /api/mapping-drafts/{id}/batch/jobs` - List batch jobs for a mapping
 - `GET /api/mapping-drafts/{id}/batch/jobs/{jobId}` - Get batch job detail and row-level results
 - `POST /api/mapping-drafts/{id}/batch/jobs/{jobId}/retry` - Retry all original rows from a batch job

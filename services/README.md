@@ -57,31 +57,16 @@ Full reactive microservices architecture built with Quarkus, Vert.x, and reactiv
 - Kafka publishing
 - Event envelope wrapping
 
-### 5. business-consumer-service (Port 8083)
-**Status**: 🚧 To be implemented  
-**Tech**: Quarkus + Vert.x + Reactive PostgreSQL  
-**Purpose**: Consume canonical events, enforce idempotency, write outbox
+### 5. runtime workers inside mapping-studio-api
+**Status**: ✅ Implemented  
+**Tech**: Quarkus + Reactive PostgreSQL + Reactive Kafka  
+**Purpose**: Own runtime recovery surfaces that are tightly coupled to Mapping Studio state.
 
 **Features**:
-- Kafka consumer for canonical events
-- Idempotency enforcement
-- Ordering guarantees
-- Transactional outbox writes
-
-### 6. outbox-publisher (Port 8084)
-**Status**: 🚧 To be implemented  
-**Tech**: Quarkus + Vert.x + Reactive Kafka  
-**Purpose**: Publish outbox rows to Kafka
-
-**Features**:
-- Polling-based outbox pattern
-- At-least-once delivery
-- Mark published rows
-
-### 7. scheduled-poller
-**Status**: 🚧 To be implemented  
-**Tech**: Quarkus Scheduler or Kubernetes CronJob  
-**Purpose**: Periodic external API polling
+- Canonical publish outbox trace with replay worker and manual replay API
+- Scheduled API poller with status and run history
+- FILE_BATCH durable jobs, retry/redrive, and chunked upload sessions
+- Prometheus metrics for outbox, batch, and scheduled run outcomes
 
 ## Architecture Principles
 
@@ -124,8 +109,10 @@ All services share a single PostgreSQL database with Flyway migrations:
 - `outbound_connections` - External system connections
 - `call_history` - Outbound call audit log
 - `webhook_endpoints` - Webhook configurations
-- `credentials` - Encrypted credentials (to be implemented)
-- `outbox` - Transactional outbox pattern (to be implemented)
+- `credentials` - Encrypted credential metadata and write-only secret material
+- `outbox_events` - Canonical publish outbox trace and replay state
+- `etl_batch_jobs` / `etl_batch_upload_sessions` - Batch execution and large-file chunk upload state
+- `etl_scheduled_api_runs` / `etl_scheduled_api_run_history` - Scheduled poll state and run history
 
 ## Running Locally
 

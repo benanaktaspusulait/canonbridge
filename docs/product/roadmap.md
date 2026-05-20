@@ -64,7 +64,7 @@ In those cases, a smaller adapter library, managed iPaaS workflow, or partner-sp
 
 ### Current Product Gaps to Close
 
-The repository is currently documentation-heavy and does not contain application source code, package metadata, Docker Compose, Kubernetes manifests, or automated tests. That is acceptable for an architecture package, but it means the product claims should be treated as targets, not proven results.
+The repository now contains working services, package metadata, Docker Compose, Kubernetes manifests, CI workflows, and automated tests. Product claims should still be validated with customer evidence, staging traffic, and production deployment inputs.
 
 Priority gaps:
 
@@ -73,7 +73,7 @@ Priority gaps:
 - **Build-vs-buy analysis**: Compare against existing iPaaS, workflow automation, Kafka stream processing, and custom adapter approaches.
 - **MVP boundary**: Reduce MVP scope to the smallest proof: one partner, one event type, mapping versioning, validation, DLQ, replay, and basic observability.
 - **ROI model**: Quantify engineering weeks saved, incident reduction, onboarding cycle time, and operational cost.
-- **Implementation proof**: Add working source code, fixture-based mapping tests, local dev environment, and benchmark results before claiming achieved performance.
+- **Implementation proof**: Keep expanding benchmark, staging, and production proof before claiming achieved performance.
 - **UX definition**: Specify whether the product is mainly an API/CLI, an operations console, a business-user mapping UI, or a full SaaS control plane.
 - **Pricing validation**: Treat pricing tiers as hypotheses until willingness-to-pay is tested with target buyers.
 - **Security scope**: Decide which compliance promises are MVP, later enterprise features, or customer-specific responsibilities.

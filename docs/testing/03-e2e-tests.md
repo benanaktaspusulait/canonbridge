@@ -29,7 +29,7 @@ CANONBRIDGE_PROTOCOL_E2E=true TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/doc
       -Dtest=ProtocolDockerE2ETest test
 ```
 
-The test is skipped during normal unit runs so local development does not start Docker unexpectedly. Docker Desktop 29+ may require the explicit `docker.host` and `api.version` Maven properties shown above.
+The test is skipped during normal unit runs so local development does not start Docker unexpectedly. Docker Desktop 29+ may require the explicit `docker.host` and `api.version` Maven properties shown above. CI runs the same coverage in the `mock-protocol-e2e` job.
 
 ## UI Coverage
 

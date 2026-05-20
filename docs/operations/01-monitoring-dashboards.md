@@ -88,6 +88,22 @@ This document describes the monitoring dashboards for CanonBridge platform, incl
 - Transformation success rate
 - DLQ message count
 
+### 3. Runtime Operations Dashboard
+
+The local Grafana provisioning includes `runtime-operations.json` for Mapping Studio runtime recovery paths.
+
+**Panels**:
+- Outbox publish/replay success and failure counters.
+- Batch job completion status and processed row counts.
+- Scheduled API run success/failure counts and failure ratio.
+
+**Metric families**:
+- `canonbridge_outbox_publish_*`
+- `canonbridge_outbox_replay_*`
+- `canonbridge_batch_jobs_completed_total`
+- `canonbridge_batch_rows_processed_total`
+- `canonbridge_scheduled_runs_completed_total`
+
 **Panels**:
 ```
 ┌─────────────────────────────────────────────────────────┐
