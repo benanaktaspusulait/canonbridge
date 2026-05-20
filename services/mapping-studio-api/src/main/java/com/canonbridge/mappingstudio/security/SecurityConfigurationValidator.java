@@ -33,12 +33,47 @@ public class SecurityConfigurationValidator {
         String jwtSecret = value(config, "canonbridge.jwt.secret", "");
         String credentialKey = value(config, "canonbridge.credentials.encryption-key", "");
         String corsOrigins = value(config, "quarkus.http.cors.origins", "");
+        boolean authEnabled = booleanValue(config, "canonbridge.auth.enabled", true);
+        boolean apiKeyEnabled = booleanValue(config, "canonbridge.auth.api-key.enabled", true);
+        boolean localJwtEnabled = booleanValue(config, "canonbridge.auth.local-jwt.enabled", true);
+        boolean localLoginEnabled = booleanValue(config, "canonbridge.auth.local-login.enabled", true);
+        boolean bearerApiKeyEnabled = booleanValue(config, "canonbridge.auth.bearer-api-key.enabled", false);
+        boolean oidcEnabled = booleanValue(config, "quarkus.oidc.enabled", false);
+        boolean productionRequiresOidc = booleanValue(config, "canonbridge.security.production-requires-oidc", true);
+        boolean requireOidcClientSecret = booleanValue(config, "canonbridge.security.require-oidc-client-secret", true);
+        boolean productionAllowsLocalLogin = booleanValue(config, "canonbridge.security.production-allows-local-login", false);
 
-        if (apiKeys.isBlank() || containsToken(apiKeys, DEFAULT_API_KEY)) {
+        if (!authEnabled) {
+            failures.add("CANONBRIDGE_AUTH_ENABLED must not be false in production");
+        }
+        if (apiKeyEnabled && (apiKeys.isBlank() || containsToken(apiKeys, DEFAULT_API_KEY))) {
             failures.add("CANONBRIDGE_API_KEYS must be set and must not include dev-api-key");
         }
-        if (jwtSecret.isBlank() || JwtService.DEFAULT_SECRET.equals(jwtSecret)) {
+        if (localJwtEnabled && (jwtSecret.isBlank() || JwtService.DEFAULT_SECRET.equals(jwtSecret))) {
             failures.add("JWT_SECRET_KEY/canonbridge.jwt.secret must be set to a production secret");
+        }
+        if (bearerApiKeyEnabled) {
+            failures.add("CANONBRIDGE_BEARER_API_KEY_ENABLED must remain false in production; use X-API-Key or OIDC Bearer tokens");
+        }
+        if (localLoginEnabled && !productionAllowsLocalLogin) {
+            failures.add("CANONBRIDGE_LOCAL_LOGIN_ENABLED must be false in production unless CANONBRIDGE_PRODUCTION_ALLOWS_LOCAL_LOGIN=true is explicitly set");
+        }
+        if (productionRequiresOidc && !oidcEnabled) {
+            failures.add("OIDC_ENABLED/quarkus.oidc.enabled must be true in production");
+        }
+        if (oidcEnabled) {
+            String oidcServerUrl = value(config, "quarkus.oidc.auth-server-url", "");
+            String oidcClientId = value(config, "quarkus.oidc.client-id", "");
+            String oidcClientSecret = value(config, "quarkus.oidc.credentials.secret", "");
+            if (oidcServerUrl.isBlank() || oidcServerUrl.contains("localhost") || oidcServerUrl.startsWith("http://")) {
+                failures.add("OIDC_SERVER_URL/quarkus.oidc.auth-server-url must be an HTTPS production issuer URL");
+            }
+            if (oidcClientId.isBlank()) {
+                failures.add("OIDC_CLIENT_ID/quarkus.oidc.client-id must be set in production");
+            }
+            if (requireOidcClientSecret && oidcClientSecret.isBlank()) {
+                failures.add("OIDC_CLIENT_SECRET/quarkus.oidc.credentials.secret must be set in production");
+            }
         }
         if (credentialKey.isBlank() || DEFAULT_CREDENTIAL_KEY.equals(credentialKey)) {
             failures.add("CANONBRIDGE_CREDENTIAL_ENCRYPTION_KEY must be set to a production key");
@@ -60,6 +95,10 @@ public class SecurityConfigurationValidator {
 
     private static String value(Config config, String name, String fallback) {
         return config.getOptionalValue(name, String.class).orElse(fallback).trim();
+    }
+
+    private static boolean booleanValue(Config config, String name, boolean fallback) {
+        return config.getOptionalValue(name, Boolean.class).orElse(fallback);
     }
 
     private static boolean containsToken(String csv, String token) {

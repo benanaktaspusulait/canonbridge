@@ -36,11 +36,22 @@ class ApiKeyAuthenticatorTest {
     @Test
     void authenticatesBearerAuthorizationHeader() {
         ApiKeyAuthenticator authenticator = new ApiKeyAuthenticator(Set.of("bearer-secret"));
+        authenticator.bearerApiKeyEnabled = true;
 
         ApiKeyAuthenticator.AuthenticationResult result = authenticator.authenticate("Bearer bearer-secret", null);
 
         assertTrue(result.authenticated());
         assertEquals("api-key", result.principal());
+    }
+
+    @Test
+    void rejectsBearerApiKeyWhenCompatibilityModeIsDisabled() {
+        ApiKeyAuthenticator authenticator = new ApiKeyAuthenticator(Set.of("bearer-secret"));
+
+        ApiKeyAuthenticator.AuthenticationResult result = authenticator.authenticate("Bearer bearer-secret", null);
+
+        assertFalse(result.authenticated());
+        assertEquals("invalid_credentials", result.error());
     }
 
     @Test

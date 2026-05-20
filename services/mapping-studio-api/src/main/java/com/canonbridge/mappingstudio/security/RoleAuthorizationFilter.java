@@ -97,6 +97,10 @@ public class RoleAuthorizationFilter implements ContainerRequestFilter {
             return HttpMethod.GET.equals(normalizedMethod) ? OPERATOR_ROLES : OPERATOR_ROLES;
         }
 
+        if (path.startsWith("api/outbox")) {
+            return OPERATOR_ROLES;
+        }
+
         if (path.startsWith("api/proxy/")) {
             if (path.matches("api/proxy/[^/]+/?")) {
                 return Set.of("admin", "integration_author", "operator");

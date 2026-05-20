@@ -15,11 +15,9 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -107,17 +105,17 @@ public class ScheduledApiPollerService {
                 continue;
             }
 
-            Duration interval = parseInterval(schedule);
             String tenantId = tenantId(mapping);
-            jobs.add(scheduledApiRunRepository.findLastStartedAt(tenantId, mapping.getId())
-                    .chain(lastRun -> {
-                        if (lastRun != null && lastRun.plus(interval).isAfter(now)) {
+            jobs.add(scheduledApiRunRepository.findSummary(tenantId, mapping.getId())
+                    .chain(runState -> {
+                        Instant nextDueAt = instantFrom(runState, "nextRunAt");
+                        if (nextDueAt != null && nextDueAt.isAfter(now)) {
                             return Uni.createFrom().voidItem();
                         }
                         Instant startedAt = Instant.now();
-                        Instant nextRunAt = startedAt.plus(interval);
+                        Instant nextRunAt = nextRunAfter(schedule, startedAt);
                         return scheduledApiRunRepository.markStarted(tenantId, mapping.getId(), startedAt, nextRunAt)
-                                .chain(() -> runMapping(mapping, startedAt));
+                                .chain(runId -> runMapping(mapping, startedAt, runId));
                     }));
         }
 
@@ -137,7 +135,7 @@ public class ScheduledApiPollerService {
                 );
     }
 
-    private Uni<Void> runMapping(MappingDraft mapping, Instant startedAt) {
+    private Uni<Void> runMapping(MappingDraft mapping, Instant startedAt, java.util.UUID runId) {
         String tenantId = tenantId(mapping);
         return executionService.executeMapping(mapping, "{}", null)
                 .chain(result -> {
@@ -146,6 +144,7 @@ public class ScheduledApiPollerService {
                         return scheduledApiRunRepository.markCompleted(
                                 tenantId,
                                 mapping.getId(),
+                                runId,
                                 startedAt,
                                 false,
                                 null,
@@ -156,6 +155,7 @@ public class ScheduledApiPollerService {
                         return scheduledApiRunRepository.markCompleted(
                                 tenantId,
                                 mapping.getId(),
+                                runId,
                                 startedAt,
                                 false,
                                 null,
@@ -171,6 +171,7 @@ public class ScheduledApiPollerService {
                             .chain(() -> scheduledApiRunRepository.markCompleted(
                                     tenantId,
                                     mapping.getId(),
+                                    runId,
                                     startedAt,
                                     true,
                                     canonical,
@@ -181,6 +182,7 @@ public class ScheduledApiPollerService {
                     return scheduledApiRunRepository.markCompleted(
                                     tenantId,
                                     mapping.getId(),
+                                    runId,
                                     startedAt,
                                     false,
                                     null,
@@ -207,47 +209,26 @@ public class ScheduledApiPollerService {
         }
     }
 
-    private Duration parseInterval(String schedule) {
-        String raw = schedule.trim();
-        try {
-            if (raw.toUpperCase(Locale.ROOT).startsWith("PT")) {
-                return Duration.parse(raw);
-            }
-        } catch (Exception ignored) {
-        }
-
-        String lower = raw.toLowerCase(Locale.ROOT);
-        if (lower.matches("\\d+[smhd]")) {
-            long amount = Long.parseLong(lower.substring(0, lower.length() - 1));
-            return switch (lower.charAt(lower.length() - 1)) {
-                case 's' -> Duration.ofSeconds(amount);
-                case 'm' -> Duration.ofMinutes(amount);
-                case 'h' -> Duration.ofHours(amount);
-                case 'd' -> Duration.ofDays(amount);
-                default -> fallbackInterval();
-            };
-        }
-        if (lower.startsWith("*/") && lower.contains(" ")) {
-            String minutes = lower.substring(2, lower.indexOf(' '));
-            try {
-                return Duration.ofMinutes(Long.parseLong(minutes));
-            } catch (Exception ignored) {
-            }
-        }
-        if ("@hourly".equals(lower) || "hourly".equals(lower)) {
-            return Duration.ofHours(1);
-        }
-        if ("@daily".equals(lower) || "daily".equals(lower)) {
-            return Duration.ofDays(1);
-        }
-        return fallbackInterval();
+    public Instant nextRunAfter(String schedule, Instant after) {
+        return ScheduleExpression.nextRunAfter(schedule, after, defaultInterval);
     }
 
-    private Duration fallbackInterval() {
+    public String scheduleDescription(String schedule) {
+        return ScheduleExpression.describe(schedule, defaultInterval);
+    }
+
+    private Instant instantFrom(JsonObject value, String fieldName) {
+        if (value == null) {
+            return null;
+        }
+        String raw = value.getString(fieldName);
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
         try {
-            return Duration.parse(defaultInterval);
+            return Instant.parse(raw);
         } catch (Exception e) {
-            return Duration.ofMinutes(15);
+            return null;
         }
     }
 

@@ -1,6 +1,7 @@
 package com.canonbridge.mappingstudio.kafka;
 
 import com.canonbridge.mappingstudio.repository.OutboxEventRepository;
+import com.canonbridge.mappingstudio.repository.OutboxEventRepository.OutboxEvent;
 import com.canonbridge.mappingstudio.security.TenantContext;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import io.smallrye.reactive.messaging.kafka.Record;
@@ -15,6 +16,8 @@ import java.util.concurrent.CompletableFuture;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -95,5 +98,63 @@ class KafkaProducerServiceTest {
         verify(outboxEventRepository).createPending("tenant-acme", "canonical.events", key, payload, partnerId, eventType);
         verify(outboxEventRepository).markPublished(eventId);
         verify(outboxEventRepository, never()).markFailed(any(), any());
+    }
+
+    @Test
+    void marksOutboxFailedWhenKafkaSendFails() {
+        String key = "test-key-failed";
+        String payload = "{\"orderId\":\"failed\"}";
+        UUID eventId = UUID.randomUUID();
+        CompletableFuture<Void> failedSend = new CompletableFuture<>();
+        failedSend.completeExceptionally(new RuntimeException("broker unavailable"));
+
+        when(outboxEventRepository.createPending("tenant-acme", "canonical.events", key, payload, null, null))
+                .thenReturn(io.smallrye.mutiny.Uni.createFrom().item(eventId));
+        when(canonicalEventsEmitter.send(any(Record.class))).thenReturn(failedSend);
+        when(outboxEventRepository.markFailed(eq(eventId), contains("broker unavailable"), any()))
+                .thenReturn(io.smallrye.mutiny.Uni.createFrom().voidItem());
+
+        kafkaProducerService.publishCanonicalEvent(key, payload)
+                .subscribe().withSubscriber(UniAssertSubscriber.create())
+                .awaitFailure()
+                .assertFailedWith(Throwable.class);
+
+        verify(outboxEventRepository).markFailed(eq(eventId), contains("broker unavailable"), any());
+        verify(outboxEventRepository, never()).markPublished(eventId);
+    }
+
+    @Test
+    void replaysExistingOutboxEventWithoutCreatingANewRecord() {
+        UUID eventId = UUID.randomUUID();
+        OutboxEvent event = new OutboxEvent(
+                eventId,
+                "tenant-acme",
+                "canonical.events",
+                "replay-key",
+                "{\"orderId\":\"replay\"}",
+                "partner-1",
+                "order.created",
+                "FAILED",
+                1,
+                "broker down",
+                java.time.Instant.now(),
+                java.time.Instant.now());
+
+        when(canonicalEventsEmitter.send(any(Record.class)))
+                .thenReturn(CompletableFuture.completedFuture(null));
+        when(outboxEventRepository.markPublishedAfterReplay(eventId))
+                .thenReturn(io.smallrye.mutiny.Uni.createFrom().voidItem());
+
+        kafkaProducerService.replayOutboxEvent(event)
+                .subscribe().withSubscriber(UniAssertSubscriber.create())
+                .awaitItem()
+                .assertCompleted();
+
+        ArgumentCaptor<Record<String, String>> recordCaptor = ArgumentCaptor.forClass(Record.class);
+        verify(canonicalEventsEmitter).send(recordCaptor.capture());
+        assertEquals("replay-key", recordCaptor.getValue().key());
+        assertEquals("{\"orderId\":\"replay\"}", recordCaptor.getValue().value());
+        verify(outboxEventRepository).markPublishedAfterReplay(eventId);
+        verify(outboxEventRepository, never()).createPending(any(), any(), any(), any(), any(), any());
     }
 }

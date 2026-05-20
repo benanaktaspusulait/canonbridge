@@ -38,6 +38,9 @@ public class ApiAuthenticationFilter implements ContainerRequestFilter {
     @ConfigProperty(name = "canonbridge.auth.public-docs.enabled", defaultValue = "false")
     boolean publicDocsEnabled;
 
+    @ConfigProperty(name = "quarkus.oidc.enabled", defaultValue = "false")
+    boolean oidcEnabled;
+
     @ConfigProperty(name = "canonbridge.tenant.default-id", defaultValue = "tenant-acme")
     String defaultTenantId;
 
@@ -50,6 +53,10 @@ public class ApiAuthenticationFilter implements ContainerRequestFilter {
     @Override
     public void filter(ContainerRequestContext requestContext) {
         if (!authEnabled || shouldBypass(requestContext)) {
+            return;
+        }
+
+        if (oidcEnabled && hasAuthenticatedSecurityContext(requestContext)) {
             return;
         }
 
@@ -87,6 +94,11 @@ public class ApiAuthenticationFilter implements ContainerRequestFilter {
         }
 
         return !path.startsWith("api/");
+    }
+
+    private boolean hasAuthenticatedSecurityContext(ContainerRequestContext requestContext) {
+        SecurityContext securityContext = requestContext.getSecurityContext();
+        return securityContext != null && securityContext.getUserPrincipal() != null;
     }
 
     private void auditFailure(ContainerRequestContext requestContext, ApiKeyAuthenticator.AuthenticationResult result) {

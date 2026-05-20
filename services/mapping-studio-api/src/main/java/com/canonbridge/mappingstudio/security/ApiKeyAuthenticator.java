@@ -19,6 +19,15 @@ public class ApiKeyAuthenticator {
     @ConfigProperty(name = "canonbridge.auth.api-keys", defaultValue = "dev-api-key")
     String configuredApiKeys;
 
+    @ConfigProperty(name = "canonbridge.auth.api-key.enabled", defaultValue = "true")
+    boolean apiKeyEnabled = true;
+
+    @ConfigProperty(name = "canonbridge.auth.local-jwt.enabled", defaultValue = "true")
+    boolean localJwtEnabled = true;
+
+    @ConfigProperty(name = "canonbridge.auth.bearer-api-key.enabled", defaultValue = "false")
+    boolean bearerApiKeyEnabled = false;
+
     @Inject
     JwtService jwtService;
 
@@ -29,11 +38,15 @@ public class ApiKeyAuthenticator {
 
     ApiKeyAuthenticator(Set<String> acceptedApiKeys) {
         this.acceptedApiKeys = Set.copyOf(acceptedApiKeys);
+        this.apiKeyEnabled = true;
+        this.localJwtEnabled = true;
     }
 
     ApiKeyAuthenticator(Set<String> acceptedApiKeys, JwtService jwtService) {
         this.acceptedApiKeys = Set.copyOf(acceptedApiKeys);
         this.jwtService = jwtService;
+        this.apiKeyEnabled = true;
+        this.localJwtEnabled = true;
     }
 
     @PostConstruct
@@ -43,7 +56,7 @@ public class ApiKeyAuthenticator {
 
     public AuthenticationResult authenticate(String authorizationHeader, String apiKeyHeader) {
         Optional<String> presentedApiKey = extractApiKeyCredential(apiKeyHeader);
-        if (presentedApiKey.isPresent()) {
+        if (presentedApiKey.isPresent() && apiKeyEnabled) {
             AuthenticationResult apiKeyResult = authenticateApiKey(presentedApiKey.get());
             if (apiKeyResult.authenticated()) {
                 return apiKeyResult;
@@ -55,7 +68,7 @@ public class ApiKeyAuthenticator {
 
         Optional<String> bearerToken = extractBearerToken(authorizationHeader);
         if (bearerToken.isPresent()) {
-            if (jwtService != null) {
+            if (localJwtEnabled && jwtService != null) {
                 Optional<JwtService.TokenClaims> tokenClaims = jwtService.validateToken(bearerToken.get());
                 if (tokenClaims.isPresent()) {
                     return AuthenticationResult.authenticated(
@@ -65,13 +78,19 @@ public class ApiKeyAuthenticator {
                 }
             }
 
-            AuthenticationResult apiKeyResult = authenticateApiKey(bearerToken.get());
-            if (apiKeyResult.authenticated()) {
-                return apiKeyResult;
+            if (bearerApiKeyEnabled && apiKeyEnabled) {
+                AuthenticationResult apiKeyResult = authenticateApiKey(bearerToken.get());
+                if (apiKeyResult.authenticated()) {
+                    return apiKeyResult;
+                }
+                if ("auth_misconfigured".equals(apiKeyResult.error())) {
+                    return apiKeyResult;
+                }
             }
-            if ("auth_misconfigured".equals(apiKeyResult.error())) {
-                return apiKeyResult;
-            }
+        }
+
+        if (!apiKeyEnabled && !localJwtEnabled) {
+            return AuthenticationResult.failed("auth_misconfigured", "Authentication is enabled but no local authentication method is enabled");
         }
 
         if (presentedApiKey.isEmpty() && bearerToken.isEmpty()) {

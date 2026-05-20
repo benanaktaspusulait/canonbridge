@@ -5,6 +5,7 @@ import com.canonbridge.mappingstudio.repository.UserRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.mindrot.jbcrypt.BCrypt;
 import org.jboss.logging.Logger;
 
@@ -19,7 +20,13 @@ public class AuthService {
     @Inject
     JwtService jwtService;
 
+    @ConfigProperty(name = "canonbridge.auth.local-jwt.enabled", defaultValue = "true")
+    boolean localJwtEnabled;
+
     public Uni<AuthResponse> login(String email, String password) {
+        if (!localJwtEnabled) {
+            return Uni.createFrom().failure(new AuthException("Local JWT authentication is disabled"));
+        }
         return userRepository.findByEmail(email)
             .chain(user -> {
                 if (user == null) {
@@ -41,6 +48,9 @@ public class AuthService {
     }
 
     public Uni<User> validateToken(String token) {
+        if (!localJwtEnabled) {
+            return Uni.createFrom().failure(new AuthException("Local JWT authentication is disabled"));
+        }
         return jwtService.validateToken(token)
             .map(claims -> userRepository.findById(claims.userId())
                 .chain(user -> {

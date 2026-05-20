@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.net.URI;
+import java.security.Principal;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -78,6 +79,19 @@ class ApiAuthenticationFilterTest {
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), requestContext.abortedResponse.getStatus());
     }
 
+    @Test
+    void acceptsOidcSecurityContextWhenOidcIsEnabled() {
+        ApiAuthenticationFilter filter = filterWithKey("test-secret");
+        filter.oidcEnabled = true;
+        FakeRequestContext requestContext = new FakeRequestContext("api/partners");
+        requestContext.securityContext = oidcSecurityContext();
+
+        filter.filter(requestContext);
+
+        assertNull(requestContext.abortedResponse);
+        assertEquals("oidc-user", requestContext.securityContext.getUserPrincipal().getName());
+    }
+
     private static ApiAuthenticationFilter filterWithKey(String apiKey) {
         ApiAuthenticationFilter filter = new ApiAuthenticationFilter();
         filter.authEnabled = true;
@@ -85,8 +99,35 @@ class ApiAuthenticationFilterTest {
         filter.publicDocsEnabled = false;
         filter.defaultTenantId = "tenant-acme";
         filter.tenantHeaderName = "X-Tenant-Id";
+        filter.oidcEnabled = false;
         filter.authenticator = new ApiKeyAuthenticator(Set.of(apiKey));
         return filter;
+    }
+
+    private static SecurityContext oidcSecurityContext() {
+        return new SecurityContext() {
+            private final Principal principal = () -> "oidc-user";
+
+            @Override
+            public Principal getUserPrincipal() {
+                return principal;
+            }
+
+            @Override
+            public boolean isUserInRole(String role) {
+                return "admin".equals(role);
+            }
+
+            @Override
+            public boolean isSecure() {
+                return true;
+            }
+
+            @Override
+            public String getAuthenticationScheme() {
+                return "OIDC";
+            }
+        };
     }
 
     private static class FakeRequestContext implements ContainerRequestContext {
