@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS etl_batch_jobs (
     job_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id VARCHAR(80) NOT NULL,
+    tenant_id VARCHAR(100) NOT NULL,
     draft_id UUID NOT NULL,
     status VARCHAR(40) NOT NULL CHECK (status IN ('RUNNING', 'COMPLETED', 'COMPLETED_WITH_ERRORS', 'FAILED')),
     total_rows INTEGER NOT NULL DEFAULT 0,
@@ -23,7 +23,7 @@ CREATE INDEX IF NOT EXISTS idx_batch_jobs_status ON etl_batch_jobs(tenant_id, st
 
 CREATE TABLE IF NOT EXISTS etl_scheduled_api_runs (
     run_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id VARCHAR(80) NOT NULL,
+    tenant_id VARCHAR(100) NOT NULL,
     draft_id UUID NOT NULL,
     status VARCHAR(40) NOT NULL CHECK (status IN ('IDLE', 'RUNNING', 'SUCCESS', 'FAILED')),
     last_started_at TIMESTAMPTZ,
@@ -46,7 +46,7 @@ CREATE INDEX IF NOT EXISTS idx_scheduled_runs_status ON etl_scheduled_api_runs(t
 
 CREATE TABLE IF NOT EXISTS outbox_events (
     event_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id VARCHAR(80) NOT NULL,
+    tenant_id VARCHAR(100) NOT NULL,
     topic VARCHAR(200) NOT NULL,
     event_key VARCHAR(300) NOT NULL,
     partner_id VARCHAR(120),

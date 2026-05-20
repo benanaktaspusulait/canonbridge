@@ -3,6 +3,8 @@ package com.canonbridge.mappingstudio.service;
 import com.canonbridge.mappingstudio.domain.MappingDraft;
 import com.canonbridge.mappingstudio.kafka.KafkaProducerService;
 import com.canonbridge.mappingstudio.repository.MappingDraftRepository;
+import com.canonbridge.mappingstudio.repository.ScheduledApiRunRepository;
+import com.canonbridge.mappingstudio.security.TenantContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
@@ -18,9 +20,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -40,6 +39,12 @@ public class ScheduledApiPollerService {
     @Inject
     KafkaProducerService kafkaProducerService;
 
+    @Inject
+    ScheduledApiRunRepository scheduledApiRunRepository;
+
+    @Inject
+    TenantContext tenantContext;
+
     @ConfigProperty(name = "canonbridge.scheduled-poller.enabled", defaultValue = "true")
     boolean enabled;
 
@@ -50,7 +55,6 @@ public class ScheduledApiPollerService {
     String defaultInterval;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
-    private final Map<UUID, Instant> lastRuns = new ConcurrentHashMap<>();
     private ScheduledExecutorService executor;
 
     @PostConstruct
@@ -104,13 +108,17 @@ public class ScheduledApiPollerService {
             }
 
             Duration interval = parseInterval(schedule);
-            Instant lastRun = lastRuns.get(mapping.getId());
-            if (lastRun != null && lastRun.plus(interval).isAfter(now)) {
-                continue;
-            }
-
-            lastRuns.put(mapping.getId(), now);
-            jobs.add(runMapping(mapping));
+            String tenantId = tenantId(mapping);
+            jobs.add(scheduledApiRunRepository.findLastStartedAt(tenantId, mapping.getId())
+                    .chain(lastRun -> {
+                        if (lastRun != null && lastRun.plus(interval).isAfter(now)) {
+                            return Uni.createFrom().voidItem();
+                        }
+                        Instant startedAt = Instant.now();
+                        Instant nextRunAt = startedAt.plus(interval);
+                        return scheduledApiRunRepository.markStarted(tenantId, mapping.getId(), startedAt, nextRunAt)
+                                .chain(() -> runMapping(mapping, startedAt));
+                    }));
         }
 
         if (jobs.isEmpty()) {
@@ -129,28 +137,64 @@ public class ScheduledApiPollerService {
                 );
     }
 
-    private Uni<Void> runMapping(MappingDraft mapping) {
+    private Uni<Void> runMapping(MappingDraft mapping, Instant startedAt) {
+        String tenantId = tenantId(mapping);
         return executionService.executeMapping(mapping, "{}", null)
                 .chain(result -> {
                     if (!result.success()) {
                         LOG.warnf("Scheduled API mapping failed: %s (%s)", mapping.getName(), result.error());
-                        return Uni.createFrom().voidItem();
+                        return scheduledApiRunRepository.markCompleted(
+                                tenantId,
+                                mapping.getId(),
+                                startedAt,
+                                false,
+                                null,
+                                result.error());
                     }
                     JsonNode canonical = result.transformedResponse();
                     if (canonical == null) {
-                        return Uni.createFrom().voidItem();
+                        return scheduledApiRunRepository.markCompleted(
+                                tenantId,
+                                mapping.getId(),
+                                startedAt,
+                                false,
+                                null,
+                                "Mapping produced no canonical payload");
                     }
                     String key = buildMessageKey(mapping, canonical);
                     return kafkaProducerService.publishCanonicalEvent(
+                            tenantId,
                             key,
                             canonical.toString(),
                             mapping.getPartnerId() != null ? mapping.getPartnerId().toString() : null,
-                            mapping.getEventType());
+                            mapping.getEventType())
+                            .chain(() -> scheduledApiRunRepository.markCompleted(
+                                    tenantId,
+                                    mapping.getId(),
+                                    startedAt,
+                                    true,
+                                    canonical,
+                                    null));
                 })
                 .onFailure().recoverWithUni(error -> {
                     LOG.warnf("Scheduled API mapping execution failed for %s: %s", mapping.getName(), error.getMessage());
-                    return Uni.createFrom().voidItem();
+                    return scheduledApiRunRepository.markCompleted(
+                                    tenantId,
+                                    mapping.getId(),
+                                    startedAt,
+                                    false,
+                                    null,
+                                    error.getMessage())
+                            .onFailure().invoke(markError ->
+                                    LOG.warnf("Failed to persist scheduled API failure for %s: %s", mapping.getName(), markError.getMessage()))
+                            .replaceWithVoid();
                 });
+    }
+
+    private String tenantId(MappingDraft mapping) {
+        return mapping.getTenantId() != null && !mapping.getTenantId().isBlank()
+                ? mapping.getTenantId()
+                : tenantContext.defaultTenantId();
     }
 
     private JsonObject parseSourceConfig(MappingDraft mapping) {

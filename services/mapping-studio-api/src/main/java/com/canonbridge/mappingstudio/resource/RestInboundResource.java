@@ -83,6 +83,7 @@ public class RestInboundResource {
                                 String key = buildMessageKey(requiredTenantId, draft, canonicalNode);
 
                                 return kafkaProducerService.publishCanonicalEvent(
+                                                requiredTenantId,
                                                 key,
                                                 canonicalPayload,
                                                 draft.getPartnerId() != null ? draft.getPartnerId().toString() : null,

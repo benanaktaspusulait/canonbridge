@@ -3,6 +3,7 @@ package com.canonbridge.mappingstudio.resource;
 import com.canonbridge.mappingstudio.security.TenantContext;
 import com.canonbridge.mappingstudio.domain.MappingDraft;
 import com.canonbridge.mappingstudio.kafka.KafkaProducerService;
+import com.canonbridge.mappingstudio.repository.BatchJobRepository;
 import com.canonbridge.mappingstudio.repository.MappingDraftRepository;
 import com.canonbridge.mappingstudio.service.MappingExecutionService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -11,7 +12,6 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
@@ -39,6 +39,9 @@ public class FileBatchResource {
     MappingDraftRepository draftRepository;
 
     @Inject
+    BatchJobRepository batchJobRepository;
+
+    @Inject
     MappingExecutionService executionService;
 
     @Inject
@@ -52,9 +55,10 @@ public class FileBatchResource {
     @Operation(summary = "Ingest normalized batch rows and publish canonical events")
     public Uni<Response> ingest(
             @HeaderParam("X-Tenant-Id") String tenantId,
+            @HeaderParam("X-User-Id") String userId,
             @PathParam("id") UUID id,
             String requestBody) {
-        tenantId = tenantContext.requireTenantId(tenantId);
+        String requiredTenantId = tenantContext.requireTenantId(tenantId);
 
         JsonNode rowsNode;
         try {
@@ -72,7 +76,7 @@ public class FileBatchResource {
                     .build());
         }
 
-        return draftRepository.findById(tenantId, id)
+        return draftRepository.findById(requiredTenantId, id)
                 .chain(draft -> {
                     if (draft == null) {
                         return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND)
@@ -84,24 +88,48 @@ public class FileBatchResource {
                                 .entity(new JsonObject().put("error", "Mapping is not a FILE_BATCH source mapping"))
                                 .build());
                     }
-                    if (rowsNode.isEmpty()) {
-                        return Uni.createFrom().item(Response.ok(batchSummary(draft, new JsonArray())).build());
-                    }
-
-                    List<Uni<JsonObject>> rowJobs = new ArrayList<>();
-                    for (int i = 0; i < rowsNode.size(); i++) {
-                        rowJobs.add(processRow(draft, i + 1, rowsNode.get(i)));
-                    }
-
-                    return Uni.combine().all().unis(rowJobs)
-                            .combinedWith(items -> {
-                                JsonArray results = new JsonArray();
-                                for (Object item : items) {
-                                    results.add(item);
+                    return batchJobRepository.createRunning(requiredTenantId, draft.getId(), rowsNode.size(), userId)
+                            .chain(jobId -> {
+                                if (rowsNode.isEmpty()) {
+                                    return completeBatchJob(requiredTenantId, jobId, draft, new JsonArray(), null);
                                 }
-                                return Response.ok(batchSummary(draft, results)).build();
+
+                                List<Uni<JsonObject>> rowJobs = new ArrayList<>();
+                                for (int i = 0; i < rowsNode.size(); i++) {
+                                    rowJobs.add(processRow(requiredTenantId, draft, i + 1, rowsNode.get(i)));
+                                }
+
+                                return Uni.combine().all().unis(rowJobs)
+                                        .combinedWith(items -> {
+                                            JsonArray results = new JsonArray();
+                                            for (Object item : items) {
+                                                results.add(item);
+                                            }
+                                            return results;
+                                        })
+                                        .chain(results -> completeBatchJob(requiredTenantId, jobId, draft, results, null));
                             });
-                });
+                })
+                .onFailure().recoverWithItem(error -> Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(new JsonObject().put("error", "Failed to process batch job: " + error.getMessage()))
+                        .build());
+    }
+
+    private Uni<Response> completeBatchJob(
+            String tenantId,
+            UUID jobId,
+            MappingDraft draft,
+            JsonArray results,
+            String errorMessage) {
+        JsonObject summary = batchSummary(draft, results, jobId, errorMessage);
+        return batchJobRepository.complete(
+                        tenantId,
+                        jobId,
+                        summary.getInteger("succeeded", 0),
+                        summary.getInteger("failed", 0),
+                        summary,
+                        errorMessage)
+                .replaceWith(Response.ok(summary).build());
     }
 
     private JsonNode extractRows(JsonNode body) {
@@ -113,7 +141,7 @@ public class FileBatchResource {
         return null;
     }
 
-    private Uni<JsonObject> processRow(MappingDraft draft, int rowNumber, JsonNode row) {
+    private Uni<JsonObject> processRow(String tenantId, MappingDraft draft, int rowNumber, JsonNode row) {
         return executionService.testSourceMapping(draft, row.toString())
                 .chain(result -> {
                     if (!result.success()) {
@@ -125,6 +153,7 @@ public class FileBatchResource {
                     String key = buildMessageKey(draft, rowNumber, canonicalNode);
 
                     return kafkaProducerService.publishCanonicalEvent(
+                                    tenantId,
                                     key,
                                     canonicalPayload,
                                     draft.getPartnerId() != null ? draft.getPartnerId().toString() : null,
@@ -139,7 +168,7 @@ public class FileBatchResource {
                 .onFailure().recoverWithItem(error -> rowError(rowNumber, error.getMessage()));
     }
 
-    private JsonObject batchSummary(MappingDraft draft, JsonArray results) {
+    private JsonObject batchSummary(MappingDraft draft, JsonArray results, UUID jobId, String errorMessage) {
         int succeeded = 0;
         int failed = 0;
         for (int i = 0; i < results.size(); i++) {
@@ -153,12 +182,24 @@ public class FileBatchResource {
 
         return new JsonObject()
                 .put("mappingId", draft.getId() != null ? draft.getId().toString() : null)
+                .put("jobId", jobId != null ? jobId.toString() : null)
+                .put("jobStatus", batchStatus(succeeded, failed, errorMessage))
                 .put("sourceType", draft.getSourceType() != null ? draft.getSourceType().name() : null)
                 .put("totalRows", results.size())
                 .put("succeeded", succeeded)
                 .put("failed", failed)
                 .put("published", succeeded)
                 .put("results", results);
+    }
+
+    private String batchStatus(int succeeded, int failed, String errorMessage) {
+        if (errorMessage != null && !errorMessage.isBlank() && succeeded == 0) {
+            return "FAILED";
+        }
+        if (failed > 0) {
+            return succeeded > 0 ? "COMPLETED_WITH_ERRORS" : "FAILED";
+        }
+        return "COMPLETED";
     }
 
     private JsonObject rowError(int rowNumber, String message) {

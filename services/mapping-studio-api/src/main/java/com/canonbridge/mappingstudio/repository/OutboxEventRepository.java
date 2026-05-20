@@ -1,6 +1,7 @@
 package com.canonbridge.mappingstudio.repository;
 
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Tuple;
@@ -33,7 +34,7 @@ public class OutboxEventRepository {
                 ") VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, 'PENDING', $8, $8) " +
                 "RETURNING event_id"
         )
-        .execute(Tuple.of(
+        .execute(Tuples.of(
                 eventId,
                 tenantId,
                 topic,
@@ -72,6 +73,10 @@ public class OutboxEventRepository {
         }
         try {
             return new JsonObject(payload);
+        } catch (Exception ignored) {
+        }
+        try {
+            return new JsonArray(payload);
         } catch (Exception ignored) {
             return new JsonObject().put("value", payload);
         }

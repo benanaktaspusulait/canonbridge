@@ -53,7 +53,7 @@ public class BatchJobRepository {
                 "result_summary = $5::jsonb, updated_at = $6, completed_at = $6 " +
                 "WHERE tenant_id = $7 AND job_id = $8"
         )
-        .execute(Tuple.of(
+        .execute(Tuples.of(
                 status,
                 Math.max(0, succeededRows),
                 Math.max(0, failedRows),

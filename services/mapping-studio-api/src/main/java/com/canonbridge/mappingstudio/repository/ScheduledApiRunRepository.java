@@ -2,6 +2,7 @@ package com.canonbridge.mappingstudio.repository;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
@@ -61,9 +62,10 @@ public class ScheduledApiRunRepository {
             JsonNode result,
             String errorMessage) {
         Instant completedAt = Instant.now();
-        int durationMs = startedAt != null
-                ? Math.toIntExact(Math.max(0, completedAt.toEpochMilli() - startedAt.toEpochMilli()))
+        long rawDurationMs = startedAt != null
+                ? Math.max(0, completedAt.toEpochMilli() - startedAt.toEpochMilli())
                 : 0;
+        int durationMs = rawDurationMs > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) rawDurationMs;
 
         return client.preparedQuery(
                 "UPDATE etl_scheduled_api_runs SET " +
@@ -71,12 +73,12 @@ public class ScheduledApiRunRepository {
                 "last_result = $5::jsonb, updated_at = $2 " +
                 "WHERE tenant_id = $6 AND draft_id = $7"
         )
-        .execute(Tuple.of(
+        .execute(Tuples.of(
                 success ? "SUCCESS" : "FAILED",
                 toLocalDateTime(completedAt),
                 durationMs,
                 errorMessage,
-                result != null ? new JsonObject(result.toString()) : null,
+                jsonValue(result),
                 tenantId,
                 draftId
         ))
@@ -85,5 +87,27 @@ public class ScheduledApiRunRepository {
 
     private LocalDateTime toLocalDateTime(Instant instant) {
         return instant == null ? null : LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+    }
+
+    private Object jsonValue(JsonNode result) {
+        if (result == null || result.isNull()) {
+            return null;
+        }
+        if (result.isObject()) {
+            return new JsonObject(result.toString());
+        }
+        if (result.isArray()) {
+            return new JsonArray(result.toString());
+        }
+        if (result.isTextual()) {
+            return new JsonObject().put("value", result.asText());
+        }
+        if (result.isNumber()) {
+            return new JsonObject().put("value", result.numberValue());
+        }
+        if (result.isBoolean()) {
+            return new JsonObject().put("value", result.asBoolean());
+        }
+        return new JsonObject().put("value", result.toString());
     }
 }

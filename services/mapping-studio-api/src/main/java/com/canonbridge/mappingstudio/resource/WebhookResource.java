@@ -159,7 +159,7 @@ public class WebhookResource {
                 }
 
                 String messageKey = endpoint.getTenantId() + ":" + endpointId;
-                return kafkaProducerService.publishCanonicalEvent(messageKey, rawBody)
+                return kafkaProducerService.publishCanonicalEvent(endpoint.getTenantId(), messageKey, rawBody, null, null)
                     .flatMap(v -> webhookRepository.recordReceived(endpointId))
                     .map(v -> Response.accepted()
                         .entity("{\"status\":\"accepted\",\"endpoint_id\":\"" + endpointId + "\"}")
