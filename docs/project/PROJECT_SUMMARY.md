@@ -1,6 +1,6 @@
 # CanonBridge Project Summary
 
-**Last Updated**: May 19, 2026  
+**Last Updated**: May 20, 2026  
 **Status**: Active development, demo-ready core platform with production hardening gaps.
 
 ## What CanonBridge Is
@@ -21,7 +21,7 @@ The platform combines:
 | Area | Status | Notes |
 |---|---|---|
 | Source types | Implemented | UI/backend model includes 10 integration source types. |
-| External systems | Implemented at template/mock level | 10 distinct mock-backed templates are normalized by migration `V38`. |
+| External systems | Implemented with deterministic smoke proof | 10 distinct mock-backed templates are normalized by migration `V38`; `V39` seeds the newest four systems; transformer tests assert one canonical output per system. |
 | Mapping Studio UI | Active | Angular app with wizard, Integration Studio, preview, autosave, DLQ handoff, and i18n. |
 | Mapping Studio API | Active | Quarkus API with Flyway schema, repositories, security filters, outbound execution, and tests. |
 | Transformer | Active | JSONata, Ajv, Kafka runner, enrichment support, metrics, and tests. |
@@ -58,10 +58,10 @@ etlsolutions/
 
 ## Top Open Gaps
 
-1. Add mapping drafts, fixtures, and E2E scenarios for the four newest mock systems.
-2. Add a DB/smoke guard for exactly 10 distinct external system templates.
-3. Transform REST inbound payloads before canonical Kafka publish.
-4. Persist scheduled poller run state.
-5. Complete production auth and outbox publisher hardening.
+1. Persist file/batch job state and expose batch run history.
+2. Persist scheduled poller run state and expose run history.
+3. Complete production auth hardening and environment-backed secret replacement.
+4. Complete outbox publisher implementation and recovery tests.
+5. Add live Docker/Testcontainers protocol E2E tests for every mock-backed system.
 
 The canonical gap list is [Project Gaps](./PROJECT_GAPS.md).

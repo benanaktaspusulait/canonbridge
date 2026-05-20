@@ -39,7 +39,7 @@ Supported auth types:
 ## Current Limits
 
 - Scheduled polling keeps run state in memory.
-- REST inbound accepts and publishes validated payloads, but canonical transformation should be added before publish.
-- New system templates need seeded mapping drafts and fixtures to become fully proven E2E flows.
+- REST inbound validates, transforms accepted payloads through the draft mapping, and publishes canonical payloads.
+- Live Docker-backed protocol E2E should be expanded beyond the deterministic 10-system transformer smoke fixtures.
 
 See [Project Gaps](../project/PROJECT_GAPS.md) for the current prioritized backlog.

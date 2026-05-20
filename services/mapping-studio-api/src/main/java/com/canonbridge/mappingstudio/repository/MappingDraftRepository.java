@@ -19,6 +19,19 @@ import java.util.UUID;
 @ApplicationScoped
 public class MappingDraftRepository {
 
+    private static final String SELECT_WITH_RESOLVED_SCHEMA =
+        "SELECT d.*, COALESCE(d.target_schema_json::text, resolved_schema.schema_json::text) AS resolved_target_schema_json " +
+        "FROM mapping_drafts d " +
+        "LEFT JOIN LATERAL ( " +
+        "  SELECT s.schema_json " +
+        "  FROM schemas s " +
+        "  WHERE s.tenant_id = d.tenant_id " +
+        "    AND s.status = 'ACTIVE' " +
+        "    AND (s.id::text = d.canonical_schema_ref OR s.subject = d.canonical_schema_ref) " +
+        "  ORDER BY CASE WHEN s.id::text = d.canonical_schema_ref THEN 0 ELSE 1 END, s.version DESC " +
+        "  LIMIT 1 " +
+        ") resolved_schema ON TRUE ";
+
     @Inject
     PgPool client;
 
@@ -26,7 +39,8 @@ public class MappingDraftRepository {
 
     public Uni<List<MappingDraft>> findByTenantId(String tenantId) {
         return client.preparedQuery(
-            "SELECT * FROM mapping_drafts WHERE tenant_id = $1 ORDER BY updated_at DESC"
+            SELECT_WITH_RESOLVED_SCHEMA +
+            "WHERE d.tenant_id = $1 ORDER BY d.updated_at DESC"
         )
         .execute(Tuple.of(tenantId))
         .map(this::toMappingDraftList);
@@ -34,7 +48,8 @@ public class MappingDraftRepository {
 
     public Uni<List<MappingDraft>> findByPartner(String tenantId, UUID partnerId) {
         return client.preparedQuery(
-            "SELECT * FROM mapping_drafts WHERE tenant_id = $1 AND partner_id = $2 ORDER BY updated_at DESC"
+            SELECT_WITH_RESOLVED_SCHEMA +
+            "WHERE d.tenant_id = $1 AND d.partner_id = $2 ORDER BY d.updated_at DESC"
         )
         .execute(Tuple.of(tenantId, partnerId))
         .map(this::toMappingDraftList);
@@ -42,7 +57,8 @@ public class MappingDraftRepository {
 
     public Uni<MappingDraft> findById(String tenantId, UUID id) {
         return client.preparedQuery(
-            "SELECT * FROM mapping_drafts WHERE tenant_id = $1 AND id = $2"
+            SELECT_WITH_RESOLVED_SCHEMA +
+            "WHERE d.tenant_id = $1 AND d.id = $2"
         )
         .execute(Tuple.of(tenantId, id))
         .map(rowSet -> {
@@ -55,7 +71,8 @@ public class MappingDraftRepository {
 
     public Uni<MappingDraft> findByPartnerAndEventType(String tenantId, UUID partnerId, String eventType) {
         return client.preparedQuery(
-            "SELECT * FROM mapping_drafts WHERE tenant_id = $1 AND partner_id = $2 AND event_type = $3"
+            SELECT_WITH_RESOLVED_SCHEMA +
+            "WHERE d.tenant_id = $1 AND d.partner_id = $2 AND d.event_type = $3"
         )
         .execute(Tuple.of(tenantId, partnerId, eventType))
         .map(rowSet -> {
@@ -68,10 +85,10 @@ public class MappingDraftRepository {
 
     public Uni<List<MappingDraft>> findRunnableScheduledApiMappings() {
         return client.preparedQuery(
-            "SELECT * FROM mapping_drafts " +
-            "WHERE source_type = 'SCHEDULED_API' " +
-            "AND status IN ('VALID', 'READY_TO_PUBLISH') " +
-            "ORDER BY updated_at DESC"
+            SELECT_WITH_RESOLVED_SCHEMA +
+            "WHERE d.source_type = 'SCHEDULED_API' " +
+            "AND d.status IN ('VALID', 'READY_TO_PUBLISH') " +
+            "ORDER BY d.updated_at DESC"
         )
         .execute()
         .map(this::toMappingDraftList);
@@ -211,7 +228,10 @@ public class MappingDraftRepository {
         
         draft.setCanonicalSchemaRef(row.getString("canonical_schema_ref"));
         
-        Object targetSchemaJson = row.getValue("target_schema_json");
+        Object targetSchemaJson = rowValue(row, "resolved_target_schema_json");
+        if (targetSchemaJson == null) {
+            targetSchemaJson = rowValue(row, "target_schema_json");
+        }
         draft.setTargetSchemaJson(targetSchemaJson != null ? targetSchemaJson.toString() : null);
         
         Object mappingRules = row.getValue("mapping_rules");
@@ -240,6 +260,11 @@ public class MappingDraftRepository {
 
     private LocalDateTime toLocalDateTime(Instant instant) {
         return instant == null ? null : LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+    }
+
+    private Object rowValue(Row row, String columnName) {
+        int index = row.getColumnIndex(columnName);
+        return index >= 0 ? row.getValue(index) : null;
     }
 
     /**

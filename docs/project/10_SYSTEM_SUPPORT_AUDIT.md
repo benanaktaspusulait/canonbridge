@@ -7,7 +7,7 @@
 
 CanonBridge now exposes 10 distinct mock-backed external system templates for the single tenant demo path. The platform also models 10 integration source types in the UI and backend enum.
 
-The remaining risk is not system count or seed coverage; it is automated proof depth. The four newest systems now have mapping drafts, canonical schemas, and source samples, but CI still needs one runtime smoke path per external system.
+The remaining risk is not system count or seed coverage. The four newest systems now have mapping drafts, canonical schemas, and source samples, and transformer `npm test` includes one deterministic source-to-canonical smoke fixture for each of the 10 systems. Live protocol E2E depth remains the next hardening layer.
 
 ## 10 Source Types
 
@@ -73,12 +73,11 @@ Evidence:
 | Mock-backed systems | Done | 10 distinct system templates after `V38`, with a `V39` guard for both row count and distinct names. |
 | Request transformation | Done | `GAP-011` is now closed in the no-code gap register. |
 | Mapping seeds | Done | The four newest REST systems now have partners, schemas, drafts, connection links, and source samples in `V39`. |
-| Runtime proof per system | Partial | CI still needs one source-to-canonical smoke assertion for each of the 10 systems. |
+| Runtime proof per system | Done | `services/transformer/fixtures/ten-system-smoke.json` covers all 10 systems and is wired into `npm test`. |
 | Production proof | Partial | Integration tests still depend on Docker/Testcontainers availability. |
 
 ## Remaining Actions
 
-1. Add CI-backed E2E smoke tests that execute one source-to-canonical path per external system.
-2. Add expected canonical output fixtures for the four newest systems.
-3. Add UI coverage for selecting each template in the mapping wizard.
-4. Keep [Project Gaps](./PROJECT_GAPS.md) as the single living gap register for production readiness.
+1. Add live protocol E2E tests that call each mock-backed system through Docker/Testcontainers.
+2. Add UI coverage for selecting each template in the mapping wizard.
+3. Keep [Project Gaps](./PROJECT_GAPS.md) as the single living gap register for production readiness.

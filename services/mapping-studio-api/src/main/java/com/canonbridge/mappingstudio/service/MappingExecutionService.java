@@ -172,7 +172,20 @@ public class MappingExecutionService {
                 );
             }
             return applyResponseTransformation(mapping, requestJson)
-                .map(transformed -> new ExecutionResult(true, transformed, null, requestJson, requestJson, transformed))
+                .map(transformed -> {
+                    String responseError = validateAgainstSchema(mapping, transformed);
+                    if (responseError != null) {
+                        return new ExecutionResult(
+                            false,
+                            transformed,
+                            "Response validation failed: " + responseError,
+                            requestJson,
+                            requestJson,
+                            transformed
+                        );
+                    }
+                    return new ExecutionResult(true, transformed, null, requestJson, requestJson, transformed);
+                })
                 .onFailure().recoverWithItem(error -> new ExecutionResult(
                     false,
                     null,

@@ -2054,7 +2054,7 @@ curl -X POST http://localhost:3000/v1/transform \
 
 ## 20. Ten-System Template Smoke Matrix
 **Purpose**: Prove the product can represent and exercise 10 distinct external systems, not only 10 labels in the UI.
-**Seed Evidence**: `V38__normalize_ten_system_templates.sql` creates the 10 distinct system templates. `V39__seed_new_system_mapping_drafts.sql` adds drafts, canonical schemas, and source samples for InventoryPro, TicketDesk, CloudBill, and PeopleOps.
+**Seed Evidence**: `V38__normalize_ten_system_templates.sql` creates the 10 distinct system templates. `V39__seed_new_system_mapping_drafts.sql` adds drafts, canonical schemas, and source samples for InventoryPro, TicketDesk, CloudBill, and PeopleOps. `services/transformer/fixtures/ten-system-smoke.json` stores expected canonical outputs for all 10 systems.
 
 | System | Primary path | Expected smoke proof |
 |---|---|---|
@@ -2073,7 +2073,7 @@ curl -X POST http://localhost:3000/v1/transform \
 - Database contains exactly 10 `tenant-acme` rows with `is_system_template = TRUE` and 10 distinct template names.
 - Each template is backed by a mock endpoint or mock protocol route.
 - Each system has a mapping path and source sample or fixture.
-- CI executes at least one source-to-canonical assertion per system.
+- CI executes at least one source-to-canonical assertion per system through `npm test`.
 
 ---
 

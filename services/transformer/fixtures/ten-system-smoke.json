@@ -1,0 +1,374 @@
+[
+  {
+    "id": "payflex-payment",
+    "system": "PayFlex Payment System",
+    "input": {
+      "transactionId": "TXN-PAY-001",
+      "merchantId": "MERCH-001",
+      "amount": 1250.5,
+      "currency": "EUR",
+      "status": "COMPLETED",
+      "paymentMethod": "CREDIT_CARD",
+      "cardLast4": "4242",
+      "cardBrand": "VISA",
+      "customerEmail": "john.doe@example.com",
+      "customerName": "John Doe",
+      "billingAddress": {
+        "city": "Istanbul",
+        "country": "TR"
+      },
+      "metadata": {
+        "orderId": "ORD-001"
+      },
+      "timestamp": "2026-05-14T10:00:00Z"
+    },
+    "expected": {
+      "transactionId": "TXN-PAY-001",
+      "merchantId": "MERCH-001",
+      "amount": 1250.5,
+      "currency": "EUR",
+      "status": "COMPLETED",
+      "paymentMethod": "CREDIT_CARD",
+      "cardLast4": "4242",
+      "cardBrand": "VISA",
+      "customerEmail": "john.doe@example.com",
+      "customerName": "John Doe",
+      "billingAddress": {
+        "city": "Istanbul",
+        "country": "TR"
+      },
+      "metadata": {
+        "orderId": "ORD-001"
+      },
+      "timestamp": "2026-05-14T10:00:00Z"
+    }
+  },
+  {
+    "id": "shopmax-order",
+    "system": "ShopMax E-Commerce System",
+    "input": {
+      "eventId": "EVT-ORD-001",
+      "timestamp": "2026-05-14T10:00:00Z",
+      "orderId": "ORD-SHOP-001",
+      "customerId": "CUST-001",
+      "customerEmail": "jane@example.com",
+      "items": [
+        {
+          "productId": "PROD-001",
+          "productName": "Wireless Mouse",
+          "quantity": 2,
+          "unitPrice": 29.99
+        }
+      ],
+      "subtotal": 59.98,
+      "taxTotal": 10.8,
+      "shippingCost": 5,
+      "totalAmount": 75.78,
+      "currency": "USD",
+      "paymentMethod": "CREDIT_CARD",
+      "paymentStatus": "PAID",
+      "shippingAddress": {
+        "city": "Izmir",
+        "country": "TR"
+      },
+      "billingAddress": {
+        "city": "Izmir",
+        "country": "TR"
+      },
+      "shippingMethod": "EXPRESS",
+      "estimatedDelivery": "2026-05-17T18:00:00Z"
+    },
+    "expected": {
+      "eventId": "EVT-ORD-001",
+      "orderId": "ORD-SHOP-001",
+      "customerId": "CUST-001",
+      "customerEmail": "jane@example.com",
+      "items": [
+        {
+          "productId": "PROD-001",
+          "productName": "Wireless Mouse",
+          "quantity": 2,
+          "unitPrice": 29.99
+        }
+      ],
+      "subtotal": 59.98,
+      "taxTotal": 10.8,
+      "shippingCost": 5,
+      "totalAmount": 75.78,
+      "currency": "USD",
+      "paymentMethod": "CREDIT_CARD",
+      "paymentStatus": "PAID",
+      "shippingAddress": {
+        "city": "Izmir",
+        "country": "TR"
+      },
+      "billingAddress": {
+        "city": "Izmir",
+        "country": "TR"
+      },
+      "shippingMethod": "EXPRESS",
+      "estimatedDelivery": "2026-05-17T18:00:00Z",
+      "timestamp": "2026-05-14T10:00:00Z"
+    }
+  },
+  {
+    "id": "fastcargo-shipment",
+    "system": "FastCargo Logistics System",
+    "input": {
+      "trackingNumber": "FC-TRACK-001",
+      "status": "IN_TRANSIT",
+      "currentLocation": {
+        "city": "Istanbul",
+        "country": "TR"
+      },
+      "estimatedDelivery": "2026-05-16T14:00:00Z",
+      "weight": 2.5,
+      "weightUnit": "kg",
+      "deliveryDetails": {
+        "recipientName": "Jane Smith"
+      },
+      "history": [
+        {
+          "status": "PICKED_UP",
+          "timestamp": "2026-05-13T09:00:00Z"
+        }
+      ]
+    },
+    "expected": {
+      "trackingNumber": "FC-TRACK-001",
+      "status": "IN_TRANSIT",
+      "currentLocation": {
+        "city": "Istanbul",
+        "country": "TR"
+      },
+      "estimatedDelivery": "2026-05-16T14:00:00Z",
+      "weight": 2.5,
+      "weightUnit": "kg",
+      "deliveryDetails": {
+        "recipientName": "Jane Smith"
+      },
+      "history": [
+        {
+          "status": "PICKED_UP",
+          "timestamp": "2026-05-13T09:00:00Z"
+        }
+      ]
+    }
+  },
+  {
+    "id": "profilehub-customer",
+    "system": "ProfileHub GraphQL API",
+    "input": {
+      "data": {
+        "customer": {
+          "id": "CUST-1001",
+          "name": "Jane Smith",
+          "email": "jane.smith@example.com",
+          "tier": "GOLD",
+          "marketingOptIn": true,
+          "updatedAt": "2026-05-13T10:00:00Z"
+        }
+      }
+    },
+    "expected": {
+      "customerId": "CUST-1001",
+      "name": "Jane Smith",
+      "email": "jane.smith@example.com",
+      "tier": "GOLD",
+      "marketingOptIn": true,
+      "updatedAt": "2026-05-13T10:00:00Z"
+    }
+  },
+  {
+    "id": "customergateway-profile",
+    "system": "CustomerGateway gRPC Profile Service",
+    "input": {
+      "customerId": "CUST-2001",
+      "displayName": "Acme Buyer",
+      "email": "buyer@example.com",
+      "tier": "PLATINUM",
+      "riskScore": 0.12,
+      "updatedAt": "2026-05-19T11:00:00Z"
+    },
+    "expected": {
+      "customerId": "CUST-2001",
+      "name": "Acme Buyer",
+      "email": "buyer@example.com",
+      "tier": "PLATINUM",
+      "riskScore": 0.12,
+      "updatedAt": "2026-05-19T11:00:00Z"
+    }
+  },
+  {
+    "id": "foodmarket-order",
+    "system": "FoodMarket Order System",
+    "input": {
+      "order": {
+        "id": "FM-1001",
+        "restaurantId": "REST-42",
+        "customerId": "CUST-88",
+        "status": "READY",
+        "currency": "GBP",
+        "total": 42.75,
+        "items": [
+          {
+            "sku": "MEAL-1",
+            "name": "Lunch Box",
+            "quantity": 3
+          }
+        ],
+        "delivery": {
+          "city": "London",
+          "eta": "2026-05-19T13:30:00Z"
+        },
+        "updatedAt": "2026-05-19T12:30:00Z"
+      }
+    },
+    "expected": {
+      "orderId": "FM-1001",
+      "restaurantId": "REST-42",
+      "customerId": "CUST-88",
+      "status": "READY",
+      "currency": "GBP",
+      "totalAmount": 42.75,
+      "itemCount": 1,
+      "deliveryCity": "London",
+      "estimatedDelivery": "2026-05-19T13:30:00Z",
+      "updatedAt": "2026-05-19T12:30:00Z"
+    }
+  },
+  {
+    "id": "inventorypro-stock",
+    "system": "InventoryPro Warehouse System",
+    "input": {
+      "sku": "SKU-1001",
+      "name": "Replacement Motor Assembly",
+      "category": "MRO",
+      "availableQuantity": 17,
+      "reservedQuantity": 4,
+      "warehouse": {
+        "id": "WH-LON-01",
+        "city": "London",
+        "country": "GB"
+      },
+      "reorderPoint": 20,
+      "updatedAt": "2026-05-19T15:45:00Z"
+    },
+    "expected": {
+      "stockItemId": "SKU-1001",
+      "sku": "SKU-1001",
+      "name": "Replacement Motor Assembly",
+      "category": "MRO",
+      "availableQuantity": 17,
+      "reservedQuantity": 4,
+      "warehouseId": "WH-LON-01",
+      "warehouseCity": "London",
+      "reorderPoint": 20,
+      "updatedAt": "2026-05-19T15:45:00Z"
+    }
+  },
+  {
+    "id": "ticketdesk-ticket",
+    "system": "TicketDesk Support System",
+    "input": {
+      "ticketId": "TCK-1001",
+      "status": "OPEN",
+      "priority": "HIGH",
+      "subject": "Webhook retries failing",
+      "customer": {
+        "id": "CUST-4421",
+        "name": "Northstar Retail",
+        "tier": "ENTERPRISE"
+      },
+      "assignee": {
+        "id": "USR-19",
+        "name": "Selin Kaya"
+      },
+      "tags": ["integration", "partner-api"],
+      "updatedAt": "2026-05-19T15:15:00Z"
+    },
+    "expected": {
+      "ticketId": "TCK-1001",
+      "status": "OPEN",
+      "priority": "HIGH",
+      "subject": "Webhook retries failing",
+      "customerId": "CUST-4421",
+      "customerName": "Northstar Retail",
+      "customerTier": "ENTERPRISE",
+      "assigneeId": "USR-19",
+      "assigneeName": "Selin Kaya",
+      "tags": ["integration", "partner-api"],
+      "updatedAt": "2026-05-19T15:15:00Z"
+    }
+  },
+  {
+    "id": "cloudbill-invoice",
+    "system": "CloudBill Billing System",
+    "input": {
+      "invoiceId": "INV-1001",
+      "accountId": "ACCT-9001",
+      "currency": "USD",
+      "status": "ISSUED",
+      "periodStart": "2026-05-01",
+      "periodEnd": "2026-05-31",
+      "lines": [
+        {
+          "sku": "CB-EVENTS",
+          "amount": 875
+        },
+        {
+          "sku": "CB-CONNECTORS",
+          "amount": 300
+        }
+      ],
+      "totalAmount": 1175,
+      "dueDate": "2026-06-15"
+    },
+    "expected": {
+      "invoiceId": "INV-1001",
+      "accountId": "ACCT-9001",
+      "currency": "USD",
+      "status": "ISSUED",
+      "periodStart": "2026-05-01",
+      "periodEnd": "2026-05-31",
+      "lineCount": 2,
+      "lines": [
+        {
+          "sku": "CB-EVENTS",
+          "amount": 875
+        },
+        {
+          "sku": "CB-CONNECTORS",
+          "amount": 300
+        }
+      ],
+      "totalAmount": 1175,
+      "dueDate": "2026-06-15"
+    }
+  },
+  {
+    "id": "peopleops-employee",
+    "system": "PeopleOps HR System",
+    "input": {
+      "employeeId": "EMP-1001",
+      "externalRef": "PO-EMP-1001",
+      "firstName": "Deniz",
+      "lastName": "Arslan",
+      "email": "emp-1001@example.com",
+      "department": "Engineering",
+      "title": "Integration Lead",
+      "employmentStatus": "ACTIVE",
+      "updatedAt": "2026-05-19T15:00:00Z"
+    },
+    "expected": {
+      "employeeId": "EMP-1001",
+      "externalRef": "PO-EMP-1001",
+      "fullName": "Deniz Arslan",
+      "email": "emp-1001@example.com",
+      "department": "Engineering",
+      "title": "Integration Lead",
+      "employmentStatus": "ACTIVE",
+      "updatedAt": "2026-05-19T15:00:00Z"
+    }
+  }
+]

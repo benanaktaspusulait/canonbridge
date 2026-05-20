@@ -4,10 +4,11 @@ import com.canonbridge.mappingstudio.security.TenantContext;
 import com.canonbridge.mappingstudio.domain.MappingDraft;
 import com.canonbridge.mappingstudio.kafka.KafkaProducerService;
 import com.canonbridge.mappingstudio.repository.MappingDraftRepository;
+import com.canonbridge.mappingstudio.service.MappingExecutionService;
 import com.canonbridge.mappingstudio.validation.SourcePayloadValidator;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
@@ -34,6 +35,9 @@ public class RestInboundResource {
 
     @Inject
     SourcePayloadValidator payloadValidator;
+
+    @Inject
+    MappingExecutionService executionService;
 
     @Inject
     KafkaProducerService kafkaProducerService;
@@ -66,15 +70,62 @@ public class RestInboundResource {
                                 .build());
                     }
 
-                    String key = requiredTenantId + ":" + draftId;
-                    return kafkaProducerService.publishCanonicalEvent(key, rawPayload)
-                            .map(ignored -> Response.accepted()
-                                    .entity(new AcceptedResponse("accepted", draftId))
-                                    .build());
+                    return executionService.testSourceMapping(draft, rawPayload)
+                            .chain(result -> {
+                                if (!result.success()) {
+                                    return Uni.createFrom().item(Response.status(422)
+                                            .entity(new ErrorResponse(result.error()))
+                                            .build());
+                                }
+
+                                JsonNode canonicalNode = result.transformedResponse();
+                                String canonicalPayload = canonicalNode != null ? canonicalNode.toString() : rawPayload;
+                                String key = buildMessageKey(requiredTenantId, draft, canonicalNode);
+
+                                return kafkaProducerService.publishCanonicalEvent(
+                                                key,
+                                                canonicalPayload,
+                                                draft.getPartnerId() != null ? draft.getPartnerId().toString() : null,
+                                                draft.getEventType())
+                                        .map(ignored -> Response.accepted()
+                                                .entity(new AcceptedResponse("accepted", draftId, key, "canonical"))
+                                                .build());
+                            });
                 });
     }
 
-    public record AcceptedResponse(String status, UUID draftId) {}
+    private String buildMessageKey(String tenantId, MappingDraft draft, JsonNode canonicalNode) {
+        String discoveredKey = findText(
+                canonicalNode,
+                "eventId",
+                "id",
+                "orderId",
+                "paymentId",
+                "transactionId",
+                "customerId",
+                "ticketId",
+                "invoiceId",
+                "employeeId",
+                "stockItemId",
+                "sku");
+        if (discoveredKey != null && !discoveredKey.isBlank()) {
+            return discoveredKey;
+        }
+        return tenantId + ":" + draft.getId();
+    }
+
+    private String findText(JsonNode node, String... fieldNames) {
+        if (node == null || !node.isObject()) return null;
+        for (String fieldName : fieldNames) {
+            JsonNode value = node.get(fieldName);
+            if (value != null && value.isValueNode()) {
+                return value.asText();
+            }
+        }
+        return null;
+    }
+
+    public record AcceptedResponse(String status, UUID draftId, String messageKey, String publishedPayloadType) {}
     public record ErrorResponse(String error) {}
     public record ValidationErrorResponse(java.util.List<String> errors) {}
 }

@@ -9,10 +9,11 @@
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run",
+    "test": "vitest run && npm run test:mapping-fixtures && npm run test:ten-system-smoke",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:mapping-fixtures": "node scripts/validate-mapping-fixtures.mjs",
+    "test:ten-system-smoke": "node scripts/validate-ten-system-smoke.mjs",
     "test:schema-compatibility": "node scripts/check-schema-compatibility.mjs"
   },
   "engines": {
