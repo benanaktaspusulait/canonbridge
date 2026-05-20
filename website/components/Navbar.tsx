@@ -8,9 +8,16 @@ import { locales } from "@/lib/i18n";
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { locale, setLocale, t } = useLocale();
 
   const currentLocale = locales.find((l) => l.code === locale)!;
+  const navLinks = [
+    { href: "#how-it-works", label: t.nav.howItWorks },
+    { href: "#sources", label: t.nav.sources },
+    { href: "#architecture", label: t.nav.architecture },
+    { href: "#features", label: t.nav.features },
+  ];
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -25,53 +32,36 @@ export default function Navbar() {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-navy-900/80 backdrop-blur-xl border-b border-white/5"
-          : "bg-transparent"
+          ? "bg-white/86 backdrop-blur-xl border-b border-navy-900/10 shadow-sm"
+          : "bg-white/72 backdrop-blur-md"
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <a href="#" className="flex items-center gap-3">
+        <a href="/" className="flex items-center gap-3" aria-label="CanonBridge home">
           <img
-            src="/images/logo-white.jpeg"
+            src="/images/logo-canonbridge.svg"
             alt="CanonBridge"
             className="h-8 w-auto"
           />
-          <span className="text-lg font-semibold text-white">CanonBridge</span>
         </a>
 
-        {/* Nav links */}
         <div className="hidden md:flex items-center gap-8">
-          <a
-            href="#how-it-works"
-            className="text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            {t.nav.howItWorks}
-          </a>
-          <a
-            href="#sources"
-            className="text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            {t.nav.sources}
-          </a>
-          <a
-            href="#architecture"
-            className="text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            {t.nav.architecture}
-          </a>
-          <a
-            href="#features"
-            className="text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            {t.nav.features}
-          </a>
+          {navLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className="text-sm text-navy-700 hover:text-navy-900 transition-colors"
+            >
+              {link.label}
+            </a>
+          ))}
 
-          {/* Language switcher */}
           <div className="relative">
             <button
               onClick={() => setLangOpen(!langOpen)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-400 hover:text-white border border-white/10 rounded-lg hover:border-white/20 transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-navy-700 hover:text-navy-900 border border-navy-900/10 rounded-lg hover:border-navy-900/20 transition-all"
+              aria-expanded={langOpen}
+              aria-haspopup="menu"
             >
               <span>{currentLocale.flag}</span>
               <span className="hidden lg:inline">{currentLocale.code.toUpperCase()}</span>
@@ -87,7 +77,8 @@ export default function Navbar() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -5 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-full mt-2 py-2 w-40 bg-navy-800 border border-white/10 rounded-xl shadow-xl overflow-hidden"
+                  className="absolute right-0 top-full mt-2 py-2 w-40 bg-white border border-navy-900/10 rounded-xl shadow-xl overflow-hidden"
+                  role="menu"
                 >
                   {locales.map((l) => (
                     <button
@@ -98,9 +89,10 @@ export default function Navbar() {
                       }}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
                         locale === l.code
-                          ? "text-accent-cyan bg-white/5"
-                          : "text-gray-400 hover:text-white hover:bg-white/5"
+                          ? "text-accent-blue bg-accent-blue/10"
+                          : "text-navy-700 hover:text-navy-900 hover:bg-navy-900/5"
                       }`}
+                      role="menuitem"
                     >
                       <span>{l.flag}</span>
                       <span>{l.label}</span>
@@ -113,12 +105,84 @@ export default function Navbar() {
 
           <a
             href="#demo"
-            className="px-4 py-2 bg-gradient-to-r from-accent-blue to-accent-cyan text-white text-sm font-medium rounded-lg hover:shadow-lg hover:shadow-accent-blue/25 transition-shadow"
+            className="px-4 py-2 bg-accent-blue text-white text-sm font-medium rounded-lg hover:bg-navy-900 transition-colors"
           >
             {t.nav.requestDemo}
           </a>
         </div>
+
+        <button
+          type="button"
+          className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-lg border border-navy-900/10 text-navy-900"
+          aria-label="Toggle navigation"
+          aria-controls="mobile-navigation"
+          aria-expanded={mobileOpen}
+          onClick={() => setMobileOpen((v) => !v)}
+        >
+          <span className="sr-only">Menu</span>
+          {mobileOpen ? (
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          )}
+        </button>
       </div>
+
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            id="mobile-navigation"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
+            className="md:hidden border-t border-navy-900/10 bg-white/96 px-6 pb-5 pt-3 shadow-lg"
+          >
+            <div className="flex flex-col gap-3">
+              {navLinks.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="min-h-11 rounded-lg px-3 py-2.5 text-sm font-medium text-navy-800 hover:bg-navy-900/5"
+                >
+                  {link.label}
+                </a>
+              ))}
+              <div className="grid grid-cols-4 gap-2 pt-2">
+                {locales.map((l) => (
+                  <button
+                    key={l.code}
+                    type="button"
+                    onClick={() => {
+                      setLocale(l.code);
+                      setMobileOpen(false);
+                    }}
+                    className={`min-h-11 rounded-lg border px-2 text-sm font-medium ${
+                      locale === l.code
+                        ? "border-accent-blue bg-accent-blue/10 text-accent-blue"
+                        : "border-navy-900/10 text-navy-700"
+                    }`}
+                  >
+                    {l.code.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <a
+                href="#demo"
+                onClick={() => setMobileOpen(false)}
+                className="mt-2 min-h-11 rounded-lg bg-accent-blue px-4 py-3 text-center text-sm font-semibold text-white"
+              >
+                {t.nav.requestDemo}
+              </a>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.nav>
   );
 }

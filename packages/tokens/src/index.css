@@ -1,0 +1,26 @@
+:root {
+  --cb-color-ink-950: #061016;
+  --cb-color-ink-900: #0a1720;
+  --cb-color-ink-800: #102331;
+  --cb-color-ink-700: #183247;
+  --cb-color-cloud-50: #f7faf8;
+  --cb-color-cloud-100: #edf4f1;
+  --cb-color-cloud-200: #dbe8e2;
+  --cb-color-brand-700: #166b6b;
+  --cb-color-brand-600: #1e7f78;
+  --cb-color-brand-500: #2b9a90;
+  --cb-color-signal-600: #c4552d;
+  --cb-color-signal-500: #df6b3a;
+  --cb-color-gold-500: #c99a35;
+  --cb-color-blue-600: #2864ad;
+  --cb-color-violet-600: #6b4fb3;
+  --cb-radius-xs: 4px;
+  --cb-radius-sm: 6px;
+  --cb-radius-md: 8px;
+  --cb-radius-lg: 12px;
+  --cb-shadow-panel: 0 20px 70px rgba(6, 16, 22, 0.16);
+  --cb-shadow-focus: 0 0 0 3px rgba(43, 154, 144, 0.24);
+  --cb-font-sans: "Manrope", "IBM Plex Sans", system-ui, sans-serif;
+  --cb-font-display: "Space Grotesk", "Manrope", system-ui, sans-serif;
+  --cb-font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+}

@@ -1,11 +1,71 @@
 import type { Metadata } from "next";
+import { Manrope, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { LocaleProvider } from "@/lib/LocaleContext";
 
+const manrope = Manrope({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-manrope",
+  display: "swap",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+});
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://canonbridge.io";
+
 export const metadata: Metadata = {
-  title: "CanonBridge — Enterprise Integration Platform",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "CanonBridge | Enterprise Integration Platform",
+    template: "%s | CanonBridge",
+  },
   description:
-    "Transform partner data with zero code. Visual mapping, real-time transformation, enterprise reliability.",
+    "Transform partner data with zero code. Visual mapping, real-time transformation, and operational recovery for enterprise integrations.",
+  applicationName: "CanonBridge",
+  authors: [{ name: "CanonBridge" }],
+  alternates: {
+    canonical: "/",
+    languages: {
+      en: "/",
+      tr: "/?lang=tr",
+      de: "/?lang=de",
+      es: "/?lang=es",
+    },
+  },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "CanonBridge",
+    title: "CanonBridge | Enterprise Integration Platform",
+    description:
+      "A no-code integration control plane for mapping partner payloads into canonical business events.",
+    images: [
+      {
+        url: "/images/canonbridge-og.svg",
+        width: 1200,
+        height: 630,
+        alt: "CanonBridge integration workflow console",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "CanonBridge | Enterprise Integration Platform",
+    description:
+      "Visual mapping, runtime recovery, and observability for partner integrations.",
+    images: ["/images/canonbridge-og.svg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
@@ -15,13 +75,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="antialiased">
+      <body className={`${manrope.variable} ${spaceGrotesk.variable} antialiased`}>
         <LocaleProvider>{children}</LocaleProvider>
       </body>
     </html>
