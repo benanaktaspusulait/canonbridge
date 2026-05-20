@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.testcontainers.containers.DockerComposeContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 
 import java.io.File;
 import java.net.URI;
@@ -28,29 +27,23 @@ class ProtocolDockerE2ETest {
     void allTenMockSystemsRespondThroughDockerCompose() throws Exception {
         try (DockerComposeContainer<?> compose = new DockerComposeContainer<>(new File("docker-compose.yml"))
                 .withLocalCompose(true)
-                .withExposedService(
-                        "canonbridge-mock",
-                        8080,
-                        Wait.forHttp("/actuator/health")
-                                .forStatusCode(200)
-                                .withStartupTimeout(Duration.ofMinutes(4)))) {
+                .withOptions("--compatibility")) {
             compose.start();
 
-            String baseUrl = "http://%s:%d".formatted(
-                    compose.getServiceHost("canonbridge-mock", 8080),
-                    compose.getServicePort("canonbridge-mock", 8080));
+            String baseUrl = "http://localhost:8080";
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(Duration.ofSeconds(10))
                     .build();
+            waitForHealth(client, baseUrl);
             String token = oauthToken(client, baseUrl);
 
             assertOk(client, get(baseUrl + "/api/payments/latest")
-                    .header("X-API-Key", "demo-api-key-12345"), "transaction");
+                    .header("X-API-Key", "demo-api-key-12345"), "payment");
             assertOk(client, get(baseUrl + "/api/orders/recent")
-                    .header("Authorization", "Bearer " + token), "orders");
+                    .header("Authorization", "Bearer " + token), "order");
             assertOk(client, post(baseUrl + "/ws/track", soapTrackRequest())
                     .header("Content-Type", "text/xml")
-                    .header("Authorization", basic("fastcargo-demo", "fastcargo-secret")), "trackingNumber");
+                    .header("Authorization", basic("fastcargo-demo", "fastcargo-secret")), "TrackingNumber");
             assertOk(client, post(baseUrl + "/graphql", "{\"query\":\"query { customer(id: \\\"CUST-1001\\\") { id email } }\"}")
                     .header("Content-Type", "application/json")
                     .header("Authorization", "Bearer " + token), "data");
@@ -68,6 +61,27 @@ class ProtocolDockerE2ETest {
             assertOk(client, get(baseUrl + "/api/peopleops/employees/EMP-1001")
                     .header("Authorization", "Bearer " + token), "employeeId");
         }
+    }
+
+    private void waitForHealth(HttpClient client, String baseUrl) throws Exception {
+        long deadline = System.nanoTime() + Duration.ofMinutes(2).toNanos();
+        Exception lastError = null;
+        while (System.nanoTime() < deadline) {
+            try {
+                HttpResponse<String> response = client.send(get(baseUrl + "/actuator/health").build(),
+                        HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() == 200) {
+                    return;
+                }
+            } catch (Exception e) {
+                lastError = e;
+            }
+            Thread.sleep(1_000);
+        }
+        if (lastError != null) {
+            throw lastError;
+        }
+        throw new AssertionError("Mock service health endpoint did not become ready");
     }
 
     private String oauthToken(HttpClient client, String baseUrl) throws Exception {

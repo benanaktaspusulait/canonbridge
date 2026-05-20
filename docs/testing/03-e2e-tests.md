@@ -23,10 +23,13 @@ The mock service includes an opt-in Docker/Testcontainers suite that starts `ser
 
 ```bash
 cd services/canonbridge-mock
-CANONBRIDGE_PROTOCOL_E2E=true mvn -Dtest=ProtocolDockerE2ETest test
+CANONBRIDGE_PROTOCOL_E2E=true TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock \
+  mvn -Ddocker.host=unix://${HOME}/.docker/run/docker.sock \
+      -Dapi.version=1.44 \
+      -Dtest=ProtocolDockerE2ETest test
 ```
 
-The test is skipped during normal unit runs so local development does not start Docker unexpectedly.
+The test is skipped during normal unit runs so local development does not start Docker unexpectedly. Docker Desktop 29+ may require the explicit `docker.host` and `api.version` Maven properties shown above.
 
 ## UI Coverage
 

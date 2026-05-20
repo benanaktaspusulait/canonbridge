@@ -47,10 +47,16 @@ cd services/canonbridge-mock && mvn test
 cd mapping-studio-ui && npm test -- --run
 ```
 
-Local note: when Docker/Testcontainers is unavailable, Mapping Studio API tests can run against a temporary local PostgreSQL with `QUARKUS_DATASOURCE_DEVSERVICES_ENABLED=false`; this was used on 2026-05-20 and produced 74 passing API tests.
+Local note: when Docker/Testcontainers is unavailable, Mapping Studio API tests can run against a temporary local PostgreSQL with `QUARKUS_DATASOURCE_DEVSERVICES_ENABLED=false`; this was used on 2026-05-20 and produced 87 passing API tests.
 
 Docker protocol E2E is opt-in to avoid starting the full stack in normal unit runs:
 
 ```bash
-cd services/canonbridge-mock && CANONBRIDGE_PROTOCOL_E2E=true mvn -Dtest=ProtocolDockerE2ETest test
+cd services/canonbridge-mock
+CANONBRIDGE_PROTOCOL_E2E=true TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock \
+  mvn -Ddocker.host=unix://${HOME}/.docker/run/docker.sock \
+      -Dapi.version=1.44 \
+      -Dtest=ProtocolDockerE2ETest test
 ```
+
+Docker Desktop 29+ may require the explicit `docker.host` and `api.version` Maven properties because Docker Java/Testcontainers otherwise negotiates an older API version.

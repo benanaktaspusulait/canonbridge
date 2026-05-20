@@ -1,13 +1,13 @@
 # CanonBridge 10 System Support Audit
 
-**Date**: 2026-05-19  
+**Date**: 2026-05-20  
 **Scope**: Source types, runtime paths, mock systems, database templates, and test evidence.
 
 ## Result
 
 CanonBridge now exposes 10 distinct mock-backed external system templates for the single tenant demo path. The platform also models 10 integration source types in the UI and backend enum.
 
-The remaining risk is not system count or seed coverage. The four newest systems now have mapping drafts, canonical schemas, and source samples, and transformer `npm test` includes one deterministic source-to-canonical smoke fixture for each of the 10 systems. Live protocol E2E depth remains the next hardening layer.
+The remaining risk is not system count, seed coverage, or live protocol coverage. The four newest systems now have mapping drafts, canonical schemas, and source samples, transformer `npm test` includes one deterministic source-to-canonical smoke fixture for each of the 10 systems, and `ProtocolDockerE2ETest` exercises all 10 mock systems through Docker Compose/Testcontainers.
 
 ## 10 Source Types
 
@@ -74,10 +74,10 @@ Evidence:
 | Request transformation | Done | `GAP-011` is now closed in the no-code gap register. |
 | Mapping seeds | Done | The four newest REST systems now have partners, schemas, drafts, connection links, and source samples in `V39`. |
 | Runtime proof per system | Done | `services/transformer/fixtures/ten-system-smoke.json` covers all 10 systems and is wired into `npm test`. |
-| Production proof | Partial | Integration tests still depend on Docker/Testcontainers availability. |
+| Production proof | Done | `ProtocolDockerE2ETest` starts the mock Docker Compose stack and calls all 10 systems through live protocol endpoints. |
 
 ## Remaining Actions
 
-1. Add live protocol E2E tests that call each mock-backed system through Docker/Testcontainers.
+1. Run the opt-in Docker/Testcontainers protocol E2E in CI once Docker capacity is available.
 2. Add UI coverage for selecting each template in the mapping wizard.
 3. Keep [Project Gaps](./PROJECT_GAPS.md) as the single living gap register for production readiness.

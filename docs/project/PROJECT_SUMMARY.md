@@ -21,7 +21,7 @@ The platform combines:
 | Area | Status | Notes |
 |---|---|---|
 | Source types | Implemented | UI/backend model includes 10 integration source types. |
-| External systems | Implemented with deterministic smoke proof | 10 distinct mock-backed templates are normalized by migration `V38`; `V39` seeds the newest four systems; transformer tests assert one canonical output per system. |
+| External systems | Implemented with deterministic and live protocol proof | 10 distinct mock-backed templates are normalized by migration `V38`; `V39` seeds the newest four systems; transformer tests assert one canonical output per system; opt-in Docker/Testcontainers E2E calls all 10 live mock protocols. |
 | Mapping Studio UI | Active | Angular app with wizard, Integration Studio, preview, autosave, DLQ handoff, and i18n. |
 | Mapping Studio API | Active | Quarkus API with Flyway schema, repositories, security filters, OIDC production guardrails, outbound execution, batch status/retry, scheduled run history, outbox replay, and tests. |
 | Transformer | Active | JSONata, Ajv, Kafka runner, enrichment support, metrics, and tests. |
