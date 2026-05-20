@@ -75,9 +75,10 @@ Evidence:
 | Mapping seeds | Done | The four newest REST systems now have partners, schemas, drafts, connection links, and source samples in `V39`. |
 | Runtime proof per system | Done | `services/transformer/fixtures/ten-system-smoke.json` covers all 10 systems and is wired into `npm test`. |
 | Production proof | Done | `ProtocolDockerE2ETest` starts the mock Docker Compose stack and calls all 10 systems through live protocol endpoints. |
+| UI source selection proof | Done | `source-type-selection.component.spec.ts` asserts the Mapping Wizard exposes all 10 backend source types exactly once. |
 
 ## Remaining Actions
 
 1. Keep the CI `mock-protocol-e2e` Docker job healthy.
-2. Add UI coverage for selecting each template in the mapping wizard.
+2. Expand browser-level wizard tests when template-specific UX flows are added.
 3. Keep [Project Gaps](./PROJECT_GAPS.md) as the single living gap register for production readiness.
