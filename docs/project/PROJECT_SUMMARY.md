@@ -1,7 +1,7 @@
 # CanonBridge Project Summary
 
 **Last Updated**: May 20, 2026  
-**Status**: Active development, demo-ready core platform with runtime state and remaining production hardening gaps.
+**Status**: Active development, demo-ready core platform with durable runtime state and production hardening guardrails.
 
 ## What CanonBridge Is
 
@@ -23,10 +23,10 @@ The platform combines:
 | Source types | Implemented | UI/backend model includes 10 integration source types. |
 | External systems | Implemented with deterministic smoke proof | 10 distinct mock-backed templates are normalized by migration `V38`; `V39` seeds the newest four systems; transformer tests assert one canonical output per system. |
 | Mapping Studio UI | Active | Angular app with wizard, Integration Studio, preview, autosave, DLQ handoff, and i18n. |
-| Mapping Studio API | Active | Quarkus API with Flyway schema, repositories, security filters, outbound execution, batch/scheduled runtime state, outbox traces, and tests. |
+| Mapping Studio API | Active | Quarkus API with Flyway schema, repositories, security filters, OIDC production guardrails, outbound execution, batch status/retry, scheduled run history, outbox replay, and tests. |
 | Transformer | Active | JSONata, Ajv, Kafka runner, enrichment support, metrics, and tests. |
 | Webhook receiver | Active | Webhook auth, event envelope creation, Kafka publish path. |
-| Production readiness | In progress | See [Project Gaps](./PROJECT_GAPS.md). |
+| Production readiness | In progress | Core guardrails and replay paths are implemented; see [Project Gaps](./PROJECT_GAPS.md) for remaining ops follow-through. |
 
 ## Key Documents
 
@@ -56,12 +56,11 @@ etlsolutions/
 └── scripts/
 ```
 
-## Top Open Gaps
+## Top Remaining Follow-Ups
 
-1. Complete production auth hardening and environment-backed secret replacement.
-2. Add batch status/history APIs, chunked upload, and retry/redrive semantics.
-3. Expose scheduled poller run history and formalize cron/interval contracts.
-4. Add outbox replay worker, metrics, and recovery tests.
-5. Add live Docker/Testcontainers protocol E2E tests for every mock-backed system.
+1. Wire real production IdP/secrets and keep local demo auth disabled in production environments.
+2. Add chunked upload/session APIs for very large file batch ingestion.
+3. Run the opt-in Docker/Testcontainers protocol E2E in CI.
+4. Add Grafana/alert panels for outbox replay counters and batch/scheduled failure rates.
 
 The canonical gap list is [Project Gaps](./PROJECT_GAPS.md).

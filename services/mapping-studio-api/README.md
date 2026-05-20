@@ -70,6 +70,20 @@ This service is fully reactive using:
 - `POST /api/external-systems/{connectionId}/test` - Execute a test HTTP request using the linked credential
 - `DELETE /api/external-systems/{connectionId}` - Delete connection
 
+### Runtime Operations
+- `POST /api/rest-inbound/{draftId}` - Validate, transform, and publish inbound REST payloads
+- `POST /api/mapping-drafts/{id}/batch/ingest` - Ingest normalized file/batch rows and publish canonical events
+- `GET /api/mapping-drafts/{id}/batch/jobs` - List batch jobs for a mapping
+- `GET /api/mapping-drafts/{id}/batch/jobs/{jobId}` - Get batch job detail and row-level results
+- `POST /api/mapping-drafts/{id}/batch/jobs/{jobId}/retry` - Retry all original rows from a batch job
+- `POST /api/mapping-drafts/{id}/batch/jobs/{jobId}/redrive` - Redrive only failed rows from a batch job
+- `GET /api/mapping-drafts/{id}/scheduled-runs/status` - Get scheduled API polling state and next-run contract
+- `GET /api/mapping-drafts/{id}/scheduled-runs/history` - List scheduled API run history
+- `GET /api/mapping-drafts/{id}/scheduled-runs/history/{runId}` - Get scheduled API run detail
+- `GET /api/outbox/events` - List canonical publish outbox events
+- `GET /api/outbox/stats` - Get outbox status counts
+- `POST /api/outbox/replay` - Manually trigger replay for due outbox records
+
 ### Credentials
 - `GET /api/credentials` - List credential metadata
 - `GET /api/credentials/{credentialId}` - Get credential metadata by ID
@@ -101,10 +115,19 @@ DB_PASSWORD=postgres
 REDIS_URL=redis://localhost:6379
 CANONBRIDGE_API_KEYS=replace-with-a-strong-api-key
 CANONBRIDGE_CREDENTIAL_ENCRYPTION_KEY=base64-encoded-32-byte-key
+OIDC_ENABLED=true
+OIDC_SERVER_URL=https://idp.example.com/realms/canonbridge
+OIDC_CLIENT_ID=mapping-studio
+OIDC_CLIENT_SECRET=replace-with-idp-client-secret
+CORS_ALLOWED_ORIGINS=https://app.example.com
+CANONBRIDGE_LOCAL_LOGIN_ENABLED=false
+CANONBRIDGE_LOCAL_JWT_ENABLED=false
+OUTBOX_REPLAY_ENABLED=true
 ```
 
 Development defaults include `CANONBRIDGE_API_KEYS=dev-api-key`. Override this value outside local development.
 Credential secrets use AES-256-GCM and require a base64-encoded 32-byte key in `CANONBRIDGE_CREDENTIAL_ENCRYPTION_KEY` outside local development.
+Production startup fails closed when insecure defaults are detected. By default production requires OIDC, HTTPS IdP metadata, explicit CORS origins, non-default API/JWT/credential secrets, disabled bearer API-key compatibility, and disabled local login unless explicitly allowed.
 
 ### Rate Limiting Configuration
 

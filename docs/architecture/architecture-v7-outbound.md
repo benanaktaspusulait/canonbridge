@@ -15,7 +15,7 @@ Outbound-aware mappings carry source metadata in `source_config`. The important 
 | `headers` | Static or template-rendered headers. |
 | `query` / `variables` | GraphQL query and variables. |
 | `operation`, `soapAction`, `namespace` | SOAP operation metadata. |
-| `schedule` | Lightweight interval for scheduled polling. |
+| `schedule` | ISO duration, short interval, 5-field cron, or 6-field cron-with-seconds expression for scheduled polling. |
 
 ## Runtime Components
 
@@ -23,9 +23,10 @@ Outbound-aware mappings carry source metadata in `source_config`. The important 
 - `OutboundHttpService` executes REST, SOAP, GraphQL, and gRPC-style HTTP calls with credential injection.
 - `RequestTemplateService` renders request bodies and headers from visual/template config.
 - `MappingExecutionService` performs request transformation, outbound call, response transformation, and response validation.
-- `ScheduledApiPollerService` runs published scheduled API mappings on an interval and persists last/next/result state in `etl_scheduled_api_runs`.
-- `FileBatchResource` persists batch ingest job summaries in `etl_batch_jobs`.
+- `ScheduledApiPollerService` runs published scheduled API mappings on an interval or cron schedule and persists current state in `etl_scheduled_api_runs` plus history in `etl_scheduled_api_run_history`.
+- `FileBatchResource` persists batch ingest job summaries and original rows in `etl_batch_jobs`, then exposes list/detail/retry/redrive APIs.
 - `KafkaProducerService` records canonical publish attempts in `outbox_events`.
+- `OutboxReplayService` replays due `PENDING`/`FAILED` outbox records with bounded attempts, backoff, metrics, and manual trigger support.
 
 ## Credential Store
 
@@ -40,10 +41,8 @@ Supported auth types:
 
 ## Current Limits
 
-- Scheduled polling has durable interval state, but not full cron semantics or a run-history API.
-- Batch ingest has durable job summaries, but not chunked upload or retry/redrive APIs.
-- Canonical publish attempts are recorded in `outbox_events`, but a background replay worker and recovery metrics are still needed.
+- Batch ingest has durable job summaries, status/history, and retry/redrive APIs; chunked upload is still future work for very large files.
 - REST inbound validates, transforms accepted payloads through the draft mapping, and publishes canonical payloads.
-- Live Docker-backed protocol E2E should be expanded beyond the deterministic 10-system transformer smoke fixtures.
+- Live Docker-backed protocol E2E exists as an opt-in Testcontainers test and should be wired into CI when Docker capacity is available.
 
 See [Project Gaps](../project/PROJECT_GAPS.md) for the current prioritized backlog.
