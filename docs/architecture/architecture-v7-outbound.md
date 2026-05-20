@@ -23,7 +23,9 @@ Outbound-aware mappings carry source metadata in `source_config`. The important 
 - `OutboundHttpService` executes REST, SOAP, GraphQL, and gRPC-style HTTP calls with credential injection.
 - `RequestTemplateService` renders request bodies and headers from visual/template config.
 - `MappingExecutionService` performs request transformation, outbound call, response transformation, and response validation.
-- `ScheduledApiPollerService` runs published scheduled API mappings on an interval.
+- `ScheduledApiPollerService` runs published scheduled API mappings on an interval and persists last/next/result state in `etl_scheduled_api_runs`.
+- `FileBatchResource` persists batch ingest job summaries in `etl_batch_jobs`.
+- `KafkaProducerService` records canonical publish attempts in `outbox_events`.
 
 ## Credential Store
 
@@ -38,7 +40,9 @@ Supported auth types:
 
 ## Current Limits
 
-- Scheduled polling keeps run state in memory.
+- Scheduled polling has durable interval state, but not full cron semantics or a run-history API.
+- Batch ingest has durable job summaries, but not chunked upload or retry/redrive APIs.
+- Canonical publish attempts are recorded in `outbox_events`, but a background replay worker and recovery metrics are still needed.
 - REST inbound validates, transforms accepted payloads through the draft mapping, and publishes canonical payloads.
 - Live Docker-backed protocol E2E should be expanded beyond the deterministic 10-system transformer smoke fixtures.
 

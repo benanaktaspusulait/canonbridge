@@ -46,6 +46,7 @@ Sıradaki kritik ürün işi, request dönüşümünün JSONata modunu server-si
 
 - Mapping Studio UI production build geçti.
 - Mapping Studio API tenant/security test seti ve `mvn clean -DskipTests package` geçti.
+- Mapping Studio API `mvn test` 2026-05-20 tarihinde geçici yerel PostgreSQL ile geçti: 74 test, 0 failure, 0 error.
 - Webhook receiver `mvn test` 2026-05-19 tarihinde geçti: 14 test, 0 failure, 0 error.
 - GAP-011 kapatıldı: `node scripts/no-code-acceptance-coverage.mjs --markdown` artık tüm gap'ler için `DONE` döndürmelidir.
 - Yeni doğrulama komutları: `npm test -- --run src/transformEngine.test.ts`, `./mvnw test -Dtest=SourcePayloadValidatorTest`, `node scripts/no-code-acceptance-coverage.mjs --markdown`.
