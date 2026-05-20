@@ -82,8 +82,7 @@ public class RateLimitFilter implements ContainerRequestFilter, ContainerRespons
         }
 
         // Check rate limit
-        RateLimitResult result = rateLimitService.checkRateLimit(clientId, limit, windowSeconds)
-                .await().indefinitely();
+        RateLimitResult result = rateLimitService.checkRateLimitNow(clientId, limit, windowSeconds);
 
         requestContext.setProperty(RATE_LIMIT_RESULT_KEY, result);
 

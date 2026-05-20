@@ -54,9 +54,13 @@ public class RateLimitService {
      * @return RateLimitResult with allowed status and metadata
      */
     public Uni<RateLimitResult> checkRateLimit(String clientId, int limit, int windowSeconds) {
+        return Uni.createFrom().item(() -> checkRateLimitNow(clientId, limit, windowSeconds));
+    }
+
+    public RateLimitResult checkRateLimitNow(String clientId, int limit, int windowSeconds) {
         if (!config.enabled()) {
             // Rate limiting disabled, allow all requests
-            return Uni.createFrom().item(new RateLimitResult(true, limit, limit, 0, 0));
+            return new RateLimitResult(true, limit, limit, 0, 0);
         }
 
         String key = config.redisKeyPrefix() + clientId;
@@ -64,50 +68,48 @@ public class RateLimitService {
         long windowStart = now - (windowSeconds * 1000L);
 
         if (usesInMemoryStorage()) {
-            return Uni.createFrom().item(() -> checkInMemoryRateLimit(key, limit, windowSeconds, now, windowStart));
+            return checkInMemoryRateLimit(key, limit, windowSeconds, now, windowStart);
         }
 
         if (sortedSetCommands == null) {
             init();
         }
 
-        return Uni.createFrom().item(() -> {
-            try {
-                // Remove old entries outside the sliding window
-                sortedSetCommands.zremrangebyscore(key, ScoreRange.from(0L, windowStart));
+        try {
+            // Remove old entries outside the sliding window
+            sortedSetCommands.zremrangebyscore(key, ScoreRange.from(0L, windowStart));
 
-                // Count current requests in the window
-                long currentCount = sortedSetCommands.zcard(key);
+            // Count current requests in the window
+            long currentCount = sortedSetCommands.zcard(key);
 
-                // Calculate reset time (end of current window)
-                long resetTime = now + (windowSeconds * 1000L);
+            // Calculate reset time (end of current window)
+            long resetTime = now + (windowSeconds * 1000L);
 
-                if (currentCount >= limit) {
-                    // Rate limit exceeded
-                    long retryAfter = calculateRetryAfter(key, windowSeconds, now);
-                    
-                    Log.warnf("Rate limit exceeded for client %s: %d/%d requests in %ds window",
-                            clientId, currentCount, limit, windowSeconds);
-                    
-                    return new RateLimitResult(false, limit, 0, resetTime, retryAfter);
-                }
+            if (currentCount >= limit) {
+                // Rate limit exceeded
+                long retryAfter = calculateRetryAfter(key, windowSeconds, now);
 
-                // Add current request to the window
-                String requestId = UUID.randomUUID().toString();
-                sortedSetCommands.zadd(key, new ZAddArgs(), (double) now, requestId);
+                Log.warnf("Rate limit exceeded for client %s: %d/%d requests in %ds window",
+                        clientId, currentCount, limit, windowSeconds);
 
-                // Set TTL on the key to auto-cleanup
-                redisDataSource.key().expire(key, Duration.ofSeconds(windowSeconds + 10));
-
-                int remaining = limit - (int) currentCount - 1;
-                return new RateLimitResult(true, limit, remaining, resetTime, 0);
-
-            } catch (Exception e) {
-                Log.errorf(e, "Error checking rate limit for client %s, allowing request", clientId);
-                // On Redis errors, fail open to avoid blocking legitimate traffic
-                return new RateLimitResult(true, limit, limit, 0, 0);
+                return new RateLimitResult(false, limit, 0, resetTime, retryAfter);
             }
-        });
+
+            // Add current request to the window
+            String requestId = UUID.randomUUID().toString();
+            sortedSetCommands.zadd(key, new ZAddArgs(), (double) now, requestId);
+
+            // Set TTL on the key to auto-cleanup
+            redisDataSource.key().expire(key, Duration.ofSeconds(windowSeconds + 10));
+
+            int remaining = limit - (int) currentCount - 1;
+            return new RateLimitResult(true, limit, remaining, resetTime, 0);
+
+        } catch (Exception e) {
+            Log.errorf(e, "Error checking rate limit for client %s, allowing request", clientId);
+            // On Redis errors, fail open to avoid blocking legitimate traffic
+            return new RateLimitResult(true, limit, limit, 0, 0);
+        }
     }
 
     private boolean usesInMemoryStorage() {
