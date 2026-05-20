@@ -27,6 +27,7 @@ class ProtocolDockerE2ETest {
     @Test
     void allTenMockSystemsRespondThroughDockerCompose() throws Exception {
         try (DockerComposeContainer<?> compose = new DockerComposeContainer<>(new File("docker-compose.yml"))
+                .withLocalCompose(true)
                 .withExposedService(
                         "canonbridge-mock",
                         8080,

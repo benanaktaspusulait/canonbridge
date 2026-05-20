@@ -18,6 +18,10 @@ class PartnerResourceTest {
                 .header("X-API-Key", "partner-resource-test-" + System.nanoTime());
     }
 
+    private static String uniqueExternalId(String prefix) {
+        return prefix + "-" + System.nanoTime();
+    }
+
     @Test
     void testListPartners() {
         request()
@@ -30,13 +34,14 @@ class PartnerResourceTest {
 
     @Test
     void testCreatePartner() {
+        String externalId = uniqueExternalId("test-partner");
         String partnerJson = """
             {
-                "external_id": "test-partner",
+                "external_id": "%s",
                 "name": "Test Partner",
                 "description": "Test partner for unit testing"
             }
-            """;
+            """.formatted(externalId);
 
         request()
             .contentType(ContentType.JSON)
@@ -50,14 +55,40 @@ class PartnerResourceTest {
     }
 
     @Test
-    void testGetPartnerById() {
-        // First create a partner
+    void testCreatePartnerRejectsDuplicateExternalId() {
+        String externalId = uniqueExternalId("duplicate-test-partner");
         String partnerJson = """
             {
-                "external_id": "get-test-partner",
+                "external_id": "%s",
+                "name": "Duplicate Test Partner"
+            }
+            """.formatted(externalId);
+
+        request()
+            .contentType(ContentType.JSON)
+            .body(partnerJson)
+            .when().post("/api/partners")
+            .then()
+            .statusCode(201);
+
+        request()
+            .contentType(ContentType.JSON)
+            .body(partnerJson)
+            .when().post("/api/partners")
+            .then()
+            .statusCode(409);
+    }
+
+    @Test
+    void testGetPartnerById() {
+        // First create a partner
+        String externalId = uniqueExternalId("get-test-partner");
+        String partnerJson = """
+            {
+                "external_id": "%s",
                 "name": "Get Test Partner"
             }
-            """;
+            """.formatted(externalId);
 
         String id = request()
             .contentType(ContentType.JSON)
@@ -78,12 +109,13 @@ class PartnerResourceTest {
     @Test
     void testUpdatePartner() {
         // Create a partner first
+        String externalId = uniqueExternalId("update-test-partner");
         String partnerJson = """
             {
-                "external_id": "update-test-partner",
+                "external_id": "%s",
                 "name": "Update Test Partner"
             }
-            """;
+            """.formatted(externalId);
 
         String id = request()
             .contentType(ContentType.JSON)
@@ -96,11 +128,11 @@ class PartnerResourceTest {
         // Update it
         String updatedJson = """
             {
-                "external_id": "update-test-partner",
+                "external_id": "%s",
                 "name": "Updated Partner Name",
                 "status": "INACTIVE"
             }
-            """;
+            """.formatted(externalId);
 
         request()
             .contentType(ContentType.JSON)
@@ -113,12 +145,13 @@ class PartnerResourceTest {
     @Test
     void testDeletePartner() {
         // Create a partner first
+        String externalId = uniqueExternalId("delete-test-partner");
         String partnerJson = """
             {
-                "external_id": "delete-test-partner",
+                "external_id": "%s",
                 "name": "Delete Test Partner"
             }
-            """;
+            """.formatted(externalId);
 
         String id = request()
             .contentType(ContentType.JSON)

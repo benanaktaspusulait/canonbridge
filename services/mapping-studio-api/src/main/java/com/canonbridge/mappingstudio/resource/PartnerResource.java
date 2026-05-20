@@ -4,6 +4,7 @@ import com.canonbridge.mappingstudio.security.TenantContext;
 import com.canonbridge.mappingstudio.domain.Partner;
 import com.canonbridge.mappingstudio.repository.PartnerRepository;
 import io.smallrye.mutiny.Uni;
+import io.vertx.pgclient.PgException;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
@@ -78,7 +79,9 @@ public class PartnerResource {
         partner.setUpdatedBy(userId);
         
         return partnerRepository.create(partner)
-            .map(created -> Response.status(Response.Status.CREATED).entity(created).build());
+            .map(created -> Response.status(Response.Status.CREATED).entity(created).build())
+            .onFailure(PartnerResource::isUniqueConstraintViolation)
+            .recoverWithItem(error -> conflict("Partner external_id already exists for this tenant"));
     }
 
     @PUT
@@ -101,7 +104,9 @@ public class PartnerResource {
                     return Response.status(Response.Status.NOT_FOUND).build();
                 }
                 return Response.ok(updated).build();
-            });
+            })
+            .onFailure(PartnerResource::isUniqueConstraintViolation)
+            .recoverWithItem(error -> conflict("Partner external_id already exists for this tenant"));
     }
 
     @DELETE
@@ -119,5 +124,19 @@ public class PartnerResource {
                 }
                 return Response.noContent().build();
             });
+    }
+
+    private static boolean isUniqueConstraintViolation(Throwable error) {
+        return error instanceof PgException pgException
+                && "23505".equals(pgException.getSqlState());
+    }
+
+    private static Response conflict(String message) {
+        return Response.status(Response.Status.CONFLICT)
+                .entity(new ErrorResponse(message))
+                .build();
+    }
+
+    public record ErrorResponse(String message) {
     }
 }
