@@ -55,12 +55,18 @@ The review removed root-level one-off or stale documents:
 
 ```bash
 node scripts/no-code-acceptance-coverage.mjs --strict --markdown
+node scripts/validate-production-env.mjs --env-file /path/to/production.env
 cd services/mapping-studio-api && mvn -DskipTests package
 cd services/mapping-studio-api && mvn -Dtest=ApiKeyAuthenticatorTest,ApiAuthenticationFilterTest,KafkaProducerServiceTest,ScheduleExpressionTest,OutboxReplayServiceTest,FileBatchResourceTest test
 cd services/mapping-studio-api && mvn test
 cd services/transformer && npm test
 cd services/canonbridge-mock && mvn test
 cd mapping-studio-ui && npm test -- --run
+cd mapping-studio-ui && npm run build
+cd website && npm run lint
+cd website && npm test
+cd website && npm run build
+cd website && npm run test:e2e
 ```
 
 Local note: when Docker/Testcontainers is unavailable, Mapping Studio API tests can run against a temporary local PostgreSQL with `QUARKUS_DATASOURCE_DEVSERVICES_ENABLED=false`; this was used on 2026-05-20 and produced 87 passing API tests.

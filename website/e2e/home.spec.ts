@@ -1,6 +1,10 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+test.beforeEach(async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+});
+
 test("homepage renders, submits lead webhook, and has no axe violations", async ({ page }) => {
   await page.goto("/");
 
@@ -28,7 +32,7 @@ test("language switch updates the document language", async ({ page }) => {
 
   if ((page.viewportSize()?.width ?? 0) < 768) {
     await page.getByRole("button", { name: "Toggle navigation" }).click();
-    await page.getByRole("button", { name: "TR" }).click();
+    await page.getByRole("button", { name: "TR", exact: true }).click();
   } else {
     await page.getByRole("button", { name: /🇬🇧 EN/i }).click();
     await page.getByRole("menuitem", { name: /Türkçe/i }).click();
