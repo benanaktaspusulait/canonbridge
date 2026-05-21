@@ -13,22 +13,40 @@ import { useLocale } from "@/lib/LocaleContext";
 
 export default function Home() {
   const { t } = useLocale();
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "CanonBridge",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    description:
+      "Enterprise integration platform for visually mapping partner payloads into canonical business events.",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+      availability: "https://schema.org/PreOrder",
+    },
+  };
 
   return (
     <main>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <Navbar />
       <Hero />
 
-      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="section-divider" />
 
-      {/* How It Works heading */}
-      <section id="how-it-works" className="pt-24 pb-8">
+      <section id="how-it-works" className="bg-white pt-24 pb-8" aria-labelledby="how-it-works-title">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <h2 id="how-it-works-title" className="hero-title text-3xl md:text-4xl font-bold mb-4 text-navy-900">
             {t.howItWorks.title}{" "}
             <span className="gradient-text">{t.howItWorks.titleHighlight}</span>
           </h2>
-          <p className="text-gray-400 text-lg">{t.howItWorks.subtitle}</p>
+          <p className="text-navy-700 text-lg">{t.howItWorks.subtitle}</p>
         </div>
       </section>
 
@@ -39,10 +57,9 @@ export default function Home() {
         title={t.steps.step1.title}
         description={t.steps.step1.description}
         bullets={t.steps.step1.bullets}
-        videoSrc="/videos/onboard-source.mp4"
       />
 
-      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="section-divider" />
 
       <VideoSection
         step={2}
@@ -54,7 +71,7 @@ export default function Home() {
         reversed
       />
 
-      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="section-divider" />
 
       <VideoSection
         step={3}
@@ -62,10 +79,9 @@ export default function Home() {
         title={t.steps.step3.title}
         description={t.steps.step3.description}
         bullets={t.steps.step3.bullets}
-        videoSrc="/videos/test-validate.mp4"
       />
 
-      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="section-divider" />
 
       <VideoSection
         step={4}
@@ -73,11 +89,10 @@ export default function Home() {
         title={t.steps.step4.title}
         description={t.steps.step4.description}
         bullets={t.steps.step4.bullets}
-        videoSrc="/videos/publish.mp4"
         reversed
       />
 
-      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="section-divider" />
 
       <VideoSection
         step={5}
@@ -85,30 +100,29 @@ export default function Home() {
         title={t.steps.step5.title}
         description={t.steps.step5.description}
         bullets={t.steps.step5.bullets}
-        videoSrc="/videos/monitor.mp4"
       />
 
-      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="section-divider" />
 
       <Metrics />
 
-      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="section-divider" />
 
       <Scalability />
 
-      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="section-divider" />
 
       <Architecture />
 
-      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="section-divider" />
 
       <Features />
 
-      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="section-divider" />
 
       <UseCases />
 
-      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="section-divider" />
 
       <Footer />
     </main>

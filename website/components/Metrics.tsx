@@ -43,7 +43,7 @@ function AnimatedMetric({ value, suffix, label, duration = 2 }: MetricProps) {
         {isInView ? count.toLocaleString() : "0"}
         {suffix}
       </div>
-      <div className="text-gray-400 text-sm md:text-base">{label}</div>
+      <div className="text-navy-700 text-sm md:text-base">{label}</div>
     </div>
   );
 }
@@ -52,12 +52,7 @@ export default function Metrics() {
   const { t } = useLocale();
 
   return (
-    <section className="relative py-24 md:py-32 overflow-hidden">
-      {/* Background glow */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-accent-blue/5 rounded-full blur-3xl" />
-      </div>
-
+    <section className="relative overflow-hidden bg-[var(--cb-color-cloud-50)] py-24 md:py-32" aria-labelledby="metrics-title">
       <div className="max-w-6xl mx-auto px-6 relative z-10">
         <motion.div
           className="text-center mb-16"
@@ -66,10 +61,10 @@ export default function Metrics() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <h2 id="metrics-title" className="hero-title text-3xl md:text-4xl font-bold mb-4 text-navy-900">
             {t.metrics.title}
           </h2>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+          <p className="text-navy-700 text-lg max-w-2xl mx-auto">
             {t.metrics.subtitle}
           </p>
         </motion.div>
@@ -112,12 +107,12 @@ export default function Metrics() {
           ].map((item, i) => (
             <div
               key={i}
-              className="flex items-center gap-4 p-5 rounded-xl bg-white/[0.02] border border-white/5"
+              className="flex items-center gap-4 rounded-xl border border-navy-900/10 bg-white p-5 shadow-sm"
             >
               <span className="text-2xl">{item.icon}</span>
               <div>
-                <div className="text-white font-semibold">{item.stat}</div>
-                <div className="text-gray-500 text-sm">{item.desc}</div>
+                <div className="text-navy-900 font-semibold">{item.stat}</div>
+                <div className="text-navy-700/70 text-sm">{item.desc}</div>
               </div>
             </div>
           ))}
