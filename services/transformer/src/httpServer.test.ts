@@ -271,6 +271,18 @@ describe('HTTP Server', () => {
       expect(body.info.title).toBe('CanonBridge Transformer API');
       expect(body.paths['/v1/transform']).toBeDefined();
     });
+
+    it('should hide OpenAPI metadata when docs are disabled', async () => {
+      const privateDocsApp = await buildServer({ ...envFixture(testDir), docsEnabled: false }, registry, engine);
+
+      const response = await privateDocsApp.inject({
+        method: 'GET',
+        url: '/docs/json',
+      });
+
+      expect(response.statusCode).toBe(404);
+      await privateDocsApp.close();
+    });
   });
 
   describe('POST /v1/admin/reload', () => {
@@ -445,5 +457,59 @@ describe('HTTP Server', () => {
       expect(response.statusCode).toBe(200);
       await authApp.close();
     });
+
+    it('should accept any configured API key during rotation', async () => {
+      const authApp = await buildServer(
+        { ...envFixture(testDir), apiKeys: ['old-secret', 'new-secret'] },
+        registry,
+        engine,
+      );
+
+      const response = await authApp.inject({
+        method: 'POST',
+        url: '/v1/transform',
+        headers: {
+          'x-api-key': 'new-secret',
+        },
+        payload: {
+          partnerId: 'test-partner',
+          eventType: 'order-created',
+          orderId: 'ORD-123',
+          amount: 99.99,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      await authApp.close();
+    });
   });
 });
+
+function envFixture(testDir: string): Env {
+  return {
+    mappingsRoot: testDir,
+    port: 8080,
+    apiKey: undefined,
+    corsOrigins: [],
+    kafkaEnabled: false,
+    kafkaBrokers: [],
+    kafkaGroupId: 'test',
+    kafkaFallbackDlqTopic: 'test.dlq',
+    kafkaConnectRetries: 3,
+    kafkaConnectRetryDelayMs: 100,
+    kafkaSslEnabled: false,
+    kafkaSaslMechanism: undefined,
+    kafkaSaslUsername: undefined,
+    kafkaSaslPassword: undefined,
+    redisUrl: undefined,
+    redisCacheTtlSeconds: 3600,
+    workerPoolEnabled: false,
+    workerPoolSize: 0,
+    outboxEnabled: false,
+    outboxDatabaseUrl: undefined,
+    outboxPollIntervalMs: 1000,
+    outboxBatchSize: 100,
+    dlqDatabaseUrl: undefined,
+    logLevel: 'silent',
+  };
+}

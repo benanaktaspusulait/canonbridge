@@ -21,9 +21,10 @@ type DlqManagementDeps = {
 
 // G-06: API key auth hook
 async function apiKeyAuth(env: Env, request: FastifyRequest, reply: FastifyReply): Promise<void> {
-  if (!env.apiKey) return; // auth disabled
+  const acceptedApiKeys = env.apiKeys?.length ? env.apiKeys : env.apiKey ? [env.apiKey] : [];
+  if (acceptedApiKeys.length === 0) return; // auth disabled
   const provided = request.headers['x-api-key'];
-  if (provided !== env.apiKey) {
+  if (typeof provided !== 'string' || !acceptedApiKeys.includes(provided)) {
     return reply.code(401).send({ error: { message: 'Unauthorized' } });
   }
 }
@@ -36,7 +37,7 @@ export async function buildServer(
 ): Promise<FastifyInstance> {
   const app = Fastify({
     logger: { level: env.logLevel },
-    bodyLimit: 2 * 1024 * 1024,
+    bodyLimit: env.httpBodyLimitBytes ?? 20 * 1024 * 1024,
   });
 
   // G-06: CORS — explicit origins or allow all if empty
@@ -53,45 +54,47 @@ export async function buildServer(
   });
 
   // G-15: OpenAPI/Swagger documentation
-  await app.register(swagger, {
-    openapi: {
-      info: {
-        title: 'CanonBridge Transformer API',
-        description: 'JSONata transformation engine with Ajv validation for partner data integration',
-        version: '0.1.0',
-      },
-      servers: [
-        {
-          url: 'http://localhost:8080',
-          description: 'Development server',
+  if (env.docsEnabled !== false) {
+    await app.register(swagger, {
+      openapi: {
+        info: {
+          title: 'CanonBridge Transformer API',
+          description: 'JSONata transformation engine with Ajv validation for partner data integration',
+          version: '0.1.0',
         },
-      ],
-      tags: [
-        { name: 'transform', description: 'Data transformation endpoints' },
-        { name: 'admin', description: 'Administrative operations' },
-        { name: 'health', description: 'Health and monitoring' },
-        { name: 'dlq', description: 'Dead letter queue management' },
-      ],
-      components: {
-        securitySchemes: {
-          apiKey: {
-            type: 'apiKey',
-            name: 'X-Api-Key',
-            in: 'header',
+        servers: [
+          {
+            url: 'http://localhost:8080',
+            description: 'Development server',
+          },
+        ],
+        tags: [
+          { name: 'transform', description: 'Data transformation endpoints' },
+          { name: 'admin', description: 'Administrative operations' },
+          { name: 'health', description: 'Health and monitoring' },
+          { name: 'dlq', description: 'Dead letter queue management' },
+        ],
+        components: {
+          securitySchemes: {
+            apiKey: {
+              type: 'apiKey',
+              name: 'X-Api-Key',
+              in: 'header',
+            },
           },
         },
       },
-    },
-  });
+    });
 
-  await app.register(swaggerUi, {
-    routePrefix: '/docs',
-    uiConfig: {
-      docExpansion: 'list',
-      deepLinking: true,
-    },
-    staticCSP: true,
-  });
+    await app.register(swaggerUi, {
+      routePrefix: '/docs',
+      uiConfig: {
+        docExpansion: 'list',
+        deepLinking: true,
+      },
+      staticCSP: true,
+    });
+  }
 
   app.get('/health', {
     schema: {
@@ -115,7 +118,7 @@ export async function buildServer(
       schema: {
         tags: ['transform'],
         description: 'Transform partner data to canonical format using JSONata mappings',
-        security: env.apiKey ? [{ apiKey: [] }] : [],
+        security: env.apiKey || env.apiKeys?.length ? [{ apiKey: [] }] : [],
         body: {
           type: 'object',
           required: ['partnerId', 'eventType'],
@@ -202,7 +205,7 @@ export async function buildServer(
       schema: {
         tags: ['transform'],
         description: 'Evaluate a single JSONata expression against a payload',
-        security: env.apiKey ? [{ apiKey: [] }] : [],
+        security: env.apiKey || env.apiKeys?.length ? [{ apiKey: [] }] : [],
         body: {
           type: 'object',
           required: ['expression'],
@@ -266,7 +269,7 @@ export async function buildServer(
       schema: {
         tags: ['transform'],
         description: 'Batch validate JSONata expressions against a payload',
-        security: env.apiKey ? [{ apiKey: [] }] : [],
+        security: env.apiKey || env.apiKeys?.length ? [{ apiKey: [] }] : [],
         body: {
           type: 'object',
           required: ['expressions'],
@@ -386,7 +389,7 @@ export async function buildServer(
       schema: {
         tags: ['admin'],
         description: 'Reload partner configurations and clear cache',
-        security: env.apiKey ? [{ apiKey: [] }] : [],
+        security: env.apiKey || env.apiKeys?.length ? [{ apiKey: [] }] : [],
         response: {
           200: {
             type: 'object',
@@ -432,7 +435,7 @@ export async function buildServer(
       schema: {
         tags: ['dlq'],
         description: 'List dead letter queue records',
-        security: env.apiKey ? [{ apiKey: [] }] : [],
+        security: env.apiKey || env.apiKeys?.length ? [{ apiKey: [] }] : [],
         querystring: {
           type: 'object',
           properties: {
@@ -461,7 +464,7 @@ export async function buildServer(
       schema: {
         tags: ['dlq'],
         description: 'Get a dead letter queue record by ID',
-        security: env.apiKey ? [{ apiKey: [] }] : [],
+        security: env.apiKey || env.apiKeys?.length ? [{ apiKey: [] }] : [],
         params: {
           type: 'object',
           required: ['id'],
@@ -491,7 +494,7 @@ export async function buildServer(
       schema: {
         tags: ['dlq'],
         description: 'Redrive a dead letter queue record back to processing queue',
-        security: env.apiKey ? [{ apiKey: [] }] : [],
+        security: env.apiKey || env.apiKeys?.length ? [{ apiKey: [] }] : [],
         params: {
           type: 'object',
           required: ['id'],

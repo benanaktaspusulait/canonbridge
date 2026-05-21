@@ -106,7 +106,7 @@ async function main(): Promise<void> {
       port: env.port,
       mappingsRoot: env.mappingsRoot,
       partners: registry.listPartners().length,
-      authEnabled: env.apiKey !== undefined,
+      authEnabled: env.apiKey !== undefined || (env.apiKeys?.length ?? 0) > 0,
       kafkaEnabled: env.kafkaEnabled,
       cacheType: env.redisUrl ? 'redis' : 'in-memory',
       workerPoolEnabled: env.workerPoolEnabled,

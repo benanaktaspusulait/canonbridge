@@ -10,7 +10,10 @@ export interface Env {
   mappingDatabaseTenantId?: string;
   // HTTP auth
   apiKey: string | undefined;
+  apiKeys?: string[];
   corsOrigins: string[];
+  httpBodyLimitBytes?: number;
+  docsEnabled?: boolean;
   // Kafka
   kafkaEnabled: boolean;
   kafkaBrokers: string[];
@@ -63,8 +66,14 @@ export function loadEnv(): Env {
     mappingDatabaseTenantId: process.env.MAPPING_DATABASE_TENANT_ID || undefined,
     // G-06: API key auth — undefined means auth disabled (dev/internal use)
     apiKey: process.env.API_KEY || undefined,
+    apiKeys: (process.env.API_KEYS ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
     // G-06: explicit CORS origins; empty = allow all (dev default)
     corsOrigins,
+    httpBodyLimitBytes: Number.parseInt(process.env.HTTP_BODY_LIMIT_BYTES ?? String(20 * 1024 * 1024), 10),
+    docsEnabled: process.env.TRANSFORMER_DOCS_ENABLED === 'true' || process.env.NODE_ENV !== 'production',
     // Kafka
     kafkaEnabled: process.env.KAFKA_ENABLED === 'true',
     kafkaBrokers: (process.env.KAFKA_BROKERS ?? 'localhost:9092').split(',').map((s) => s.trim()),
