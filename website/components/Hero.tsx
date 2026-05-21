@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { ArrowDown, PlayCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLocale } from "@/lib/LocaleContext";
@@ -83,14 +82,27 @@ export default function Hero() {
             transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
             className="relative"
           >
-            <Image
-              src="/images/canonbridge-mapping-studio.png"
-              alt="CanonBridge Mapping Studio showing partner sources, field mapping, validation, and runtime health"
-              width={1440}
-              height={900}
-              className="w-full rounded-xl border border-navy-900/10 bg-white shadow-2xl"
-              priority
-            />
+            <picture>
+              <source
+                type="image/avif"
+                srcSet="/images/canonbridge-mapping-studio-960.avif 960w, /images/canonbridge-mapping-studio-1440.avif 1440w"
+                sizes="(min-width: 1024px) 52vw, 100vw"
+              />
+              <source
+                type="image/webp"
+                srcSet="/images/canonbridge-mapping-studio-960.webp 960w, /images/canonbridge-mapping-studio-1440.webp 1440w"
+                sizes="(min-width: 1024px) 52vw, 100vw"
+              />
+              <img
+                src="/images/canonbridge-mapping-studio.png"
+                alt="CanonBridge Mapping Studio showing partner sources, field mapping, validation, and runtime health"
+                width={1440}
+                height={900}
+                className="w-full rounded-xl border border-navy-900/10 bg-white shadow-2xl"
+                fetchPriority="high"
+                decoding="async"
+              />
+            </picture>
           </motion.div>
         </motion.div>
 

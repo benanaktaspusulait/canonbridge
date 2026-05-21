@@ -36,6 +36,8 @@ test("hero uses the real Mapping Studio product screenshot", () => {
   const hero = read("components/Hero.tsx");
 
   assert.match(hero, /canonbridge-mapping-studio\.png/);
+  assert.match(hero, /canonbridge-mapping-studio-1440\.avif/);
+  assert.match(hero, /canonbridge-mapping-studio-1440\.webp/);
   assert.doesNotMatch(hero, /canonbridge-console\.svg/);
   assert.doesNotThrow(() => statSync(join(root, "public/images/canonbridge-mapping-studio.png")));
 });
@@ -88,7 +90,7 @@ test("static assets referenced by the app exist", () => {
     .concat(allFiles("components"))
     .map(read)
     .join("\n");
-  const assetRefs = [...files.matchAll(/["'](\/(?:images|videos)\/[^"']+)["']/g)].map((m) => m[1]);
+  const assetRefs = [...files.matchAll(/\/(?:images|videos)\/[^\s"',`)]+/g)].map((m) => m[0]);
 
   for (const ref of assetRefs) {
     const diskPath = join(root, "public", ref.replace(/^\//, ""));
