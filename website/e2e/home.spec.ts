@@ -6,6 +6,7 @@ test("homepage renders, submits lead webhook, and has no axe violations", async 
 
   await expect(page.getByRole("heading", { name: /Any Source\. One Format\./i })).toBeVisible();
   await expect(page.getByRole("navigation")).toBeVisible();
+  await page.waitForTimeout(500);
 
   const accessibilityScanResults = await new AxeBuilder({ page })
     .include("main")
@@ -25,8 +26,13 @@ test("homepage renders, submits lead webhook, and has no axe violations", async 
 test("language switch updates the document language", async ({ page }) => {
   await page.goto("/");
 
-  await page.getByRole("button", { name: /🇬🇧 EN/i }).click();
-  await page.getByRole("menuitem", { name: /Türkçe/i }).click();
+  if ((page.viewportSize()?.width ?? 0) < 768) {
+    await page.getByRole("button", { name: "Toggle navigation" }).click();
+    await page.getByRole("button", { name: "TR" }).click();
+  } else {
+    await page.getByRole("button", { name: /🇬🇧 EN/i }).click();
+    await page.getByRole("menuitem", { name: /Türkçe/i }).click();
+  }
 
   await expect(page.locator("html")).toHaveAttribute("lang", "tr");
   await expect(page.getByRole("link", { name: /Demo Talep Et/i }).first()).toBeVisible();

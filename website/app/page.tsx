@@ -67,7 +67,6 @@ export default function Home() {
         title={t.steps.step2.title}
         description={t.steps.step2.description}
         bullets={t.steps.step2.bullets}
-        youtubeId="mblKMBHPYWk"
         reversed
       />
 

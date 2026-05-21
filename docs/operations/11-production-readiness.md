@@ -76,6 +76,7 @@ Inspired by Google's Production Readiness Review (PRR) model, adapted for CanonB
 - [ ] Kafka SASL/TLS configured — no plaintext connections
 - [ ] Database TLS enabled — certificate verification required
 - [ ] All secrets in Vault/KMS — no credentials in Git or ConfigMaps
+- [ ] Production env validation passes (`node scripts/validate-production-env.mjs --env-file <env-file>`)
 - [ ] RBAC roles defined and tested — no over-privileged roles
 - [ ] Tenant isolation integration tests passing (all isolation test cases pass)
 - [ ] PII masking rules defined for all event types with PII classification
@@ -113,6 +114,7 @@ Inspired by Google's Production Readiness Review (PRR) model, adapted for CanonB
 
 - [ ] All P1 alerts tested (fire and notify correctly)
 - [ ] All P2 alerts tested
+- [ ] Alert thresholds calibrated through [Alert Threshold Calibration](./16-alert-threshold-calibration.md)
 - [ ] PagerDuty integration configured for P1 alerts
 - [ ] Slack integration configured for P2/P3 alerts
 - [ ] Escalation policy defined (who is paged if primary on-call does not respond in 15 min)

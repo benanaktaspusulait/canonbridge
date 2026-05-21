@@ -36,11 +36,11 @@ These are not open implementation gaps in the current local/staging MVP:
 
 | Area | Status | Owner / Trigger |
 |---|---|---|
-| Production IdP and secrets | Deployment input | Provide values through the target secret manager before production release. |
-| Website lead capture destination | Deployment input | Replace `mailto:` with CRM/Supabase/webhook once the sales workflow is chosen. |
-| Browser E2E + axe automation | Planned enhancement | Add Playwright/axe once dependency policy and browser runner cost are accepted. |
-| Storybook/component gallery | Planned enhancement | Add when reusable product components stabilize beyond the current app shell. |
-| Alert thresholds | Staging calibration | Tune after realistic traffic establishes baseline rates. |
+| Production IdP and secrets | Closed as deployable contract | `infrastructure/k8s/mapping-studio-api-secret.example.yaml` and `scripts/validate-production-env.mjs` define and validate required production values. |
+| Website lead capture destination | Closed as configurable webhook | `NEXT_PUBLIC_LEAD_WEBHOOK_URL` posts to CRM/Supabase/webhook with `mailto:` fallback when unset. |
+| Browser E2E + axe automation | Closed | Website Playwright + axe tests run through `npm run test:e2e` and CI. |
+| Component gallery | Closed | `/component-gallery` documents shared tokens, controls, cards, and lucide icon usage. |
+| Alert thresholds | Closed as runbook | [Alert Threshold Calibration](../operations/16-alert-threshold-calibration.md) defines the staging baseline and sign-off process. |
 
 ## Removed As Unnecessary
 

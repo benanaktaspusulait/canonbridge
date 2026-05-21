@@ -78,9 +78,11 @@ This is the active documentation hub for the CanonBridge integration platform.
 - [Kubernetes Deployment Guide](./deployment/KUBERNETES_DEPLOYMENT_GUIDE.md)
 - [Deployment Checklist](./deployment/01-deployment-checklist.md)
 - [Database Migrations](./deployment/05-database-migrations.md)
+- [Production Environment And Secrets](./deployment/09-production-env-and-secrets.md)
 - [Runbook](./operations/08-runbook.md)
 - [Production Readiness](./operations/11-production-readiness.md)
 - [Security Operations](./operations/14-security-operations.md)
+- [Alert Threshold Calibration](./operations/16-alert-threshold-calibration.md)
 
 ### Testing
 

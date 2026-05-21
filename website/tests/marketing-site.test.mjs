@@ -33,8 +33,18 @@ test("mobile navigation and contact form are not no-op placeholders", () => {
 
   assert.match(navbar, /mobileOpen/);
   assert.match(navbar, /aria-controls="mobile-navigation"/);
+  assert.match(navbar, /lucide-react/);
+  assert.match(footer, /NEXT_PUBLIC_LEAD_WEBHOOK_URL/);
   assert.match(footer, /mailto:sales@canonbridge\.io/);
   assert.doesNotMatch(footer, /Form submission logic/);
+});
+
+test("component gallery documents shared UI primitives", () => {
+  const gallery = read("app/component-gallery/page.tsx");
+
+  assert.match(gallery, /Component Gallery/);
+  assert.match(gallery, /lucide-react/);
+  assert.match(gallery, /--cb-color-brand-600/);
 });
 
 test("static assets referenced by the app exist", () => {

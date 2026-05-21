@@ -13,6 +13,7 @@ Use this checklist before deploying transformer, business service, Mapping Studi
 - [ ] JSONata mappings parse and run against fixtures.
 - [ ] Database migrations are backward-compatible.
 - [ ] Secrets and config values are present in target environment.
+- [ ] Production env passes `node scripts/validate-production-env.mjs --env-file <env-file>`.
 - [ ] Dashboards and alerts exist for affected services.
 - [ ] Capacity impact is understood.
 - [ ] Release notes list changed partners, event types, schemas, and mapping versions.
@@ -38,4 +39,3 @@ Use this checklist before deploying transformer, business service, Mapping Studi
 - [Canary Deployment](./02-canary-deployment.md)
 - [Rollback Procedure](./04-rollback-procedure.md)
 - [Monitoring Dashboards](../operations/01-monitoring-dashboards.md)
-
