@@ -13,20 +13,48 @@ import { useLocale } from "@/lib/LocaleContext";
 
 export default function Home() {
   const { t } = useLocale();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://canonbridge.io";
   const structuredData = {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: "CanonBridge",
-    applicationCategory: "BusinessApplication",
-    operatingSystem: "Web",
-    description:
-      "Enterprise integration platform for visually mapping partner payloads into canonical business events.",
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "USD",
-      availability: "https://schema.org/PreOrder",
-    },
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${siteUrl}/#organization`,
+        name: "CanonBridge",
+        url: siteUrl,
+        logo: `${siteUrl}/images/canonbridge-logo-wide-light.png`,
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": `${siteUrl}/#software`,
+        name: "CanonBridge",
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Web",
+        description:
+          "Enterprise integration platform for visually mapping partner payloads into canonical business events.",
+        publisher: {
+          "@id": `${siteUrl}/#organization`,
+        },
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "USD",
+          availability: "https://schema.org/PreOrder",
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${siteUrl}/#breadcrumb`,
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: siteUrl,
+          },
+        ],
+      },
+    ],
   };
 
   return (

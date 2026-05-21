@@ -5,22 +5,36 @@ import { dirname, resolve } from "node:path";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const sourcePath = resolve(root, "packages/tokens/src/index.css");
-const targetPath = resolve(root, "website/app/brand-tokens.css");
+const targets = [
+  {
+    path: resolve(root, "website/app/brand-tokens.css"),
+    header: "/* Generated from packages/tokens/src/index.css. Run scripts/sync-website-tokens.mjs after token edits. */",
+  },
+  {
+    path: resolve(root, "mapping-studio-ui/src/styles/brand-tokens.css"),
+    header: "/* Generated from packages/tokens/src/index.css. Run scripts/sync-website-tokens.mjs after token edits. */",
+  },
+];
 const checkOnly = process.argv.includes("--check");
 
 const source = readFileSync(sourcePath, "utf8").trimEnd();
-const target = `/* Generated from packages/tokens/src/index.css. Run scripts/sync-website-tokens.mjs after token edits. */\n${source}\n`;
-const current = readFileSync(targetPath, "utf8");
+const staleTargets = targets.filter((target) => {
+  const expected = `${target.header}\n${source}\n`;
+  return readFileSync(target.path, "utf8") !== expected;
+});
 
-if (current === target) {
-  console.log("Website brand tokens are in sync.");
+if (staleTargets.length === 0) {
+  console.log("Brand token snapshots are in sync.");
   process.exit(0);
 }
 
 if (checkOnly) {
-  console.error("Website brand tokens are out of sync. Run: node scripts/sync-website-tokens.mjs");
+  console.error("Brand token snapshots are out of sync. Run: node scripts/sync-website-tokens.mjs");
   process.exit(1);
 }
 
-writeFileSync(targetPath, target);
-console.log("Synced website/app/brand-tokens.css from packages/tokens/src/index.css.");
+for (const target of staleTargets) {
+  writeFileSync(target.path, `${target.header}\n${source}\n`);
+}
+
+console.log("Synced brand token snapshots from packages/tokens/src/index.css.");

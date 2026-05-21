@@ -30,12 +30,6 @@ export const metadata: Metadata = {
   authors: [{ name: "CanonBridge" }],
   alternates: {
     canonical: "/",
-    languages: {
-      en: "/",
-      tr: "/?lang=tr",
-      de: "/?lang=de",
-      es: "/?lang=es",
-    },
   },
   openGraph: {
     type: "website",
@@ -46,7 +40,7 @@ export const metadata: Metadata = {
       "A no-code integration control plane for mapping partner payloads into canonical business events.",
     images: [
       {
-        url: "/images/canonbridge-og.svg",
+        url: "/images/canonbridge-og.png",
         width: 1200,
         height: 630,
         alt: "CanonBridge integration workflow console",
@@ -58,7 +52,7 @@ export const metadata: Metadata = {
     title: "CanonBridge | Enterprise Integration Platform",
     description:
       "Visual mapping, runtime recovery, and observability for partner integrations.",
-    images: ["/images/canonbridge-og.svg"],
+    images: ["/images/canonbridge-og.png"],
   },
   robots: {
     index: true,
