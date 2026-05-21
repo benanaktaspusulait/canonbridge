@@ -17,6 +17,12 @@ export const metadata: Metadata = {
   authors: [{ name: "CanonBridge" }],
   alternates: {
     canonical: "/",
+    languages: {
+      en: "/",
+      tr: "/tr",
+      de: "/de",
+      es: "/es",
+    },
   },
   openGraph: {
     type: "website",

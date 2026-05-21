@@ -27,6 +27,8 @@ test("marketing site has SEO metadata and structured data", () => {
   assert.match(layout, /canonbridge-og\.png/);
   assert.doesNotMatch(layout, /canonbridge-og\.svg/);
   assert.doesNotMatch(layout, /next\/font\/google/);
+  assert.match(layout, /tr: "\/tr"/);
+  assert.doesNotThrow(() => statSync(join(root, "app/[locale]/page.tsx")));
   assert.match(page, /application\/ld\+json/);
   assert.match(page, /Organization/);
   assert.match(page, /BreadcrumbList/);
@@ -63,6 +65,9 @@ test("internal component gallery is excluded from search indexing", () => {
 
   assert.match(robots, /component-gallery/);
   assert.doesNotMatch(sitemap, /component-gallery/);
+  assert.match(sitemap, /"\/tr"/);
+  assert.match(sitemap, /"\/de"/);
+  assert.match(sitemap, /"\/es"/);
   assert.match(galleryLayout, /index: false/);
 });
 

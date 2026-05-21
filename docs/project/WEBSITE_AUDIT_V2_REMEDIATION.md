@@ -24,17 +24,16 @@ Source report: `canonbridge-findings-v2.md`
 | N14 | Done | Expanded JSON-LD with `Organization`, `SoftwareApplication`, and `BreadcrumbList`. |
 | N15 | Done | Generated `canonbridge-og.png` and switched Open Graph/Twitter metadata from SVG to PNG. |
 | N16 | Done | Kept static export and added manual AVIF/WebP responsive source sets for the large hero product screenshot. |
-| N17 | Partial | Removed query-string `hreflang` alternates until real `/tr`, `/de`, `/es` routes exist. |
+| N17 | Done | Added real `/tr`, `/de`, and `/es` static routes, restored `hreflang` alternates, and switched language selection away from query strings. |
 | N18 | Done | Added Release Please manifest config and a main-branch workflow to automate `CHANGELOG.md` release PRs. |
 | N19 | Done | Expanded static tests and confirmed Playwright coverage still passes on desktop and mobile. |
 | N20 | Done | Ran Mapping Studio Angular/Vitest audit checks: 119 tests passed and production build succeeds. |
 
-## Still Product / Route Decisions
+## Still Product / Edge Decisions
 
 | Finding | Remaining work |
 | --- | --- |
 | N2 | Replace the public lead webhook URL with a private edge endpoint plus origin allowlist and Turnstile/hCaptcha for full spam protection. |
-| N17 | Add real `/tr`, `/de`, and `/es` App Router routes before restoring `hreflang` alternates. |
 
 ## Verification
 
@@ -46,3 +45,4 @@ Source report: `canonbridge-findings-v2.md`
 - `npm run build` in `mapping-studio-ui`
 - `docker compose -f website/docker-compose.yml up -d --build website`
 - `curl -I http://localhost:8090/`
+- `curl -I http://localhost:8090/tr`

@@ -16,13 +16,28 @@ const LocaleContext = createContext<{
 
 const allowedLocales: Locale[] = ["en", "tr", "de", "es"];
 
+function localePath(locale: Locale) {
+  return locale === "en" ? "/" : `/${locale}`;
+}
+
+function localeFromPath(pathname: string): Locale | null {
+  const segment = pathname.split("/").filter(Boolean)[0] as Locale | undefined;
+  return segment && allowedLocales.includes(segment) ? segment : null;
+}
+
 function resolveInitialLocale(): Locale {
   if (typeof window === "undefined") {
     return "en";
   }
 
+  const routed = localeFromPath(window.location.pathname);
   const requested = new URLSearchParams(window.location.search).get("lang") as Locale | null;
   const saved = localStorage.getItem("cb-locale") as Locale | null;
+
+  if (routed) {
+    localStorage.setItem("cb-locale", routed);
+    return routed;
+  }
 
   if (requested && allowedLocales.includes(requested)) {
     localStorage.setItem("cb-locale", requested);
@@ -41,6 +56,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") {
       localStorage.setItem("cb-locale", l);
       document.documentElement.lang = l;
+      const nextPath = localePath(l);
+      if (window.location.pathname !== nextPath) {
+        window.history.pushState({}, "", `${nextPath}${window.location.hash}`);
+      }
     }
   };
 

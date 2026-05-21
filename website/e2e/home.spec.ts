@@ -39,6 +39,7 @@ test("language switch updates the document language", async ({ page }) => {
   }
 
   await expect(page.locator("html")).toHaveAttribute("lang", "tr");
+  await expect(page).toHaveURL(/\/tr$/);
   await expect(page.getByRole("link", { name: /Demo Talep Et/i }).first()).toBeVisible();
 });
 
