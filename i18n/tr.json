@@ -1,0 +1,1439 @@
+{
+  "app": {
+    "title": "CanonBridge — Mapping Studio"
+  },
+  "common": {
+    "back": "Geri",
+    "next": "İleri",
+    "skip": "Atla",
+    "format": "Formatla",
+    "loadFile": "Dosya Yükle"
+  },
+  "layout": {
+    "demoBanner": {
+      "strong": "Demo ortamı",
+      "text": "— yalnızca örnek veri. Canlı API veya partner trafiği yok."
+    }
+  },
+  "nav": {
+    "section": {
+      "main": "Ana menü"
+    },
+    "dashboard": "Kontrol paneli",
+    "studio": "Studio",
+    "mappings": "Eşlemeler",
+    "partners": "Ortaklar",
+    "externalSystems": "Dış Sistemler",
+    "schemas": "Şemalar",
+    "dlq": "DLQ",
+    "monitoring": "İzleme",
+    "audit": "Denetim kaydı",
+    "tenant": "Tenant",
+    "settings": "Ayarlar"
+  },
+  "sidebar": {
+    "logoSub": "Mapping Studio",
+    "menuGroup": "Uygulama",
+    "preferencesGroup": "Tercihler"
+  },
+  "topbar": {
+    "demo": "Demo",
+    "demoTitle": "Bu sürümde canlı API çağrısı yapılmaz",
+    "toggleSidebar": "Kenar çubuğunu aç/kapat",
+    "notifications": "Bildirimler",
+    "documentation": "Dokümantasyon",
+    "language": "Dil",
+    "profile": "Profil",
+    "apiKeys": "API anahtarları",
+    "signOut": "Çıkış",
+    "darkMode": "Gece modu",
+    "lightMode": "Gündüz modu"
+  },
+  "login": {
+    "tagline": "Elle yazılmış mapper’lar olmadan kurumsal entegrasyon",
+    "feature1": "Partner JSON’unu alın, alanları görsel olarak modelleyin, kanonik çıktıyı üretin",
+    "feature2": "Yayın öncesi test korumalı, sürümlü eşlemeler",
+    "feature3": "Dayanıklılık: DLQ, yeniden oynatma ve gözlemlenebilirlik",
+    "feature4": "Dönüşümleri ince ayar için isteğe bağlı gelişmiş mod",
+    "signIn": "Giriş yap",
+    "welcome": "Tekrar hoş geldiniz. Kimlik bilgilerinizi girin.",
+    "tenantLocked": "Tek tenant ortamı",
+    "demoMode": "Demo modu",
+    "demoModeHint": "— aşağıdan bir test hesabı seçin",
+    "quickFill": "Hızlı doldur — demo hesabı",
+    "selectAccount": "Demo hesabı seçin...",
+    "orManual": "veya elle girin",
+    "email": "E-posta",
+    "password": "Şifre",
+    "forgot": "Şifremi unuttum?",
+    "submit": "Giriş yap",
+    "footer": "CanonBridge Mapping Studio © 2026",
+    "documentation": "Dokümantasyon"
+  },
+  "auth": {
+    "invalidCredentials": "Geçersiz e-posta veya şifre.",
+    "enterCredentials": "Lütfen e-posta ve şifrenizi girin."
+  },
+  "tenant": {
+    "title": "Tenant",
+    "subtitle": "Bu tek tenant Studio kurulumundaki aktif tenant kapsamı ve istek bağlamı.",
+    "currentTenant": "Aktif tenant",
+    "copyId": "Tenant ID kopyala",
+    "enforcement": "Zorlama",
+    "enforced": "API ve veritabanı tarafından kilitli",
+    "mode": {
+      "single": "Tek tenant"
+    },
+    "identity": {
+      "title": "Tenant Kimliği",
+      "subtitle": "Kullanıcı oturumu girişten sonra bu tenant'a bağlanır.",
+      "mode": "Mod",
+      "user": "Giriş yapan kullanıcı",
+      "role": "Rol"
+    },
+    "requestContext": {
+      "title": "İstek Bağlamı",
+      "subtitle": "Tenant kapsamlı API çağrılarına eklenen header'lar."
+    },
+    "controls": {
+      "title": "İzolasyon Kontrolleri",
+      "subtitle": "Runtime ve veri sınırları artık aynı tenant kaynağına bakıyor.",
+      "database": {
+        "title": "Veritabanı tenant satırı",
+        "description": "tenants tablosu tek aktif tenant içerir ve ikinci tenant'ı reddeder.",
+        "status": "Zorunlu"
+      },
+      "api": {
+        "title": "API tenant filtresi",
+        "description": "Eksik tenant header'ları normalize edilir, farklı tenant istekleri reddedilir.",
+        "status": "Zorunlu"
+      },
+      "rbac": {
+        "title": "Rol erişimi",
+        "description": "Kullanıcı rolü tenant kapsamlı işlemlere erişimi belirlemeye devam eder.",
+        "status": "Aktif"
+      },
+      "audit": {
+        "title": "Denetim izi",
+        "description": "Tenant reddi ve güvenlik hataları audit event olarak yazılır.",
+        "status": "İzleniyor"
+      }
+    },
+    "note": "Bu sürümde tenant değiştirme bilerek kapalıdır. Platform hedefi tek tenant'tır; bu davranış tenants tablosu ve API SingleTenantContextFilter ile desteklenir."
+  },
+  "dashboard": {
+    "title": "Kontrol paneli",
+    "subtitle": "CanonBridge operasyon özeti.",
+    "studio": "Integration Studio",
+    "monitoring": "İzleme",
+    "recentTitle": "Son eşlemeler",
+    "recentSubtitle": "Tüm ortaklardaki son eşleme aktivitesi",
+    "viewAll": "Tümünü gör",
+    "stat": {
+      "msgProcessed": {
+        "label": "İşlenen mesajlar",
+        "change": "Toplam işlenen"
+      },
+      "activeMappings": {
+        "label": "Aktif eşlemeler",
+        "change": "Şu anda aktif"
+      },
+      "dlq": {
+        "label": "DLQ mesajları",
+        "change": "İlgilenilmeli"
+      },
+      "lag": {
+        "label": "Tüketici gecikmesi",
+        "change": "Anlık kuyruk gecikmesi"
+      },
+      "p99": {
+        "label": "Dönüşüm p99",
+        "change": "Son gecikme"
+      },
+      "partners": {
+        "label": "Aktif ortaklar",
+        "change": "Şu anda bağlı"
+      }
+    }
+  },
+  "table": {
+    "partner": "Ortak",
+    "eventType": "Olay tipi",
+    "sourceType": "Kaynak Tipi",
+    "method": "Metod",
+    "version": "Sürüm",
+    "status": "Durum",
+    "lastModified": "Son değişiklik",
+    "by": "Kullanıcı",
+    "transformations": "Dönüşümler",
+    "published": "Yayınlanma"
+  },
+  "status": {
+    "active": "aktif",
+    "draft": "taslak",
+    "deprecated": "kullanım dışı"
+  },
+  "mappings": {
+    "title": "Eşlemeler",
+    "subtitle": "Ortak ve olay başına sürümlü dönüşüm tanımları — katalog görünümü (demo veri).",
+    "studio": "Integration Studio",
+    "newDemo": "Yeni eşleme (demo)",
+    "searchPlaceholder": "Ortak veya olay tipi ara…",
+    "filter": "Filtrele",
+    "export": "CSV dışa aktar",
+    "preview": "Önizleme",
+    "rollback": "Geri al",
+    "deprecate": "Kullanım dışı bırak",
+    "delete": "Sil",
+    "cancel": "İptal",
+    "detailTitle": "Sürüm detayı",
+    "checksum": "İmza",
+    "notes": "Sürüm notları",
+    "rules": "Dönüşüm kuralları",
+    "openStudio": "Studio’da aç",
+    "deprecateTitle": "Eşlemeyi kullanım dışı bırak",
+    "deprecateMessage": "{{version}} kullanım dışı bırakılsın mı? Yeni eventler artık bu sürümü kullanmayacak.",
+    "deleteTitle": "Eşlemeyi sil",
+    "deleteMessage": "{{version}} katalogdan silinsin mi?",
+    "toast": {
+      "deprecated": "Eşleme kullanım dışı",
+      "deleted": "Eşleme silindi",
+      "exported": "Dışa aktarım hazır"
+    },
+    "empty": "Eşleme bulunamadı.",
+    "results": "sonuç"
+  },
+  "partners": {
+    "title": "Ortaklar",
+    "subtitle": "Ortak entegrasyonları, sağlık durumu ve olay yapılandırmaları",
+    "onboard": "Ortak ekle",
+    "edit": "Düzenle",
+    "delete": "Sil",
+    "cancel": "İptal",
+    "save": "Kaydet",
+    "colPartner": "Ortak",
+    "colStatus": "Durum",
+    "colEvents": "Olay tipleri",
+    "colMappings": "Aktif eşlemeler",
+    "colDlq": "DLQ",
+    "colThroughput": "Verim",
+    "colLastSeen": "Son görülme",
+    "configure": "Yapılandır",
+    "metrics": "Metrikler",
+    "summary": {
+      "total": "Toplam ortak",
+      "active": "Aktif",
+      "mappings": "Eşlemeler"
+    },
+    "dialog": {
+      "addTitle": "Ortak ekle",
+      "editTitle": "Ortak düzenle"
+    },
+    "form": {
+      "name": "Ortak adı",
+      "slug": "Ortak kısa adı",
+      "status": "Durum",
+      "contactEmail": "Teknik iletişim",
+      "eventTypes": "Olay tipleri",
+      "activeMappings": "Aktif eşlemeler",
+      "description": "Açıklama"
+    },
+    "deleteTitle": "Ortağı sil",
+    "deleteMessage": "{{name}} ve yerel demo yapılandırması silinsin mi?",
+    "toast": {
+      "invalidTitle": "Eksik bilgi",
+      "invalidDetail": "Ortak adı ve kısa adı zorunlu.",
+      "duplicateTitle": "Bu kısa ad zaten var",
+      "updated": "Ortak güncellendi",
+      "onboarded": "Ortak eklendi",
+      "deleted": "Ortak silindi"
+    },
+    "status": {
+      "active": "aktif",
+      "inactive": "pasif",
+      "degraded": "bozulmuş"
+    }
+  },
+  "externalSystems": {
+    "title": "Dış Sistemler",
+    "subtitle": "Son 24 saatte outbound API, webhook ve zamanlı sorgu sağlığı.",
+    "newConnection": "Yeni bağlantı",
+    "kpi": {
+      "healthy": "Sağlıklı",
+      "degraded": "Sorunlu",
+      "down": "Kapalı",
+      "calls": "Çağrı / 24s"
+    },
+    "filter": {
+      "partner": "Ortak",
+      "type": "Tip",
+      "environment": "Ortam",
+      "window": "Son 24s"
+    },
+    "col": {
+      "connection": "Bağlantı",
+      "type": "Tip",
+      "status": "Durum",
+      "success": "Başarı",
+      "latency": "Gecikme",
+      "lastError": "Son hata",
+      "lastSuccess": "Son başarı"
+    },
+    "colLast24h": "Çağrı / 24s",
+    "status": {
+      "healthy": "Sağlıklı",
+      "degraded": "Sorunlu",
+      "down": "Kapalı",
+      "notTested": "Test edilmedi"
+    },
+    "action": {
+      "test": "Bağlantıyı test et",
+      "view": "Geçmişi gör",
+      "edit": "Düzenle",
+      "useInStudio": "Studio'da kullan"
+    },
+    "detail": {
+      "eyebrow": "Bağlantı detayı",
+      "metrics": "Sağlık metrikleri",
+      "history": "Son çağrılar",
+      "noHistory": "Henüz demo çağrı kaydı yok.",
+      "sample": "Yakalanan örnek yanıt",
+      "mappings": "Bu bağlantıyı kullanan mapping'ler",
+      "noMappings": "Bu bağlantıya bağlı mapping yok.",
+      "logDetail": "İstek / yanıt logunu gör",
+      "headers": "Header'lar",
+      "request": "İstek",
+      "response": "Yanıt",
+      "typeConfig": "Tip konfigürasyonu",
+      "pollHint": "Zamanlı sorgu: {{schedule}}",
+      "wsdlHint": "WSDL: {{wsdl}}",
+      "grpcHint": "RPC metodu, metadata ve mesaj payload'u olan gRPC servisi.",
+      "webhookHint": "Üretilmiş URL ve inbound API key ile webhook alıcısı.",
+      "restHint": "Demo outbound okuma veya zenginleştirme için REST endpoint."
+    },
+    "credentialStore": {
+      "eyebrow": "Credential Store",
+      "title": "Tekrar kullanılabilir kimlik profilleri",
+      "manage": "Yönet",
+      "manageTitle": "Credential Store",
+      "addTitle": "Credential ekle",
+      "editTitle": "Credential düzenle",
+      "name": "Credential adı",
+      "type": "Credential tipi",
+      "owner": "Sahip",
+      "secretValue": "Gizli değer",
+      "secretPlaceholder": "Döndürmek için yeni değer girin",
+      "writeOnly": "Bu demo akışında secret değerler write-only tutulur; kaydedilen değerler geri gösterilmez.",
+      "save": "Credential kaydet",
+      "disable": "Credential pasifleştir",
+      "neverUsed": "Hiç kullanılmadı",
+      "invalidTitle": "Credential bilgisi eksik",
+      "invalidDetail": "Credential adı ve sahip zorunlu.",
+      "status": {
+        "active": "Aktif",
+        "disabled": "Pasif",
+        "rotationDue": "Döndür"
+      }
+    },
+    "health": {
+      "healthy": "Son demo kontrolleri sağlıklı. Gecikme ve başarı oranı beklenen aralıkta.",
+      "degraded": "Bu bağlantı cevap veriyor, fakat gecikme veya hata oranı dikkat istiyor.",
+      "down": "Son demo kontrolü başarısız. Yayın öncesi bunu dış sistem veya konfigürasyon riski sayın.",
+      "notTested": "Sağlık ve çağrı geçmişi üretmek için demo test çalıştırın."
+    },
+    "dialog": {
+      "addTitle": "Dış bağlantı ekle",
+      "editTitle": "Dış bağlantı düzenle"
+    },
+    "form": {
+      "name": "Bağlantı adı",
+      "partner": "Ortak",
+      "eventType": "Olay tipi",
+      "type": "Tip",
+      "environment": "Ortam",
+      "method": "HTTP metodu",
+      "url": "Endpoint URL",
+      "authType": "Kimlik doğrulama",
+      "timeoutMs": "Timeout",
+      "credentialName": "Kimlik profili",
+      "pollSchedule": "Sorgu takvimi",
+      "pollInterval": "Tekrar aralığı",
+      "firstRunAt": "İlk çalışma",
+      "checkpointMode": "Checkpoint modu",
+      "wsdlUrl": "WSDL URL",
+      "wsdlFile": "WSDL dosyası",
+      "wsdlUpload": "WSDL yükle",
+      "sampleJson": "Demo örnek JSON"
+    },
+    "save": "Bağlantıyı kaydet",
+    "cancel": "İptal",
+    "justNow": "şimdi",
+    "toast": {
+      "invalidTitle": "Bağlantı bilgisi eksik",
+      "invalidDetail": "Ad, ortak, olay tipi ve URL zorunlu.",
+      "created": "Bağlantı oluşturuldu",
+      "updated": "Bağlantı güncellendi",
+      "testPassed": "Bağlantı testi başarılı",
+      "testFailed": "Bağlantı testi başarısız",
+      "invalidUrl": "URL http:// veya https:// ile başlamalı",
+      "deleted": "Bağlantı silindi",
+      "sampleReady": "Örnek Mapping Studio'ya gönderildi",
+      "credentialSaved": "Credential kaydedildi",
+      "credentialDisabled": "Credential pasifleştirildi",
+      "wsdlLoaded": "WSDL yüklendi"
+    },
+    "history": {
+      "demoSuccess": "Demo isteği tamamlandı"
+    },
+    "results": "sonuç",
+    "empty": "Mevcut filtrelere uyan bağlantı yok.",
+    "delete": "Sil",
+    "deleteTitle": "Bağlantıyı sil",
+    "deleteMessage": "\"{{name}}\" ve yapılandırması silinsin mi?"
+  },
+  "dlq": {
+    "title": "Ölü harf kuyruğu",
+    "subtitle": "{{count}} başarısız mesaj — inceleyin ve yeniden gönderin",
+    "redriveSelected": "Seçilenleri yeniden gönder",
+    "redriveAll": "Tümünü yeniden gönder",
+    "searchPlaceholder": "Id, ortak, hata, trace ara...",
+    "filterPartner": "Ortak",
+    "filterError": "Hata tipi",
+    "filterDate": "Hata tarihi",
+    "results": "mesaj",
+    "colErrorType": "Hata tipi",
+    "colErrorMessage": "Hata mesajı",
+    "colAttempts": "Denemeler",
+    "colLastFailed": "Son hata",
+    "tooltipRedrive": "Yeniden gönder",
+    "tooltipInspect": "Yükü incele",
+    "tooltipFixDraft": "Düzeltme taslağı oluştur",
+    "createFixDraft": "Düzeltme taslağı oluştur",
+    "tooltipDiscard": "Sil",
+    "inspectorTitle": "Payload inceleyici",
+    "payload": "Payload",
+    "traceId": "Trace ID",
+    "stackTrace": "Stack trace",
+    "discard": "Sil",
+    "cancel": "İptal",
+    "discardTitle": "DLQ mesajını sil",
+    "discardMessage": "{{id}} kuyruktan kalıcı olarak silinsin mi?",
+    "toast": {
+      "redriven": "Mesaj yeniden gönderildi",
+      "redrivenAll": "DLQ yeniden gönderildi",
+      "redriveFailed": "Yeniden gönderim başarısız",
+      "fixDraftReady": "Düzeltme taslağı hazır",
+      "fixDraftFailed": "Düzeltme taslağı oluşturulamadı",
+      "discarded": "Mesaj(lar) silindi",
+      "count": "{{count}} mesaj"
+    },
+    "empty": "DLQ’da mesaj yok",
+    "discardSelected": "Seçilenleri sil",
+    "colFirstFailed": "İlk hata",
+    "discardSelectedTitle": "Seçili mesajları sil",
+    "discardSelectedMessage": "{{count}} seçili mesaj kalıcı olarak silinsin mi?"
+  },
+  "monitoring": {
+    "title": "İzleme",
+    "subtitle": "Gerçek zamanlı platform metrikleri ve ortak sağlığı",
+    "refresh": "Yenile",
+    "autoRefresh": "Otomatik yenile",
+    "export": "Dışa aktar",
+    "lastUpdated": "Son güncelleme",
+    "windowTooltip": "Metrikler için zaman penceresi seç",
+    "exportCsv": "CSV dışa aktar",
+    "exportCsvTooltip": "Ortak sağlığını CSV olarak indir",
+    "exportJsonTooltip": "Tam metrik görüntüsünü JSON olarak indir",
+    "partnerHealth": "Ortak sağlığı",
+    "partnerHealthSub": "Ortak başına verim, gecikme ve DLQ metrikleri",
+    "colStatus": "Durum",
+    "colThroughput": "Verim",
+    "colP99": "p99",
+    "colP99Latency": "p99 gecikme",
+    "colDlqRate": "DLQ oranı",
+    "colLag": "Gecikme",
+    "colUptime": "Çalışma süresi",
+    "metric": {
+      "throughput": {
+        "label": "Verim",
+        "slo": "SLO: > 100/sn"
+      },
+      "p99": {
+        "label": "p99 gecikme",
+        "slo": "SLO: < 200 ms"
+      },
+      "dlq": {
+        "label": "DLQ oranı",
+        "slo": "SLO: <%0,1"
+      },
+      "lag": {
+        "label": "Tüketici gecikmesi",
+        "slo": "SLO: < 1.000"
+      },
+      "error": {
+        "label": "Hata oranı",
+        "slo": "SLO: <%1"
+      },
+      "uptime": {
+        "label": "Çalışma süresi",
+        "slo": "SLO: > %99,9"
+      }
+    },
+    "healthStatus": {
+      "healthy": "sağlıklı",
+      "degraded": "bozulmuş",
+      "down": "kapalı"
+    },
+    "toast": {
+      "refreshed": "Metrikler yenilendi",
+      "autoOn": "Otomatik yenileme açık",
+      "autoOff": "Otomatik yenileme kapalı",
+      "exported": "Dışa aktarım hazır"
+    }
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "subtitle": "Kiracı yapılandırması, API anahtarları ve bildirim tercihleri",
+    "tenant": "Kiracı",
+    "tenantSub": "Temel kiracı bilgisi",
+    "tenantName": "Kiracı adı",
+    "tenantSlug": "Kiracı kısa adı",
+    "tenantSlugHint": "Kafka konu adları ve API yollarında kullanılır",
+    "tenantLockedHint": "Tek tenant backend tarafından yönetilir; yalnızca deployment konfigürasyonundan değişir.",
+    "webhookUrl": "Webhook URL",
+    "webhookHint": "Platform olay bildirimlerini alır",
+    "saveChanges": "Değişiklikleri kaydet",
+    "notificationsTitle": "Bildirimler",
+    "notificationsSub": "Uyarı ve özet tercihleri",
+    "dlqAlerts": "DLQ uyarıları",
+    "dlqAlertsDesc": "DLQ eşiği aşıldığında bildir",
+    "lagAlerts": "Tüketici gecikmesi uyarıları",
+    "lagAlertsDesc": "Gecikme SLO’yu aştığında bildir",
+    "emailDigest": "Günlük e-posta özeti",
+    "emailDigestDesc": "Günlük platform aktivitesi özeti al",
+    "apiKeysTitle": "API anahtarları",
+    "apiKeysSub": "Servis kimlik doğrulama anahtarlarını yönet",
+    "generateKey": "Anahtar üret",
+    "colName": "Ad",
+    "colKeyPrefix": "Anahtar öneki",
+    "colCreated": "Oluşturulma",
+    "colLastUsed": "Son kullanım",
+    "revoke": "İptal et",
+    "cancel": "İptal",
+    "keyName": "Anahtar adı",
+    "generatedKey": "Üretilen anahtar",
+    "generatedKeyHint": "Şimdi kopyalayın. Tam anahtar sadece bir kez gösterilir.",
+    "copyKey": "Anahtarı kopyala",
+    "revokeTitle": "API anahtarını iptal et",
+    "revokeMessage": "{{name}} iptal edilsin mi? Bu anahtarı kullanan istemciler artık doğrulanamayacak.",
+    "toast": {
+      "invalidTitle": "Kiracı bilgisi eksik",
+      "invalidDetail": "Kiracı adı ve kısa adı zorunlu.",
+      "saved": "Ayarlar kaydedildi",
+      "keyNameRequired": "Anahtar adı zorunlu",
+      "keyGenerated": "API anahtarı üretildi",
+      "keyCopied": "API anahtarı kopyalandı",
+      "revoked": "API anahtarı iptal edildi"
+    },
+    "keyStatus": {
+      "active": "aktif",
+      "revoked": "iptal"
+    },
+    "revokedNow": "iptal edildi"
+  },
+  "schemas": {
+    "title": "Şemalar",
+    "subtitle": "Kanonik ve partner şemalarını yönetin",
+    "createNew": "Şema Oluştur",
+    "createSchema": "Şema Oluştur",
+    "editSchema": "Şema Düzenle",
+    "createFirst": "İlk şemanızı oluşturun",
+    "noSchemas": "Şema bulunamadı",
+    "name": "Şema Adı",
+    "description": "Açıklama",
+    "type": "Şema Tipi",
+    "subject": "Konu",
+    "version": "Sürüm",
+    "status": "Durum",
+    "createdAt": "Oluşturulma Tarihi",
+    "actions": "İşlemler",
+    "schemaJson": "Şema JSON",
+    "formatJson": "JSON Formatla"
+  },
+  "studio": {
+    "title": "Integration Studio",
+    "subtitle": "Partner yükünden kurumsal şemanıza görsel dönüşümler, canlı önizleme ve yerel doğrulama ile tasarım.",
+    "heroKicker": "CanonBridge",
+    "heroBadge": "Yerel önizleme · API yok",
+    "heroBadgeHybrid": "Yerel önizleme · dönüşüm motoru doğruluyor",
+    "stepProgress": "{{current}} / {{total}} adım",
+    "wizardAria": "Çalışma akışı adımları",
+    "wizard": {
+      "blockedTitle": "Önce geçerli adımı tamamlayın",
+      "blockedDetail": "İleriye atlamadan önce vurgulanan adımı bitirin veya düzeltin."
+    },
+    "catalog": "Eşleme kataloğu",
+    "step": {
+      "source": "Kaynak yük",
+      "canonical": "Kanonik şema",
+      "mapping": "Alan eşlemesi",
+      "unfinished": "Eksikleri tamamla",
+      "validate": "Doğrula ve yayınla"
+    },
+    "command": {
+      "sourceFields": "Kaynak alan",
+      "sourceFieldsHint": "JSON + şema önerileri",
+      "requiredTargets": "Zorunlu hedef",
+      "missing": "eksik",
+      "mappingCoverage": "Eşleme kapsamı",
+      "mapped": "eşlendi",
+      "advancedRules": "Motor kuralı",
+      "advancedHint": "istisnai"
+    },
+    "ingestTitle": "Kaynak yükü al",
+    "ingestSubtitle": "Partner sisteminden JSON yapıştırın veya dosya yükleyin. Yapı, eşleme için alan ağacına dönüştürülür.",
+    "loadFile": "JSON dosyası yükle",
+    "cancel": "İptal",
+    "remove": "Sil",
+    "config": {
+      "import": "Config içe al",
+      "export": "Config dışa aktar",
+      "invalidFileType": "Lütfen .json Studio config dosyası kullanın.",
+      "invalidShape": "Bu dosya CanonBridge Studio config dosyası değil.",
+      "imported": "Studio config içe alındı",
+      "importedDetail": "Alanlar, kurallar, doğrulama, fixture ve kaynak ayarları geri yüklendi.",
+      "importFailed": "Studio config içe alınamadı",
+      "exported": "Studio config dışa aktarıldı"
+    },
+    "autosave": {
+      "savedAt": "Otomatik kayıt {{time}}"
+    },
+    "sourceType": {
+      "title": "Kaynak tipi",
+      "kafka": "Kafka Topic",
+      "kafkaDesc": "Mevcut raw topic üzerinden akış.",
+      "kafkaHint": "Event pipeline için",
+      "webhook": "Webhook",
+      "webhookDesc": "Dış sistem CanonBridge'e veri göndersin.",
+      "webhookHint": "URL + giriş API key",
+      "restApi": "REST API",
+      "restApiDesc": "Inbound HTTP endpoint açın.",
+      "restApiHint": "Metod, path, auth",
+      "externalApi": "Dış API",
+      "externalApiDesc": "CanonBridge dışarı gidip veriyi alsın.",
+      "externalApiHint": "URL, metod, auth, zamanlama",
+      "soap": "SOAP",
+      "soapDesc": "XML envelope veya WSDL uyumlu yanıt yükleyin.",
+      "soapHint": "Endpoint + action",
+      "grpc": "gRPC",
+      "grpcDesc": "Tipli RPC servislerini çağırın.",
+      "grpcHint": "Servis, metod, metadata",
+      "fileBatch": "Dosya Batch",
+      "fileBatchDesc": "CSV, JSONL veya JSON array dosyası yükleyin.",
+      "fileBatchHint": "Batch ingest",
+      "apiEnrichment": "API Zenginleştirme",
+      "apiEnrichmentDesc": "Mapping kayıtlarını zenginleştirmek için API çağırın.",
+      "apiEnrichmentHint": "Transform sırasında lookup",
+      "manual": "Manuel Yükleme",
+      "manualDesc": "Kurulum ve test için JSON bırakın.",
+      "manualHint": "JSON yapıştır veya yükle"
+    },
+    "sourceCommon": {
+      "uploadInstead": "JSON yükle"
+    },
+    "sourceKafka": {
+      "title": "Kafka kaynağı",
+      "subtitle": "Runtime tetikleyici olarak mevcut raw topic'i kullanın, mapping için yakalanmış JSON yükleyin.",
+      "badge": "Mevcut pipeline",
+      "topic": "Topic",
+      "consumerGroup": "Consumer group",
+      "topicPlaceholder": "Kafka topic girin",
+      "consumerGroupPlaceholder": "Consumer group girin",
+      "fetchSample": "Son örneği çek"
+    },
+    "sourceWebhook": {
+      "title": "Webhook kaynağı",
+      "subtitle": "CanonBridge dış sistemin kullanacağı inbound URL ve anahtarı üretir.",
+      "ready": "Endpoint hazır",
+      "url": "Webhook URL",
+      "apiKey": "Giriş API key",
+      "rotate": "Döndür",
+      "captureSample": "Örnek yakala",
+      "notConfigured": "Yapılandırılmadı",
+      "rotateUnavailable": "Webhook key döndürme endpoint oluşturulduktan sonra kullanılabilir.",
+      "copyUrl": "Webhook URL kopyala",
+      "copyKey": "Giriş API key kopyala",
+      "copiedUrl": "Webhook URL kopyalandı",
+      "copiedKey": "Giriş API key kopyalandı",
+      "rotated": "Webhook anahtarı döndürüldü",
+      "rotatedDetail": "Bu taslak için yeni maskeli anahtar hazır."
+    },
+    "sourceApi": {
+      "title": "Dış API kaynağı",
+      "subtitle": "CanonBridge'in zamanlı veya test sırasında çalıştıracağı isteği yapılandırın.",
+      "notTested": "Test edilmedi",
+      "name": "Bağlantı adı",
+      "method": "Metod",
+      "url": "URL",
+      "schedule": "Zamanlama",
+      "auth": "Kimlik doğrulama",
+      "test": "API çağrısını test et",
+      "namePlaceholder": "Bağlantı adı girin",
+      "urlPlaceholder": "https://api.partner.com/resource",
+      "schedulePlaceholder": "Cron veya interval",
+      "invalidUrl": "Testten önce geçerli bir HTTP veya HTTPS URL girin.",
+      "testPassed": "Dış API testi başarılı",
+      "testFailed": "Dış API testi başarısız",
+      "testRequiredBeforeMapping": "Mapping doğrulaması çalışmadan önce yanıt JSON'u yükleyin.",
+      "responseRequiredTitle": "Yanıt JSON gerekli",
+      "responseRequired": "Kaynak ağacı oluşturmak için gerçek API yanıt JSON'unu yükleyin veya yapıştırın.",
+      "resultTitle": "Yanıt hazır",
+      "errorTitle": "Yanıt başarısız",
+      "resultText": "HTTP {{status}} · {{duration}}ms · {{capturedAt}} saatinde yakalandı. Bu yanıt artık kaynak ağacıdır.",
+      "nonJsonResponse": "API başarılı döndü fakat yanıt gövdesi geçerli JSON değil. Ham yanıt aşağıda gösteriliyor.",
+      "sampleImported": "Dış sistem örneği içe alındı",
+      "importedFrom": "{{name}} kaynağından"
+    },
+    "sourceRest": {
+      "title": "REST API kaynağı",
+      "subtitle": "Inbound request şeklini yapılandırın, mapping için yakalanmış payload yükleyin.",
+      "badge": "Inbound HTTP",
+      "path": "Path",
+      "pathPlaceholder": "/api/inbound/resource"
+    },
+    "sourceGrpc": {
+      "title": "gRPC kaynağı",
+      "subtitle": "gRPC tarzı bir servisi çağırın ve dönen mesaj payload'unu eşleyin.",
+      "badge": "RPC servisi",
+      "endpoint": "Endpoint",
+      "endpointPlaceholder": "https://api.partner.com/grpc/customer.ProfileService/GetCustomer",
+      "method": "RPC metodu",
+      "methodPlaceholder": "GetCustomer"
+    },
+    "sourceSoap": {
+      "title": "SOAP kaynağı",
+      "subtitle": "SOAP metadatasını yapılandırın, ardından yakalanmış XML envelope yükleyin.",
+      "badge": "XML payload",
+      "endpoint": "Endpoint",
+      "endpointPlaceholder": "https://partner.example.com/soap",
+      "action": "SOAP action",
+      "actionPlaceholder": "urn:Operation",
+      "operation": "Operation",
+      "operationPlaceholder": "OperationName",
+      "uploadXml": "XML yükle"
+    },
+    "sourceFileBatch": {
+      "title": "Dosya batch kaynağı",
+      "subtitle": "Mapping kurulumu için CSV, JSONL veya JSON array dosyası yükleyin.",
+      "badge": "Batch dosya",
+      "format": "Format",
+      "delimiter": "Ayraç",
+      "headerRow": "Header satırı",
+      "uploadFile": "Dosya yükle"
+    },
+    "sourceEnrichment": {
+      "title": "API zenginleştirme",
+      "subtitle": "Transform sırasında kayıtları zenginleştiren lookup çağrısını yapılandırın.",
+      "badge": "Lookup API",
+      "lookupName": "Lookup adı",
+      "lookupNamePlaceholder": "Customer profile lookup",
+      "urlTemplate": "URL template",
+      "urlTemplatePlaceholder": "https://api.partner.com/customers/{{customerId}}",
+      "failurePolicy": "Hata politikası",
+      "policy": {
+        "RETRY": "Tekrar dene",
+        "DLQ": "DLQ'ya gönder",
+        "SKIP_ENRICHMENT": "Zenginleştirmeyi atla"
+      }
+    },
+    "sourceAuth": {
+      "add": "Kimlik doğrulama ekle",
+      "drawerTitle": "Kimlik doğrulama ekle",
+      "drawerSubtitle": "Secret alanlar tek yönlü kaydedilir ve isimle tekrar kullanılır.",
+      "name": "Credential adı",
+      "type": "Credential tipi",
+      "headerName": "Header adı",
+      "secretValue": "Değer",
+      "username": "Kullanıcı adı",
+      "password": "Şifre",
+      "token": "Token",
+      "tokenUrl": "Token URL",
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "scope": "Scope",
+      "writeOnly": "Secret değerleri kaydettikten sonra tekrar gösterilmez.",
+      "save": "Credential kaydet",
+      "saved": "Credential kaydedildi",
+      "savedDetail": "Artık kimlik doğrulama seçiminde kullanılabilir.",
+      "saveFailed": "Credential kaydedilemedi",
+      "missingSecret": "Kaydetmeden önce gerekli secret alanlarını girin.",
+      "unnamedCredential": "Adsız credential",
+      "noCredential": "Credential seçilmedi",
+      "lastUsed": "Son kullanım",
+      "typeLabel": {
+        "API_KEY": "API Key",
+        "BASIC_AUTH": "Basic Auth",
+        "BEARER_TOKEN": "Bearer Token",
+        "OAUTH2_CLIENT_CREDENTIALS": "OAuth2 Client Credentials"
+      }
+    },
+    "publishSummary": {
+      "eyebrow": "Yayın onayı",
+      "version": "v{{fields}}.{{rules}}.{{advanced}}",
+      "ready": "Doğrulama geçti. Yayınlama bu versiyonu kaydeder ve teslimata hazır gösterir.",
+      "blocked": "Bu versiyonu yayınlamadan önce başarılı bir test çalıştırın."
+    },
+    "upload": {
+      "browse": "Dosya seç",
+      "loaded": "Yüklendi",
+      "schemaReady": "Şema hazır",
+      "sourceHint": "Partner JSON’unu buraya bırakın veya dosya seçin.",
+      "inputSchemaHint": "Partner verisini eşleme öncesi doğrulamak için giriş şemasını bırakın.",
+      "canonicalSchemaHint": "Kanonik alanları otomatik üretmek için hedef JSON Schema’yı bırakın.",
+      "acceptSource": ".json veya .txt",
+      "acceptSchema": ".json şema"
+    },
+    "analyze": "Yükü analiz et",
+    "next": "İleri",
+    "back": "Geri",
+    "undo": "Geri al",
+    "redo": "Yinele",
+    "showExpertMode": "Uzman Modu",
+    "hideExpertMode": "Uzman Modunu Gizle",
+    "expertModeTooltip": "Tüm eşleme kuralları için oluşturulan JSONata ifadesini göster",
+    "nestedMappingTooltip": "Bu nesne/dizi hedefi için iç içe alan eşlemelerini yapılandır",
+    "treeTitle": "Alan ağacı",
+    "treeSubtitle": "Geçerli JSON’dan çıkarılan hiyerarşi. Yaprak düğüme tıklayarak yolu kopyalayın veya seçili eşleme kuralına doğrudan atayın.",
+    "treeEmpty": "Ağacı doldurmak için geçerli bir JSON analiz edin.",
+    "tree": {
+      "pathCopied": "Yol panoya kopyalandı",
+      "assignedToRule": "{{path}} seçili kurala atandı",
+      "noRuleSelected": "Seçili kural yok — yol panoya kopyalandı",
+      "assignHint": "Yaprak düğüme tıklayarak → {{target}} için kaynak atayın"
+    },
+    "mappingTab": {
+      "response": "Response dönüşümü",
+      "request": "Request dönüşümü"
+    },
+    "request": {
+      "title": "Request şablonu",
+      "subtitle": "Partner API çağrısından önce outbound request gövdesini canonical veriden üretin.",
+      "preview": "Request önizle",
+      "canonicalSample": "Canonical örnek",
+      "template": "Request JSON şablonu",
+      "jsonata": "Request JSONata",
+      "headers": "Header şablonu",
+      "previewBody": "Gövde önizleme",
+      "previewHeaders": "Header önizleme",
+      "previewEmpty": "Oluşan request'i görmek için önizleme çalıştırın.",
+      "previewReady": "Request önizleme hazır",
+      "previewFailed": "Request önizleme başarısız",
+      "previewObjectRequired": "Request dönüşümü bir JSON nesnesi üretmeli.",
+      "mode": {
+        "template": "Şablon",
+        "jsonata": "JSONata"
+      }
+    },
+    "sourceValidation": {
+      "title": "Gelen JSON kuralları",
+      "subtitle": "Partner payload’u dönüşüme girmeden önce hangi alanların kabul edileceğini kod yazmadan tanımlayın.",
+      "add": "Kural ekle",
+      "reorder": "Doğrulama kuralını sırala",
+      "remove": "Kuralı sil",
+      "count": "{{count}} kural aktif listede",
+      "passing": "Geçerli",
+      "failing": "Kontrol gerekiyor",
+      "field": "Kaynak alan",
+      "rule": "Kural",
+      "expectedType": "Beklenen tip",
+      "requiredHint": "Alan yoksa, null ise veya boş metinse payload reddedilir.",
+      "kind": {
+        "required": "Zorunlu alan",
+        "type": "Tip kontrolü",
+        "enum": "İzinli değerler",
+        "min": "Minimum sayı",
+        "max": "Maksimum sayı",
+        "min_length": "Minimum uzunluk",
+        "max_length": "Maksimum uzunluk",
+        "regex": "Metin deseni"
+      },
+      "type": {
+        "string": "Metin",
+        "number": "Sayı",
+        "boolean": "Doğru/Yanlış",
+        "object": "Nesne",
+        "array": "Dizi"
+      },
+      "paramLabel": {
+        "enum": "İzinli değerler",
+        "min": "En az",
+        "max": "En çok",
+        "min_length": "En az karakter",
+        "max_length": "En çok karakter",
+        "regex": "Desen"
+      },
+      "paramPlaceholder": {
+        "enum": "A, B, C",
+        "min": "0",
+        "max": "999",
+        "min_length": "2",
+        "max_length": "64",
+        "regex": "^[A-Z0-9-]+$"
+      },
+      "error": {
+        "required": "{{path}} zorunlu ama kaynakta boş veya yok.",
+        "type": "{{path}} tipi {{expected}} olmalı; gelen tip {{actual}}.",
+        "enum": "{{path}} izinli değerlerden biri olmalı: {{values}}.",
+        "min": "{{path}} minimum {{min}} olmalı.",
+        "max": "{{path}} maksimum {{max}} olmalı.",
+        "minLength": "{{path}} en az {{min}} karakter olmalı.",
+        "maxLength": "{{path}} en çok {{max}} karakter olmalı.",
+        "regex": "{{path}} beklenen metin desenine uymuyor.",
+        "regexInvalid": "{{path}} için girilen desen geçerli değil.",
+        "requiredExcluded": "\"{{field}}\" zorunlu alan olarak işaretlenmiş ancak istekten çıkarılmış.",
+        "jsonataRequired": "JSONata ifadesi girilmesi zorunludur.",
+        "templateInvalid": "İstek şablonu geçersiz JSON içeriyor.",
+        "headersInvalid": "Başlık şablonu geçersiz JSON içeriyor.",
+        "systemError": "Doğrulama tamamlanamadı. Lütfen tekrar deneyin veya bağlantınızı kontrol edin."
+      },
+      "tooltip": {
+        "requiredExcluded": "Zorunlu alanlar istekten çıkarıldı: {{fields}}",
+        "validationErrors": "Devam etmeden önce {{count}} doğrulama hatası giderilmeli.",
+        "validateFirst": "Sonraki adıma geçmeden önce doğrulama kontrolünü çalıştırın.",
+        "templateError": "Devam etmeden önce şablon JSON hatasını düzeltin.",
+        "jsonataError": "Devam etmeden önce JSONata ifadesi hatasını düzeltin.",
+        "headersError": "Devam etmeden önce başlık JSON hatasını düzeltin.",
+        "fixErrors": "Devam etmeden önce tüm doğrulama hatalarını giderin."
+      }
+    },
+    "canonicalTitle": "Kanonik şema",
+    "canonicalSubtitle": "Verinin platformunuzda nasıl görünmesi gerektiğini tanımlayın: alan anahtarları, tipler ve zorunluluk.",
+    "canonical": {
+      "needField": "Devam etmeden önce en az bir kanonik alan ekleyin.",
+      "keyInvalid": "Harf, rakam, alt çizgi veya nokta kullanın (ör. order.id)."
+    },
+    "addField": "Alan ekle",
+    "colTargetKey": "Hedef anahtar",
+    "colType": "Tip",
+    "colRequired": "Zorunlu",
+    "colDescription": "Açıklama",
+    "rulesTitle": "Dönüşüm kuralları",
+    "rulesSubtitle": "Kaynak yollarını kanonik hedeflerle bağlayın; metin, sayı, tarih, koşul ve dizi işlemlerini kartlardan seçin. Kullanıcı kod görmez; sistem seçimleri çalıştırılabilir kurala çevirip test eder.",
+    "addRule": "Kural ekle",
+    "colSourcePath": "Kaynak yol",
+    "colTargetKeyRule": "Hedef anahtar",
+    "colTransform": "Dönüşüm",
+    "colParameters": "Parametreler",
+    "colStatus": "Durum",
+    "mode": {
+      "visual": "Görsel",
+      "advanced": "Motor kuralı"
+    },
+    "ruleStatus": {
+      "ready": "Hazır",
+      "missingSource": "Kaynak seç",
+      "missingTarget": "Hedef seç",
+      "needsSettings": "Ayar eksik",
+      "needsFix": "Düzelt",
+      "imported": "İçe aktarıldı"
+    },
+    "ruleInspectorTitle": "Kural inceleyici",
+    "ruleInspectorEmpty": "Görsel dönüşüm seçenekleri ve kural özeti için tablodan bir satır seçin.",
+    "ruleContext": {
+      "selected": "Seçili kural",
+      "source": "Kaynak alan",
+      "target": "Hedef alan",
+      "fieldToTransform": "Dönüştürülecek alan",
+      "outputTarget": "Sonucun yazılacağı alan",
+      "sourceHelp": "İşlem bu gelen payload alanını okuyacak.",
+      "effectTitle": "Ne olacak",
+      "missingSource": "Kaynak alan seçin",
+      "missingTarget": "Hedef alan seçin",
+      "required": "zorunlu",
+      "optional": "isteğe bağlı",
+      "runTestForPreview": "Önizleme için test çalıştırın",
+      "livePreviewTitle": "Canlı önizleme",
+      "livePreviewHint": "Kural değiştikçe sonuç anında güncellenir — test çalıştırmaya gerek yok.",
+      "livePreviewEmpty": "Önizleme için kaynak alan seçin.",
+      "livePreviewAdvanced": "Gelişmiş kurallar önizleme için test çalıştırması gerektirir.",
+      "livePreviewError": "Önizleme hatası",
+      "livePreviewSource": "Kaynak değer",
+      "livePreviewResult": "Sonuç"
+    },
+    "tab": {
+      "visual": "Wizard",
+      "advanced": "Teknik",
+      "summary": "Özet"
+    },
+    "visualDisabledHint": "Bu kural eski teknik moddan gelmiş. Görsel wizard’a dönmek için teknik kuralı temizleyebilirsiniz.",
+    "clearTechnicalRule": "Görsel wizard’a dön",
+    "advancedHint": "Teknik kurallar yalnızca içe aktarılan eski mappinglerde görünür; normal akış görsel wizard’dır.",
+    "advancedPlaceholder": "Teknik kural alanı normal kullanıcı akışında gösterilmez.",
+    "summaryHint": "Onay süreçleri için kısa, teknik jargonsuz anlatım — aşağıda satır düzünde özeti görürsünüz.",
+    "insertPathTitle": "Alan yolunu ekle",
+    "copySummary": "Özeti kopyala",
+    "ruleInspectError": "Bu kural son test çalıştırında başarısız oldu. Görsel ayarları veya örnek yükleri gözden geçirip Eşlemeyi test et’i tekrar çalıştırın.",
+    "phSubstringStart": "Başlangıç indeksi (0 tabanlı)",
+    "phSubstringLen": "Uzunluk (isteğe bağlı)",
+    "phReplaceFrom": "Bul",
+    "phReplaceTo": "Değiştir",
+    "phArrayDelim": "Ayraç (ör. , veya | )",
+    "phArrayIndex": "Sıra numarası (1 = ilk eleman)",
+    "phArrayItemField": "Örn. status",
+    "phArrayItemValue": "Örn. ACTIVE",
+    "phWhenEquals": "Kaynak şuna eşitse (metin)",
+    "phThenValue": "O zaman değer",
+    "phElseValue": "Değilse değer",
+    "phTemplate": "Merhaba {{customer.full_name}} — adet {{order.qty}}",
+    "enum": {
+      "title": "Değer sözlüğü",
+      "subtitle": "Partnerden gelen değeri sizin sözlüğünüzdeki değere bağlayın.",
+      "add": "Eşleme ekle",
+      "remove": "Eşlemeyi sil",
+      "sourceValue": "Partner değeri",
+      "targetValue": "Kanonik değer",
+      "sourcePlaceholder": "Seç veya yaz",
+      "targetPlaceholder": "Seç veya yaz",
+      "unmatchedHint": "Eşleşmeyen değerler şimdilik kaynak değeriyle bırakılır; gerekirse yeni satır ekleyin."
+    },
+    "date": {
+      "inputFormat": "Gelen tarih formatı",
+      "outputFormat": "Çıkış tarih formatı"
+    },
+    "defaultValue": {
+      "valueLabel": "Kaynak boşsa yazılacak değer"
+    },
+    "combine": {
+      "secondField": "Birleştirilecek ikinci alan",
+      "separator": "Araya konacak ayraç"
+    },
+    "substring": {
+      "start": "Başlangıç karakteri",
+      "length": "Alınacak karakter sayısı"
+    },
+    "replace": {
+      "find": "Bulunacak metin",
+      "with": "Yeni metin"
+    },
+    "condition": {
+      "when": "Kaynak bu değere eşitse",
+      "then": "O zaman yaz",
+      "else": "Değilse yaz"
+    },
+    "template": {
+      "body": "Şablon metni"
+    },
+    "array": {
+      "firstHint": "Seçilen kaynaktaki listenin ilk satırı alınır.",
+      "lastHint": "Seçilen kaynaktaki listenin son satırı alınır.",
+      "positionLabel": "Hangi sıradaki eleman?",
+      "positionHint": "Kullanıcı 1 yazar; sistem arka planda doğru dizi konumuna çevirir.",
+      "countHint": "Seçilen listedeki eleman sayısı hedef alana yazılır.",
+      "itemFieldLabel": "Dizi satırındaki alan",
+      "itemValueLabel": "Eşit olması gereken değer",
+      "delimiterLabel": "Elemanların arasına konacak ayraç"
+    },
+    "math": {
+      "sumHint": "Seçilen sayı listesindeki değerler toplanır.",
+      "averageHint": "Seçilen sayı listesinin ortalaması alınır.",
+      "minHint": "Seçilen sayı listesindeki en küçük değer seçilir.",
+      "maxHint": "Seçilen sayı listesindeki en büyük değer seçilir."
+    },
+    "engineProof": {
+      "title": "Motor kuralı otomatik hazırlanır",
+      "text": "Bu seçimler arka planda çalıştırılabilir dönüşüm kuralına çevrilir ve test adımında doğrulanır."
+    },
+    "transformSetup": {
+      "direct": "Seçilen kaynak alan olduğu gibi hedef alana aktarılır. Ek ayar gerekmez.",
+      "number_coerce": "Kaynak değer metin olsa bile sayıya çevrilir; boş değer gelirse null üretilir.",
+      "string_uppercase": "Seçilen metnin tamamı büyük harfe çevrilir.",
+      "string_lowercase": "Seçilen metnin tamamı küçük harfe çevrilir.",
+      "string_trim": "Metnin başındaki ve sonundaki gereksiz boşluklar temizlenir.",
+      "noParams": "Bu işlem için ek alan gerekmez; seçim test adımında doğrulanır."
+    },
+    "noCode": {
+      "title": "Kod yazmadan kapsanan dönüşümler",
+      "paths": {
+        "title": "Alan seçimi",
+        "text": "Kaynak ağaçtan değer seçme, iç içe alanlar ve tekil hedefler."
+      },
+      "arrays": {
+        "title": "Diziler",
+        "text": "İlk/son/sıradaki eleman, filtreleme, sayma ve birleştirme."
+      },
+      "strings": {
+        "title": "Metin",
+        "text": "Büyük/küçük harf, kırpma, değiştirme, parça alma ve şablon."
+      },
+      "numbers": {
+        "title": "Sayı",
+        "text": "Sayıya çevirme, toplam, ortalama, minimum ve maksimum."
+      },
+      "dates": {
+        "title": "Tarih",
+        "text": "Giriş ve çıkış formatını seçerek tarih dönüştürme."
+      },
+      "logic": {
+        "title": "Koşul",
+        "text": "Eşitse/değilse bloklarıyla iş kuralı kurma."
+      },
+      "defaults": {
+        "title": "Varsayılan",
+        "text": "Kaynak boşsa güvenli değer atama."
+      },
+      "validation": {
+        "title": "Doğrulama",
+        "text": "Her seçimden sonra önizleme ve son adımda şema kontrolü."
+      }
+    },
+    "cheat": {
+      "title": "Eşleme ipuçları",
+      "paths": "Veriye işaret etmek",
+      "pathsText": "customer.order.reference   — iç içe JSON’da gezinme\naddresses[1].street        — dizilerde sıra numarası\nVarsayılan dönüşümler kullanılıyorsa boş güvenli dallar zarif biçimde yanar.",
+      "strings": "Önce görsel araçları kullanın",
+      "stringsText": "Metin işlemi için görselde büyük/küçük harf, kırpma, dilimleme ve yer değiştirme seçeneklerini deneyin.\nŞablon seçeneğiyle sabit yazı ile {{dinamik.yollar}} yer tutucularını birleştirebilirsiniz.",
+      "arrays": "Liste ve koleksiyonlar",
+      "arraysText": "“Diziyi birleştir”, ayırıcı karakter seçerek çıktıyı tek satıra yayar.\n“Dizi elemanı”, yalnızca belirli bir indeksi hedefliyorsanız idealdir.",
+      "logic": "Kalite güvencesi",
+      "logicText": "Koşullu ve varsayılan dönüşümler iş kurallarını çoğu senaryoda kapsar.\nHer yük örneği değiştiğinde Eşlemeyi test etmeyi unutmayın."
+    },
+    "summary": {
+      "advanced": "Tam yük üzerinde içe aktarılmış teknik kural çalıştırılır ve sonuç “{{target}}” alanında tutulur.",
+      "direct": "“{{path}}” adresindeki değer doğrudan “{{target}}” kanonik alanına kopyalanır.",
+      "dateFormat": "“{{path}}” tarih değeri {{inFmt}} biçimiyle okunur, {{outFmt}} olarak yazılır ve “{{target}}”e aktarılır.",
+      "enumMap": "“{{path}}” üzerinden gelen partner kodları sözlük eşlemesiyle “{{target}}” çıktınıza çevrilir.",
+      "numberCoerce": "“{{path}}” metinden sayıya dönüştürülerek “{{target}}” için saklanır.",
+      "defaultValue": "Önce “{{path}}” kullanılabilirliyine bakılır; yoksa “{{fallback}}” değeri “{{target}}”e yazılır.",
+      "combine": "“{{path}}” ve “{{path2}}”, “{{sep}}” ayırıcısıyla birleştirilerek “{{target}}” oluşturulur.",
+      "stringUppercase": "Metin “{{path}}” büyük harfe döndürülür ve “{{target}}” olarak kaydedilir.",
+      "stringLowercase": "Metin “{{path}}” küçük harfe döndürülür ve “{{target}}” olarak kaydedilir.",
+      "stringTrim": "“{{path}}” öncesindeki/sonrasındaki gereksiz boşluklar temizlenir; çıktı “{{target}}”dir.",
+      "stringSubstring": "“{{path}}”, {{start}} karakterinden itibaren alınır{{lenPhrase}}, “{{target}}” olarak yazılır.",
+      "substrLenPhrase": ", en fazla {{n}} karakter",
+      "substrToEndPhrase": ", alanın geri kalanına kadar",
+      "stringReplace": "“{{path}}” içindeki tüm “{{from}}” değeri “{{to}}” ile değiştirilir ve “{{target}}” elde edilir.",
+      "arrayJoin": "“{{path}}” dizisi “{{delim}}” ile birleştirilerek “{{target}}” çıktılanır.",
+      "arrayFirst": "“{{path}}” listesinin ilk elemanı “{{target}}”e aktarılır.",
+      "arrayLast": "“{{path}}” listesinin son elemanı “{{target}}”e aktarılır.",
+      "arrayElement": "“{{path}}” listesindeki {{index}}. eleman seçilir ve “{{target}}”e aktarılır.",
+      "arrayCount": "“{{path}}” listesindeki eleman sayısı “{{target}}”e yazılır.",
+      "arrayFilterEquals": "“{{path}}” listesindeki satırlarda “{{itemPath}}” değeri “{{value}}” ise satır korunur ve “{{target}}”e aktarılır.",
+      "mathSum": "“{{path}}” sayı listesi toplanır ve “{{target}}”e yazılır.",
+      "mathAverage": "“{{path}}” sayı listesinin ortalaması alınır ve “{{target}}”e yazılır.",
+      "mathMin": "“{{path}}” sayı listesindeki en küçük değer “{{target}}”e yazılır.",
+      "mathMax": "“{{path}}” sayı listesindeki en büyük değer “{{target}}”e yazılır.",
+      "conditional": "“{{path}}”, “{{when}}” değeriyle örtüşürse “{{thenVal}}”, aksi durumda “{{elseVal}}” “{{target}}” olarak yazılır.",
+      "template": "Şablon, Görsel sekmedeki yer tutucularla oluşturulur ve çıktı “{{target}}”dir."
+    },
+    "altFixtureTitle": "Alternatif test yükü",
+    "altFixtureSubtitle": "Aynı kurallarla isteğe bağlı ikinci JSON — sihirbazdan çıkmadan hızlı regresyon kontrolü.",
+    "altFixturePlaceholder": "{ \"baska\": \"ornek\" }",
+    "altTransformerTag": "Dönüşüm motoru notları",
+    "altOutputTitle": "Alternatif yük çıktısı",
+    "testAltFixture": "Alternatif JSON’da çalıştır",
+    "filterPath": "Yol ara",
+    "selectPath": "Yol seç",
+    "phDateIn": "Giriş deseni (ör. yyyy-MM-dd)",
+    "phDateOut": "Çıkış deseni (ör. dd/MM/yyyy)",
+    "phEnum": "Değer seç veya yaz",
+    "phDefault": "Kaynak boşsa değer",
+    "phSecondPath": "İkinci yol",
+    "phSeparator": "Ayraç (boşluk)",
+    "noExtraParams": "Ek parametre yok",
+    "validateTitle": "Doğrulamayı çalıştır",
+    "validateSubtitle": "Dönüşümleri yüklenen JSON üzerinde yerel çalıştırır ve zorunlu kanonik alanları kontrol eder.",
+    "validateSubtitleHybrid": "Eşlemeyi tarayıcıda çalıştırır, zorunlu alanları kontrol eder ve aynı üretim motorunda derleme/değerlendirme eşliğini doğrular.",
+    "testMapping": "Eşlemeyi test et",
+    "test": {
+      "successToast": "Test geçti — çıktı zorunlu alanlarla uyumlu.",
+      "failedToast": "Test başarısız — doğrulama mesajlarını ve kuralları gözden geçirin.",
+      "running": "Mapping kuralları ve şema kontrolleri çalıştırılıyor..."
+    },
+    "publishDemo": "Yayınla",
+    "schemaOk": "Şema kontrolü başarılı",
+    "schemaFail": "Şema kontrolü başarısız",
+    "publishSuccess": "Mapping versiyonu kaydedildi ve yükseltmeye hazır.",
+    "publish": {
+      "blocked": "Yayınlamadan önce doğrulama hatalarını giderin ve başarılı bir test çalıştırın."
+    },
+    "outputTitle": "Dönüştürülmüş çıktı",
+    "outputSubtitle": "Kurallarınız uygulandıktan sonra kanonik yükün önizlemesi.",
+    "outputEmpty": "Çıktıyı görmek için “Eşlemeyi test et” çalıştırın.",
+    "output": {
+      "copied": "Çıktı panoya kopyalandı",
+      "copy": "Çıktıyı kopyala",
+      "download": "Çıktıyı indir"
+    },
+    "jsonPlaceholder": "JSON'u buraya yapıştırın veya dosya bırakın.",
+    "json": {
+      "fileMeta": "{{name}} · {{size}}",
+      "syntaxPreview": "Sözdizimi vurgulu önizleme (salt okunur)",
+      "validate": "JSON doğrula",
+      "validTitle": "JSON geçerli",
+      "valid": "JSON sözdizimi geçerli.",
+      "validWithSchema": "JSON sözdizimi ve giriş şeması kontrolleri geçti.",
+      "invalid": "JSON doğrulama başarısız",
+      "invalidDetail": "{{message}}",
+      "invalidAt": "{{where}}: {{message}}",
+      "schemaInvalid": "JSON sözdizimi geçerli, fakat {{count}} şema/kural hatası incelenmeli.",
+      "empty": "Doğrulamadan önce JSON yapıştırın veya yükleyin."
+    },
+    "draft": {
+      "loaded": "Mapping yüklendi",
+      "loadFailed": "Mapping yüklenemedi"
+    },
+    "invalidJson": "Geçersiz JSON",
+    "validation": {
+      "missing": "Zorunlu hedef alan eksik: “{{field}}”.",
+      "allPresent": "Tüm zorunlu kanonik alanlar mevcut.",
+      "ruleEvalFailed": "“{{field}}” alanını üreten kural tamamlanamadı. İlgili kolon için inceleyiciyi kullanıp “Eşlemeyi test et”i yeniden çalıştırın.",
+      "transformerUnreachable": "Dönüşüm motoru kontrolüne ulaşılamadı. Servisin ayakta olduğundan ve CORS’un bu çıkış noktasını kabul ettiğinden emin olun.",
+      "serverBrowserMismatch": "Canonical “{{field}}” için üretim motoru sonucu tarayıcı çıktısından farklı. Kütüphane sürümlerini eşleyin—üretim hattında otoriter sonuç sunucudaki motor olur.",
+      "altTransformerNote": "{{field}} · {{detail}}"
+    },
+    "transform": {
+      "direct": "Doğrudan eşle",
+      "date_format": "Tarih biçimi",
+      "enum_map": "Enum eşlemesi",
+      "number_coerce": "Sayıya dönüştür",
+      "default_value": "Varsayılan değer",
+      "combine": "Alanları birleştir",
+      "string_uppercase": "Büyük harf",
+      "string_lowercase": "Küçük harf",
+      "string_trim": "Boşluk kırp",
+      "string_substring": "Alt dizge",
+      "string_replace": "Metin değiştir",
+      "array_join": "Diziyi birleştir",
+      "array_first": "İlk elemanı al",
+      "array_last": "Son elemanı al",
+      "array_element": "Sıradaki elemanı al",
+      "array_count": "Diziyi say",
+      "array_filter_equals": "Diziyi filtrele",
+      "math_sum": "Toplam al",
+      "math_average": "Ortalama al",
+      "math_min": "En küçüğü al",
+      "math_max": "En büyüğü al",
+      "conditional_value": "Eşitse / değilse",
+      "template_string": "Şablon ({{path}})"
+    },
+    "transformHelp": {
+      "direct": "Değeri değiştirmeden taşı",
+      "date_format": "Tarih biçimini dönüştür",
+      "enum_map": "Partner kodlarını sizin değerlere çevir",
+      "number_coerce": "Metni sayıya çevir",
+      "default_value": "Boş gelen kaynağı tamamla",
+      "combine": "İki alanı tek çıktıda birleştir",
+      "string_uppercase": "Metni büyük harfe çevir",
+      "string_lowercase": "Metni küçük harfe çevir",
+      "string_trim": "Baş/son boşlukları temizle",
+      "string_substring": "Metnin belirli parçasını al",
+      "string_replace": "Metin içinde bul ve değiştir",
+      "array_join": "Listeyi ayraçla tek değere indir",
+      "array_first": "Listenin ilk elemanını seç",
+      "array_last": "Listenin son elemanını seç",
+      "array_element": "1’den başlayan sıra numarasıyla seç",
+      "array_count": "Listedeki eleman sayısını yaz",
+      "array_filter_equals": "Satır alanı belirli değere eşitse tut",
+      "math_sum": "Sayı listesini topla",
+      "math_average": "Sayı listesinin ortalamasını al",
+      "math_min": "En küçük sayıyı seç",
+      "math_max": "En büyük sayıyı seç",
+      "conditional_value": "Eşitse başka, değilse başka yaz",
+      "template_string": "Sabit metin ve alanları birleştir"
+    },
+    "fieldType": {
+      "string": "Metin",
+      "number": "Sayı",
+      "date": "Tarih"
+    },
+    "schema": {
+      "loadInput": "Giriş şeması yükle",
+      "loadCanonical": "Kanonik şema yükle",
+      "metaTitle": "Şema başlığı",
+      "metaId": "$id",
+      "invalidJson": "Geçersiz JSON dosyası: {{msg}}",
+      "invalidFileType": "Lütfen .json uzantılı bir şema dosyası kullanın.",
+      "unsupportedRoot": "Desteklenmeyen şema: kök tip \"object\" olmalıdır.",
+      "inputIssuesTitle": "Kaynak JSON ve yüklenen şema",
+      "canonicalFailedSummary": "Kanonik JSON Schema doğrulaması başarısız (ayrıntılar aşağıda).",
+      "canonicalValidDetail": "Kanonik JSON Schema doğrulaması geçti ✓",
+      "generalField": "genel",
+      "jumpToRule": "Kuralı aç",
+      "fromSchemaTag": "Şemadan"
+    },
+    "unfinished": {
+      "title": "Bitmemiş işler",
+      "subtitle": "Yayın öncesi zorunlu alanları, kural hatalarını ve eşleme kapsamını tek noktada temizleyin.",
+      "readyTitle": "Yayın testine hazırsınız",
+      "readyText": "Tüm zorunlu hedef alanlar bir mapping kuralına bağlı. Son testte fixture ve şema kapılarını çalıştırabilirsiniz.",
+      "needsWorkTitle": "Tamamlanması gereken alanlar var",
+      "needsWorkText": "{{count}} zorunlu hedef alan hâlâ eşlenmemiş. Her satır sizi doğrudan ilgili hedef alanın çalışma tezgahına götürür.",
+      "noDescription": "Açıklama yok",
+      "required": "Zorunlu",
+      "requiredDone": "Zorunlu alan eşlendi",
+      "optionalField": "Opsiyonel alan",
+      "mapped": "Eşlendi",
+      "optional": "Opsiyonel",
+      "continue": "Teste geç",
+      "coverageTitle": "Kapsam ve kalite",
+      "coverageSubtitle": "Mevcut mapping için kısa sağlık özeti.",
+      "requiredCoverage": "Zorunlu kapsam",
+      "visualRules": "Görsel kural",
+      "advancedRules": "Motor kuralı",
+      "lastValidation": "Son doğrulama",
+      "notRun": "Çalışmadı",
+      "passed": "Geçti",
+      "failed": "Başarısız",
+      "blockedTitle": "Zorunlu alanlar eksik",
+      "blockedDetail": "Teste geçmeden önce Bitmemiş işler listesindeki zorunlu alanları eşleyin."
+    },
+    "validateTab": {
+      "test": "Test ve yayın",
+      "fixtures": "Toplu fixture",
+      "expression": "Motor kuralı"
+    },
+    "fixture": {
+      "title": "Toplu fixture çalıştırıcı",
+      "subtitle": "Geçerli eşleme kurallarını birden çok giriş/beklenen çiftinde çalıştırır (tek alternatif JSON alanından bağımsızdır).",
+      "add": "Fixture ekle",
+      "runAll": "Tümünü çalıştır",
+      "loadConfig": "config.json yükle",
+      "loadInputFile": "Giriş .json yükle",
+      "loadExpectedFile": "Beklenen .json yükle",
+      "configDropHint": "config.json dosyasını bırakın",
+      "inputDropHint": "Giriş JSON’unu bırakın",
+      "expectedDropHint": "Beklenen JSON’u bırakın",
+      "remove": "Sil",
+      "name": "Ad",
+      "status": "Durum",
+      "passed": "Geçti ✓",
+      "failed": "Başarısız ✗",
+      "error": "Hata ⚠",
+      "summary": "{{passed}} / {{total}} geçti",
+      "configNoFixtures": "Bu config dosyasında fixtures dizisi yok.",
+      "configImported": "{{count}} fixture satırı gömülü payload ile içe alındı.",
+      "configPathsImported": "{{count}} fixture satırı config path bilgisiyle içe alındı. Tarayıcı güvenliği yerel dosyaları path ile okuyamaz; her giriş/beklenen JSON’u satıra bırakın.",
+      "invalidConfig": "Geçersiz config dosyası: {{msg}}",
+      "invalidConfigFileType": "Lütfen .json uzantılı bir config dosyası kullanın.",
+      "expectedJson": "beklenen JSON",
+      "diffTitle": "Farklar",
+      "expectedCol": "Beklenen",
+      "actualCol": "Gerçek",
+      "expandRow": "Farkı göster"
+    },
+    "expression": {
+      "title": "Üretilen dönüşüm kuralı",
+      "subtitle": "Görsel wizard seçimlerinden otomatik hazırlanan çalıştırılabilir kural önizlemesi.",
+      "copy": "Kuralı kopyala",
+      "download": "mapping-preview.rule indir",
+      "copied": "Üretilen kural kopyalandı"
+    }
+  },
+  "wizard": {
+    "title": "Yeni Eşleme Sihirbazı",
+    "subtitle": "Adım adım yeni eşleme oluşturma rehberi",
+    "backToList": "Eşlemelere Dön",
+    "back": "Geri",
+    "next": "İleri",
+    "loading": "Eşleme verisi yükleniyor...",
+    "sourceType": {
+      "title": "Kaynak Tipi Seçin",
+      "subtitle": "Verinin CanonBridge'e nasıl alınacağını seçin",
+      "selected": "Seçili Kaynak Tipi",
+      "kafka": "Kafka Topic",
+      "kafkaDesc": "Mevcut raw topic üzerinden akış",
+      "webhook": "Webhook",
+      "webhookDesc": "Dış sistem CanonBridge'e veri göndersin",
+      "restApi": "REST API",
+      "restApiDesc": "Inbound HTTP endpoint açın",
+      "externalApi": "Dış API",
+      "externalApiDesc": "CanonBridge dışarı gidip veriyi alsın",
+      "graphql": "GraphQL",
+      "graphqlDesc": "GraphQL endpoint'lerine tipli query çalıştırın",
+      "soap": "SOAP / XML",
+      "soapDesc": "XML envelope veya WSDL uyumlu yanıt yükleyin",
+      "grpc": "gRPC",
+      "grpcDesc": "Tipli RPC servislerini çağırın",
+      "fileBatch": "Dosya Batch",
+      "fileBatchDesc": "CSV, JSONL veya JSON array dosyası yükleyin",
+      "apiEnrichment": "API Zenginleştirme",
+      "apiEnrichmentDesc": "Mapping kayıtlarını zenginleştirmek için API çağırın",
+      "manual": "Manuel Yükleme",
+      "manualDesc": "Kurulum ve test için JSON bırakın"
+    },
+    "sampleData": {
+      "title": "Örnek Veri",
+      "subtitle": "Mapping için örnek request payload sağlayın",
+      "noPayloadNeeded": "Bu HTTP metodu request payload gerektirmez. Devam etmek için İleri'ye tıklayın.",
+      "requestPayload": "Request Payload",
+      "uploadFile": "JSON Yükle",
+      "formatJson": "JSON Formatla",
+      "copyJson": "JSON Kopyala",
+      "copiedJson": "Kopyalandı!",
+      "jsonPlaceholder": "{\n  \"orderId\": \"12345\",\n  \"customerId\": \"67890\",\n  \"items\": [\n    {\n      \"productId\": \"ABC\",\n      \"quantity\": 2\n    }\n  ]\n}",
+      "invalidJson": "Geçersiz JSON",
+      "hint": "Örnek request payload yapıştırın veya JSON dosyası yükleyin. Bu, alanları canonical schema'ya eşlemek için kullanılacak."
+    },
+    "requestMapping": {
+      "title": "Request Payload Mapping",
+      "description": "Canonical verinin giden request payload'a nasıl dönüştürüleceğini tanımlayın",
+      "notNeeded": "Bu HTTP metodu request payload gerektirmez. Devam etmek için İleri'ye tıklayın.",
+      "templateMode": "Template Modu",
+      "jsonataMode": "JSONata Modu",
+      "requestTemplate": "Request Template",
+      "templateHelp": "Canonical alanlarına referans vermek için {{canonical.fieldName}} sözdizimini kullanın. Örnek: {\"orderId\": \"{{canonical.order.id}}\"}",
+      "jsonataExpression": "JSONata İfadesi",
+      "jsonataHelp": "Canonical veriyi dönüştürmek için JSONata ifadesi yazın. Örnek: { \"orderId\": canonical.order.id }",
+      "headers": "Request Headers",
+      "headersHelp": "Request için HTTP header'ları tanımlayın. {{canonical.fieldName}} placeholder'ları kullanabilirsiniz.",
+      "preview": "Dönüşümü Önizle",
+      "previewResult": "Önizleme Sonucu",
+      "previewObjectRequired": "Request dönüşümü bir JSON objesi üretmelidir"
+    },
+    "configuration": {
+      "title": "Yapılandırma",
+      "subtitle": "{{type}} kaynak ayarlarını yapılandırın",
+      "externalSystem": "Dış Sistem",
+      "selectSystem": "Dış sistem seçin",
+      "selectSystemPlaceholder": "Bir dış sistem seçin...",
+      "selectEndpoint": "Endpoint Seçin (Opsiyonel)",
+      "selectEndpointPlaceholder": "Bilinen bir endpoint seçin veya aşağıya manuel girin...",
+      "noSystems": "Dış sistem bulunamadı. Lütfen önce bir tane oluşturun.",
+      "createSystem": "Dış Sistem Oluştur",
+      "createNew": "Yeni Oluştur",
+      "loading": "Dış sistemler yükleniyor...",
+      "loadError": "Dış sistemler yüklenemedi. Lütfen tekrar deneyin.",
+      "networkError": "Ağ hatası. Lütfen bağlantınızı kontrol edin ve tekrar deneyin.",
+      "authError": "Kimlik doğrulama başarısız. Lütfen tekrar giriş yapın.",
+      "serverError": "Sunucu hatası. Lütfen daha sonra tekrar deneyin.",
+      "retry": "Tekrar Dene",
+      "sourceConfig": "Kaynak Yapılandırması",
+      "kafkaTopic": "Kafka Topic",
+      "kafkaTopicPlaceholder": "örn. raw.partner.events",
+      "kafkaConsumerGroup": "Consumer Group",
+      "kafkaConsumerGroupPlaceholder": "örn. canonbridge-consumer",
+      "webhookEndpoint": "Webhook Endpoint",
+      "webhookEndpointPlaceholder": "örn. /webhooks/partner-events",
+      "restApiPath": "REST API Path",
+      "restApiPathPlaceholder": "örn. /api/inbound/orders",
+      "restApiPathHint": "Yukarıdan bilinen endpoint'lerden seçebilir veya özel path girebilirsiniz",
+      "restApiMethod": "HTTP Metodu",
+      "externalApiUrl": "Dış API URL",
+      "externalApiUrlPlaceholder": "örn. https://api.partner.com/orders",
+      "schedule": "Zamanlama",
+      "schedulePlaceholder": "örn. */5 * * * * (her 5 dakikada)",
+      "scheduleHint": "Cron ifadesi veya interval",
+      "graphqlQuery": "GraphQL Query",
+      "graphqlQueryPlaceholder": "query Customer($customerId: ID!) {\n  customer(id: $customerId) {\n    id\n    name\n    email\n  }\n}",
+      "graphqlQueryHint": "Yukarıdan mock GraphQL endpoint'ini seçin, sonra CanonBridge'in çalıştıracağı query'yi tanımlayın.",
+      "graphqlVariables": "Variables JSON",
+      "graphqlVariablesPlaceholder": "{\n  \"customerId\": \"CUST-1001\"\n}",
+      "grpcService": "gRPC servisi",
+      "grpcServicePlaceholder": "örn. customer.ProfileService",
+      "grpcMethod": "RPC metodu",
+      "grpcMethodPlaceholder": "örn. GetCustomer",
+      "grpcHint": "Yukarıdan bilinen RPC endpoint'i seçebilir veya servis ve metodu manuel girebilirsiniz",
+      "noConfigNeeded": "Bu kaynak tipi için ek yapılandırma gerekmez."
+    }
+  }
+}

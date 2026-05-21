@@ -1,0 +1,11 @@
+window.CANONBRIDGE_CONFIG = {
+  apiBaseUrl: "${CANONBRIDGE_API_BASE_URL}",
+  websocketUrl: "${CANONBRIDGE_WEBSOCKET_URL}",
+  authIssuer: "${CANONBRIDGE_AUTH_ISSUER}",
+  authClientId: "${CANONBRIDGE_AUTH_CLIENT_ID}",
+  authRedirectUri: "${CANONBRIDGE_AUTH_REDIRECT_URI}",
+  tenantId: "${CANONBRIDGE_TENANT_ID}",
+  tenantName: "${CANONBRIDGE_TENANT_NAME}",
+  transformerApiUrl: "${CANONBRIDGE_TRANSFORMER_API_URL}",
+  enableDemoMode: "${CANONBRIDGE_ENABLE_DEMO_MODE}"
+};

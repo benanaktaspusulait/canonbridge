@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>CanonBridge — Mapping Studio</title>
+  <base href="/canonbridge/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <script>
+    (function () {
+      try {
+        var s = localStorage.getItem('canonbridge.darkMode');
+        var dark = s === '1' || (s !== '0' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) document.documentElement.classList.add('dark-mode');
+      } catch (e) {}
+    })();
+  </script>
+  <script src="env.js"></script>
+<link rel="stylesheet" href="styles.css"></head>
+<body>
+  <app-root></app-root>
+<link rel="modulepreload" href="chunk-GOBMWY6J.js"><link rel="modulepreload" href="chunk-KUAWUT46.js"><link rel="modulepreload" href="chunk-YFC4IMTE.js"><link rel="modulepreload" href="chunk-2VDSLNOW.js"><link rel="modulepreload" href="chunk-HHZQSEIC.js"><link rel="modulepreload" href="chunk-56FG4FZN.js"><script src="main.js" type="module"></script></body>
+</html>

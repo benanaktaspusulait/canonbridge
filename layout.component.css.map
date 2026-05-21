@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/layout/layout.component.scss"],
+  "sourcesContent": [".layout-wrapper {\n  display: flex;\n  min-height: 100vh;\n  background: var(--cb-page-mesh);\n}\n\nhtml.dark-mode .layout-wrapper {\n  background: var(--surface-ground);\n}\n\n.layout-main {\n  flex: 1;\n  display: flex;\n  flex-direction: column;\n  min-width: 0;\n  margin-left: 280px;\n  transition: margin-left 0.2s ease;\n}\n\n.layout-sidebar-collapsed .layout-main {\n  margin-left: 4.5rem;\n}\n\n.layout-content {\n  flex: 1;\n  overflow: auto;\n  padding: 1.5rem 2rem 2rem;\n  max-width: 1680px;\n  width: 100%;\n  margin: 0 auto;\n}\n\n:host ::ng-deep .layout-demo-alert {\n  width: 100%;\n  border-radius: 0;\n  border-left: none;\n  border-right: none;\n  margin: 0;\n\n  .p-message-text {\n    font-size: 0.8125rem;\n    line-height: 1.45;\n  }\n}\n"],
+  "mappings": ";AAAA,CAAA;AACE,WAAA;AACA,cAAA;AACA,cAAA,IAAA;;AAGF,IAAA,CAAA,UAAA,CANA;AAOE,cAAA,IAAA;;AAGF,CAAA;AACE,QAAA;AACA,WAAA;AACA,kBAAA;AACA,aAAA;AACA,eAAA;AACA,cAAA,YAAA,KAAA;;AAGF,CAAA,yBAAA,CATA;AAUE,eAAA;;AAGF,CAAA;AACE,QAAA;AACA,YAAA;AACA,WAAA,OAAA,KAAA;AACA,aAAA;AACA,SAAA;AACA,UAAA,EAAA;;AAGF,MAAA,UAAA,CAAA;AACE,SAAA;AACA,iBAAA;AACA,eAAA;AACA,gBAAA;AACA,UAAA;;AAEA,MAAA,UAAA,CAPF,kBAOE,CAAA;AACE,aAAA;AACA,eAAA;;",
+  "names": []
+}
