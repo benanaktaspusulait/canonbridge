@@ -1,3 +1,5 @@
+import { runtimeBoolean, runtimeString } from './runtime-config';
+
 /**
  * Production Environment Configuration
  * 
@@ -11,23 +13,23 @@ export const environment = {
   
   // API Configuration
   api: {
-    baseUrl: '/api',
+    baseUrl: runtimeString('apiBaseUrl', '/api'),
     timeout: 30000, // 30 seconds
     retryAttempts: 3,
   },
   
   // WebSocket Configuration
   websocket: {
-    url: '',
+    url: runtimeString('websocketUrl', ''),
     reconnectInterval: 5000,
     maxReconnectAttempts: 10,
   },
   
   // Authentication Configuration
   auth: {
-    clientId: 'mapping-studio-ui',
-    issuer: 'https://auth.canonbridge.com/realms/canonbridge',
-    redirectUri: 'https://studio.canonbridge.com/auth/callback',
+    clientId: runtimeString('authClientId', 'mapping-studio-ui'),
+    issuer: runtimeString('authIssuer', 'https://auth.canonbridge.com/realms/canonbridge'),
+    redirectUri: runtimeString('authRedirectUri', 'https://studio.canonbridge.com/auth/callback'),
     scope: 'openid profile email',
     tokenRefreshThreshold: 300, // 5 minutes before expiry
     demoAccounts: [],
@@ -35,14 +37,14 @@ export const environment = {
 
   // Tenant Configuration
   tenant: {
-    id: 'tenant-acme',
-    name: 'Acme Tenant',
+    id: runtimeString('tenantId', 'tenant-acme'),
+    name: runtimeString('tenantName', 'Acme Tenant'),
     mode: 'single',
   },
   
   // Feature Flags
   features: {
-    enableDemoMode: false,
+    enableDemoMode: runtimeBoolean('enableDemoMode', false),
     enableDarkMode: true,
     enableAdvancedEditor: true,
     enableBetaFeatures: false,
@@ -69,7 +71,7 @@ export const environment = {
   // Mapping Configuration
   mapping: {
     /** Inject at deploy time via file/environment replacement when Studio should hit the transformer HTTP API (default: unset). */
-    transformerApiUrl: '',
+    transformerApiUrl: runtimeString('transformerApiUrl', ''),
     maxFieldDepth: 10,
     previewSampleSize: 5,
     autoSaveInterval: 30000, // 30 seconds

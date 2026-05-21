@@ -2,13 +2,13 @@
 
 > **Enterprise Integration Platform** — Event-driven partner data transformation at scale.
 
-> ✅ **Project Status**: **DEVELOPMENT PHASE** — 86% Complete
+> ✅ **Project Status**: **MVP implementation complete for the local/staging proof path**
 > - **Code**: Core services implemented and tested
-> - **Backend**: Quarkus services, Kafka integration, database layer complete
-> - **Frontend**: Angular Mapping Studio with wizard, live preview, and auto-save
-> - **Transformer**: Node.js transformation engine with JSONata, validation, and retry logic
-> - **Infrastructure**: Docker Compose, Kubernetes manifests, CI/CD pipelines ready
-> - **Production Ready**: 2-3 weeks (pending auth integration, outbox consumer, and integration tests)
+> - **Backend**: Quarkus API, auth guardrails, database migrations, Kafka publish path, batch operations, scheduled runs, and outbox replay are implemented
+> - **Frontend**: Angular Mapping Studio with wizard, live preview, auto-save, source-type coverage, and runtime config injection
+> - **Transformer**: Node.js transformation engine with JSONata, validation, retry logic, enrichment, and 10-system smoke fixtures
+> - **Infrastructure**: Docker Compose, Kubernetes manifests, CI/CD, Prometheus alerts, and Grafana dashboards are present
+> - **Deployment Inputs**: real OIDC tenant, production secrets, and staging alert thresholds must be supplied by the target environment
 >
 > See [10_SYSTEM_SUPPORT_AUDIT.md](docs/project/10_SYSTEM_SUPPORT_AUDIT.md) and [PROJECT_GAPS.md](docs/project/PROJECT_GAPS.md) for the latest support audit and remaining gaps.
 
@@ -241,33 +241,34 @@ Full rationale with tradeoffs: [docs/adr/](./docs/adr/)
 
 ## Project Status
 
-**Current Phase**: Phase 3 - Core Implementation (86% Complete)<br>
+**Current Phase**: Local/staging MVP hardening complete; production deployment inputs remain environment-owned.<br>
 **Code Status**: Core services implemented and tested<br>
-**Documentation**: Comprehensive architecture and implementation docs
+**Documentation**: Architecture, implementation, operations, testing, and active gap docs are maintained
 
 > 📋 **See [10_SYSTEM_SUPPORT_AUDIT.md](docs/project/10_SYSTEM_SUPPORT_AUDIT.md) for the latest support audit and remaining gaps**
 
 | Component | Status | Notes |
 |-----------|--------|-------|
 | Architecture documentation | ✅ Complete | Comprehensive design docs with ADRs |
-| Transformer Service (Node.js) | ✅ Complete | JSONata engine, validation, retry, tests |
-| Mapping Studio API (Java/Quarkus) | ✅ 75% Complete | Auth, DB, CRUD, Kafka integration done |
-| Mapping Studio UI (Angular) | ✅ 90% Complete | Wizard, live preview, auto-save, undo/redo |
-| Mock Services | ✅ 85% Complete | Docker compose, demo scenarios ready |
+| Transformer Service (Node.js) | ✅ Complete | JSONata engine, validation, retry, enrichment, 10-system tests |
+| Mapping Studio API (Java/Quarkus) | ✅ Complete | Auth, DB, CRUD, Kafka integration, batch sessions, scheduled runs, outbox replay |
+| Mapping Studio UI (Angular) | ✅ Complete | Wizard, live preview, auto-save, undo/redo, 10 source-type proof |
+| Website | ✅ Improved | Shared tokens, SEO metadata, mobile navigation, working contact flow, smoke tests |
+| Mock Services | ✅ Complete | Docker compose, demo scenarios, live protocol E2E for 10 systems |
 | Kubernetes manifests | ✅ Complete | Production-ready K8s configs |
 | CI/CD pipelines | ✅ Complete | GitHub Actions for build and deploy |
-| Security design | ✅ Complete | Threat model defined (implementation pending) |
-| Observability | ✅ Complete | Prometheus, Grafana, OpenTelemetry ready |
-| Integration tests | ⏳ In Progress | Testcontainers setup needed |
-| Outbox consumer | ⏳ Pending | Critical for production atomicity |
-| OIDC/OAuth2 integration | ⏳ Pending | Replace demo auth with real OIDC |
+| Security design | ✅ Complete | Threat model plus production auth guardrails |
+| Observability | ✅ Complete | Prometheus, Grafana, OpenTelemetry, runtime recovery alerts |
+| Integration tests | ✅ Complete | Docker/Testcontainers protocol E2E plus API, UI, and transformer regression suites |
+| Outbox replay | ✅ Complete | Durable outbox records, background replay, manual replay, metrics, and alerts |
+| OIDC/OAuth2 integration | ✅ Guardrails complete | Production requires real OIDC/secrets supplied by deployment |
 
-**Critical Path to Production** (2-3 weeks):
-1. ✅ Complete Mapping Studio wizard UI enhancements
-2. ⏳ Implement OIDC authentication (replace hardcoded demo users)
-3. ⏳ Build outbox consumer for atomicity guarantees
-4. ⏳ Add integration tests with Testcontainers
-5. ⏳ Security hardening (move secrets to .env, add interceptors)
+**Deployment Inputs Before Production**:
+1. Supply real OIDC issuer/client/secret values through the target secret manager.
+2. Disable demo/local auth compatibility flags in production.
+3. Set environment-specific CORS origins, API keys, JWT issuer/audience, and credential encryption key.
+4. Tune alert thresholds after staging traffic establishes baselines.
+5. Run the command matrix in [Project Gaps](docs/project/PROJECT_GAPS.md) on the release candidate.
 
 See [10_SYSTEM_SUPPORT_AUDIT.md](docs/project/10_SYSTEM_SUPPORT_AUDIT.md) for the latest technical audit.
 

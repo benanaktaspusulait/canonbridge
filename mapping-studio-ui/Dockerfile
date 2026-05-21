@@ -26,6 +26,8 @@ FROM nginx:alpine
 
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
+COPY docker-entrypoint.d/10-canonbridge-env.sh /docker-entrypoint.d/10-canonbridge-env.sh
+RUN chmod +x /docker-entrypoint.d/10-canonbridge-env.sh
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist/mapping-studio-ui/browser /usr/share/nginx/html
@@ -39,4 +41,3 @@ EXPOSE 80
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
-

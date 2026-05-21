@@ -26,11 +26,24 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    const allowed: Locale[] = ["en", "tr", "de", "es"];
+    const requested = new URLSearchParams(window.location.search).get("lang") as Locale | null;
     const saved = localStorage.getItem("cb-locale") as Locale | null;
-    if (saved && ["en", "tr", "de", "es"].includes(saved)) {
-      setLocaleState(saved);
+    const next = requested && allowed.includes(requested)
+      ? requested
+      : saved && allowed.includes(saved)
+        ? saved
+        : "en";
+    setLocaleState(next);
+    document.documentElement.lang = next;
+    if (requested && allowed.includes(requested)) {
+      localStorage.setItem("cb-locale", requested);
     }
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
 
   useEffect(() => {
     async function loadTranslations() {

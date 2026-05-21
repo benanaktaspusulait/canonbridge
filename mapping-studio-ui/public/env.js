@@ -1,0 +1,1 @@
+window.CANONBRIDGE_CONFIG = window.CANONBRIDGE_CONFIG || {};

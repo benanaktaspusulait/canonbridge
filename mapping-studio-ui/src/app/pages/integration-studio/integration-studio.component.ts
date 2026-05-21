@@ -3357,9 +3357,6 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
           summary: this.i18n.translate('studio.publishSuccess'),
           life: 4000
         });
-        import('canvas-confetti').then(m => {
-          m.default({ particleCount: 130, spread: 72, origin: { y: 0.65 } });
-        });
       },
       error: () => {
         this.published.set(true);
@@ -3367,9 +3364,6 @@ export class IntegrationStudioComponent implements OnInit, OnDestroy {
           severity: 'success',
           summary: this.i18n.translate('studio.publishSuccess'),
           life: 4000
-        });
-        import('canvas-confetti').then(m => {
-          m.default({ particleCount: 130, spread: 72, origin: { y: 0.65 } });
         });
       }
     });
