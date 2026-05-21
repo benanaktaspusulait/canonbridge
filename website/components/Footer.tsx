@@ -210,11 +210,11 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
               <Image
-                src="/images/logo-canonbridge.svg"
+                src="/images/canonbridge-logo-wide-light.png"
                 alt="CanonBridge"
-                width={180}
-                height={40}
-                className="h-7 w-auto"
+                width={350}
+                height={90}
+                className="h-12 w-auto"
               />
             </div>
 
