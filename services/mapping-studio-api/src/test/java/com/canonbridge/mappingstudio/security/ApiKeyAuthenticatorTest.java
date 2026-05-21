@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -17,10 +18,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ApiKeyAuthenticatorTest {
 
     @Test
-    void parsesCommaSeparatedApiKeys() {
-        Set<String> apiKeys = ApiKeyAuthenticator.parseApiKeys(" first-key,second-key, , third-key ");
+    void parsesCommaSeparatedLegacyApiKeys() {
+        List<ApiKeyAuthenticator.ApiKeyIdentity> apiKeys =
+                ApiKeyAuthenticator.parseApiKeys(" first-key,second-key, , third-key ");
 
-        assertEquals(Set.of("first-key", "second-key", "third-key"), apiKeys);
+        assertEquals(List.of("first-key", "second-key", "third-key"),
+                apiKeys.stream().map(ApiKeyAuthenticator.ApiKeyIdentity::secret).toList());
+    }
+
+    @Test
+    void parsesRoleAndTenantScopedApiKeyDescriptors() {
+        List<ApiKeyAuthenticator.ApiKeyIdentity> apiKeys =
+                ApiKeyAuthenticator.parseApiKeys("ops-secret:ops-team:tenant-acme|tenant-demo:operator|viewer;etl-secret:etl-bot:tenant-acme:integration_author");
+
+        assertEquals("api-key:ops-team", apiKeys.get(0).principal());
+        assertEquals(Set.of("tenant-acme", "tenant-demo"), apiKeys.get(0).tenantIds());
+        assertEquals(Set.of("operator", "viewer"), apiKeys.get(0).roles());
     }
 
     @Test
@@ -31,6 +44,20 @@ class ApiKeyAuthenticatorTest {
 
         assertTrue(result.authenticated());
         assertEquals("api-key", result.principal());
+        assertEquals(Set.of("integration_author", "viewer"), result.roles());
+        assertEquals(Set.of("*"), result.tenantIds());
+    }
+
+    @Test
+    void authenticatesDescriptorWithConfiguredPrincipalTenantsAndRoles() {
+        ApiKeyAuthenticator authenticator = new ApiKeyAuthenticator(Set.of("ops-secret:ops-team:tenant-acme:operator"));
+
+        ApiKeyAuthenticator.AuthenticationResult result = authenticator.authenticate(null, "ops-secret");
+
+        assertTrue(result.authenticated());
+        assertEquals("api-key:ops-team", result.principal());
+        assertEquals(Set.of("tenant-acme"), result.tenantIds());
+        assertEquals(Set.of("operator"), result.roles());
     }
 
     @Test
@@ -56,7 +83,7 @@ class ApiKeyAuthenticatorTest {
 
     @Test
     void authenticatesBearerLoginToken() {
-        JwtService jwtService = new JwtService();
+        JwtService jwtService = new JwtService("test-jwt-secret");
         UUID userId = UUID.randomUUID();
         ApiKeyAuthenticator authenticator = new ApiKeyAuthenticator(Set.of("test-secret"), jwtService);
         String token = jwtService.generateToken(activeUser(userId));
@@ -73,7 +100,7 @@ class ApiKeyAuthenticatorTest {
 
     @Test
     void rejectsTamperedBearerLoginToken() {
-        JwtService jwtService = new JwtService();
+        JwtService jwtService = new JwtService("test-jwt-secret");
         UUID userId = UUID.randomUUID();
         ApiKeyAuthenticator authenticator = new ApiKeyAuthenticator(Set.of("test-secret"), jwtService);
         String token = jwtService.generateToken(activeUser(userId));
@@ -87,7 +114,7 @@ class ApiKeyAuthenticatorTest {
 
     @Test
     void rejectsExpiredBearerLoginToken() {
-        ApiKeyAuthenticator authenticator = new ApiKeyAuthenticator(Set.of("test-secret"), new JwtService());
+        ApiKeyAuthenticator authenticator = new ApiKeyAuthenticator(Set.of("test-secret"), new JwtService("test-jwt-secret"));
         String expiredToken = Base64.getEncoder().encodeToString(
                 ("00000000-0000-0000-0000-000000000001:user@example.com:ADMIN:tenant-acme:"
                         + Instant.now().minusSeconds(60).getEpochSecond())

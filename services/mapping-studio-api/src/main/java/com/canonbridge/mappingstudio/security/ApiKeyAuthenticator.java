@@ -9,6 +9,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,19 +32,23 @@ public class ApiKeyAuthenticator {
     @Inject
     JwtService jwtService;
 
-    private Set<String> acceptedApiKeys;
+    private List<ApiKeyIdentity> acceptedApiKeys;
 
     ApiKeyAuthenticator() {
     }
 
     ApiKeyAuthenticator(Set<String> acceptedApiKeys) {
-        this.acceptedApiKeys = Set.copyOf(acceptedApiKeys);
+        this.acceptedApiKeys = acceptedApiKeys.stream()
+                .map(ApiKeyIdentity::parse)
+                .toList();
         this.apiKeyEnabled = true;
         this.localJwtEnabled = true;
     }
 
     ApiKeyAuthenticator(Set<String> acceptedApiKeys, JwtService jwtService) {
-        this.acceptedApiKeys = Set.copyOf(acceptedApiKeys);
+        this.acceptedApiKeys = acceptedApiKeys.stream()
+                .map(ApiKeyIdentity::parse)
+                .toList();
         this.jwtService = jwtService;
         this.apiKeyEnabled = true;
         this.localJwtEnabled = true;
@@ -73,7 +78,8 @@ public class ApiKeyAuthenticator {
                 if (tokenClaims.isPresent()) {
                     return AuthenticationResult.authenticated(
                             "user:" + tokenClaims.get().userId(),
-                            Set.of(tokenClaims.get().role())
+                            Set.of(tokenClaims.get().role()),
+                            Set.of(tokenClaims.get().tenantId())
                     );
                 }
             }
@@ -105,25 +111,32 @@ public class ApiKeyAuthenticator {
             return AuthenticationResult.failed("auth_misconfigured", "API authentication is enabled but no API keys are configured");
         }
 
-        boolean valid = acceptedApiKeys.stream()
-                .anyMatch(acceptedApiKey -> constantTimeEquals(presentedCredential, acceptedApiKey));
+        Optional<ApiKeyIdentity> identity = acceptedApiKeys.stream()
+                .filter(acceptedApiKey -> constantTimeEquals(presentedCredential, acceptedApiKey.secret()))
+                .findFirst();
 
-        if (!valid) {
+        if (identity.isEmpty()) {
             return AuthenticationResult.failed("invalid_credentials", "Invalid API credentials");
         }
 
-        return AuthenticationResult.authenticated("api-key", Set.of("admin"));
+        return AuthenticationResult.authenticated(
+                identity.get().principal(),
+                identity.get().roles(),
+                identity.get().tenantIds()
+        );
     }
 
-    static Set<String> parseApiKeys(String configuredApiKeys) {
+    static List<ApiKeyIdentity> parseApiKeys(String configuredApiKeys) {
         if (configuredApiKeys == null || configuredApiKeys.isBlank()) {
-            return Set.of();
+            return List.of();
         }
 
-        return Arrays.stream(configuredApiKeys.split(","))
+        String separator = configuredApiKeys.contains(";") ? ";" : ",";
+        return Arrays.stream(configuredApiKeys.split(separator))
                 .map(String::trim)
                 .filter(candidate -> !candidate.isBlank())
-                .collect(Collectors.toUnmodifiableSet());
+                .map(ApiKeyIdentity::parse)
+                .toList();
     }
 
     static Optional<String> extractApiKeyCredential(String apiKeyHeader) {
@@ -162,15 +175,48 @@ public class ApiKeyAuthenticator {
             boolean authenticated,
             String principal,
             Set<String> roles,
+            Set<String> tenantIds,
             String error,
             String message
     ) {
-        static AuthenticationResult authenticated(String principal, Set<String> roles) {
-            return new AuthenticationResult(true, principal, roles, null, null);
+        static AuthenticationResult authenticated(String principal, Set<String> roles, Set<String> tenantIds) {
+            return new AuthenticationResult(true, principal, roles, tenantIds, null, null);
         }
 
         static AuthenticationResult failed(String error, String message) {
-            return new AuthenticationResult(false, null, Set.of(), error, message);
+            return new AuthenticationResult(false, null, Set.of(), Set.of(), error, message);
+        }
+    }
+
+    record ApiKeyIdentity(String secret, String principal, Set<String> tenantIds, Set<String> roles) {
+        private static final Set<String> LEGACY_ROLES = Set.of("integration_author", "viewer");
+
+        static ApiKeyIdentity parse(String value) {
+            String[] parts = value.split(":", 4);
+            if (parts.length < 4) {
+                return legacy(value);
+            }
+
+            String secret = parts[0].trim();
+            String principal = parts[1].trim();
+            Set<String> tenantIds = splitSet(parts[2]);
+            Set<String> roles = splitSet(parts[3]);
+            if (secret.isBlank() || principal.isBlank() || tenantIds.isEmpty() || roles.isEmpty()) {
+                throw new IllegalArgumentException("Invalid API key descriptor. Expected key:principal:tenant1|tenant2:role1|role2");
+            }
+            return new ApiKeyIdentity(secret, "api-key:" + principal, tenantIds, roles);
+        }
+
+        static ApiKeyIdentity legacy(String secret) {
+            String trimmed = secret == null ? "" : secret.trim();
+            return new ApiKeyIdentity(trimmed, "api-key", Set.of("*"), LEGACY_ROLES);
+        }
+
+        private static Set<String> splitSet(String value) {
+            return Arrays.stream(value.split("[|,]"))
+                    .map(String::trim)
+                    .filter(candidate -> !candidate.isBlank())
+                    .collect(Collectors.toUnmodifiableSet());
         }
     }
 }

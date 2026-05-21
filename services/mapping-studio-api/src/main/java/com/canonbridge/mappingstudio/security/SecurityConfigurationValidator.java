@@ -1,6 +1,5 @@
 package com.canonbridge.mappingstudio.security;
 
-import com.canonbridge.mappingstudio.auth.JwtService;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -49,7 +48,7 @@ public class SecurityConfigurationValidator {
         if (apiKeyEnabled && (apiKeys.isBlank() || containsToken(apiKeys, DEFAULT_API_KEY))) {
             failures.add("CANONBRIDGE_API_KEYS must be set and must not include dev-api-key");
         }
-        if (localJwtEnabled && (jwtSecret.isBlank() || JwtService.DEFAULT_SECRET.equals(jwtSecret))) {
+        if (localJwtEnabled && jwtSecret.isBlank()) {
             failures.add("JWT_SECRET_KEY/canonbridge.jwt.secret must be set to a production secret");
         }
         if (bearerApiKeyEnabled) {

@@ -20,8 +20,8 @@ import java.util.Arrays;
  * Ensures that authenticated users can only access their own tenant's data.
  * 
  * Configuration:
- * - canonbridge.tenant.mappings=api-key:tenant-acme,another-key:tenant-other
- * - If no mapping is configured, any authenticated user can access any tenant (dev mode)
+ * - canonbridge.tenant.mappings=principal:tenant-acme,another-principal:tenant-other
+ * - If no mapping is configured, tenant claims from the authenticated credential are used.
  * 
  * Runs AFTER authentication filter (priority 1001 vs 1000).
  */
@@ -58,20 +58,31 @@ public class TenantIsolationFilter implements ContainerRequestFilter {
         String principalName = principal.getName();
         Map<String, Set<String>> mappings = getPrincipalToTenants();
 
-        if (mappings.isEmpty()) {
-            return; // No mappings configured - allow all (dev mode)
-        }
-
-        Set<String> allowedTenants = mappings.get(principalName);
-        if (allowedTenants == null || !allowedTenants.contains(tenantId)) {
-            LOG.warnf("🚫 Tenant isolation violation: principal '%s' attempted to access tenant '%s'", 
-                principalName, tenantId);
+        Set<String> allowedTenants = mappings.isEmpty()
+                ? authorizedTenants(requestContext)
+                : mappings.get(principalName);
+        if (allowedTenants == null
+                || (!allowedTenants.contains("*") && !allowedTenants.contains(tenantId))) {
+            LOG.warnf("Tenant isolation violation: principal '%s' attempted to access tenant '%s'",
+                    principalName, tenantId);
             requestContext.abortWith(
                 Response.status(Response.Status.FORBIDDEN)
                     .entity("{\"error\":\"Access denied for tenant: " + tenantId + "\"}")
                     .build()
             );
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<String> authorizedTenants(ContainerRequestContext requestContext) {
+        Object value = requestContext.getProperty(ApiAuthenticationFilter.AUTHORIZED_TENANTS_PROPERTY);
+        if (value instanceof Set<?> tenants) {
+            return tenants.stream()
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .collect(Collectors.toUnmodifiableSet());
+        }
+        return Set.of();
     }
 
     private Map<String, Set<String>> getPrincipalToTenants() {

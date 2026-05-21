@@ -19,13 +19,12 @@ import javax.crypto.spec.SecretKeySpec;
 @ApplicationScoped
 public class JwtService {
 
-    public static final String DEFAULT_SECRET = "canonbridge-jwt-secret-key-for-development-only-change-in-production";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Base64.Encoder BASE64_URL_ENCODER = Base64.getUrlEncoder().withoutPadding();
     private static final Base64.Decoder BASE64_URL_DECODER = Base64.getUrlDecoder();
     private static final TypeReference<Map<String, Object>> JSON_MAP = new TypeReference<>() {};
 
-    @ConfigProperty(name = "canonbridge.jwt.secret", defaultValue = DEFAULT_SECRET)
+    @ConfigProperty(name = "canonbridge.jwt.secret")
     String jwtSecret;
 
     @ConfigProperty(name = "canonbridge.jwt.issuer", defaultValue = "canonbridge")
@@ -33,6 +32,13 @@ public class JwtService {
 
     @ConfigProperty(name = "canonbridge.jwt.ttl-seconds", defaultValue = "28800")
     long ttlSeconds;
+
+    public JwtService() {
+    }
+
+    public JwtService(String jwtSecret) {
+        this.jwtSecret = jwtSecret;
+    }
 
     public String generateToken(User user) {
         long issuedAt = Instant.now().getEpochSecond();
@@ -130,7 +136,10 @@ public class JwtService {
     }
 
     private String resolvedSecret() {
-        return jwtSecret == null || jwtSecret.isBlank() ? DEFAULT_SECRET : jwtSecret;
+        if (jwtSecret == null || jwtSecret.isBlank()) {
+            throw new IllegalStateException("JWT secret is not configured");
+        }
+        return jwtSecret;
     }
 
     private String resolvedIssuer() {

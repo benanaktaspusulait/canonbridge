@@ -40,4 +40,11 @@ class CredentialSecretCodecTest {
 
         assertThrows(IllegalStateException.class, () -> codec.encrypt(new JsonObject().put("apiKey", "secret")));
     }
+
+    @Test
+    void rejectsPlainJsonCredentialEnvelope() {
+        CredentialSecretCodec codec = new CredentialSecretCodec(TEST_KEY);
+
+        assertThrows(IllegalStateException.class, () -> codec.decrypt(new JsonObject().put("apiKey", "secret").encode()));
+    }
 }

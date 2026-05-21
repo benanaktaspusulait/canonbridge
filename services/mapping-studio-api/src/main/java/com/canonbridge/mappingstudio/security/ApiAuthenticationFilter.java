@@ -25,6 +25,7 @@ import java.util.Set;
 public class ApiAuthenticationFilter implements ContainerRequestFilter {
 
     private static final String AUTHENTICATE_HEADER = "Bearer realm=\"canonbridge-mapping-studio\"";
+    public static final String AUTHORIZED_TENANTS_PROPERTY = "canonbridge.authorizedTenants";
 
     @Inject
     ApiKeyAuthenticator authenticator;
@@ -76,6 +77,7 @@ public class ApiAuthenticationFilter implements ContainerRequestFilter {
                 result.principal(),
                 result.roles()
         ));
+        requestContext.setProperty(AUTHORIZED_TENANTS_PROPERTY, result.tenantIds());
     }
 
     private boolean shouldBypass(ContainerRequestContext requestContext) {
