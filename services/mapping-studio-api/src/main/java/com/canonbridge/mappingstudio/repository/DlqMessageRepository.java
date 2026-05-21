@@ -11,7 +11,9 @@ import jakarta.inject.Inject;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @ApplicationScoped
 public class DlqMessageRepository {
@@ -93,6 +95,38 @@ public class DlqMessageRepository {
         return client.preparedQuery(sql)
             .execute(Tuple.of(status.name(), redriveAttemptedAt, id))
             .replaceWithVoid();
+    }
+
+    public Uni<Map<String, Long>> stats() {
+        String sql = """
+            SELECT status, COUNT(*) AS count
+            FROM dlq_messages
+            GROUP BY status
+            """;
+
+        return client.query(sql)
+            .execute()
+            .map(rows -> {
+                Map<String, Long> counts = new LinkedHashMap<>();
+                counts.put("total", 0L);
+                counts.put("failed", 0L);
+                counts.put("redriving", 0L);
+                counts.put("redriven", 0L);
+                counts.put("permanentlyFailed", 0L);
+
+                for (Row row : rows) {
+                    long count = row.getLong("count");
+                    String status = row.getString("status");
+                    counts.put("total", counts.get("total") + count);
+                    switch (DlqMessage.DlqStatus.valueOf(status)) {
+                        case FAILED -> counts.put("failed", count);
+                        case REDRIVING -> counts.put("redriving", count);
+                        case REDRIVEN -> counts.put("redriven", count);
+                        case PERMANENTLY_FAILED -> counts.put("permanentlyFailed", count);
+                    }
+                }
+                return counts;
+            });
     }
 
     private List<DlqMessage> mapRows(RowSet<Row> rows) {

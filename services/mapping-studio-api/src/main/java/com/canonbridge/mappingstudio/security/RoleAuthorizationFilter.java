@@ -16,6 +16,9 @@ import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.security.Principal;
+import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Set;
 
@@ -75,7 +78,7 @@ public class RoleAuthorizationFilter implements ContainerRequestFilter {
             return true;
         }
 
-        String path = requestContext.getUriInfo().getPath();
+        String path = normalizePath(requestContext.getUriInfo().getPath());
         return !path.startsWith("api/")
                 || path.startsWith("api/auth/login")
                 || path.startsWith("api/auth/refresh")
@@ -84,28 +87,29 @@ public class RoleAuthorizationFilter implements ContainerRequestFilter {
 
     private Set<String> allowedRoles(String method, String path) {
         String normalizedMethod = method == null ? "" : method.toUpperCase(Locale.ROOT);
+        String normalizedPath = normalizePath(path);
 
-        if (path.startsWith("api/audit-logs")) {
+        if (normalizedPath.startsWith("api/audit-logs")) {
             return OPERATOR_ROLES;
         }
 
-        if (path.startsWith("api/credentials")) {
+        if (normalizedPath.startsWith("api/credentials")) {
             return HttpMethod.GET.equals(normalizedMethod) ? AUTHOR_ROLES : ADMIN_ROLE;
         }
 
-        if (path.startsWith("api/dlq")) {
+        if (normalizedPath.startsWith("api/dlq")) {
             return HttpMethod.GET.equals(normalizedMethod) ? OPERATOR_ROLES : OPERATOR_ROLES;
         }
 
-        if (path.startsWith("api/outbox")) {
+        if (normalizedPath.startsWith("api/outbox")) {
             return OPERATOR_ROLES;
         }
 
-        if (path.startsWith("api/proxy/")) {
-            if (path.matches("api/proxy/[^/]+/?")) {
+        if (normalizedPath.startsWith("api/proxy/")) {
+            if (normalizedPath.matches("api/proxy/[^/]+/?")) {
                 return Set.of("admin", "integration_author", "operator");
             }
-            if (path.contains("/retry/")) {
+            if (normalizedPath.contains("/retry/")) {
                 return OPERATOR_ROLES;
             }
             return ALL_AUTHENTICATED_ROLES;
@@ -119,16 +123,26 @@ public class RoleAuthorizationFilter implements ContainerRequestFilter {
             return ADMIN_ROLE;
         }
 
-        if (path.startsWith("api/mapping-drafts")
-                || path.startsWith("api/mapping-versions")
-                || path.startsWith("api/partners")
-                || path.startsWith("api/schemas")
-                || path.startsWith("api/external-systems")
-                || path.startsWith("api/webhooks")) {
+        if (normalizedPath.startsWith("api/mapping-drafts")
+                || normalizedPath.startsWith("api/mapping-versions")
+                || normalizedPath.startsWith("api/partners")
+                || normalizedPath.startsWith("api/schemas")
+                || normalizedPath.startsWith("api/external-systems")
+                || normalizedPath.startsWith("api/webhooks")) {
             return AUTHOR_ROLES;
         }
 
         return AUTHOR_ROLES;
+    }
+
+    static String normalizePath(String rawPath) {
+        if (rawPath == null || rawPath.isBlank()) {
+            return "";
+        }
+        String decoded = URLDecoder.decode(rawPath, StandardCharsets.UTF_8);
+        String squashed = decoded.replaceAll("/{2,}", "/");
+        String normalized = URI.create("/" + squashed).normalize().getPath();
+        return normalized.replaceFirst("^/+", "");
     }
 
     private boolean hasAnyRole(SecurityContext securityContext, Set<String> allowedRoles) {

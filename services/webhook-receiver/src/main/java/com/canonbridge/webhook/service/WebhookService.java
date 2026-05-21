@@ -40,11 +40,14 @@ public class WebhookService {
                     return Uni.createFrom().failure(new NotAuthorizedException("Invalid webhook key"));
                 }
 
-                if (webhookSignature != null && !webhookSignature.isBlank()) {
-                    if (!authService.verifyHmacSignature(payload, webhookSignature, webhookKey)) {
-                        LOG.warnf("HMAC signature mismatch for partner: %s, event: %s", partnerId, eventType);
-                        return Uni.createFrom().failure(new NotAuthorizedException("Invalid webhook signature"));
-                    }
+                if (webhookSignature == null || webhookSignature.isBlank()) {
+                    LOG.warnf("Missing HMAC signature for partner: %s, event: %s", partnerId, eventType);
+                    return Uni.createFrom().failure(new NotAuthorizedException("Missing webhook signature"));
+                }
+
+                if (!authService.verifyHmacSignature(payload, webhookSignature, webhookKey)) {
+                    LOG.warnf("HMAC signature mismatch for partner: %s, event: %s", partnerId, eventType);
+                    return Uni.createFrom().failure(new NotAuthorizedException("Invalid webhook signature"));
                 }
 
                 String eventId = UUID.randomUUID().toString();
@@ -76,6 +79,7 @@ public class WebhookService {
         JsonObject headerObj = new JsonObject();
         headers.getRequestHeaders().forEach((key, values) -> {
             if (!key.equalsIgnoreCase("X-Webhook-Key") && 
+                !key.equalsIgnoreCase("X-Webhook-Signature") &&
                 !key.equalsIgnoreCase("Authorization")) {
                 headerObj.put(key, values.isEmpty() ? null : values.get(0));
             }

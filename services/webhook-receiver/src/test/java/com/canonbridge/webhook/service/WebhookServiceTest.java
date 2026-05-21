@@ -44,9 +44,11 @@ class WebhookServiceTest {
     void givenValidKey_whenProcessWebhook_thenReturnsEventId() {
         Mockito.when(authService.validateWebhookKey("partner-001", "valid-key"))
             .thenReturn(Uni.createFrom().item(true));
+        Mockito.when(authService.verifyHmacSignature("{\"orderId\":\"ORD-001\"}", "valid-signature", "valid-key"))
+            .thenReturn(true);
 
         String result = webhookService
-            .processWebhook("partner-001", "ORDER_CREATED", "valid-key", null, "{\"orderId\":\"ORD-001\"}", mockHeaders)
+            .processWebhook("partner-001", "ORDER_CREATED", "valid-key", "valid-signature", "{\"orderId\":\"ORD-001\"}", mockHeaders)
             .await().indefinitely();
 
         assertNotNull(result);
@@ -60,18 +62,32 @@ class WebhookServiceTest {
 
         assertThrows(NotAuthorizedException.class, () ->
             webhookService
-                .processWebhook("partner-001", "ORDER_CREATED", "wrong-key", null, "{}", mockHeaders)
+                .processWebhook("partner-001", "ORDER_CREATED", "wrong-key", "signature", "{}", mockHeaders)
                 .await().indefinitely()
         );
     }
 
     @Test
-    void givenValidKey_whenProcessWebhook_thenEnvelopePublishedToKafka() {
-        Mockito.when(authService.validateWebhookKey("shopmax", "shopmax-key"))
+    void givenMissingSignature_whenProcessWebhook_thenThrowsNotAuthorizedException() {
+        Mockito.when(authService.validateWebhookKey("partner-001", "valid-key"))
             .thenReturn(Uni.createFrom().item(true));
 
+        assertThrows(NotAuthorizedException.class, () ->
+            webhookService
+                .processWebhook("partner-001", "ORDER_CREATED", "valid-key", null, "{}", mockHeaders)
+                .await().indefinitely()
+        );
+    }
+
+    @Test
+    void givenValidKeyAndSignature_whenProcessWebhook_thenEnvelopePublishedToKafka() {
+        Mockito.when(authService.validateWebhookKey("shopmax", "shopmax-key"))
+            .thenReturn(Uni.createFrom().item(true));
+        Mockito.when(authService.verifyHmacSignature("{\"amount\":99.99}", "valid-signature", "shopmax-key"))
+            .thenReturn(true);
+
         webhookService
-            .processWebhook("shopmax", "PAYMENT_CAPTURED", "shopmax-key", null, "{\"amount\":99.99}", mockHeaders)
+            .processWebhook("shopmax", "PAYMENT_CAPTURED", "shopmax-key", "valid-signature", "{\"amount\":99.99}", mockHeaders)
             .await().indefinitely();
 
         InMemorySink<Record<String, String>> sink = connector.sink("raw-events");
@@ -85,7 +101,7 @@ class WebhookServiceTest {
 
         assertThrows(RuntimeException.class, () ->
             webhookService
-                .processWebhook("partner-001", "ORDER_CREATED", "any-key", null, "{}", mockHeaders)
+                .processWebhook("partner-001", "ORDER_CREATED", "any-key", "signature", "{}", mockHeaders)
                 .await().indefinitely()
         );
     }

@@ -72,6 +72,12 @@ class RoleAuthorizationFilterTest {
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getValue().getStatus());
     }
 
+    @Test
+    void normalizesEncodedAndDuplicateSlashPathsBeforeRoleMatching() {
+        assertEquals("api/credentials", RoleAuthorizationFilter.normalizePath("api//credentials"));
+        assertEquals("api/audit-logs", RoleAuthorizationFilter.normalizePath("api/credentials/%2E%2E/audit-logs"));
+    }
+
     private static RoleAuthorizationFilter filter() {
         RoleAuthorizationFilter filter = new RoleAuthorizationFilter();
         filter.authEnabled = true;

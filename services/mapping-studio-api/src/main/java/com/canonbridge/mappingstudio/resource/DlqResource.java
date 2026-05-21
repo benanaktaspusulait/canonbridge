@@ -121,18 +121,8 @@ public class DlqResource {
     @Operation(summary = "Get DLQ statistics", description = "Retrieve statistics about DLQ messages")
     public Uni<Response> getDlqStats() {
         LOG.info("Getting DLQ statistics");
-        
-        // TODO: Implement statistics query
-        String stats = """
-            {
-                "total": 0,
-                "failed": 0,
-                "redriving": 0,
-                "redriven": 0,
-                "permanentlyFailed": 0
-            }
-            """;
-        
-        return Uni.createFrom().item(Response.ok(stats).build());
+
+        return dlqRepository.stats()
+                .map(stats -> Response.ok(stats).build());
     }
 }
