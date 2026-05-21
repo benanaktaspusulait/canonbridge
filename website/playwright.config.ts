@@ -12,7 +12,7 @@ export default defineConfig({
   },
   webServer: {
     command:
-      "NEXT_PUBLIC_LEAD_WEBHOOK_URL=http://127.0.0.1:4173/lead-test npm run build && node tests/static-server.mjs out 4173",
+      "NEXT_PUBLIC_LEAD_ENDPOINT=/api/leads npm run build && node tests/static-server.mjs out 4173",
     url: "http://127.0.0.1:4173",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

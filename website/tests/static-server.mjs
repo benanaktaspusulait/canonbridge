@@ -47,14 +47,14 @@ createServer(async (request, response) => {
 
   const url = new URL(request.url ?? "/", `http://${request.headers.host}`);
 
-  if (url.pathname === "/lead-test" && request.method === "POST") {
+  if ((url.pathname === "/lead-test" || url.pathname === "/api/leads") && request.method === "POST") {
     const body = await readBody(request);
     leads.push(JSON.parse(body || "{}"));
     send(response, 200, JSON.stringify({ ok: true, count: leads.length }), "application/json; charset=utf-8");
     return;
   }
 
-  if (url.pathname === "/lead-test" && request.method === "GET") {
+  if ((url.pathname === "/lead-test" || url.pathname === "/api/leads") && request.method === "GET") {
     send(response, 200, JSON.stringify(leads), "application/json; charset=utf-8");
     return;
   }

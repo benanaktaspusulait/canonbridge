@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import Script from "next/script";
 import type { FormEvent } from "react";
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
@@ -11,6 +12,8 @@ export default function Footer() {
   const { t } = useLocale();
   const [status, setStatus] = useState<"idle" | "submitting" | "sent" | "mail" | "error">("idle");
   const formStartedAt = useRef(Date.now());
+  const leadEndpoint = process.env.NEXT_PUBLIC_LEAD_ENDPOINT?.trim();
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,16 +35,16 @@ export default function Footer() {
       email: String(data.get("email") ?? ""),
       partners: String(data.get("partners") ?? ""),
       message: String(data.get("message") ?? ""),
+      turnstileToken: String(data.get("cf-turnstile-response") ?? ""),
       source: "canonbridge-website",
       submittedAt: new Date().toISOString(),
       elapsedMs,
     };
-    const webhookUrl = process.env.NEXT_PUBLIC_LEAD_WEBHOOK_URL?.trim();
 
-    if (webhookUrl) {
+    if (leadEndpoint) {
       setStatus("submitting");
       try {
-        const response = await fetch(webhookUrl, {
+        const response = await fetch(leadEndpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -88,6 +91,15 @@ export default function Footer() {
 
   return (
     <>
+      {turnstileSiteKey ? (
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          strategy="afterInteractive"
+          async
+          defer
+        />
+      ) : null}
+
       <section id="demo" className="relative overflow-hidden bg-[var(--cb-color-cloud-100)] py-24 md:py-32" aria-labelledby="demo-title">
         <div className="max-w-5xl mx-auto px-6 relative z-10">
           <motion.div
@@ -122,6 +134,13 @@ export default function Footer() {
                     autoComplete="off"
                   />
                 </div>
+                {turnstileSiteKey ? (
+                  <div
+                    className="cf-turnstile"
+                    data-sitekey={turnstileSiteKey}
+                    data-theme="light"
+                  />
+                ) : null}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>

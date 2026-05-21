@@ -51,7 +51,9 @@ test("mobile navigation and contact form are not no-op placeholders", () => {
   assert.match(navbar, /mobileOpen/);
   assert.match(navbar, /aria-controls="mobile-navigation"/);
   assert.match(navbar, /lucide-react/);
-  assert.match(footer, /NEXT_PUBLIC_LEAD_WEBHOOK_URL/);
+  assert.match(footer, /NEXT_PUBLIC_LEAD_ENDPOINT/);
+  assert.doesNotMatch(footer, /NEXT_PUBLIC_LEAD_WEBHOOK_URL/);
+  assert.match(footer, /NEXT_PUBLIC_TURNSTILE_SITE_KEY/);
   assert.match(footer, /honeypot/);
   assert.match(footer, /elapsedMs/);
   assert.match(footer, /mailto:sales@canonbridge\.io/);
