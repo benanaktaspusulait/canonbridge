@@ -56,6 +56,11 @@ requireDisabled("CANONBRIDGE_PUBLIC_DOCS_ENABLED");
   "CANONBRIDGE_DOMAIN",
   "ACME_EMAIL",
   "NEXT_PUBLIC_SITE_URL",
+  "NEXT_PUBLIC_LEAD_ENDPOINT",
+  "LEAD_ALLOWED_ORIGINS",
+  "LEAD_UPSTREAM_URL",
+  "LEAD_UPSTREAM_AUTH_VALUE",
+  "TURNSTILE_SECRET_KEY",
   "OIDC_SERVER_URL",
   "OIDC_CLIENT_ID",
   "OIDC_CLIENT_SECRET",
@@ -70,6 +75,20 @@ for (const urlName of ["NEXT_PUBLIC_SITE_URL", "OIDC_SERVER_URL"]) {
   if (url && !url.startsWith("https://")) {
     failures.push(`${urlName} must use https:// in production`);
   }
+}
+
+if (value("NEXT_PUBLIC_LEAD_ENDPOINT") !== "/api/leads") {
+  failures.push("NEXT_PUBLIC_LEAD_ENDPOINT must be /api/leads in production");
+}
+
+const leadOrigins = value("LEAD_ALLOWED_ORIGINS");
+if (leadOrigins && leadOrigins.split(",").some((origin) => !origin.trim().startsWith("https://"))) {
+  failures.push("LEAD_ALLOWED_ORIGINS must contain only https:// origins in production");
+}
+
+const leadUpstream = value("LEAD_UPSTREAM_URL");
+if (leadUpstream && !leadUpstream.startsWith("https://")) {
+  failures.push("LEAD_UPSTREAM_URL must use https:// in production");
 }
 
 const corsOrigins = value("CORS_ALLOWED_ORIGINS");

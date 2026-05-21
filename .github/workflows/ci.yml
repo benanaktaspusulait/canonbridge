@@ -206,6 +206,32 @@ jobs:
         run: npm run test:e2e
 
   # ============================================================================
+  # EDGE: Lead Capture
+  # ============================================================================
+  lead-capture-edge:
+    name: Lead Capture Edge
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/lead-capture-edge
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Test
+        run: npm test
+
+      - name: Build Docker image
+        run: docker build -t ${{ env.IMAGE_PREFIX }}/lead-capture-edge:${{ github.sha }} .
+
+  # ============================================================================
   # MOCK SERVICE (Spring Boot)
   # ============================================================================
   mock-service:
