@@ -84,10 +84,10 @@ export default function Hero() {
             className="relative"
           >
             <Image
-              src="/images/canonbridge-console.svg"
+              src="/images/canonbridge-mapping-studio.png"
               alt="CanonBridge Mapping Studio showing partner sources, field mapping, validation, and runtime health"
-              width={1120}
-              height={700}
+              width={1440}
+              height={900}
               className="w-full rounded-xl border border-navy-900/10 bg-white shadow-2xl"
               priority
             />

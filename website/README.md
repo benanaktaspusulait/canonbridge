@@ -18,7 +18,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Typography is driven by the shared CanonBridge token snapshot in `app/brand-tokens.css`. The static export does not depend on a build-time Google Fonts request, so CI and Docker builds stay offline-friendly.
 
 ## Learn More
 

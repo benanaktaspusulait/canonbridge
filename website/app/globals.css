@@ -23,6 +23,7 @@ html {
 body {
   background-color: var(--cb-color-cloud-50);
   color: var(--cb-color-ink-950);
+  font-family: var(--cb-font-sans);
 }
 
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {

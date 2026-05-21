@@ -26,9 +26,18 @@ test("marketing site has SEO metadata and structured data", () => {
   assert.match(layout, /alternates/);
   assert.match(layout, /canonbridge-og\.png/);
   assert.doesNotMatch(layout, /canonbridge-og\.svg/);
+  assert.doesNotMatch(layout, /next\/font\/google/);
   assert.match(page, /application\/ld\+json/);
   assert.match(page, /Organization/);
   assert.match(page, /BreadcrumbList/);
+});
+
+test("hero uses the real Mapping Studio product screenshot", () => {
+  const hero = read("components/Hero.tsx");
+
+  assert.match(hero, /canonbridge-mapping-studio\.png/);
+  assert.doesNotMatch(hero, /canonbridge-console\.svg/);
+  assert.doesNotThrow(() => statSync(join(root, "public/images/canonbridge-mapping-studio.png")));
 });
 
 test("mobile navigation and contact form are not no-op placeholders", () => {
