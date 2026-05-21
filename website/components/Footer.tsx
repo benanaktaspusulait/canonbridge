@@ -3,18 +3,29 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { FormEvent } from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useLocale } from "@/lib/LocaleContext";
 
 export default function Footer() {
   const { t } = useLocale();
   const [status, setStatus] = useState<"idle" | "submitting" | "sent" | "mail" | "error">("idle");
+  const formStartedAt = useRef(Date.now());
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
+    const elapsedMs = Date.now() - formStartedAt.current;
+    const honeypot = String(data.get("website") ?? "").trim();
+
+    if (honeypot || elapsedMs < 1500) {
+      setStatus("sent");
+      form.reset();
+      formStartedAt.current = Date.now();
+      return;
+    }
+
     const payload = {
       name: String(data.get("name") ?? ""),
       company: String(data.get("company") ?? ""),
@@ -23,6 +34,7 @@ export default function Footer() {
       message: String(data.get("message") ?? ""),
       source: "canonbridge-website",
       submittedAt: new Date().toISOString(),
+      elapsedMs,
     };
     const webhookUrl = process.env.NEXT_PUBLIC_LEAD_WEBHOOK_URL?.trim();
 
@@ -41,6 +53,7 @@ export default function Footer() {
 
         setStatus("sent");
         form.reset();
+        formStartedAt.current = Date.now();
         return;
       } catch {
         setStatus("error");
@@ -62,6 +75,7 @@ export default function Footer() {
     )}&body=${encodeURIComponent(body)}`;
     setStatus("mail");
     form.reset();
+    formStartedAt.current = Date.now();
   }
 
   const statusMessage = {
@@ -98,6 +112,17 @@ export default function Footer() {
                 className="space-y-5 rounded-xl border border-navy-900/10 bg-white p-6 shadow-xl"
                 onSubmit={handleSubmit}
               >
+                <div className="hidden" aria-hidden="true">
+                  <label htmlFor="website">Website</label>
+                  <input
+                    id="website"
+                    name="website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label

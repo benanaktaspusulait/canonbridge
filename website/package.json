@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "tokens:check": "node ../scripts/sync-website-tokens.mjs --check",
+    "tokens:sync": "node ../scripts/sync-website-tokens.mjs",
     "test": "node --test tests/*.test.mjs",
     "test:e2e": "playwright test"
   },

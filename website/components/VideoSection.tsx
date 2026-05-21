@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Check, CirclePlay } from "lucide-react";
+import { Activity, Check, CirclePlay, Database, GitBranch, Rocket, ShieldCheck } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 
 interface VideoSectionProps {
@@ -30,6 +30,45 @@ export default function VideoSection({
   const sectionRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const isInView = useInView(sectionRef, { once: false, margin: "-100px" });
+  const fallbackScreens = [
+    {
+      icon: Database,
+      label: "Source setup",
+      title: "Partner Sources",
+      rows: ["REST API", "Kafka Topic", "SFTP Batch"],
+      panel: ["Schema detected", "Auth configured", "Ingress ready"],
+    },
+    {
+      icon: GitBranch,
+      label: "Field mapping",
+      title: "Visual Mapping",
+      rows: ["order_id", "amount", "status"],
+      panel: ["canonical.orderId", "canonical.total", "canonical.state"],
+    },
+    {
+      icon: ShieldCheck,
+      label: "Validation",
+      title: "Fixture Test",
+      rows: ["Input fixture", "Transform preview", "Schema check"],
+      panel: ["Compatible", "No PII leak", "Ready to publish"],
+    },
+    {
+      icon: Rocket,
+      label: "Publishing",
+      title: "Version Control",
+      rows: ["v1.4 draft", "Approval", "Go live"],
+      panel: ["Immutable version", "Rollback ready", "Audit logged"],
+    },
+    {
+      icon: Activity,
+      label: "Runtime",
+      title: "Operational Health",
+      rows: ["99.9% SLO", "12ms p95", "0 DLQ"],
+      panel: ["Replay queue clear", "Tracing active", "Alerts healthy"],
+    },
+  ];
+  const fallback = fallbackScreens[step - 1] ?? fallbackScreens[0];
+  const FallbackIcon = fallback.icon;
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -128,19 +167,20 @@ export default function VideoSection({
                   <div className="h-full w-full bg-white p-5">
                     <div className="mb-4 flex items-center justify-between border-b border-navy-900/10 pb-3">
                       <div>
-                        <div className="h-2.5 w-24 rounded bg-navy-900/[0.18]" />
-                        <div className="mt-2 h-2 w-36 rounded bg-navy-900/10" />
+                        <div className="text-sm font-bold text-navy-900">{fallback.title}</div>
+                        <div className="mt-1 text-xs text-navy-700/65">{fallback.label}</div>
                       </div>
-                      <div className="rounded-md bg-accent-blue px-3 py-1.5 text-xs font-semibold text-white">
+                      <div className="inline-flex items-center gap-1.5 rounded-md bg-accent-blue px-3 py-1.5 text-xs font-semibold text-white">
+                        <FallbackIcon className="h-3.5 w-3.5" aria-hidden="true" />
                         Step {step}
                       </div>
                     </div>
                     <div className="grid h-[calc(100%-64px)] grid-cols-3 gap-4">
                       <div className="space-y-3">
-                        {["Source", "Schema", "Auth"].map((label) => (
+                        {fallback.rows.map((label) => (
                           <div key={label} className="rounded-lg border border-navy-900/10 bg-[var(--cb-color-cloud-50)] p-3">
                             <div className="mb-2 text-xs font-bold text-navy-800">{label}</div>
-                            <div className="h-2 rounded bg-navy-900/10" />
+                            <div className="h-2 rounded bg-accent-blue/20" />
                             <div className="mt-2 h-2 w-2/3 rounded bg-navy-900/10" />
                           </div>
                         ))}
@@ -153,10 +193,12 @@ export default function VideoSection({
                           <span className="h-2 w-2 rounded-full bg-accent-purple" />
                         </div>
                         <div className="space-y-3">
-                          {[0, 1, 2, 3, 4].map((row) => (
-                            <div key={row} className="grid grid-cols-[0.8fr_1fr] gap-3">
+                          {fallback.panel.map((row) => (
+                            <div key={row} className="grid grid-cols-[0.8fr_1fr] items-center gap-3">
                               <div className="h-3 rounded bg-white/[0.16]" />
-                              <div className="h-3 rounded bg-accent-cyan/45" />
+                              <div className="rounded bg-accent-cyan/20 px-2 py-1 text-[10px] font-semibold text-white">
+                                {row}
+                              </div>
                             </div>
                           ))}
                         </div>

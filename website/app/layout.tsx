@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { LocaleProvider } from "@/lib/LocaleContext";
+import MotionProvider from "@/lib/MotionProvider";
 
 const manrope = Manrope({
   subsets: ["latin", "latin-ext"],
@@ -76,7 +77,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${manrope.variable} ${spaceGrotesk.variable} antialiased`}>
-        <LocaleProvider>{children}</LocaleProvider>
+        <MotionProvider>
+          <LocaleProvider>{children}</LocaleProvider>
+        </MotionProvider>
       </body>
     </html>
   );
