@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import localFont from "next/font/local";
 import "./globals.css";
 import { LocaleProvider } from "@/lib/LocaleContext";
@@ -84,7 +85,10 @@ export default async function RootLayout({
   params?: Promise<{ locale?: string }>;
 }>) {
   const resolvedParams = params ? await params : {};
-  const locale = normalizeLocale(resolvedParams.locale);
+  const requestHeaders = await headers();
+  const locale = normalizeLocale(
+    resolvedParams.locale ?? requestHeaders.get("x-canonbridge-locale") ?? undefined,
+  );
 
   return (
     <html lang={locale}>

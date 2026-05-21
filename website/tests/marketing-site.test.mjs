@@ -75,7 +75,7 @@ test("internal component gallery is excluded from search indexing", () => {
   assert.match(sitemap, /"\/de"/);
   assert.match(sitemap, /"\/es"/);
   assert.match(galleryLayout, /index: false/);
-  assert.match(read("middleware.ts"), /CANONBRIDGE_COMPONENT_GALLERY_ENABLED/);
+  assert.match(read("proxy.ts"), /CANONBRIDGE_COMPONENT_GALLERY_ENABLED/);
 });
 
 test("brand token snapshots are generated from shared tokens", () => {
@@ -105,7 +105,7 @@ test("static assets referenced by the app exist", () => {
   const assetRefs = [...files.matchAll(/\/(?:images|videos)\/[^\s"',`)]+/g)].map((m) => m[0]);
 
   for (const ref of assetRefs) {
-    const diskPath = join(root, "public", ref.replace(/^\//, ""));
+    const diskPath = join(root, "public", ref.replace(/^\//, "").split(/[?#]/)[0]);
     assert.doesNotThrow(() => statSync(diskPath), `${ref} should exist in public/`);
   }
 });

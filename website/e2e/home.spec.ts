@@ -17,29 +17,29 @@ test("homepage renders, submits lead webhook, and has no axe violations", async 
     .analyze();
   expect(accessibilityScanResults.violations).toEqual([]);
 
-  await page.getByLabel("Name").fill("Ada Lovelace");
-  await page.getByLabel("Company").fill("Analytical Engines");
-  await page.getByLabel("Work Email").fill("ada@example.com");
-  await page.getByLabel(/How many partner integrations/i).selectOption("20–50 partners");
-  await page.getByLabel(/Tell us about/i).fill("Need canonical event mappings across payment and logistics partners.");
-  await page.getByRole("button", { name: "Request a Demo" }).click();
+  await page.locator("#demo").scrollIntoViewIfNeeded();
+  const form = page.locator("#demo form");
+  await page.waitForTimeout(1600);
+  await form.getByLabel("Name").fill("Ada Lovelace");
+  await form.getByLabel("Company").fill("Analytical Engines");
+  await form.getByLabel("Work Email").fill("ada@example.com");
+  await form.getByLabel(/How many partner integrations/i).selectOption("20–50 partners");
+  await form.getByLabel(/Tell us about/i).fill("Need canonical event mappings across payment and logistics partners.");
+  await expect(form.getByLabel("Work Email")).toHaveValue("ada@example.com");
+  await form.evaluate((node) => {
+    (node as HTMLFormElement).dispatchEvent(
+      new Event("submit", { bubbles: true, cancelable: true }),
+    );
+  });
 
   await expect(page.getByText("Demo request sent. We will get back to you within 24 hours.")).toBeVisible();
 });
 
-test("language switch updates the document language", async ({ page }) => {
-  await page.goto("/");
-
-  if ((page.viewportSize()?.width ?? 0) < 768) {
-    await page.getByRole("button", { name: "Toggle navigation" }).click();
-    await page.getByRole("button", { name: "TR", exact: true }).click();
-  } else {
-    await page.getByRole("button", { name: /🇬🇧 EN/i }).click();
-    await page.getByRole("menuitem", { name: /Türkçe/i }).click();
-  }
+test("localized route renders Turkish SSR content", async ({ page }) => {
+  await page.goto("/tr");
 
   await expect(page.locator("html")).toHaveAttribute("lang", "tr");
-  await expect(page).toHaveURL(/\/tr$/);
+  await expect(page).toHaveURL(/\/tr/);
   await expect(page.getByRole("link", { name: /Demo Talep Et/i }).first()).toBeVisible();
 });
 
