@@ -171,7 +171,7 @@ The repository-owned findings from this review have been addressed in the curren
 | Mapping Studio UI | Done | Added runtime `env.js` injection, removed confetti behavior/dependency, connected shared tokens, and documented UX component cross-reference. |
 | Cross-cutting CI | Done | Mapping Studio CI now runs tests before production build; mock protocol Docker E2E remains in CI. |
 | Production env/secrets | Done | Added Kubernetes secret example and `scripts/validate-production-env.mjs`. |
-| Lead capture | Done | Website supports `NEXT_PUBLIC_LEAD_WEBHOOK_URL` for CRM/Supabase/webhook posting with mail fallback. |
+| Lead capture | Done | Website posts to same-origin `/api/leads`; `lead-capture-edge` keeps the private CRM/Supabase/webhook destination and auth token server-side. |
 | Component gallery | Done | Added `/component-gallery` for token, control, card, and lucide icon standards. |
 | Alert calibration | Done | Added staging calibration runbook and production checklist hook. |
 

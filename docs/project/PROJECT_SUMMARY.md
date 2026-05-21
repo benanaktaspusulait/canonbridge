@@ -59,7 +59,7 @@ etlsolutions/
 ## Deployment Inputs And Follow-Ups
 
 1. Supply real production IdP/secrets through each target deployment secret manager.
-2. Set `NEXT_PUBLIC_LEAD_WEBHOOK_URL` to the chosen CRM/Supabase/webhook destination for production website builds.
+2. Set `NEXT_PUBLIC_LEAD_ENDPOINT=/api/leads` for production website builds and provide `LEAD_UPSTREAM_URL`, `LEAD_UPSTREAM_AUTH_VALUE`, and Turnstile secrets to `lead-capture-edge`.
 3. Add browser resumable-upload UX on top of the batch session APIs when large-file workflows are prioritized.
 4. Complete the alert calibration sign-off after staging traffic establishes baselines.
 5. Keep Playwright/axe and component-gallery coverage current as the UI evolves.

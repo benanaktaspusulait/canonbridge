@@ -49,4 +49,12 @@ Production compatibility flags:
 
 ## Lead Capture
 
-For the website, set `NEXT_PUBLIC_LEAD_WEBHOOK_URL` at build time. The static site posts the contact payload to that endpoint and falls back to `mailto:` only when the webhook is absent.
+For the website, set `NEXT_PUBLIC_LEAD_ENDPOINT=/api/leads` at build time. Caddy routes that same-origin path to `lead-capture-edge`, where the private CRM/Supabase/webhook URL and auth token live as server-side secrets:
+
+- `LEAD_ALLOWED_ORIGINS`
+- `LEAD_UPSTREAM_URL`
+- `LEAD_UPSTREAM_AUTH_HEADER`
+- `LEAD_UPSTREAM_AUTH_VALUE`
+- `TURNSTILE_SECRET_KEY`
+
+Do not expose the upstream lead destination as a `NEXT_PUBLIC_*` variable.

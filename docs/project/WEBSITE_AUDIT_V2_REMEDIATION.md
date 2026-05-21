@@ -9,7 +9,7 @@ Source report: `canonbridge-findings-v2.md`
 | Finding | Status | Notes |
 | --- | --- | --- |
 | N1 | Done | Removed stale `website/tailwind.config.ts`; Tailwind v4 theme now comes from `app/globals.css`. |
-| N2 | Partial, static-safe | Added honeypot and minimum-delay guard to the lead form. A private edge endpoint with origin allowlist/Turnstile is still required for full webhook protection. |
+| N2 | Done | Removed public webhook exposure. The website posts to a same-origin lead endpoint, and prod Caddy routes `/api/leads` to `lead-capture-edge` with origin allowlist, honeypot/min-delay validation, optional Turnstile verification, and secret upstream webhook forwarding. |
 | N3 | Done | Added `scripts/sync-website-tokens.mjs` and `npm run tokens:check`; website and Mapping Studio token snapshots are generated from `packages/tokens`. |
 | N4 | Done | Replaced metrics emoji with lucide icons. |
 | N5 | Done | Replaced default orange architecture styling with CanonBridge signal token. |
@@ -29,11 +29,14 @@ Source report: `canonbridge-findings-v2.md`
 | N19 | Done | Expanded static tests and confirmed Playwright coverage still passes on desktop and mobile. |
 | N20 | Done | Ran Mapping Studio Angular/Vitest audit checks: 119 tests passed and production build succeeds. |
 
-## Still Product / Edge Decisions
+## Deployment Inputs
 
-| Finding | Remaining work |
-| --- | --- |
-| N2 | Replace the public lead webhook URL with a private edge endpoint plus origin allowlist and Turnstile/hCaptcha for full spam protection. |
+The remaining inputs are environment-owned production secrets, not code gaps:
+
+- `LEAD_UPSTREAM_URL`
+- `LEAD_UPSTREAM_AUTH_VALUE`
+- `TURNSTILE_SECRET_KEY`
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
 
 ## Verification
 
@@ -41,6 +44,8 @@ Source report: `canonbridge-findings-v2.md`
 - `npm test`
 - `npm run build`
 - `npm run test:e2e`
+- `npm test` in `services/lead-capture-edge`
+- `docker build -t canonbridge/lead-capture-edge:test .` in `services/lead-capture-edge`
 - `npm test -- --run` in `mapping-studio-ui`
 - `npm run build` in `mapping-studio-ui`
 - `docker compose -f website/docker-compose.yml up -d --build website`
