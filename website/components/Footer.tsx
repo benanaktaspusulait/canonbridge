@@ -212,9 +212,9 @@ export default function Footer() {
               <Image
                 src="/images/canonbridge-logo-wide-light.png"
                 alt="CanonBridge"
-                width={350}
-                height={90}
-                className="h-12 w-auto"
+                width={458}
+                height={100}
+                className="h-14 w-auto"
               />
             </div>
 

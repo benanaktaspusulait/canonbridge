@@ -44,9 +44,9 @@ export default function Navbar() {
           <Image
             src="/images/canonbridge-logo-wide-light.png"
             alt="CanonBridge"
-            width={350}
-            height={90}
-            className="h-10 w-auto"
+            width={458}
+            height={100}
+            className="h-11 w-auto"
             priority
           />
         </Link>

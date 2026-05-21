@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { ArrowDown, PlayCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLocale } from "@/lib/LocaleContext";
 
@@ -59,16 +60,18 @@ export default function Hero() {
                 href="#how-it-works"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="px-8 py-4 bg-accent-blue text-white font-semibold rounded-xl shadow-lg shadow-accent-blue/20 hover:bg-navy-900 transition-colors"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-accent-blue text-white font-semibold rounded-xl shadow-lg shadow-accent-blue/20 hover:bg-navy-900 transition-colors"
               >
+                <ArrowDown className="h-4 w-4" aria-hidden="true" />
                 {t.hero.cta1}
               </motion.a>
               <motion.a
                 href="#demo"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="px-8 py-4 border border-navy-900/15 text-navy-800 font-semibold rounded-xl hover:bg-white transition-all"
+                className="inline-flex items-center gap-2 px-8 py-4 border border-navy-900/15 text-navy-800 font-semibold rounded-xl hover:bg-white transition-all"
               >
+                <PlayCircle className="h-4 w-4" aria-hidden="true" />
                 {t.hero.cta2}
               </motion.a>
             </div>
@@ -91,27 +94,6 @@ export default function Hero() {
           </motion.div>
         </motion.div>
 
-        <motion.div
-          className="absolute bottom-4 left-1/2 hidden -translate-x-1/2 text-navy-700 md:block"
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            className="text-navy-700"
-          >
-            <path
-              d="M12 5v14M5 12l7 7 7-7"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </motion.div>
       </div>
     </section>
   );

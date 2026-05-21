@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from "react";
 import { motion, useInView } from "framer-motion";
+import { RefreshCw, ShieldCheck, Zap } from "lucide-react";
 import { useLocale } from "@/lib/LocaleContext";
 
 interface MetricProps {
@@ -19,22 +20,22 @@ function AnimatedMetric({ value, suffix, label, duration = 2 }: MetricProps) {
   useEffect(() => {
     if (!isInView) return;
 
-    let start = 0;
-    const end = value;
-    const stepTime = (duration * 1000) / end;
-    const increment = Math.max(1, Math.floor(end / 60));
+    let frame = 0;
+    let startTime: number | null = null;
 
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= end) {
-        setCount(end);
-        clearInterval(timer);
-      } else {
-        setCount(start);
+    const tick = (timestamp: number) => {
+      startTime ??= timestamp;
+      const progress = Math.min((timestamp - startTime) / (duration * 1000), 1);
+      setCount(Math.round(value * progress));
+
+      if (progress < 1) {
+        frame = requestAnimationFrame(tick);
       }
-    }, stepTime * increment);
+    };
 
-    return () => clearInterval(timer);
+    frame = requestAnimationFrame(tick);
+
+    return () => cancelAnimationFrame(frame);
   }, [isInView, value, duration]);
 
   return (
@@ -101,15 +102,15 @@ export default function Metrics() {
           transition={{ duration: 0.6, delay: 0.3 }}
         >
           {[
-            { icon: "⚡", stat: t.metrics.stat1, desc: t.metrics.stat1desc },
-            { icon: "🔄", stat: t.metrics.stat2, desc: t.metrics.stat2desc },
-            { icon: "🛡️", stat: t.metrics.stat3, desc: t.metrics.stat3desc },
+            { icon: Zap, stat: t.metrics.stat1, desc: t.metrics.stat1desc },
+            { icon: RefreshCw, stat: t.metrics.stat2, desc: t.metrics.stat2desc },
+            { icon: ShieldCheck, stat: t.metrics.stat3, desc: t.metrics.stat3desc },
           ].map((item, i) => (
             <div
               key={i}
               className="flex items-center gap-4 rounded-xl border border-navy-900/10 bg-white p-5 shadow-sm"
             >
-              <span className="text-2xl">{item.icon}</span>
+              <item.icon className="h-7 w-7 flex-shrink-0 text-accent-blue" aria-hidden="true" />
               <div>
                 <div className="text-navy-900 font-semibold">{item.stat}</div>
                 <div className="text-navy-700/70 text-sm">{item.desc}</div>

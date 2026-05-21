@@ -73,8 +73,8 @@ export default function Architecture() {
 
             {/* Row 3: Raw Events */}
             <div className="flex justify-center">
-              <div className="px-6 py-3 rounded-xl bg-orange-500/10 border border-orange-500/20 text-center">
-                <div className="text-orange-400 font-semibold">{t.architecture.rawEvents}</div>
+              <div className="px-6 py-3 rounded-xl bg-signal-500/10 border border-signal-500/20 text-center">
+                <div className="text-signal-500 font-semibold">{t.architecture.rawEvents}</div>
                 <div className="text-navy-700/65 text-xs mt-1">{t.architecture.rawEventsDesc}</div>
               </div>
             </div>
@@ -161,7 +161,7 @@ export default function Architecture() {
                 {t.architecture.legendSources}
               </div>
               <div className="flex items-center gap-2 text-xs text-navy-700/65">
-                <span className="w-3 h-3 rounded-full bg-orange-500/30" />
+                <span className="w-3 h-3 rounded-full bg-signal-500/30" />
                 {t.architecture.legendRaw}
               </div>
               <div className="flex items-center gap-2 text-xs text-navy-700/65">
