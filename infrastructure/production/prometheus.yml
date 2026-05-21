@@ -1,0 +1,52 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: canonbridge-vps
+    environment: production
+
+rule_files:
+  - "alerts/*.yml"
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: transformer
+    static_configs:
+      - targets: ["transformer:8080"]
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  - job_name: mapping-studio-api
+    static_configs:
+      - targets: ["mapping-studio-api:8080"]
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  - job_name: webhook-receiver
+    static_configs:
+      - targets: ["webhook-receiver:8082"]
+    metrics_path: /q/metrics
+    scrape_interval: 10s
+
+  - job_name: postgres
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+    scrape_interval: 15s
+
+  - job_name: redis
+    static_configs:
+      - targets: ["redis-exporter:9121"]
+    scrape_interval: 15s
+
+  - job_name: kafka
+    static_configs:
+      - targets: ["kafka-exporter:9308"]
+    scrape_interval: 15s
+
+  - job_name: node
+    static_configs:
+      - targets: ["node-exporter:9100"]
+    scrape_interval: 15s

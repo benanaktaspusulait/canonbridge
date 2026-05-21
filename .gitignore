@@ -9,6 +9,7 @@ bun.lockb
 .env
 .env.*
 !.env.example
+!.env.production.example
 
 # Build outputs
 dist/
@@ -55,6 +56,7 @@ cypress/videos/
 
 # Docker
 docker-compose.override.yml
+!docker-compose.prod.yml
 
 # Kubernetes
 k8s/secrets/

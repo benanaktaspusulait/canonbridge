@@ -1,0 +1,52 @@
+{
+	email {$ACME_EMAIL}
+	admin off
+}
+
+(common_headers) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
+
+{$CANONBRIDGE_DOMAIN}, www.{$CANONBRIDGE_DOMAIN} {
+	import common_headers
+	reverse_proxy website:80
+}
+
+studio.{$CANONBRIDGE_DOMAIN} {
+	import common_headers
+
+	@api path /api/*
+	reverse_proxy @api mapping-studio-api:8080
+
+	@notifications path /api/notifications/ws
+	reverse_proxy @notifications mapping-studio-api:8080
+
+	reverse_proxy mapping-studio-ui:80
+}
+
+api.{$CANONBRIDGE_DOMAIN} {
+	import common_headers
+	request_body {
+		max_size 10MB
+	}
+
+	@private_docs path /openapi* /swagger-ui* /q/openapi* /q/swagger-ui*
+	respond @private_docs 404
+
+	reverse_proxy mapping-studio-api:8080
+}
+
+hooks.{$CANONBRIDGE_DOMAIN} {
+	import common_headers
+	request_body {
+		max_size 10MB
+	}
+
+	reverse_proxy webhook-receiver:8082
+}

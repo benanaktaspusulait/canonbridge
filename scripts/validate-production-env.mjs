@@ -53,6 +53,9 @@ requireDisabled("CANONBRIDGE_BEARER_API_KEY_ENABLED");
 requireDisabled("CANONBRIDGE_PUBLIC_DOCS_ENABLED");
 
 [
+  "CANONBRIDGE_DOMAIN",
+  "ACME_EMAIL",
+  "NEXT_PUBLIC_SITE_URL",
   "OIDC_SERVER_URL",
   "OIDC_CLIENT_ID",
   "OIDC_CLIENT_SECRET",
@@ -61,6 +64,18 @@ requireDisabled("CANONBRIDGE_PUBLIC_DOCS_ENABLED");
   "POSTGRES_PASSWORD",
   "GF_SECURITY_ADMIN_PASSWORD",
 ].forEach(requirePresent);
+
+for (const urlName of ["NEXT_PUBLIC_SITE_URL", "OIDC_SERVER_URL"]) {
+  const url = value(urlName);
+  if (url && !url.startsWith("https://")) {
+    failures.push(`${urlName} must use https:// in production`);
+  }
+}
+
+const corsOrigins = value("CORS_ALLOWED_ORIGINS");
+if (corsOrigins && corsOrigins.split(",").some((origin) => !origin.trim().startsWith("https://"))) {
+  failures.push("CORS_ALLOWED_ORIGINS must contain only https:// origins in production");
+}
 
 const key = value("CANONBRIDGE_CREDENTIAL_ENCRYPTION_KEY");
 if (key) {

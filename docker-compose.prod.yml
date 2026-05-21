@@ -1,0 +1,419 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: canonbridge-caddy
+    restart: unless-stopped
+    depends_on:
+      website:
+        condition: service_started
+      mapping-studio-ui:
+        condition: service_healthy
+      mapping-studio-api:
+        condition: service_healthy
+      webhook-receiver:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      CANONBRIDGE_DOMAIN: ${CANONBRIDGE_DOMAIN:-canonbridge.io}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL must be set in .env.production}
+    volumes:
+      - ./infrastructure/production/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - public
+      - internal
+
+  website:
+    build:
+      context: ./website
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://canonbridge.io}
+        NEXT_PUBLIC_LEAD_WEBHOOK_URL: ${NEXT_PUBLIC_LEAD_WEBHOOK_URL:-}
+    image: canonbridge/website:${CANONBRIDGE_IMAGE_TAG:-latest}
+    container_name: canonbridge-website
+    restart: unless-stopped
+    networks:
+      - public
+
+  mapping-studio-ui:
+    build:
+      context: ./mapping-studio-ui
+      dockerfile: Dockerfile
+    image: canonbridge/mapping-studio-ui:${CANONBRIDGE_IMAGE_TAG:-latest}
+    container_name: canonbridge-mapping-studio-ui
+    restart: unless-stopped
+    environment:
+      CANONBRIDGE_API_BASE_URL: ${CANONBRIDGE_API_BASE_URL:-https://api.canonbridge.io/api}
+      CANONBRIDGE_WEBSOCKET_URL: ${CANONBRIDGE_WEBSOCKET_URL:-wss://api.canonbridge.io/api/notifications/ws}
+      CANONBRIDGE_AUTH_ISSUER: ${CANONBRIDGE_AUTH_ISSUER:-}
+      CANONBRIDGE_AUTH_CLIENT_ID: ${CANONBRIDGE_AUTH_CLIENT_ID:-mapping-studio-ui}
+      CANONBRIDGE_AUTH_REDIRECT_URI: ${CANONBRIDGE_AUTH_REDIRECT_URI:-https://studio.canonbridge.io/auth/callback}
+      CANONBRIDGE_TENANT_ID: ${CANONBRIDGE_TENANT_ID:-tenant-acme}
+      CANONBRIDGE_TENANT_NAME: ${CANONBRIDGE_TENANT_NAME:-CanonBridge Production}
+      CANONBRIDGE_TRANSFORMER_API_URL: ${CANONBRIDGE_TRANSFORMER_API_URL:-}
+      CANONBRIDGE_ENABLE_DEMO_MODE: ${CANONBRIDGE_ENABLE_DEMO_MODE:-false}
+    networks:
+      - public
+      - internal
+
+  mapping-studio-api:
+    build:
+      context: ./services/mapping-studio-api
+      dockerfile: Dockerfile
+    image: canonbridge/mapping-studio-api:${CANONBRIDGE_IMAGE_TAG:-latest}
+    container_name: canonbridge-mapping-studio-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    environment:
+      DB_USERNAME: ${POSTGRES_USER:-canonbridge_user}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env.production}
+      DB_URL: postgresql://postgres:5432/${POSTGRES_DB:-canonbridge_db}
+      JDBC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-canonbridge_db}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
+      KAFKA_RAW_TOPIC: ${KAFKA_RAW_TOPIC:-partner.raw.events}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      SECURITY_FAIL_ON_INSECURE_DEFAULTS: ${SECURITY_FAIL_ON_INSECURE_DEFAULTS:-true}
+      SECURITY_PRODUCTION_REQUIRES_OIDC: ${SECURITY_PRODUCTION_REQUIRES_OIDC:-true}
+      SECURITY_REQUIRE_OIDC_CLIENT_SECRET: ${SECURITY_REQUIRE_OIDC_CLIENT_SECRET:-true}
+      CANONBRIDGE_PRODUCTION_ALLOWS_LOCAL_LOGIN: ${CANONBRIDGE_PRODUCTION_ALLOWS_LOCAL_LOGIN:-false}
+      CANONBRIDGE_AUTH_ENABLED: ${CANONBRIDGE_AUTH_ENABLED:-true}
+      CANONBRIDGE_API_KEY_AUTH_ENABLED: ${CANONBRIDGE_API_KEY_AUTH_ENABLED:-true}
+      CANONBRIDGE_BEARER_API_KEY_ENABLED: ${CANONBRIDGE_BEARER_API_KEY_ENABLED:-false}
+      CANONBRIDGE_LOCAL_JWT_ENABLED: ${CANONBRIDGE_LOCAL_JWT_ENABLED:-false}
+      CANONBRIDGE_LOCAL_LOGIN_ENABLED: ${CANONBRIDGE_LOCAL_LOGIN_ENABLED:-false}
+      CANONBRIDGE_PUBLIC_DOCS_ENABLED: ${CANONBRIDGE_PUBLIC_DOCS_ENABLED:-false}
+      CANONBRIDGE_API_KEYS: ${CANONBRIDGE_API_KEYS:?CANONBRIDGE_API_KEYS must be set in .env.production}
+      CANONBRIDGE_CREDENTIAL_ENCRYPTION_KEY: ${CANONBRIDGE_CREDENTIAL_ENCRYPTION_KEY:?CANONBRIDGE_CREDENTIAL_ENCRYPTION_KEY must be set in .env.production}
+      OIDC_ENABLED: ${OIDC_ENABLED:-true}
+      OIDC_SERVER_URL: ${OIDC_SERVER_URL:?OIDC_SERVER_URL must be set in .env.production}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:?OIDC_CLIENT_ID must be set in .env.production}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:?OIDC_CLIENT_SECRET must be set in .env.production}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://studio.canonbridge.io,https://canonbridge.io,https://www.canonbridge.io}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY must be set in .env.production}
+      JWT_ISSUER: ${JWT_ISSUER:-canonbridge}
+      JWT_TTL_SECONDS: ${JWT_TTL_SECONDS:-28800}
+      HTTP_MAX_BODY_SIZE: ${HTTP_MAX_BODY_SIZE:-10M}
+      CANONBRIDGE_TRANSFORMER_URL: http://transformer:8080
+      RATELIMIT_ENABLED: ${RATELIMIT_ENABLED:-true}
+      CANONBRIDGE_RATELIMIT_ENABLED: ${RATELIMIT_ENABLED:-true}
+      SCHEDULED_POLLER_ENABLED: ${SCHEDULED_POLLER_ENABLED:-true}
+      SCHEDULED_POLLER_TICK_SECONDS: ${SCHEDULED_POLLER_TICK_SECONDS:-60}
+      SCHEDULED_POLLER_DEFAULT_INTERVAL: ${SCHEDULED_POLLER_DEFAULT_INTERVAL:-PT15M}
+      OUTBOX_REPLAY_ENABLED: ${OUTBOX_REPLAY_ENABLED:-true}
+      OUTBOX_REPLAY_TICK_SECONDS: ${OUTBOX_REPLAY_TICK_SECONDS:-30}
+      OUTBOX_REPLAY_BATCH_SIZE: ${OUTBOX_REPLAY_BATCH_SIZE:-50}
+      OUTBOX_REPLAY_MAX_ATTEMPTS: ${OUTBOX_REPLAY_MAX_ATTEMPTS:-10}
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - internal
+
+  transformer:
+    build:
+      context: ./services/transformer
+      dockerfile: Dockerfile
+    image: canonbridge/transformer:${CANONBRIDGE_IMAGE_TAG:-latest}
+    container_name: canonbridge-transformer
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      KAFKA_ENABLED: "true"
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka:29092}
+      KAFKA_GROUP_ID: canonbridge-transformer
+      KAFKA_FALLBACK_DLQ_TOPIC: transformation.dlq
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      OUTBOX_ENABLED: "false"
+      LOG_LEVEL: info
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - internal
+
+  webhook-receiver:
+    build:
+      context: ./services/webhook-receiver
+      dockerfile: Dockerfile
+    image: canonbridge/webhook-receiver:${CANONBRIDGE_IMAGE_TAG:-latest}
+    container_name: canonbridge-webhook-receiver
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      mapping-studio-api:
+        condition: service_healthy
+    environment:
+      DB_USERNAME: ${POSTGRES_USER:-canonbridge_user}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env.production}
+      DB_URL: postgresql://postgres:5432/${POSTGRES_DB:-canonbridge_db}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
+      HTTP_MAX_BODY_SIZE: ${HTTP_MAX_BODY_SIZE:-10M}
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8082/q/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - internal
+
+  canonbridge-mock:
+    build:
+      context: ./services/canonbridge-mock
+      dockerfile: Dockerfile
+    image: canonbridge/canonbridge-mock:${CANONBRIDGE_IMAGE_TAG:-latest}
+    container_name: canonbridge-mock
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      PAYFLEX_API_KEY: ${PAYFLEX_API_KEY:?PAYFLEX_API_KEY must be set in .env.production}
+      SHOPMAX_CLIENT_ID: ${SHOPMAX_CLIENT_ID:?SHOPMAX_CLIENT_ID must be set in .env.production}
+      SHOPMAX_CLIENT_SECRET: ${SHOPMAX_CLIENT_SECRET:?SHOPMAX_CLIENT_SECRET must be set in .env.production}
+      FASTCARGO_USERNAME: ${FASTCARGO_USERNAME:?FASTCARGO_USERNAME must be set in .env.production}
+      FASTCARGO_PASSWORD: ${FASTCARGO_PASSWORD:?FASTCARGO_PASSWORD must be set in .env.production}
+      WEBHOOK_STORAGE_DIR: /tmp/webhooks
+      SPRING_PROFILES_ACTIVE: docker
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    volumes:
+      - webhook-data:/tmp/webhooks
+    networks:
+      - internal
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: canonbridge-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-canonbridge_db}
+      POSTGRES_USER: ${POSTGRES_USER:-canonbridge_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env.production}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-canonbridge_user} -d ${POSTGRES_DB:-canonbridge_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+
+  redis:
+    image: redis:7-alpine
+    container_name: canonbridge-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    networks:
+      - internal
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    container_name: canonbridge-zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-log:/var/lib/zookeeper/log
+    networks:
+      - internal
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: canonbridge-kafka
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:29092"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    networks:
+      - internal
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: canonbridge-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      BOOTSTRAP_SERVER: kafka:29092
+    volumes:
+      - ./infrastructure/docker/kafka/create-topics.sh:/create-topics.sh:ro
+    command: ["bash", "/create-topics.sh"]
+    restart: "no"
+    networks:
+      - internal
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: canonbridge-prometheus
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./infrastructure/production/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infrastructure/docker/prometheus/alerts:/etc/prometheus/alerts:ro
+      - prometheus-data:/prometheus
+    networks:
+      - internal
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: canonbridge-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:?GF_SECURITY_ADMIN_PASSWORD must be set in .env.production}
+      GF_SECURITY_ALLOW_EMBEDDING: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_AUTH_BASIC_ENABLED: "true"
+    volumes:
+      - ./infrastructure/docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infrastructure/docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    networks:
+      - internal
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: canonbridge-kafka-ui
+    profiles:
+      - ops
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: production
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    networks:
+      - internal
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: canonbridge-postgres-exporter
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATA_SOURCE_NAME: postgresql://${POSTGRES_USER:-canonbridge_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-canonbridge_db}?sslmode=disable
+    networks:
+      - internal
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.61.0
+    container_name: canonbridge-redis-exporter
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    networks:
+      - internal
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.7.0
+    container_name: canonbridge-kafka-exporter
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    command:
+      - "--kafka.server=kafka:29092"
+    networks:
+      - internal
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.1
+    container_name: canonbridge-node-exporter
+    restart: unless-stopped
+    networks:
+      - internal
+
+networks:
+  public:
+  internal:
+    internal: true
+
+volumes:
+  caddy-data:
+  caddy-config:
+  zookeeper-data:
+  zookeeper-log:
+  kafka-data:
+  postgres-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+  webhook-data:
