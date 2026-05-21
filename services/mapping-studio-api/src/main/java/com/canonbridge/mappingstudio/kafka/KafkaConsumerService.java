@@ -1,5 +1,6 @@
 package com.canonbridge.mappingstudio.kafka;
 
+import io.quarkus.arc.properties.IfBuildProperty;
 import io.smallrye.reactive.messaging.kafka.Record;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -9,6 +10,7 @@ import org.jboss.logging.Logger;
  * Kafka Consumer Service for consuming raw partner events
  */
 @ApplicationScoped
+@IfBuildProperty(name = "canonbridge.raw-event-consumer.enabled", stringValue = "true")
 public class KafkaConsumerService {
 
     private static final Logger LOG = Logger.getLogger(KafkaConsumerService.class);
