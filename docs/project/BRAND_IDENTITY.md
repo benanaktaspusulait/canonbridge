@@ -347,6 +347,7 @@ Partner C format  ──┘     (zero custom code)
 Use this checklist when creating any content:
 
 - [ ] Uses "CanonBridge" (not ETL Solutions or Integration Magic)
+- [ ] Uses shared tokens from `packages/tokens` or an approved app snapshot
 - [ ] Uses official tagline or approved alternative
 - [ ] Targets defined audience (integration engineers, architects, etc.)
 - [ ] Focuses on partner integration pain
@@ -372,6 +373,7 @@ For brand-related questions:
 
 | Date | Version | Changes | Author |
 |------|---------|---------|--------|
+| 2026-05-21 | 1.1 | Added shared token source-of-truth requirement for website and Mapping Studio | Codex |
 | 2026-05-10 | 1.0 | Initial brand identity document | Kiro AI |
 
 ---

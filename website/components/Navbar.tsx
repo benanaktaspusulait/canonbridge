@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocale } from "@/lib/LocaleContext";
@@ -37,13 +39,16 @@ export default function Navbar() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <a href="/" className="flex items-center gap-3" aria-label="CanonBridge home">
-          <img
+        <Link href="/" className="flex items-center gap-3" aria-label="CanonBridge home">
+          <Image
             src="/images/logo-canonbridge.svg"
             alt="CanonBridge"
+            width={180}
+            height={40}
             className="h-8 w-auto"
+            priority
           />
-        </a>
+        </Link>
 
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (

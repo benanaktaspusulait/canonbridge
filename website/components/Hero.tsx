@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { useLocale } from "@/lib/LocaleContext";
 
@@ -79,10 +80,13 @@ export default function Hero() {
             transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
             className="relative"
           >
-            <img
+            <Image
               src="/images/canonbridge-console.svg"
               alt="CanonBridge Mapping Studio showing partner sources, field mapping, validation, and runtime health"
+              width={1120}
+              height={700}
               className="w-full rounded-xl border border-navy-900/10 bg-white shadow-2xl"
+              priority
             />
           </motion.div>
         </motion.div>

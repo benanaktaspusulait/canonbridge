@@ -155,3 +155,20 @@ Genel kalite: **arka uç olgunluğu yüksek**, dokümantasyon yoğun ve disiplin
 ---
 
 **Sonraki adım önerisi:** Yukarıdaki "İlk 10 İş" listesinden 1-4. maddeleri tek bir sprint'te al; bunlar dokunduğunda site **göz farkı yaratacak** seviyeye çıkar.
+
+---
+
+## 8. Remediation Status — 2026-05-21
+
+The repository-owned findings from this review have been addressed in the current pass.
+
+| Area | Status | Notes |
+|---|---|---|
+| Documentation hygiene | Done | README status now uses an MVP/deployment-input framing; `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, API docs, i18n guide, UI E2E strategy, and new ADRs are present. |
+| Shared brand tokens | Done | Added `packages/tokens` plus website and Mapping Studio CSS snapshots. |
+| Website UI | Done | Reworked hero direction, removed missing video references, added SVG logo/product assets, mobile navigation, SEO metadata, sitemap/robots, JSON-LD, and working contact mail flow. |
+| Website tests/CI | Done | Added static smoke tests and a website lint/test/build CI job. |
+| Mapping Studio UI | Done | Added runtime `env.js` injection, removed confetti behavior/dependency, connected shared tokens, and documented UX component cross-reference. |
+| Cross-cutting CI | Done | Mapping Studio CI now runs tests before production build; mock protocol Docker E2E remains in CI. |
+
+Environment-owned follow-ups remain intentionally separate from product gaps: production IdP/secrets, CRM/Supabase lead capture destination, alert threshold tuning, and future Playwright/axe/Storybook expansion after dependency policy approval.

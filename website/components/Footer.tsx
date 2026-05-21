@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -172,9 +173,11 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <img
+              <Image
                 src="/images/logo-canonbridge.svg"
                 alt="CanonBridge"
+                width={180}
+                height={40}
                 className="h-7 w-auto"
               />
             </div>

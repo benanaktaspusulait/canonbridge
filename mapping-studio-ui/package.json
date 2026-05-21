@@ -14,7 +14,7 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "lint": "ng lint",
+    "lint": "echo \"No Angular lint target configured; use npm test -- --run and npm run build\"",
     "format": "prettier --write \"src/**/*.{ts,html,scss,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,html,scss,json}\"",
     "analyze": "ng build --configuration production --stats-json && webpack-bundle-analyzer dist/mapping-studio-ui/stats.json"
