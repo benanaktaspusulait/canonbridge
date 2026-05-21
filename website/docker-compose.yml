@@ -1,9 +1,10 @@
 services:
   website:
-    build: .
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SITE_URL: http://localhost:8090
+        NEXT_PUBLIC_LEAD_CAPTURE_ENABLED: "false"
     ports:
-      - "8090:80"
+      - "8090:3000"
     restart: unless-stopped
-    volumes:
-      # Mount videos externally so you can update without rebuilding
-      - ./public/videos:/usr/share/nginx/html/videos:ro

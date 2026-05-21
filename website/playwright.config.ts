@@ -12,7 +12,7 @@ export default defineConfig({
   },
   webServer: {
     command:
-      "NEXT_PUBLIC_LEAD_ENDPOINT=/api/leads npm run build && node tests/static-server.mjs out 4173",
+      "CANONBRIDGE_COMPONENT_GALLERY_ENABLED=true NEXT_PUBLIC_LEAD_CAPTURE_ENABLED=true LEAD_WEBHOOK_URL=memory://accept npm run build && CANONBRIDGE_COMPONENT_GALLERY_ENABLED=true NEXT_PUBLIC_LEAD_CAPTURE_ENABLED=true LEAD_WEBHOOK_URL=memory://accept npm run start -- -p 4173",
     url: "http://127.0.0.1:4173",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

@@ -49,12 +49,11 @@ Production compatibility flags:
 
 ## Lead Capture
 
-For the website, set `NEXT_PUBLIC_LEAD_ENDPOINT=/api/leads` at build time. Caddy routes that same-origin path to `lead-capture-edge`, where the private CRM/Supabase/webhook URL and auth token live as server-side secrets:
+For the website, set `NEXT_PUBLIC_LEAD_CAPTURE_ENABLED=true` at build time. The browser posts to the same-origin Next API route at `/api/leads`; the private CRM/Supabase/webhook URL and auth token live only as website server runtime secrets:
 
-- `LEAD_ALLOWED_ORIGINS`
-- `LEAD_UPSTREAM_URL`
-- `LEAD_UPSTREAM_AUTH_HEADER`
-- `LEAD_UPSTREAM_AUTH_VALUE`
+- `LEAD_WEBHOOK_URL`
+- `LEAD_WEBHOOK_AUTH_HEADER`
+- `LEAD_WEBHOOK_AUTH_VALUE`
 - `TURNSTILE_SECRET_KEY`
 
 Do not expose the upstream lead destination as a `NEXT_PUBLIC_*` variable.

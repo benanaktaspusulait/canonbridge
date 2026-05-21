@@ -6,8 +6,6 @@ services:
     depends_on:
       website:
         condition: service_started
-      lead-capture-edge:
-        condition: service_healthy
       mapping-studio-ui:
         condition: service_healthy
       mapping-studio-api:
@@ -35,33 +33,17 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://canonbridge.io}
-        NEXT_PUBLIC_LEAD_ENDPOINT: ${NEXT_PUBLIC_LEAD_ENDPOINT:-/api/leads}
+        NEXT_PUBLIC_LEAD_CAPTURE_ENABLED: ${NEXT_PUBLIC_LEAD_CAPTURE_ENABLED:-true}
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
     image: canonbridge/website:${CANONBRIDGE_IMAGE_TAG:-latest}
     container_name: canonbridge-website
     restart: unless-stopped
-    networks:
-      - public
-
-  lead-capture-edge:
-    build:
-      context: ./services/lead-capture-edge
-      dockerfile: Dockerfile
-    image: canonbridge/lead-capture-edge:${CANONBRIDGE_IMAGE_TAG:-latest}
-    container_name: canonbridge-lead-capture-edge
-    restart: unless-stopped
     environment:
-      LEAD_ALLOWED_ORIGINS: ${LEAD_ALLOWED_ORIGINS:-https://canonbridge.io,https://www.canonbridge.io}
-      LEAD_MIN_ELAPSED_MS: ${LEAD_MIN_ELAPSED_MS:-1500}
-      LEAD_UPSTREAM_URL: ${LEAD_UPSTREAM_URL:?LEAD_UPSTREAM_URL must be set in .env.production}
-      LEAD_UPSTREAM_AUTH_HEADER: ${LEAD_UPSTREAM_AUTH_HEADER:-Authorization}
-      LEAD_UPSTREAM_AUTH_VALUE: ${LEAD_UPSTREAM_AUTH_VALUE:?LEAD_UPSTREAM_AUTH_VALUE must be set in .env.production}
-      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+      LEAD_WEBHOOK_URL: ${LEAD_WEBHOOK_URL:?LEAD_WEBHOOK_URL must be set in .env.production}
+      LEAD_WEBHOOK_AUTH_HEADER: ${LEAD_WEBHOOK_AUTH_HEADER:-Authorization}
+      LEAD_WEBHOOK_AUTH_VALUE: ${LEAD_WEBHOOK_AUTH_VALUE:?LEAD_WEBHOOK_AUTH_VALUE must be set in .env.production}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:?TURNSTILE_SECRET_KEY must be set in .env.production}
+      LEAD_RATE_LIMIT_PER_MINUTE: ${LEAD_RATE_LIMIT_PER_MINUTE:-8}
     networks:
       - public
 

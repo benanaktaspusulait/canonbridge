@@ -23,7 +23,7 @@ jobs:
           - { name: mapping-studio-api, path: services/mapping-studio-api, java: true }
           - { name: webhook-receiver, path: services/webhook-receiver, java: true }
           - { name: transformer, path: services/transformer, java: false }
-          - { name: lead-capture-edge, path: services/lead-capture-edge, java: false }
+          - { name: website, path: website, java: false }
           - { name: mapping-studio-ui, path: mapping-studio-ui, java: false }
           - { name: canonbridge-mock, path: services/canonbridge-mock, java: true }
     steps:
@@ -55,12 +55,14 @@ jobs:
           npm ci
           npm run build --if-present
 
-      - name: Test and build lead capture edge
-        if: matrix.service.name == 'lead-capture-edge'
+      - name: Test and build website
+        if: matrix.service.name == 'website'
         working-directory: ${{ matrix.service.path }}
         run: |
           npm ci
           npm test
+          npm run tokens:check
+          npm run build
 
       - name: Build Angular app
         if: matrix.service.name == 'mapping-studio-ui'

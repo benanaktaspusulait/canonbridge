@@ -92,6 +92,9 @@ export default function Metrics() {
             label={t.metrics.costReduction}
           />
         </div>
+        <p className="mx-auto mt-8 max-w-3xl text-center text-xs leading-relaxed text-navy-700/60">
+          Published figures are engineering targets and synthetic benchmark baselines; production results vary by connector mix, payload size, and deployment topology.
+        </p>
 
         {/* Secondary stats */}
         <motion.div

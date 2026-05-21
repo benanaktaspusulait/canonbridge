@@ -96,6 +96,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "Lead webhook is not configured." }, { status: 500 });
   }
 
+  if (webhookUrl === "memory://accept") {
+    return NextResponse.json({ ok: true, accepted: true }, { status: 202 });
+  }
+
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const authHeader = process.env.LEAD_WEBHOOK_AUTH_HEADER?.trim();
   const authValue = process.env.LEAD_WEBHOOK_AUTH_VALUE?.trim();

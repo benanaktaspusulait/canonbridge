@@ -16,10 +16,7 @@
 {$CANONBRIDGE_DOMAIN}, www.{$CANONBRIDGE_DOMAIN} {
 	import common_headers
 
-	@lead_capture path /api/leads
-	reverse_proxy @lead_capture lead-capture-edge:8080
-
-	reverse_proxy website:80
+	reverse_proxy website:3000
 }
 
 studio.{$CANONBRIDGE_DOMAIN} {

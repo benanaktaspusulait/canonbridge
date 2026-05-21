@@ -1,9 +1,25 @@
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 import "./globals.css";
 import { LocaleProvider } from "@/lib/LocaleContext";
 import MotionProvider from "@/lib/MotionProvider";
+import type { Locale } from "@/lib/i18n";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://canonbridge.io";
+const supportedLocales: Locale[] = ["en", "tr", "de", "es"];
+const ogImage = "/images/canonbridge-og.png?v=2026-05-21";
+
+const canonSans = localFont({
+  src: "./fonts/canon-sans.woff2",
+  variable: "--cb-font-sans",
+  display: "swap",
+});
+
+const canonMono = localFont({
+  src: "./fonts/canon-mono.woff2",
+  variable: "--cb-font-display",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -33,7 +49,7 @@ export const metadata: Metadata = {
       "A no-code integration control plane for mapping partner payloads into canonical business events.",
     images: [
       {
-        url: "/images/canonbridge-og.png",
+        url: ogImage,
         width: 1200,
         height: 630,
         alt: "CanonBridge integration workflow console",
@@ -45,7 +61,7 @@ export const metadata: Metadata = {
     title: "CanonBridge | Enterprise Integration Platform",
     description:
       "Visual mapping, runtime recovery, and observability for partner integrations.",
-    images: ["/images/canonbridge-og.png"],
+    images: [ogImage],
   },
   robots: {
     index: true,
@@ -56,16 +72,25 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+function normalizeLocale(locale?: string): Locale {
+  return supportedLocales.includes(locale as Locale) ? (locale as Locale) : "en";
+}
+
+export default async function RootLayout({
   children,
+  params,
 }: Readonly<{
   children: React.ReactNode;
+  params?: Promise<{ locale?: string }>;
 }>) {
+  const resolvedParams = params ? await params : {};
+  const locale = normalizeLocale(resolvedParams.locale);
+
   return (
-    <html lang="en">
-      <body className="antialiased">
+    <html lang={locale}>
+      <body className={`${canonSans.variable} ${canonMono.variable} antialiased`}>
         <MotionProvider>
-          <LocaleProvider>{children}</LocaleProvider>
+          <LocaleProvider initialLocale={locale}>{children}</LocaleProvider>
         </MotionProvider>
       </body>
     </html>

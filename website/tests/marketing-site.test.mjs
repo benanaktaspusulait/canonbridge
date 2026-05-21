@@ -19,19 +19,21 @@ function allFiles(dir) {
 
 test("marketing site has SEO metadata and structured data", () => {
   const layout = read("app/layout.tsx");
-  const page = read("app/page.tsx");
+  const page = read("components/SitePage.tsx");
 
   assert.match(layout, /openGraph/);
   assert.match(layout, /twitter/);
   assert.match(layout, /alternates/);
-  assert.match(layout, /canonbridge-og\.png/);
+  assert.match(layout, /canonbridge-og\.png\?v=2026-05-21/);
   assert.doesNotMatch(layout, /canonbridge-og\.svg/);
+  assert.match(layout, /next\/font\/local/);
   assert.doesNotMatch(layout, /next\/font\/google/);
   assert.match(layout, /tr: "\/tr"/);
   assert.doesNotThrow(() => statSync(join(root, "app/[locale]/page.tsx")));
   assert.match(page, /application\/ld\+json/);
   assert.match(page, /Organization/);
-  assert.match(page, /BreadcrumbList/);
+  assert.match(page, /FAQPage/);
+  assert.doesNotMatch(page, /BreadcrumbList/);
 });
 
 test("hero uses the real Mapping Studio product screenshot", () => {
@@ -51,7 +53,9 @@ test("mobile navigation and contact form are not no-op placeholders", () => {
   assert.match(navbar, /mobileOpen/);
   assert.match(navbar, /aria-controls="mobile-navigation"/);
   assert.match(navbar, /lucide-react/);
-  assert.match(footer, /NEXT_PUBLIC_LEAD_ENDPOINT/);
+  assert.match(footer, /NEXT_PUBLIC_LEAD_CAPTURE_ENABLED/);
+  assert.match(footer, /fetch\("\/api\/leads"/);
+  assert.doesNotMatch(footer, /NEXT_PUBLIC_LEAD_ENDPOINT/);
   assert.doesNotMatch(footer, /NEXT_PUBLIC_LEAD_WEBHOOK_URL/);
   assert.match(footer, /NEXT_PUBLIC_TURNSTILE_SITE_KEY/);
   assert.match(footer, /honeypot/);
@@ -71,6 +75,7 @@ test("internal component gallery is excluded from search indexing", () => {
   assert.match(sitemap, /"\/de"/);
   assert.match(sitemap, /"\/es"/);
   assert.match(galleryLayout, /index: false/);
+  assert.match(read("middleware.ts"), /CANONBRIDGE_COMPONENT_GALLERY_ENABLED/);
 });
 
 test("brand token snapshots are generated from shared tokens", () => {

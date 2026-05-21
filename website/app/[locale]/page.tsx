@@ -1,4 +1,4 @@
-import Home from "../page";
+import SitePage from "@/components/SitePage";
 
 const routedLocales = ["tr", "de", "es"] as const;
 
@@ -9,5 +9,5 @@ export function generateStaticParams() {
 }
 
 export default function LocalePage() {
-  return <Home />;
+  return <SitePage />;
 }

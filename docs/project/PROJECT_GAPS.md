@@ -37,7 +37,7 @@ These are not open implementation gaps in the current local/staging MVP:
 | Area | Status | Owner / Trigger |
 |---|---|---|
 | Production IdP and secrets | Closed as deployable contract | `infrastructure/k8s/mapping-studio-api-secret.example.yaml` and `scripts/validate-production-env.mjs` define and validate required production values. |
-| Website lead capture destination | Closed as same-origin edge route | `NEXT_PUBLIC_LEAD_ENDPOINT=/api/leads` posts to `lead-capture-edge`; the private CRM/Supabase/webhook URL and auth value stay in server-side secrets. |
+| Website lead capture destination | Closed as same-origin API route | `NEXT_PUBLIC_LEAD_CAPTURE_ENABLED=true` posts to `/api/leads`; the private CRM/Supabase/webhook URL and auth value stay in website server-side secrets. |
 | Browser E2E + axe automation | Closed | Website Playwright + axe tests run through `npm run test:e2e` and CI. |
 | Component gallery | Closed | `/component-gallery` documents shared tokens, controls, cards, and lucide icon usage. |
 | Alert thresholds | Closed as runbook | [Alert Threshold Calibration](../operations/16-alert-threshold-calibration.md) defines the staging baseline and sign-off process. |

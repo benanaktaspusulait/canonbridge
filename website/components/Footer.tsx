@@ -154,7 +154,7 @@ export default function Footer() {
                       id="name"
                       name="name"
                       required
-                      className="w-full px-4 py-3 rounded-lg bg-white border border-navy-900/10 text-navy-900 placeholder:text-navy-700/50 focus:outline-none focus:shadow-[var(--cb-shadow-focus)] transition-all"
+                      className="w-full px-4 py-3 rounded-lg bg-white border border-navy-900/10 text-navy-900 placeholder:text-navy-700/50 focus:outline-none focus:shadow-[var(--cb-shadow-focus)] invalid:border-red-500 invalid:ring-1 invalid:ring-red-500/30 transition-all"
                       placeholder={t.footer.formNamePlaceholder}
                     />
                   </div>
@@ -170,7 +170,7 @@ export default function Footer() {
                       id="company"
                       name="company"
                       required
-                      className="w-full px-4 py-3 rounded-lg bg-white border border-navy-900/10 text-navy-900 placeholder:text-navy-700/50 focus:outline-none focus:shadow-[var(--cb-shadow-focus)] transition-all"
+                      className="w-full px-4 py-3 rounded-lg bg-white border border-navy-900/10 text-navy-900 placeholder:text-navy-700/50 focus:outline-none focus:shadow-[var(--cb-shadow-focus)] invalid:border-red-500 invalid:ring-1 invalid:ring-red-500/30 transition-all"
                       placeholder={t.footer.formCompanyPlaceholder}
                     />
                   </div>
@@ -188,7 +188,7 @@ export default function Footer() {
                     id="email"
                     name="email"
                     required
-                    className="w-full px-4 py-3 rounded-lg bg-white border border-navy-900/10 text-navy-900 placeholder:text-navy-700/50 focus:outline-none focus:shadow-[var(--cb-shadow-focus)] transition-all"
+                    className="w-full px-4 py-3 rounded-lg bg-white border border-navy-900/10 text-navy-900 placeholder:text-navy-700/50 focus:outline-none focus:shadow-[var(--cb-shadow-focus)] invalid:border-red-500 invalid:ring-1 invalid:ring-red-500/30 transition-all"
                     placeholder={t.footer.formEmailPlaceholder}
                   />
                 </div>

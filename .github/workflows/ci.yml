@@ -171,7 +171,7 @@ jobs:
           docker push ${{ env.IMAGE_PREFIX }}/mapping-studio-ui:${{ github.sha }}
 
   # ============================================================================
-  # MARKETING WEBSITE (Next.js static export)
+  # MARKETING WEBSITE (Next.js)
   # ============================================================================
   website:
     name: Website (Next.js)
@@ -190,6 +190,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Check brand token sync
+        run: npm run tokens:check
+
       - name: Lint
         run: npm run lint --if-present
 
@@ -204,32 +207,6 @@ jobs:
 
       - name: Browser E2E and accessibility
         run: npm run test:e2e
-
-  # ============================================================================
-  # EDGE: Lead Capture
-  # ============================================================================
-  lead-capture-edge:
-    name: Lead Capture Edge
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: services/lead-capture-edge
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Test
-        run: npm test
-
-      - name: Build Docker image
-        run: docker build -t ${{ env.IMAGE_PREFIX }}/lead-capture-edge:${{ github.sha }} .
 
   # ============================================================================
   # MOCK SERVICE (Spring Boot)

@@ -14,8 +14,8 @@ export default function Hero() {
       <div
         className="absolute inset-0 opacity-[0.03]"
         style={{
-          backgroundImage: `linear-gradient(rgba(6,16,22,0.3) 1px, transparent 1px),
-                           linear-gradient(90deg, rgba(6,16,22,0.3) 1px, transparent 1px)`,
+          backgroundImage: `linear-gradient(color-mix(in oklch, var(--cb-color-ink-950) 30%, transparent) 1px, transparent 1px),
+                           linear-gradient(90deg, color-mix(in oklch, var(--cb-color-ink-950) 30%, transparent) 1px, transparent 1px)`,
           backgroundSize: "60px 60px",
         }}
       />
@@ -54,12 +54,12 @@ export default function Hero() {
               ))}
             </div>
 
-            <div className="flex flex-col sm:flex-row items-start gap-4">
+            <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start">
               <motion.a
                 href="#how-it-works"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-accent-blue text-white font-semibold rounded-xl shadow-lg shadow-accent-blue/20 hover:bg-navy-900 transition-colors"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent-blue px-8 py-4 font-semibold text-white shadow-lg shadow-accent-blue/20 transition-colors hover:bg-navy-900 sm:w-auto"
               >
                 <ArrowDown className="h-4 w-4" aria-hidden="true" />
                 {t.hero.cta1}
@@ -68,7 +68,7 @@ export default function Hero() {
                 href="#demo"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center gap-2 px-8 py-4 border border-navy-900/15 text-navy-800 font-semibold rounded-xl hover:bg-white transition-all"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-8 py-4 font-semibold text-navy-800 transition-all hover:bg-white sm:w-auto"
               >
                 <PlayCircle className="h-4 w-4" aria-hidden="true" />
                 {t.hero.cta2}

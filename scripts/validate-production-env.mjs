@@ -56,10 +56,9 @@ requireDisabled("CANONBRIDGE_PUBLIC_DOCS_ENABLED");
   "CANONBRIDGE_DOMAIN",
   "ACME_EMAIL",
   "NEXT_PUBLIC_SITE_URL",
-  "NEXT_PUBLIC_LEAD_ENDPOINT",
-  "LEAD_ALLOWED_ORIGINS",
-  "LEAD_UPSTREAM_URL",
-  "LEAD_UPSTREAM_AUTH_VALUE",
+  "NEXT_PUBLIC_LEAD_CAPTURE_ENABLED",
+  "LEAD_WEBHOOK_URL",
+  "LEAD_WEBHOOK_AUTH_VALUE",
   "TURNSTILE_SECRET_KEY",
   "OIDC_SERVER_URL",
   "OIDC_CLIENT_ID",
@@ -77,18 +76,17 @@ for (const urlName of ["NEXT_PUBLIC_SITE_URL", "OIDC_SERVER_URL"]) {
   }
 }
 
-if (value("NEXT_PUBLIC_LEAD_ENDPOINT") !== "/api/leads") {
-  failures.push("NEXT_PUBLIC_LEAD_ENDPOINT must be /api/leads in production");
+if (value("NEXT_PUBLIC_LEAD_CAPTURE_ENABLED").toLowerCase() !== "true") {
+  failures.push("NEXT_PUBLIC_LEAD_CAPTURE_ENABLED must be true in production");
 }
 
-const leadOrigins = value("LEAD_ALLOWED_ORIGINS");
-if (leadOrigins && leadOrigins.split(",").some((origin) => !origin.trim().startsWith("https://"))) {
-  failures.push("LEAD_ALLOWED_ORIGINS must contain only https:// origins in production");
+if (value("LEAD_WEBHOOK_AUTH_HEADER") && !value("LEAD_WEBHOOK_AUTH_VALUE")) {
+  failures.push("LEAD_WEBHOOK_AUTH_VALUE must be set when LEAD_WEBHOOK_AUTH_HEADER is set");
 }
 
-const leadUpstream = value("LEAD_UPSTREAM_URL");
-if (leadUpstream && !leadUpstream.startsWith("https://")) {
-  failures.push("LEAD_UPSTREAM_URL must use https:// in production");
+const leadWebhook = value("LEAD_WEBHOOK_URL");
+if (leadWebhook && !leadWebhook.startsWith("https://")) {
+  failures.push("LEAD_WEBHOOK_URL must use https:// in production");
 }
 
 const corsOrigins = value("CORS_ALLOWED_ORIGINS");
