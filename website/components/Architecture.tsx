@@ -92,7 +92,7 @@ export default function Architecture() {
                 <div className="text-accent-blue font-bold text-lg">{t.architecture.transformer}</div>
                 <div className="text-navy-700 text-xs mt-2 flex flex-wrap justify-center gap-2">
                   {t.architecture.transformerTags.map((tag) => (
-                    <span key={tag} className="px-2 py-0.5 bg-white/70 rounded">{tag}</span>
+                    <span key={tag} className="px-2 py-0.5 bg-white/[0.7] rounded">{tag}</span>
                   ))}
                 </div>
               </div>
@@ -126,7 +126,7 @@ export default function Architecture() {
                 <div className="text-accent-cyan font-bold text-lg">{t.architecture.businessService}</div>
                 <div className="text-navy-700 text-xs mt-2 flex flex-wrap justify-center gap-2">
                   {t.architecture.businessTags.map((tag) => (
-                    <span key={tag} className="px-2 py-0.5 bg-white/70 rounded">{tag}</span>
+                    <span key={tag} className="px-2 py-0.5 bg-white/[0.7] rounded">{tag}</span>
                   ))}
                 </div>
               </div>

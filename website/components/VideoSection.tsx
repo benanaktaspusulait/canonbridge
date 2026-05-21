@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
+import { Check, CirclePlay } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 
 interface VideoSectionProps {
@@ -84,19 +85,7 @@ export default function VideoSection({
                   viewport={{ once: true }}
                   transition={{ delay: 0.2 + i * 0.1, duration: 0.5 }}
                 >
-                  <svg
-                    className="w-5 h-5 text-accent-cyan mt-0.5 flex-shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
+                  <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-accent-cyan" aria-hidden="true" />
                   <span className="text-navy-700">{bullet}</span>
                 </motion.li>
               ))}
@@ -139,7 +128,7 @@ export default function VideoSection({
                   <div className="h-full w-full bg-white p-5">
                     <div className="mb-4 flex items-center justify-between border-b border-navy-900/10 pb-3">
                       <div>
-                        <div className="h-2.5 w-24 rounded bg-navy-900/18" />
+                        <div className="h-2.5 w-24 rounded bg-navy-900/[0.18]" />
                         <div className="mt-2 h-2 w-36 rounded bg-navy-900/10" />
                       </div>
                       <div className="rounded-md bg-accent-blue px-3 py-1.5 text-xs font-semibold text-white">
@@ -157,7 +146,8 @@ export default function VideoSection({
                         ))}
                       </div>
                       <div className="col-span-2 rounded-lg border border-navy-900/10 bg-navy-900 p-4">
-                        <div className="mb-4 flex gap-2">
+                        <div className="mb-4 flex items-center gap-2">
+                          <CirclePlay className="h-4 w-4 text-accent-cyan" aria-hidden="true" />
                           <span className="h-2 w-2 rounded-full bg-accent-cyan" />
                           <span className="h-2 w-2 rounded-full bg-accent-blue" />
                           <span className="h-2 w-2 rounded-full bg-accent-purple" />

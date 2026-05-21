@@ -28,7 +28,7 @@ export default function Hero() {
           className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]"
         >
           <div className="text-left">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-navy-900/10 bg-white/72 backdrop-blur-sm mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-navy-900/10 bg-white/[0.72] backdrop-blur-sm mb-8">
               <span className="w-2 h-2 rounded-full bg-accent-blue" />
               <span className="text-sm font-medium text-navy-700">{t.hero.badge}</span>
             </div>
@@ -47,7 +47,7 @@ export default function Hero() {
               {t.hero.sources.map((source) => (
                 <span
                   key={source}
-                  className="px-3 py-1.5 text-xs font-semibold text-navy-700 bg-white/80 border border-navy-900/10 rounded-full"
+                  className="px-3 py-1.5 text-xs font-semibold text-navy-700 bg-white/[0.8] border border-navy-900/10 rounded-full"
                 >
                   {source}
                 </span>

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { ChevronDown, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocale } from "@/lib/LocaleContext";
 import { locales } from "@/lib/i18n";
@@ -70,9 +71,7 @@ export default function Navbar() {
             >
               <span>{currentLocale.flag}</span>
               <span className="hidden lg:inline">{currentLocale.code.toUpperCase()}</span>
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+              <ChevronDown className="h-3 w-3" aria-hidden="true" />
             </button>
 
             <AnimatePresence>
@@ -126,13 +125,9 @@ export default function Navbar() {
         >
           <span className="sr-only">Menu</span>
           {mobileOpen ? (
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X className="h-5 w-5" aria-hidden="true" />
           ) : (
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7h16M4 12h16M4 17h16" />
-            </svg>
+            <Menu className="h-5 w-5" aria-hidden="true" />
           )}
         </button>
       </div>

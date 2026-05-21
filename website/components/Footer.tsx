@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -8,32 +9,68 @@ import { useLocale } from "@/lib/LocaleContext";
 
 export default function Footer() {
   const { t } = useLocale();
-  const [status, setStatus] = useState<"idle" | "ready">("idle");
+  const [status, setStatus] = useState<"idle" | "submitting" | "sent" | "mail" | "error">("idle");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
-    const name = String(data.get("name") ?? "");
-    const company = String(data.get("company") ?? "");
-    const email = String(data.get("email") ?? "");
-    const partners = String(data.get("partners") ?? "");
-    const message = String(data.get("message") ?? "");
+    const payload = {
+      name: String(data.get("name") ?? ""),
+      company: String(data.get("company") ?? ""),
+      email: String(data.get("email") ?? ""),
+      partners: String(data.get("partners") ?? ""),
+      message: String(data.get("message") ?? ""),
+      source: "canonbridge-website",
+      submittedAt: new Date().toISOString(),
+    };
+    const webhookUrl = process.env.NEXT_PUBLIC_LEAD_WEBHOOK_URL?.trim();
+
+    if (webhookUrl) {
+      setStatus("submitting");
+      try {
+        const response = await fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Lead webhook returned ${response.status}`);
+        }
+
+        setStatus("sent");
+        form.reset();
+        return;
+      } catch {
+        setStatus("error");
+        return;
+      }
+    }
+
     const body = [
-      `Name: ${name}`,
-      `Company: ${company}`,
-      `Email: ${email}`,
-      `Partner integrations: ${partners || "Not specified"}`,
+      `Name: ${payload.name}`,
+      `Company: ${payload.company}`,
+      `Email: ${payload.email}`,
+      `Partner integrations: ${payload.partners || "Not specified"}`,
       "",
-      message,
+      payload.message,
     ].join("\n");
 
     window.location.href = `mailto:sales@canonbridge.io?subject=${encodeURIComponent(
-      `CanonBridge demo request from ${company || name}`,
+      `CanonBridge demo request from ${payload.company || payload.name}`,
     )}&body=${encodeURIComponent(body)}`;
-    setStatus("ready");
+    setStatus("mail");
     form.reset();
   }
+
+  const statusMessage = {
+    idle: t.footer.formNote,
+    submitting: "Sending demo request...",
+    sent: "Demo request sent. We will get back to you within 24 hours.",
+    mail: "Your email client is ready with the demo request.",
+    error: "We could not send the request. Please email sales@canonbridge.io.",
+  }[status];
 
   return (
     <>
@@ -153,15 +190,14 @@ export default function Footer() {
                   type="submit"
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
+                  disabled={status === "submitting"}
                   className="w-full px-8 py-4 bg-accent-blue text-white font-semibold rounded-lg shadow-lg shadow-accent-blue/20 hover:bg-navy-900 transition-colors"
                 >
-                  {t.footer.formSubmit}
+                  {status === "submitting" ? "Sending..." : t.footer.formSubmit}
                 </motion.button>
 
                 <p className="text-center text-navy-700/70 text-xs" aria-live="polite">
-                  {status === "ready"
-                    ? "Your email client is ready with the demo request."
-                    : t.footer.formNote}
+                  {statusMessage}
                 </p>
               </form>
             </div>
@@ -207,6 +243,12 @@ export default function Footer() {
               >
                 Contact
               </a>
+              <Link
+                href="/component-gallery"
+                className="hover:text-navy-900 transition-colors"
+              >
+                Components
+              </Link>
             </div>
 
             <div className="text-sm text-navy-700/65">
