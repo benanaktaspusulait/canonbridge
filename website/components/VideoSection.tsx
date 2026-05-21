@@ -43,7 +43,8 @@ export default function VideoSection({
     <section
       ref={sectionRef}
       id={id}
-      className="relative py-24 md:py-32 overflow-hidden"
+      className="relative py-24 md:py-32 overflow-hidden bg-white"
+      aria-labelledby={`step-${step}-title`}
     >
       <div className="max-w-7xl mx-auto px-6">
         <div
@@ -67,10 +68,10 @@ export default function VideoSection({
                 {subtitle}
               </span>
             </div>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mt-3 mb-6 leading-tight">
+            <h2 id={`step-${step}-title`} className="hero-title text-3xl md:text-4xl lg:text-5xl font-bold mt-3 mb-6 leading-tight text-navy-900">
               {title}
             </h2>
-            <p className="text-gray-400 text-lg leading-relaxed mb-8">
+            <p className="text-navy-700 text-lg leading-relaxed mb-8">
               {description}
             </p>
             <ul className="space-y-4">
@@ -96,7 +97,7 @@ export default function VideoSection({
                       d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  <span className="text-gray-300">{bullet}</span>
+                  <span className="text-navy-700">{bullet}</span>
                 </motion.li>
               ))}
             </ul>
@@ -120,7 +121,7 @@ export default function VideoSection({
                     className="w-full h-full border-0"
                     title={title}
                   />
-                ) : (
+                ) : videoSrc ? (
                   <>
                     <video
                       ref={videoRef}
@@ -133,34 +134,45 @@ export default function VideoSection({
                     >
                       Your browser does not support the video tag.
                     </video>
-                    {/* Placeholder overlay when no video loads */}
-                    {!videoSrc && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-navy-800/90 video-placeholder">
-                        <div className="text-center">
-                          <svg
-                            className="w-16 h-16 text-gray-600 mx-auto mb-3"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={1}
-                              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={1}
-                              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                          <p className="text-gray-500 text-sm">Demo video</p>
+                  </>
+                ) : (
+                  <div className="h-full w-full bg-white p-5">
+                    <div className="mb-4 flex items-center justify-between border-b border-navy-900/10 pb-3">
+                      <div>
+                        <div className="h-2.5 w-24 rounded bg-navy-900/18" />
+                        <div className="mt-2 h-2 w-36 rounded bg-navy-900/10" />
+                      </div>
+                      <div className="rounded-md bg-accent-blue px-3 py-1.5 text-xs font-semibold text-white">
+                        Step {step}
+                      </div>
+                    </div>
+                    <div className="grid h-[calc(100%-64px)] grid-cols-3 gap-4">
+                      <div className="space-y-3">
+                        {["Source", "Schema", "Auth"].map((label) => (
+                          <div key={label} className="rounded-lg border border-navy-900/10 bg-[var(--cb-color-cloud-50)] p-3">
+                            <div className="mb-2 text-xs font-bold text-navy-800">{label}</div>
+                            <div className="h-2 rounded bg-navy-900/10" />
+                            <div className="mt-2 h-2 w-2/3 rounded bg-navy-900/10" />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="col-span-2 rounded-lg border border-navy-900/10 bg-navy-900 p-4">
+                        <div className="mb-4 flex gap-2">
+                          <span className="h-2 w-2 rounded-full bg-accent-cyan" />
+                          <span className="h-2 w-2 rounded-full bg-accent-blue" />
+                          <span className="h-2 w-2 rounded-full bg-accent-purple" />
+                        </div>
+                        <div className="space-y-3">
+                          {[0, 1, 2, 3, 4].map((row) => (
+                            <div key={row} className="grid grid-cols-[0.8fr_1fr] gap-3">
+                              <div className="h-3 rounded bg-white/16" />
+                              <div className="h-3 rounded bg-accent-cyan/45" />
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    )}
-                  </>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
