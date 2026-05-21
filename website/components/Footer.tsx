@@ -73,7 +73,7 @@ export default function Footer() {
                       id="name"
                       name="name"
                       required
-                      className="w-full px-4 py-3 rounded-lg bg-white border border-navy-900/10 text-navy-900 placeholder-navy-700/45 focus:outline-none focus:shadow-[var(--cb-shadow-focus)] transition-all"
+                      className="w-full px-4 py-3 rounded-lg bg-white border border-navy-900/10 text-navy-900 placeholder:text-navy-700/50 focus:outline-none focus:shadow-[var(--cb-shadow-focus)] transition-all"
                       placeholder={t.footer.formNamePlaceholder}
                     />
                   </div>
@@ -89,7 +89,7 @@ export default function Footer() {
                       id="company"
                       name="company"
                       required
-                      className="w-full px-4 py-3 rounded-lg bg-white border border-navy-900/10 text-navy-900 placeholder-navy-700/45 focus:outline-none focus:shadow-[var(--cb-shadow-focus)] transition-all"
+                      className="w-full px-4 py-3 rounded-lg bg-white border border-navy-900/10 text-navy-900 placeholder:text-navy-700/50 focus:outline-none focus:shadow-[var(--cb-shadow-focus)] transition-all"
                       placeholder={t.footer.formCompanyPlaceholder}
                     />
                   </div>
@@ -107,7 +107,7 @@ export default function Footer() {
                     id="email"
                     name="email"
                     required
-                    className="w-full px-4 py-3 rounded-lg bg-white border border-navy-900/10 text-navy-900 placeholder-navy-700/45 focus:outline-none focus:shadow-[var(--cb-shadow-focus)] transition-all"
+                    className="w-full px-4 py-3 rounded-lg bg-white border border-navy-900/10 text-navy-900 placeholder:text-navy-700/50 focus:outline-none focus:shadow-[var(--cb-shadow-focus)] transition-all"
                     placeholder={t.footer.formEmailPlaceholder}
                   />
                 </div>
@@ -143,7 +143,7 @@ export default function Footer() {
                     id="message"
                     name="message"
                     rows={4}
-                    className="w-full px-4 py-3 rounded-lg bg-white border border-navy-900/10 text-navy-900 placeholder-navy-700/45 focus:outline-none focus:shadow-[var(--cb-shadow-focus)] transition-all resize-none"
+                    className="w-full px-4 py-3 rounded-lg bg-white border border-navy-900/10 text-navy-900 placeholder:text-navy-700/50 focus:outline-none focus:shadow-[var(--cb-shadow-focus)] transition-all resize-none"
                     placeholder={t.footer.formMessagePlaceholder}
                   />
                 </div>

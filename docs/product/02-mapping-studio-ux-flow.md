@@ -363,3 +363,15 @@ Publish result:
 - Make publish feel deliberate.
 - Keep runtime and design-time concepts distinct: drafts are editable, published versions are immutable.
 
+## Component Cross-Reference
+
+| UX area | Primary component / source |
+|---|---|
+| Mapping wizard shell | `mapping-studio-ui/src/app/pages/mapping-wizard/mapping-wizard.component.*` |
+| Source type selection | `mapping-studio-ui/src/app/pages/mapping-wizard/steps/step0-source-type/source-type-selection.component.ts` |
+| Integration Studio shell | `mapping-studio-ui/src/app/pages/integration-studio/integration-studio.component.*` |
+| JSON highlighting helper | `mapping-studio-ui/src/app/pages/integration-studio/json-highlight.ts` |
+| JSONata request preview | `mapping-studio-ui/src/app/core/services/jsonata-check.service.ts` |
+| Mapping API client | `mapping-studio-ui/src/app/core/services/mapping.service.ts` |
+| External systems and credentials | `mapping-studio-ui/src/app/pages/external-systems/external-systems.component.*` |
+| Runtime configuration | `mapping-studio-ui/src/environments/runtime-config.ts` and `mapping-studio-ui/public/env.js` |

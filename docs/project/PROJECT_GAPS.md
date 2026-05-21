@@ -11,6 +11,10 @@ The largest previous gaps were production hardening and operational recovery dep
 
 Runtime state now exists for batch jobs, chunked batch upload sessions, scheduled API runs, scheduled run history, and canonical-event outbox traces. Batch jobs have status/history plus retry/redrive APIs and large-file session/chunk upload APIs; scheduled API polling has interval and cron contracts plus run history; outbox has background replay, metrics, manual replay, recovery tests, dashboard panels, and alert rules; and the mock service has Docker/Testcontainers protocol E2E coverage for all 10 systems wired into CI.
 
+The 2026-05-20 UI/documentation findings review has also been remediated for the repository-owned items: shared brand tokens, website SEO/mobile/contact/static asset checks, SVG brand assets, website test/build CI, Mapping Studio runtime `env.js`, license/security/contributing/changelog docs, i18n guide, API docs, UI E2E strategy, ADR coverage, and a doc-to-component UX cross-reference are now present.
+
+Deployment-specific items are tracked separately from product gaps. Real IdP credentials, secret-manager values, lead-capture destination, staging alert thresholds, and future browser/axe/Storybook expansion require target environment or dependency decisions rather than core code changes.
+
 ## Gaps
 
 | ID | Area | Status | Gap | Priority | Next Action |
@@ -25,6 +29,18 @@ Runtime state now exists for batch jobs, chunked batch upload sessions, schedule
 | PG-008 | Production auth | Done | Production startup now fails closed on insecure defaults, requires OIDC by default, rejects bearer API-key compatibility in production, supports disabling local login/JWT, and Docker Compose passes through environment-backed API, JWT, OIDC, CORS, and credential settings. | High | Supply real IdP/secrets through the target deployment secret manager. |
 | PG-009 | Outbox chain | Done | `KafkaProducerService` creates PENDING records, marks PUBLISHED/FAILED, assigns retry backoff, and `OutboxReplayService` replays due pending/failed records with metrics, manual API trigger, recovery tests, Grafana runtime panels, and Prometheus alerts. | High | Tune alert thresholds after staging traffic establishes baselines. |
 | PG-010 | Documentation hygiene | Done | Current status docs, service overview, product overview, runtime testing notes, and operations docs now reflect the implemented services, CI Docker E2E, chunked batch APIs, and runtime dashboards/alerts. | Medium | Keep this file as the status source as new work lands. |
+
+## Deployment Inputs And Future Enhancements
+
+These are not open implementation gaps in the current local/staging MVP:
+
+| Area | Status | Owner / Trigger |
+|---|---|---|
+| Production IdP and secrets | Deployment input | Provide values through the target secret manager before production release. |
+| Website lead capture destination | Deployment input | Replace `mailto:` with CRM/Supabase/webhook once the sales workflow is chosen. |
+| Browser E2E + axe automation | Planned enhancement | Add Playwright/axe once dependency policy and browser runner cost are accepted. |
+| Storybook/component gallery | Planned enhancement | Add when reusable product components stabilize beyond the current app shell. |
+| Alert thresholds | Staging calibration | Tune after realistic traffic establishes baseline rates. |
 
 ## Removed As Unnecessary
 

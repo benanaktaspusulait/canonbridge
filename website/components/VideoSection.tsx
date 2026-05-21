@@ -165,7 +165,7 @@ export default function VideoSection({
                         <div className="space-y-3">
                           {[0, 1, 2, 3, 4].map((row) => (
                             <div key={row} className="grid grid-cols-[0.8fr_1fr] gap-3">
-                              <div className="h-3 rounded bg-white/16" />
+                              <div className="h-3 rounded bg-white/[0.16]" />
                               <div className="h-3 rounded bg-accent-cyan/45" />
                             </div>
                           ))}

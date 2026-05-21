@@ -12,6 +12,7 @@ This is the active documentation hub for the CanonBridge integration platform.
 | 10-system readiness | [10 System Support Audit](./project/10_SYSTEM_SUPPORT_AUDIT.md) |
 | Product direction | [Product Overview](./product/overview.md) |
 | Architecture | [Architecture Overview](./architecture/01-overview.md) |
+| API docs | [API Documentation](./api/README.md) |
 | Operations | [Runbook](./operations/08-runbook.md) |
 | Testing | [Acceptance Scenarios](./testing/ACCEPTANCE_SCENARIOS.md) |
 
@@ -66,6 +67,7 @@ This is the active documentation hub for the CanonBridge integration platform.
 - [Metrics and Observability](./implementation/09-metrics-observability.md)
 - [Security](./implementation/10-security.md)
 - [Backend Service Requirements](./implementation/11-backend-service-requirements.md)
+- [i18n Contributor Guide](./implementation/12-i18n-contributor-guide.md)
 - [Transformer Node.js Guide](./implementation/TRANSFORMER_NODEJS_GUIDE.md)
 - [Services Java/Quarkus Guide](./implementation/SERVICES_JAVA_QUARKUS_GUIDE.md)
 
@@ -89,6 +91,7 @@ This is the active documentation hub for the CanonBridge integration platform.
 - [Chaos Tests](./testing/05-chaos-tests.md)
 - [Contract Tests](./testing/06-contract-tests.md)
 - [Test Environment](./testing/07-test-environment.md)
+- [UI E2E Strategy](./testing/08-ui-e2e-strategy.md)
 - [Acceptance Scenarios](./testing/ACCEPTANCE_SCENARIOS.md)
 - [No-Code Integration Gap Register](./testing/NO_CODE_INTEGRATION_GAP_REGISTER.md)
 

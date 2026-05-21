@@ -56,10 +56,12 @@ etlsolutions/
 └── scripts/
 ```
 
-## Top Remaining Follow-Ups
+## Deployment Inputs And Follow-Ups
 
 1. Supply real production IdP/secrets through each target deployment secret manager.
-2. Add browser resumable-upload UX on top of the batch session APIs when large-file workflows are prioritized.
-3. Tune Grafana/Prometheus alert thresholds after staging traffic establishes baselines.
+2. Connect the website contact form to the chosen CRM/Supabase/webhook destination when sales operations are ready.
+3. Add browser resumable-upload UX on top of the batch session APIs when large-file workflows are prioritized.
+4. Tune Grafana/Prometheus alert thresholds after staging traffic establishes baselines.
+5. Expand Playwright/axe/Storybook coverage after the UI dependency policy is approved.
 
 The canonical gap list is [Project Gaps](./PROJECT_GAPS.md).

@@ -28,6 +28,9 @@ Each ADR follows this structure:
 | [ADR-008](./ADR-008-event-id-idempotency.md) | Event ID-based idempotency strategy | Accepted |
 | [ADR-009](./ADR-009-security-threat-model.md) | Security threat model and control selection | Accepted |
 | [ADR-010](./ADR-010-schema-registry-strategy.md) | Schema registry strategy | Accepted |
+| [ADR-011](./ADR-011-production-auth-and-local-compatibility.md) | Production auth and local compatibility boundaries | Accepted |
+| [ADR-012](./ADR-012-runtime-recovery-and-outbox-replay.md) | Runtime recovery and outbox replay | Accepted |
+| [ADR-013](./ADR-013-shared-brand-tokens.md) | Shared brand tokens for product and website UI | Accepted |
 
 ## How to Add a New ADR
 

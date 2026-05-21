@@ -80,5 +80,5 @@ Evidence:
 ## Remaining Actions
 
 1. Keep the CI `mock-protocol-e2e` Docker job healthy.
-2. Expand browser-level wizard tests when template-specific UX flows are added.
+2. Expand browser-level wizard tests when template-specific UX flows are added; see [UI E2E Strategy](../testing/08-ui-e2e-strategy.md).
 3. Keep [Project Gaps](./PROJECT_GAPS.md) as the single living gap register for production readiness.
