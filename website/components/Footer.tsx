@@ -12,7 +12,6 @@ export default function Footer() {
   const { t } = useLocale();
   const [status, setStatus] = useState<"idle" | "submitting" | "sent" | "mail" | "error">("idle");
   const formStartedAt = useRef(Date.now());
-  const leadEndpoint = process.env.NEXT_PUBLIC_LEAD_ENDPOINT?.trim();
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -41,10 +40,10 @@ export default function Footer() {
       elapsedMs,
     };
 
-    if (leadEndpoint) {
+    if (process.env.NEXT_PUBLIC_LEAD_CAPTURE_ENABLED === "true") {
       setStatus("submitting");
       try {
-        const response = await fetch(leadEndpoint, {
+        const response = await fetch("/api/leads", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -235,7 +234,7 @@ export default function Footer() {
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                   disabled={status === "submitting"}
-                  className="w-full px-8 py-4 bg-accent-blue text-white font-semibold rounded-lg shadow-lg shadow-accent-blue/20 hover:bg-navy-900 transition-colors"
+                  className="w-full px-8 py-4 bg-accent-blue text-white font-semibold rounded-lg shadow-lg shadow-accent-blue/20 hover:bg-navy-900 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {status === "submitting" ? "Sending..." : t.footer.formSubmit}
                 </motion.button>
