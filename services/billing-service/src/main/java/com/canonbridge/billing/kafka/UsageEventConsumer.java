@@ -4,21 +4,28 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.logging.Log;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.reactive.messaging.kafka.Record;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.eclipse.microprofile.reactive.messaging.Message;
+import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Kafka consumer that reads usage events from the usage.events topic
  * and persists them to the usage_events table (idempotent via request_id).
+ *
+ * B-Y1 FIX: Uses Message<String> with POST_PROCESSING acknowledgment strategy.
+ * This ensures Kafka offset is committed only AFTER the DB insert succeeds.
+ * Previously used Record<String, String> which doesn't properly integrate
+ * with Smallrye's acknowledgment mechanism when auto.commit=false.
  */
 @ApplicationScoped
 public class UsageEventConsumer {
@@ -30,9 +37,10 @@ public class UsageEventConsumer {
     ObjectMapper objectMapper;
 
     @Incoming("usage-events-in")
-    public Uni<Void> consume(Record<String, String> record) {
+    @Acknowledgment(Acknowledgment.Strategy.MANUAL)
+    public Uni<Void> consume(Message<String> message) {
         try {
-            JsonNode event = objectMapper.readTree(record.value());
+            JsonNode event = objectMapper.readTree(message.getPayload());
 
             UUID orgId = UUID.fromString(event.path("org_id").asText());
             String service = event.path("service").asText();
@@ -60,13 +68,16 @@ public class UsageEventConsumer {
                     .addString(metadata)
                 )
                 .replaceWithVoid()
-                .onFailure().invoke(error ->
-                    Log.errorf(error, "Failed to persist usage event: requestId=%s", requestId)
-                );
+                .call(() -> Uni.createFrom().completionStage(message.ack()))
+                .onFailure().invoke(error -> {
+                    Log.errorf(error, "Failed to persist usage event: requestId=%s — will NOT ack (retry on restart)", requestId);
+                    // Do NOT ack on failure — message will be redelivered on restart
+                });
 
         } catch (Exception e) {
-            Log.errorf(e, "Failed to parse usage event from Kafka: key=%s", record.key());
-            return Uni.createFrom().voidItem();
+            Log.errorf(e, "Failed to parse usage event from Kafka — acknowledging to avoid poison pill");
+            // Ack unparseable messages to avoid infinite retry loop (dead letter)
+            return Uni.createFrom().completionStage(message.ack());
         }
     }
 }

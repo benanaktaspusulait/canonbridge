@@ -76,9 +76,17 @@ public class EntitlementInterceptor implements ContainerRequestFilter, Container
             return;
         }
 
-        // Check quota synchronously (Redis is fast, < 5ms)
-        EntitlementResult result = entitlementService.checkQuota(orgId, check.metric(), check.qty())
-            .await().indefinitely();
+        // Check quota with timeout (M-O2 FIX: prevent thread blocking if Redis is slow)
+        // Redis cache hit is typically <5ms; 500ms timeout prevents thread starvation
+        EntitlementResult result;
+        try {
+            result = entitlementService.checkQuota(orgId, check.metric(), check.qty())
+                .await().atMost(java.time.Duration.ofMillis(500));
+        } catch (Exception e) {
+            // Timeout or Redis failure — fail-open (allow request, log warning)
+            Log.warnf("Entitlement check timed out for org=%s metric=%s — allowing request (fail-open)", orgId, check.metric());
+            return;
+        }
 
         // Store result for response filter (to add headers)
         requestContext.setProperty(ENTITLEMENT_RESULT_PROPERTY, result);
