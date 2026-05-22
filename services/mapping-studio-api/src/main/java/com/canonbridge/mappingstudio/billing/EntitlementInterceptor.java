@@ -15,6 +15,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -47,8 +48,8 @@ public class EntitlementInterceptor implements ContainerRequestFilter, Container
     @ConfigProperty(name = "canonbridge.entitlement.bypass-internal", defaultValue = "true")
     boolean bypassInternal;
 
-    @ConfigProperty(name = "canonbridge.billing.internal-service-secret", defaultValue = "")
-    String internalServiceSecret;
+    @ConfigProperty(name = "canonbridge.billing.internal-service-secret")
+    Optional<String> internalServiceSecret;
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
@@ -183,13 +184,13 @@ public class EntitlementInterceptor implements ContainerRequestFilter, Container
             return false;
         }
 
-        if (internalServiceSecret == null || internalServiceSecret.isBlank()) {
+        if (internalServiceSecret.isEmpty() || internalServiceSecret.get().isBlank()) {
             Log.warn("Internal service secret not configured — rejecting X-Service-Auth (fail-closed)");
             return false;
         }
 
         byte[] presentedBytes = serviceAuth.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        byte[] expectedBytes = internalServiceSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] expectedBytes = internalServiceSecret.get().getBytes(java.nio.charset.StandardCharsets.UTF_8);
         return java.security.MessageDigest.isEqual(presentedBytes, expectedBytes);
     }
 }
