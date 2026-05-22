@@ -1,0 +1,13 @@
+# Kafka configuration (non-secret values)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-config
+  namespace: canonbridge
+  labels:
+    app: canonbridge
+    component: kafka
+data:
+  BOOTSTRAP_SERVERS: "kafka-0.kafka-headless.canonbridge.svc.cluster.local:9092,kafka-1.kafka-headless.canonbridge.svc.cluster.local:9092,kafka-2.kafka-headless.canonbridge.svc.cluster.local:9092"
+  SECURITY_PROTOCOL: "SASL_PLAINTEXT"
+  SASL_MECHANISM: "SCRAM-SHA-256"
