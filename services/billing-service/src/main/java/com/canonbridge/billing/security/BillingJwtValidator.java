@@ -1,37 +1,45 @@
 package com.canonbridge.billing.security;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.Base64;
-import java.util.Set;
+import java.util.*;
 
 /**
- * Validates JWT tokens issued by mapping-studio-api's JwtService.
- * Uses HS256 (HMAC-SHA256) with a shared secret.
+ * V5-M1 / NEW-V6-H1 / NEW-V6-M3 / NEW-V6-L1 FIX:
+ * Rewritten JWT validator using Jackson for proper JSON parsing.
  *
- * In production with OIDC, this validator is supplementary —
- * the primary auth path is the OIDC Bearer token validated by Quarkus OIDC extension.
+ * Validates:
+ * - HS256 signature (constant-time comparison)
+ * - Expiration (exp)
+ * - Not-before (nbf)
+ * - Issuer (iss) — must match expected issuer
+ * - Audience (aud) — if present, must include "canonbridge-billing"
+ * - Roles — parsed as JSON array or single string
  */
 @ApplicationScoped
 public class BillingJwtValidator {
 
+    private static final String EXPECTED_ISSUER = "canonbridge";
+    private static final Set<String> ACCEPTED_AUDIENCES = Set.of("canonbridge-billing", "canonbridge");
+
     @ConfigProperty(name = "canonbridge.jwt.secret", defaultValue = "")
     String jwtSecret;
 
-    /**
-     * Validate a JWT token and extract claims.
-     */
+    @Inject
+    ObjectMapper objectMapper;
+
     public ValidationResult validate(String token) {
         if (jwtSecret == null || jwtSecret.isBlank()) {
-            // If no JWT secret configured, we cannot validate local JWTs.
-            // In production, OIDC tokens are validated by Quarkus OIDC extension directly.
-            // Return invalid so the filter can try other auth methods or reject.
+            Log.warn("JWT secret not configured — cannot validate local JWTs");
             return ValidationResult.invalid();
         }
 
@@ -41,33 +49,84 @@ public class BillingJwtValidator {
                 return ValidationResult.invalid();
             }
 
-            // Verify signature
+            // 1. Verify HS256 signature (constant-time)
             String signatureInput = parts[0] + "." + parts[1];
             byte[] expectedSig = hmacSha256(signatureInput, jwtSecret);
-            byte[] actualSig = Base64.getUrlDecoder().decode(parts[2]);
+            byte[] actualSig = Base64.getUrlDecoder().decode(padBase64(parts[2]));
 
             if (!MessageDigest.isEqual(expectedSig, actualSig)) {
+                Log.debug("JWT signature mismatch");
                 return ValidationResult.invalid();
             }
 
-            // Decode payload
-            String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+            // 2. Parse header — verify algorithm
+            JsonNode header = parseBase64Json(parts[0]);
+            if (header == null || !"HS256".equals(header.path("alg").asText())) {
+                Log.debug("JWT algorithm not HS256");
+                return ValidationResult.invalid();
+            }
 
-            // Simple JSON parsing for claims (avoid heavy dependency)
-            String userId = extractClaim(payloadJson, "sub");
-            String orgId = extractClaim(payloadJson, "org_id");
-            String role = extractClaim(payloadJson, "role");
-            String expStr = extractClaim(payloadJson, "exp");
+            // 3. Parse payload with Jackson (proper JSON parsing)
+            JsonNode payload = parseBase64Json(parts[1]);
+            if (payload == null) {
+                Log.debug("JWT payload parse failed");
+                return ValidationResult.invalid();
+            }
 
-            // Check expiration
-            if (expStr != null) {
-                long exp = Long.parseLong(expStr);
-                if (System.currentTimeMillis() / 1000 > exp) {
+            // 4. Validate expiration
+            long now = System.currentTimeMillis() / 1000;
+            if (payload.has("exp")) {
+                long exp = payload.path("exp").asLong(0);
+                if (now > exp) {
+                    Log.debugf("JWT expired: exp=%d now=%d", exp, now);
                     return ValidationResult.invalid();
                 }
             }
 
-            Set<String> roles = role != null ? Set.of(role) : Set.of("user");
+            // 5. Validate not-before
+            if (payload.has("nbf")) {
+                long nbf = payload.path("nbf").asLong(0);
+                if (now < nbf) {
+                    Log.debugf("JWT not yet valid: nbf=%d now=%d", nbf, now);
+                    return ValidationResult.invalid();
+                }
+            }
+
+            // 6. Validate issuer (NEW-V6-H1 FIX)
+            String iss = payload.path("iss").asText("");
+            if (!EXPECTED_ISSUER.equals(iss)) {
+                Log.debugf("JWT issuer mismatch: expected=%s got=%s", EXPECTED_ISSUER, iss);
+                return ValidationResult.invalid();
+            }
+
+            // 7. Validate audience if present (NEW-V6-H1 FIX)
+            if (payload.has("aud")) {
+                JsonNode audNode = payload.path("aud");
+                boolean audValid = false;
+                if (audNode.isArray()) {
+                    for (JsonNode a : audNode) {
+                        if (ACCEPTED_AUDIENCES.contains(a.asText())) { audValid = true; break; }
+                    }
+                } else {
+                    audValid = ACCEPTED_AUDIENCES.contains(audNode.asText());
+                }
+                if (!audValid) {
+                    Log.debugf("JWT audience not accepted: %s", audNode);
+                    return ValidationResult.invalid();
+                }
+            }
+
+            // 8. Extract claims
+            String userId = payload.path("sub").asText(null);
+            String orgId = payload.has("org_id") ? payload.path("org_id").asText(null) : null;
+            // Fallback: try tenant_id if org_id not present
+            if (orgId == null && payload.has("tenant_id")) {
+                orgId = payload.path("tenant_id").asText(null);
+            }
+
+            // 9. Parse roles (NEW-V6-L1 FIX: handle array or single string)
+            Set<String> roles = parseRoles(payload);
+
             return ValidationResult.valid(userId != null ? userId : "unknown", orgId, roles);
 
         } catch (Exception e) {
@@ -76,40 +135,56 @@ public class BillingJwtValidator {
         }
     }
 
+    /**
+     * Parse roles from JWT payload. Handles:
+     * - "role": "admin" (single string)
+     * - "roles": ["admin", "billing_viewer"] (array)
+     */
+    private Set<String> parseRoles(JsonNode payload) {
+        Set<String> roles = new HashSet<>();
+
+        // Try "role" (single)
+        if (payload.has("role") && !payload.path("role").isNull()) {
+            String role = payload.path("role").asText();
+            if (!role.isBlank()) roles.add(role);
+        }
+
+        // Try "roles" (array)
+        if (payload.has("roles")) {
+            JsonNode rolesNode = payload.path("roles");
+            if (rolesNode.isArray()) {
+                for (JsonNode r : rolesNode) {
+                    String rv = r.asText();
+                    if (!rv.isBlank()) roles.add(rv);
+                }
+            } else if (rolesNode.isTextual()) {
+                roles.add(rolesNode.asText());
+            }
+        }
+
+        return roles.isEmpty() ? Set.of("user") : roles;
+    }
+
+    private JsonNode parseBase64Json(String base64Part) {
+        try {
+            byte[] decoded = Base64.getUrlDecoder().decode(padBase64(base64Part));
+            return objectMapper.readTree(decoded);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String padBase64(String base64) {
+        int padding = 4 - (base64.length() % 4);
+        if (padding == 4) return base64;
+        return base64 + "=".repeat(padding);
+    }
+
     private byte[] hmacSha256(String data, String secret) throws Exception {
         Mac mac = Mac.getInstance("HmacSHA256");
         SecretKeySpec keySpec = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
         mac.init(keySpec);
         return mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
-    }
-
-    /**
-     * Simple claim extraction from JSON payload.
-     * Handles both string and numeric values.
-     */
-    private String extractClaim(String json, String key) {
-        String searchKey = "\"" + key + "\"";
-        int keyIdx = json.indexOf(searchKey);
-        if (keyIdx < 0) return null;
-
-        int colonIdx = json.indexOf(':', keyIdx + searchKey.length());
-        if (colonIdx < 0) return null;
-
-        int valueStart = colonIdx + 1;
-        while (valueStart < json.length() && json.charAt(valueStart) == ' ') valueStart++;
-
-        if (valueStart >= json.length()) return null;
-
-        if (json.charAt(valueStart) == '"') {
-            int valueEnd = json.indexOf('"', valueStart + 1);
-            if (valueEnd < 0) return null;
-            return json.substring(valueStart + 1, valueEnd);
-        } else {
-            // Numeric value
-            int valueEnd = valueStart;
-            while (valueEnd < json.length() && Character.isDigit(json.charAt(valueEnd))) valueEnd++;
-            return json.substring(valueStart, valueEnd);
-        }
     }
 
     public record ValidationResult(boolean valid, String principal, String orgId, Set<String> roles) {

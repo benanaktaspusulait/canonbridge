@@ -4,6 +4,8 @@ import io.quarkus.logging.Log;
 import io.quarkus.redis.datasource.RedisDataSource;
 import io.quarkus.redis.datasource.keys.KeyCommands;
 import io.quarkus.redis.datasource.value.ValueCommands;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -42,13 +44,18 @@ public class RateLimitFilter implements ContainerRequestFilter {
     @Inject
     RedisDataSource redisDataSource;
 
+    @Inject
+    MeterRegistry meterRegistry;
+
     private ValueCommands<String, Long> valueCommands;
     private KeyCommands<String> keyCommands;
+    private Counter redisFailureCounter;
 
     private void initRedis() {
         if (valueCommands == null) {
             valueCommands = redisDataSource.value(Long.class);
             keyCommands = redisDataSource.key();
+            redisFailureCounter = meterRegistry.counter("webhook_ratelimit_redis_failures_total");
         }
     }
 
@@ -93,7 +100,8 @@ public class RateLimitFilter implements ContainerRequestFilter {
                 );
             }
         } catch (Exception e) {
-            // Fail-open: if Redis is down, allow the request but log
+            // NEW-V6-M1 FIX: Increment metric counter for alerting on Redis failures
+            if (redisFailureCounter != null) redisFailureCounter.increment();
             Log.errorf(e, "Redis rate limit check failed for partner %s — allowing request (fail-open)", partnerId);
         }
     }

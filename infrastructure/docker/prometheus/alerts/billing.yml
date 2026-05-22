@@ -50,3 +50,13 @@ groups:
         annotations:
           summary: "Potential quota abuse detected"
           description: "An organization exceeded 200% of their quota in 1 hour"
+
+      - alert: WebhookRateLimitRedisDown
+        expr: rate(webhook_ratelimit_redis_failures_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: webhook-receiver
+        annotations:
+          summary: "Webhook rate limiter Redis failures detected"
+          description: "webhook-receiver is failing to check Redis rate limits ({{ $value }}/s). Rate limiting is degraded (fail-open)."

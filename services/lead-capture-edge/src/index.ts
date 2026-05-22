@@ -58,7 +58,13 @@ export default {
     }
 
     // Rate limiting (IP-based via KV)
-    const clientIp = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+    // V5-M3 / NEW-V6-M2 FIX: Reject when IP cannot be determined (prevents bucket collapse)
+    const clientIp = request.headers.get('CF-Connecting-IP') ?? '';
+    if (!clientIp || clientIp === 'unknown') {
+      // No valid IP — either not behind Cloudflare or header stripped
+      // Reject to prevent rate-limit bypass via shared 'unknown' bucket
+      return jsonError(403, 'Request origin could not be determined');
+    }
     const rateLimitResult = await checkRateLimit(env, clientIp);
     if (!rateLimitResult.allowed) {
       return jsonError(429, 'Rate limit exceeded', {
