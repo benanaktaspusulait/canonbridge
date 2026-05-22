@@ -42,9 +42,11 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideAnimationsAsync(),
     provideHttpClient(withInterceptors([authInterceptor])),
-    provideAppInitializer(() => inject(ThemeService).init()),
     provideAppInitializer(() => {
+      const theme = inject(ThemeService);
       const i18n = inject(I18nService);
+      // Initialize theme synchronously (no HTTP), then i18n in parallel
+      theme.init();
       return i18n.init();
     }),
     provideRouter(routes, withComponentInputBinding()),
@@ -55,7 +57,7 @@ export const appConfig: ApplicationConfig = {
           darkModeSelector: '.dark-mode'
         }
       },
-      ripple: true
+      ripple: !window.matchMedia('(prefers-reduced-motion: reduce)').matches
     })
   ]
 };

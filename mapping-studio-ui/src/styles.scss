@@ -10,8 +10,8 @@
 /* highlight.js dark-mode override */
 html.dark-mode pre code.hljs,
 html.dark-mode .hljs {
-  background: #0d1117;
-  color: #c9d1d9;
+  background: var(--cb-color-ink-950);
+  color: var(--cb-color-cloud-100, #c9d1d9);
 }
 
 /* ── CanonBridge design tokens (app chrome on top of Prime Aura) ── */

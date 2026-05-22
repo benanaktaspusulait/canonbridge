@@ -1,9 +1,9 @@
 .layout-sidebar {
-  --sidebar-bg: #f8fafc;
-  --sidebar-bg-2: #eef4fb;
+  --sidebar-bg: var(--surface-50, #f8fafc);
+  --sidebar-bg-2: var(--surface-100, #eef4fb);
   --sidebar-border: rgba(148, 163, 184, 0.28);
-  --sidebar-text: #0f172a;
-  --sidebar-muted: #64748b;
+  --sidebar-text: var(--text-color, #0f172a);
+  --sidebar-muted: var(--text-color-secondary, #64748b);
   --sidebar-soft: rgba(15, 23, 42, 0.055);
   --sidebar-soft-hover: rgba(15, 23, 42, 0.08);
   --sidebar-active-bg: var(--primary-color, #0f766e);
@@ -17,7 +17,7 @@
   z-index: 110;
   padding: 0.75rem;
   background:
-    radial-gradient(circle at 20% 0%, rgba(45, 212, 191, 0.16), transparent 28rem),
+    radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--primary-300, #5eead4) 16%, transparent), transparent 28rem),
     linear-gradient(180deg, var(--sidebar-bg), var(--sidebar-bg-2));
   border-right: 1px solid var(--sidebar-border);
   box-shadow: 1px 0 4px rgba(15, 23, 42, 0.06);
@@ -29,22 +29,22 @@
 
 :host-context(.dark-mode) .layout-sidebar,
 html.dark-mode .layout-sidebar {
-  --sidebar-bg: #070b12;
-  --sidebar-bg-2: #101722;
+  --sidebar-bg: var(--surface-900, #070b12);
+  --sidebar-bg-2: var(--surface-800, #101722);
   --sidebar-border: rgba(148, 163, 184, 0.16);
-  --sidebar-text: #f8fafc;
-  --sidebar-muted: #94a3b8;
+  --sidebar-text: var(--text-color, #f8fafc);
+  --sidebar-muted: var(--text-color-secondary, #94a3b8);
   --sidebar-soft: rgba(148, 163, 184, 0.08);
   --sidebar-soft-hover: rgba(148, 163, 184, 0.13);
-  --sidebar-active-bg: #f8fafc;
-  --sidebar-active-text: #0f172a;
-  --sidebar-active-icon: var(--primary-color, #0f766e);
+  --sidebar-active-bg: var(--primary-color, #0f766e);
+  --sidebar-active-text: #ffffff;
+  --sidebar-active-icon: var(--primary-100, #ccfbf1);
   --sidebar-focus: color-mix(in srgb, var(--primary-color, #2dd4bf) 34%, transparent);
 
   background:
-    radial-gradient(circle at 20% 0%, rgba(20, 184, 166, 0.22), transparent 21rem),
+    radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--primary-400, #2dd4bf) 22%, transparent), transparent 21rem),
     linear-gradient(180deg, var(--sidebar-bg), var(--sidebar-bg-2));
-  box-shadow: 18px 0 48px rgba(0, 0, 0, 0.42);
+  box-shadow: 1px 0 6px rgba(0, 0, 0, 0.3);
 }
 
 .layout-sidebar-collapsed {
@@ -148,15 +148,20 @@ html.dark-mode .layout-sidebar-frame {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  width: 100%;
   min-height: 1.7rem;
   padding: 0.25rem 0.35rem;
   color: var(--sidebar-muted);
   font-size: 0.68rem;
   font-weight: 800;
+  font-family: inherit;
   letter-spacing: 0;
   text-transform: uppercase;
+  text-align: left;
   cursor: pointer;
+  border: none;
   border-radius: 6px;
+  background: transparent;
   transition: background 0.15s ease;
   user-select: none;
 
@@ -366,4 +371,20 @@ html.dark-mode .layout-nav-item--active .layout-nav-item__icon {
   height: 1.05rem;
   padding: 0 0.2rem;
   font-size: 0.58rem;
+}
+
+/* ── Responsive: hide sidebar on mobile, show as overlay when toggled ── */
+@media (max-width: 768px) {
+  .layout-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+
+  .layout-sidebar:not(.layout-sidebar-collapsed) {
+    transform: translateX(0);
+  }
+
+  .layout-sidebar-collapsed {
+    transform: translateX(-100%);
+  }
 }

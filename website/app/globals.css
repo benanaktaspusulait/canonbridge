@@ -13,6 +13,12 @@
   --color-signal-600: var(--cb-color-signal-600);
   --color-gold-500: var(--cb-color-gold-500);
   --font-sans: var(--cb-font-sans);
+
+  /* Semantic surface/text/border tokens */
+  --color-surface-overlay: oklch(from var(--cb-color-cloud-50) l c h / 0.72);
+  --color-text-muted: var(--cb-color-ink-800);
+  --color-text-primary: var(--cb-color-ink-950);
+  --color-border-subtle: oklch(from var(--cb-color-ink-950) l c h / 0.1);
 }
 
 /* Base styles */
@@ -43,8 +49,8 @@ body {
 /* Brand background */
 .gradient-bg {
   background:
-    linear-gradient(120deg, rgba(43, 154, 144, 0.16), transparent 32%),
-    linear-gradient(180deg, #f7faf8 0%, #edf4f1 58%, #dbe8e2 100%);
+    linear-gradient(120deg, color-mix(in oklch, var(--cb-color-signal-500) 16%, transparent), transparent 32%),
+    linear-gradient(180deg, var(--cb-color-cloud-50) 0%, var(--cb-color-cloud-100) 58%, var(--cb-color-cloud-200) 100%);
 }
 
 /* Glow effects */

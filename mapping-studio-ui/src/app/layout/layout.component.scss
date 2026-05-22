@@ -42,3 +42,18 @@ html.dark-mode .layout-wrapper {
     line-height: 1.45;
   }
 }
+
+/* ── Responsive: remove sidebar margin on mobile ── */
+@media (max-width: 768px) {
+  .layout-main {
+    margin-left: 0;
+  }
+
+  .layout-sidebar-collapsed .layout-main {
+    margin-left: 0;
+  }
+
+  .layout-content {
+    padding: 1rem;
+  }
+}

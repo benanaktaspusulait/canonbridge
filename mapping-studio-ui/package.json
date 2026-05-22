@@ -14,10 +14,10 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "lint": "echo \"No Angular lint target configured; use npm test -- --run and npm run build\"",
+    "lint": "ng lint",
     "format": "prettier --write \"src/**/*.{ts,html,scss,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,html,scss,json}\"",
-    "analyze": "ng build --configuration production --stats-json && webpack-bundle-analyzer dist/mapping-studio-ui/stats.json"
+    "analyze": "ng build --configuration production --stats-json && npx webpack-bundle-analyzer dist/mapping-studio-ui/stats.json"
   },
   "private": true,
   "packageManager": "npm@11.6.2",
@@ -45,9 +45,13 @@
     "@angular/build": "^21.2.10",
     "@angular/cli": "^21.2.10",
     "@angular/compiler-cli": "^21.2.0",
+    "@eslint/js": "^10.0.1",
+    "angular-eslint": "21.4.0",
+    "eslint": "^10.3.0",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2",
+    "typescript-eslint": "8.59.2",
     "vitest": "^4.0.8"
   }
 }

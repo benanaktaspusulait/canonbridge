@@ -43,6 +43,50 @@ test("localized route renders Turkish SSR content", async ({ page }) => {
   await expect(page.getByRole("link", { name: /Demo Talep Et/i }).first()).toBeVisible();
 });
 
+test("localized route renders German SSR content", async ({ page }) => {
+  await page.goto("/de");
+
+  await expect(page.locator("html")).toHaveAttribute("lang", "de");
+  await expect(page).toHaveURL(/\/de/);
+  await expect(page.getByRole("link", { name: /Demo anfordern/i }).first()).toBeVisible();
+});
+
+test("localized route renders Spanish SSR content", async ({ page }) => {
+  await page.goto("/es");
+
+  await expect(page.locator("html")).toHaveAttribute("lang", "es");
+  await expect(page).toHaveURL(/\/es/);
+  await expect(page.getByRole("link", { name: /Solicitar Demo/i }).first()).toBeVisible();
+});
+
+test("navbar accessibility: aria-expanded, role=menu", async ({ page }) => {
+  await page.goto("/");
+
+  // Desktop language menu
+  const langButton = page.locator("button[aria-haspopup='menu']");
+  await expect(langButton).toHaveAttribute("aria-expanded", "false");
+  await langButton.click();
+  await expect(langButton).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("[role='menu']")).toBeVisible();
+
+  // Full page axe scan including navbar
+  const accessibilityScanResults = await new AxeBuilder({ page })
+    .include("nav")
+    .analyze();
+  expect(accessibilityScanResults.violations).toEqual([]);
+});
+
+test("mobile navigation toggle works", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/");
+
+  const menuButton = page.locator("button[aria-label='Toggle navigation']");
+  await expect(menuButton).toHaveAttribute("aria-expanded", "false");
+  await menuButton.click();
+  await expect(menuButton).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#mobile-navigation")).toBeVisible();
+});
+
 test("component gallery is available", async ({ page }) => {
   await page.goto("/component-gallery");
 

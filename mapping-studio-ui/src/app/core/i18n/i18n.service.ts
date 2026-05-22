@@ -28,6 +28,8 @@ export class I18nService {
   private readonly appRef = inject(ApplicationRef);
   private readonly document = inject(DOCUMENT);
 
+  private readonly cache = new Map<LangId, Record<string, string>>();
+
   readonly lang = signal<LangId>('en');
   readonly translations = signal<Record<string, string>>({});
   readonly loaded = signal(false);
@@ -66,8 +68,15 @@ export class I18nService {
     this.lang.set(id);
     localStorage.setItem('canonbridge.lang', id);
     this.document.documentElement.lang = id;
-    const data = await firstValueFrom(this.http.get<Record<string, unknown>>(this.translationUrl(id)));
-    this.translations.set(flattenTranslations(data));
+
+    let flat = this.cache.get(id);
+    if (!flat) {
+      const data = await firstValueFrom(this.http.get<Record<string, unknown>>(this.translationUrl(id)));
+      flat = flattenTranslations(data);
+      this.cache.set(id, flat);
+    }
+
+    this.translations.set(flat);
     this.title.setTitle(this.translate('app.title'));
     this.loaded.set(true);
     this.appRef.tick();

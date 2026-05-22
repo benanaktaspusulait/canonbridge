@@ -8,7 +8,7 @@
   padding: 0.65rem 1.25rem;
   background: color-mix(in srgb, var(--surface-card) 88%, var(--surface-ground));
   backdrop-filter: blur(12px);
-  border-radius: 0 !important;
+  border-radius: 0;
 }
 
 html.dark-mode :host ::ng-deep .layout-toolbar.p-toolbar {
@@ -35,7 +35,7 @@ html.dark-mode :host ::ng-deep .layout-toolbar.p-toolbar {
   width: 2.25rem !important;
   height: 2.25rem !important;
   font-size: 0.75rem !important;
-  background: linear-gradient(145deg, var(--primary-color), #5b21b6) !important;
+  background: linear-gradient(145deg, var(--primary-color), var(--cb-color-violet-600)) !important;
   color: #fff !important;
   font-weight: 600 !important;
   box-shadow: 0 1px 4px color-mix(in srgb, var(--primary-color) 40%, transparent);

@@ -21,10 +21,10 @@
       <nav id="primary-navigation" class="layout-sidebar-nav" role="navigation" aria-label="Primary navigation">
         @for (group of navGroups; track group.labelKey) {
           <section class="layout-nav-section" role="group" [attr.aria-label]="group.labelKey | i18n">
-            <div class="layout-nav-section-title" (click)="toggleSection(group.labelKey)">
+            <button type="button" class="layout-nav-section-title" (click)="toggleSection(group.labelKey)" [attr.aria-expanded]="!isSectionCollapsed(group.labelKey)">
               <i [class]="isSectionCollapsed(group.labelKey) ? 'pi pi-chevron-right' : 'pi pi-chevron-down'" aria-hidden="true"></i>
               <span>{{ group.labelKey | i18n }}</span>
-            </div>
+            </button>
 
             @if (!isSectionCollapsed(group.labelKey)) {
               <div class="layout-nav-list" role="list">
@@ -34,7 +34,7 @@
                     role="listitem"
                     [routerLink]="item.route"
                     routerLinkActive="layout-nav-item--active"
-                    [routerLinkActiveOptions]="{ exact: true }"
+                    [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
                     [attr.aria-label]="item.labelKey | i18n"
                     [attr.aria-current]="isActive(item.route) ? 'page' : null">
                     <span class="layout-nav-item__icon" aria-hidden="true">
@@ -66,7 +66,7 @@
             class="layout-rail-item"
             [routerLink]="item.route"
             routerLinkActive="layout-rail-item--active"
-            [routerLinkActiveOptions]="{ exact: true }"
+            [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
             [pTooltip]="item.labelKey | i18n"
             tooltipPosition="right"
             [attr.aria-label]="item.labelKey | i18n"
