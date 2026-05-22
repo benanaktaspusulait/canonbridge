@@ -193,7 +193,8 @@
 
 **Öncelik:** 🟠 Yüksek  
 **Servis:** `billing-service`  
-**Bağımlılık:** TASK-006
+**Bağımlılık:** TASK-006  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] Paddle Sandbox hesabı oluştur
@@ -285,7 +286,8 @@
 
 **Öncelik:** 🟠 Yüksek  
 **Servis:** `mapping-studio-ui` (Angular 21)  
-**Bağımlılık:** TASK-002, TASK-004, TASK-005
+**Bağımlılık:** TASK-002, TASK-004, TASK-005  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] Yeni route: `/settings/billing`

@@ -29,6 +29,7 @@
     "monitoring": "Monitoring",
     "audit": "Audit Log",
     "tenant": "Tenant",
+    "billing": "Billing",
     "settings": "Settings"
   },
   "sidebar": {

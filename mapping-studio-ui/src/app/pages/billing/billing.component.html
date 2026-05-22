@@ -1,0 +1,125 @@
+<p-toast />
+
+<div class="billing-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Billing & Usage</h1>
+    <p class="subtitle">Manage your subscription, monitor usage, and view invoices.</p>
+  </div>
+
+  <!-- Subscription Overview -->
+  <div class="grid">
+    <div class="col-12 lg:col-8">
+      <p-card header="Current Plan">
+        @if (subscription(); as sub) {
+          <div class="plan-overview">
+            <div class="plan-info">
+              <h2 class="plan-name">{{ sub.plan_name }}</h2>
+              <p-tag [value]="sub.status" [severity]="getStatusSeverity(sub.status)" />
+              <span class="billing-cycle">{{ sub.billing_cycle }}</span>
+            </div>
+            <div class="plan-period">
+              <span class="period-label">Current period:</span>
+              <span>{{ sub.current_period_start | date:'mediumDate' }} — {{ sub.current_period_end | date:'mediumDate' }}</span>
+            </div>
+            @if (sub.cancel_at) {
+              <div class="cancel-notice">
+                <i class="pi pi-exclamation-triangle"></i>
+                Cancels on {{ sub.cancel_at | date:'mediumDate' }}
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="no-subscription">
+            <p>No active subscription found.</p>
+            <p-button label="Choose a Plan" icon="pi pi-arrow-right" (onClick)="onUpgrade()" />
+          </div>
+        }
+      </p-card>
+    </div>
+
+    <div class="col-12 lg:col-4">
+      <p-card header="Quick Actions">
+        <div class="quick-actions">
+          <p-button label="Upgrade Plan" icon="pi pi-arrow-up" severity="primary" (onClick)="onUpgrade()" styleClass="w-full mb-2" />
+          <p-button label="View Invoices" icon="pi pi-file" severity="secondary" styleClass="w-full mb-2" [outlined]="true" />
+          <p-button label="Manage Payment" icon="pi pi-credit-card" severity="secondary" styleClass="w-full" [outlined]="true" />
+        </div>
+      </p-card>
+    </div>
+  </div>
+
+  <!-- Usage Quotas -->
+  <p-card header="Usage This Period" class="mt-4">
+    @if (entitlements().length > 0) {
+      <div class="usage-grid">
+        @for (item of entitlements(); track item.feature_key) {
+          <div class="usage-item">
+            <div class="usage-header">
+              <span class="usage-label">{{ formatFeatureKey(item.feature_key) }}</span>
+              <span class="usage-values">{{ formatUsed(item) }} / {{ formatLimit(item) }}</span>
+            </div>
+            @if (item.limit > 0) {
+              <p-progressBar
+                [value]="getUsagePercent(item)"
+                [showValue]="false"
+                [style]="{ height: '8px' }"
+              />
+              <div class="usage-footer">
+                <span class="usage-percent">{{ getUsagePercent(item) }}% used</span>
+                <span class="usage-reset">Resets in {{ getDaysUntilReset(item.resets_at) }} days</span>
+              </div>
+            } @else {
+              <div class="usage-unlimited">
+                <i class="pi pi-infinity"></i> Unlimited
+              </div>
+            }
+          </div>
+        }
+      </div>
+    } @else if (loading()) {
+      <div class="loading-state">
+        <i class="pi pi-spin pi-spinner"></i> Loading usage data...
+      </div>
+    } @else {
+      <div class="empty-state">
+        <p>No usage data available yet. Start using CanonBridge to see your metrics here.</p>
+      </div>
+    }
+  </p-card>
+
+  <!-- Plan Comparison -->
+  <p-card header="Available Plans" class="mt-4">
+    <div class="plans-grid">
+      @for (plan of plans(); track plan.code) {
+        <div class="plan-card" [class.current]="plan.code === subscription()?.plan_code" [class.highlighted]="plan.code === 'growth'">
+          @if (plan.code === subscription()?.plan_code) {
+            <div class="current-badge">Current</div>
+          }
+          <h3>{{ plan.name }}</h3>
+          <p class="plan-desc">{{ plan.description }}</p>
+          <div class="plan-price">
+            @if (plan.price_monthly_cents === 0 && plan.code !== 'enterprise') {
+              <span class="price">$0</span>
+              <span class="period">/month</span>
+            } @else if (plan.code === 'enterprise') {
+              <span class="price">Custom</span>
+            } @else {
+              <span class="price">{{ formatPrice(plan.price_monthly_cents) }}</span>
+              <span class="period">/month</span>
+            }
+          </div>
+          @if (plan.code !== subscription()?.plan_code) {
+            <p-button
+              [label]="plan.code === 'free' ? 'Downgrade' : plan.code === 'enterprise' ? 'Contact Sales' : 'Upgrade'"
+              [severity]="plan.code === 'growth' ? 'primary' : 'secondary'"
+              [outlined]="plan.code !== 'growth'"
+              styleClass="w-full mt-3"
+              (onClick)="onUpgrade()"
+            />
+          }
+        </div>
+      }
+    </div>
+  </p-card>
+</div>

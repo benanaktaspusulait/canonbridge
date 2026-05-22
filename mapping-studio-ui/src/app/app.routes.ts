@@ -104,6 +104,11 @@ export const routes: Routes = [
         path: 'settings',
         loadComponent: () =>
           import('./pages/settings/settings.component').then(m => m.SettingsComponent)
+      },
+      {
+        path: 'billing',
+        loadComponent: () =>
+          import('./pages/billing/billing.component').then(m => m.BillingComponent)
       }
     ]
   },
