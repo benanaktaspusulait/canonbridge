@@ -9,7 +9,7 @@
 
   <!-- Subscription Overview -->
   <div class="grid">
-    <div class="col-12 lg:col-8">
+    <div>
       <p-card header="Current Plan">
         @if (subscription(); as sub) {
           <div class="plan-overview">
@@ -38,11 +38,11 @@
       </p-card>
     </div>
 
-    <div class="col-12 lg:col-4">
+    <div>
       <p-card header="Quick Actions">
         <div class="quick-actions">
-          <p-button label="Upgrade Plan" icon="pi pi-arrow-up" severity="primary" (onClick)="onUpgrade()" styleClass="w-full mb-2" />
-          <p-button label="View Invoices" icon="pi pi-file" severity="secondary" styleClass="w-full mb-2" [outlined]="true" />
+          <p-button label="Upgrade Plan" icon="pi pi-arrow-up" severity="primary" (onClick)="onUpgrade()" styleClass="w-full" />
+          <p-button label="View Invoices" icon="pi pi-file" severity="secondary" styleClass="w-full" [outlined]="true" />
           <p-button label="Manage Payment" icon="pi pi-credit-card" severity="secondary" styleClass="w-full" [outlined]="true" />
         </div>
       </p-card>

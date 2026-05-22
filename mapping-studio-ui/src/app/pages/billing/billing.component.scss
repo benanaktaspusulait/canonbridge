@@ -72,6 +72,11 @@
 .quick-actions {
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
+
+  ::ng-deep .p-button {
+    white-space: nowrap;
+  }
 }
 
 // Usage grid
@@ -209,10 +214,10 @@
 .grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1rem;
+  gap: 1.5rem;
 
   @media (min-width: 992px) {
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1fr minmax(280px, 320px);
   }
 }
 
