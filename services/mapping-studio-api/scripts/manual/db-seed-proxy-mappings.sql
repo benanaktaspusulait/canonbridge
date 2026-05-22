@@ -1,7 +1,8 @@
 -- =====================================================
 -- Seed Data for Proxy Mappings (GET and POST Examples)
 -- =====================================================
--- Run this with: docker exec -i canonbridge-postgres psql -U canonbridge_user -d canonbridge_db < db-seed-proxy-mappings.sql
+-- Run this from the repo root with:
+-- docker exec -i canonbridge-postgres psql -U canonbridge_user -d canonbridge_db < services/mapping-studio-api/scripts/manual/db-seed-proxy-mappings.sql
 
 -- First, ensure we have a partner
 INSERT INTO partners (id, tenant_id, name, status, created_at)

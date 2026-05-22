@@ -33,6 +33,9 @@ public class OutboxReplayService {
     @Inject
     MeterRegistry meterRegistry;
 
+    @Inject
+    LeaderLockService leaderLockService;
+
     @ConfigProperty(name = "canonbridge.outbox.replay.enabled", defaultValue = "true")
     boolean enabled;
 
@@ -83,6 +86,15 @@ public class OutboxReplayService {
             return Uni.createFrom().item(0);
         }
 
+        LeaderLockService lockService = leaderLockService != null ? leaderLockService : new LeaderLockService();
+        return lockService.withLock("canonbridge.outbox-replay", this::replayDueEventsUnlocked, 0)
+                .eventually(() -> {
+                    running.set(false);
+                    return Uni.createFrom().voidItem();
+                });
+    }
+
+    private Uni<Integer> replayDueEventsUnlocked() {
         return outboxEventRepository.findReplayable(batchSize, maxAttempts)
                 .chain(events -> {
                     if (events.isEmpty()) {
@@ -104,10 +116,6 @@ public class OutboxReplayService {
                         }
                         LOG.infof("Replayed %d outbox event(s)", count);
                     }
-                })
-                .eventually(() -> {
-                    running.set(false);
-                    return Uni.createFrom().voidItem();
                 });
     }
 }

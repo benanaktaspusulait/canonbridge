@@ -44,7 +44,10 @@ Expect `200` and a JSON body `{ "canonical": { ... } }`.
 | `PORT` | `8080` | HTTP port |
 | `LOG_LEVEL` | `info` | Pino log level |
 | **HTTP Auth** | | |
-| `API_KEY` | (unset) | If set, requires `X-Api-Key` header on `/v1/*` endpoints |
+| `API_KEY` | (unset) | Legacy single API key. If set, requires `X-Api-Key` header on `/v1/*` endpoints |
+| `API_KEYS` | (unset) | Comma-separated key ring for production rotation. Either `API_KEY` or `API_KEYS` enables auth |
+| `HTTP_BODY_LIMIT_BYTES` | `20971520` | Maximum HTTP JSON body size, default 20 MiB |
+| `TRANSFORMER_DOCS_ENABLED` | dev/test only | Set `true` to expose `/docs` and `/docs/json`; production leaves docs disabled unless explicitly enabled |
 | `CORS_ORIGINS` | (empty) | Comma-separated allowed origins; empty = allow all |
 | **Kafka** | | |
 | `KAFKA_ENABLED` | `false` | `true` to start consumer |
@@ -65,7 +68,7 @@ Expect `200` and a JSON body `{ "canonical": { ... } }`.
 | `WORKER_POOL_ENABLED` | `false` | Enable worker thread pool for CPU-intensive JSONata evaluations |
 | `WORKER_POOL_SIZE` | `0` | Worker pool size (0 = auto: CPU count - 1) |
 | **Outbox Pattern** | | |
-| `OUTBOX_ENABLED` | `false` | Enable outbox pattern for exactly-once delivery |
+| `OUTBOX_ENABLED` | `false` | Enable outbox pattern for durable publish relay; recommended with `OUTBOX_DATABASE_URL` in production Kafka mode |
 | `OUTBOX_DATABASE_URL` | (unset) | PostgreSQL connection string |
 | `OUTBOX_POLL_INTERVAL_MS` | `1000` | Outbox relay poll interval |
 | `OUTBOX_BATCH_SIZE` | `100` | Messages per batch in outbox relay |
@@ -86,7 +89,7 @@ Expect `200` and a JSON body `{ "canonical": { ... } }`.
   - Backward compatible: envelope values always take precedence
 
 ### 📊 Observability
-- **OpenAPI Docs**: `GET /docs` for Swagger UI and `GET /docs/json` for the OpenAPI document
+- **OpenAPI Docs**: `GET /docs` for Swagger UI and `GET /docs/json` for the OpenAPI document when `TRANSFORMER_DOCS_ENABLED=true`
 - **Prometheus Metrics** (`GET /metrics`):
   - `transform_requests_total{status, stage, partner, event_type}` — Request counter
   - `transform_duration_ms{partner, event_type}` — Latency histogram
@@ -107,7 +110,7 @@ Expect `200` and a JSON body `{ "canonical": { ... } }`.
   - Configurable TTL via `REDIS_CACHE_TTL_SECONDS`
 - **Schema Version Resolution**: Partner configs can use `version` or `schemaVersion`; envelopes with `schemaVersion` resolve the matching immutable mapping version
 - **Worker Pool** (optional): Set `WORKER_POOL_ENABLED=true` to evaluate JSONata in worker threads for CPU-heavy mappings
-- **Outbox Pattern** (optional): Set `OUTBOX_ENABLED=true` with `OUTBOX_DATABASE_URL` to persist canonical/DLQ publishes before Kafka relay
+- **Outbox Pattern** (optional for local, recommended for production Kafka): Set `OUTBOX_ENABLED=true` with `OUTBOX_DATABASE_URL` to persist canonical/DLQ publishes before Kafka relay
 
 ### ✅ Testing
 - **43 Passing Tests**: Unit + integration tests with Vitest

@@ -47,6 +47,9 @@ public class ScheduledApiPollerService {
     @Inject
     MeterRegistry meterRegistry;
 
+    @Inject
+    LeaderLockService leaderLockService;
+
     @ConfigProperty(name = "canonbridge.scheduled-poller.enabled", defaultValue = "true")
     boolean enabled;
 
@@ -87,9 +90,13 @@ public class ScheduledApiPollerService {
             return;
         }
 
-        draftRepository.findRunnableScheduledApiMappings()
+        LeaderLockService lockService = leaderLockService != null ? leaderLockService : new LeaderLockService();
+        lockService.withLock(
+                        "canonbridge.scheduled-api-poller",
+                        () -> draftRepository.findRunnableScheduledApiMappings().chain(this::runDueMappings),
+                        0)
                 .subscribe().with(
-                        this::runDueMappings,
+                        ignored -> running.set(false),
                         error -> {
                             running.set(false);
                             LOG.warnf("Scheduled API poller failed to load mappings: %s", error.getMessage());
@@ -97,7 +104,7 @@ public class ScheduledApiPollerService {
                 );
     }
 
-    private void runDueMappings(List<MappingDraft> mappings) {
+    private Uni<Integer> runDueMappings(List<MappingDraft> mappings) {
         List<Uni<Void>> jobs = new ArrayList<>();
         Instant now = Instant.now();
 
@@ -124,19 +131,12 @@ public class ScheduledApiPollerService {
         }
 
         if (jobs.isEmpty()) {
-            running.set(false);
-            return;
+            return Uni.createFrom().item(0);
         }
 
-        Uni.combine().all().unis(jobs)
+        return Uni.combine().all().unis(jobs)
                 .discardItems()
-                .subscribe().with(
-                        ignored -> running.set(false),
-                        error -> {
-                            running.set(false);
-                            LOG.warnf("Scheduled API poller run finished with errors: %s", error.getMessage());
-                        }
-                );
+                .replaceWith(jobs.size());
     }
 
     private Uni<Void> runMapping(MappingDraft mapping, Instant startedAt, java.util.UUID runId) {
