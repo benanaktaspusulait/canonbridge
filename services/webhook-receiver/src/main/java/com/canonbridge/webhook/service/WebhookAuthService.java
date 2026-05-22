@@ -26,7 +26,7 @@ public class WebhookAuthService {
 
     public Uni<Boolean> validateWebhookKey(String partnerId, String providedKey) {
         return client.preparedQuery(
-            "SELECT secret_hash FROM webhook_endpoints " +
+            "SELECT secret_hash, signing_secret_encrypted FROM webhook_endpoints " +
             "WHERE partner_id = $1::uuid AND status = 'ACTIVE'"
         )
         .execute(Tuple.of(partnerId))
@@ -45,6 +45,25 @@ public class WebhookAuthService {
             );
         })
         .onFailure().invoke(throwable -> LOG.error("Failed to validate webhook key", throwable));
+    }
+
+    /**
+     * K4 FIX: Retrieve the dedicated signing secret for HMAC verification.
+     * This is separate from the webhook key (used for authentication).
+     */
+    public Uni<String> getSigningSecret(String partnerId) {
+        return client.preparedQuery(
+            "SELECT signing_secret_encrypted FROM webhook_endpoints " +
+            "WHERE partner_id = $1::uuid AND status = 'ACTIVE'"
+        )
+        .execute(Tuple.of(partnerId))
+        .map(rowSet -> {
+            if (rowSet.size() == 0) return null;
+            String encrypted = rowSet.iterator().next().getString("signing_secret_encrypted");
+            if (encrypted == null || encrypted.isBlank()) return null;
+            // TODO: Decrypt using CredentialSecretCodec when signing secrets are encrypted
+            return encrypted;
+        });
     }
 
     private static final long TIMESTAMP_TOLERANCE_SECONDS = 300; // 5 minutes

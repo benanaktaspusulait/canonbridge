@@ -11,6 +11,12 @@ bun.lockb
 !.env.example
 !.env.production.example
 
+# Kubernetes secrets (never commit real secrets)
+**/secrets.yaml
+**/secret.yaml
+!**/secrets.example.yaml
+!**/secret.example.yaml
+
 # Build outputs
 dist/
 build/

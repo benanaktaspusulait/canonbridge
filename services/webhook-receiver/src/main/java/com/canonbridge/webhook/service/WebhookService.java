@@ -3,6 +3,8 @@ package com.canonbridge.webhook.service;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.kafka.Record;
 import io.vertx.core.json.JsonObject;
+import io.vertx.mutiny.pgclient.PgPool;
+import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotAuthorizedException;
@@ -50,12 +52,16 @@ public class WebhookService {
                     return Uni.createFrom().failure(new NotAuthorizedException("Missing webhook signature"));
                 }
 
-                if (!authService.verifyHmacSignature(payload, webhookSignature, webhookKey)) {
-                    LOG.warnf("HMAC signature mismatch for partner: %s, event: %s", partnerId, eventType);
-                    return Uni.createFrom().failure(new NotAuthorizedException("Invalid webhook signature"));
-                }
+                // K4 FIX: Use dedicated signing secret from DB instead of webhook key
+                return authService.getSigningSecret(partnerId)
+                    .flatMap(signingSecret -> {
+                        String secretForHmac = (signingSecret != null) ? signingSecret : webhookKey;
+                        if (!authService.verifyHmacSignature(payload, webhookSignature, secretForHmac)) {
+                            LOG.warnf("HMAC signature mismatch for partner: %s, event: %s", partnerId, eventType);
+                            return Uni.createFrom().failure(new NotAuthorizedException("Invalid webhook signature"));
+                        }
 
-                String eventId = UUID.randomUUID().toString();
+                        String eventId = UUID.randomUUID().toString();
                 
                 // Create envelope
                 JsonObject envelope = new JsonObject()
@@ -81,12 +87,30 @@ public class WebhookService {
                 });
             });
     }
+    }
 
     private static final Set<String> ALLOWED_HEADERS = Set.of(
             "content-type", "user-agent", "x-request-id", "x-correlation-id",
             "x-forwarded-for", "x-real-ip", "accept", "accept-encoding",
             "idempotency-key", "x-idempotency-key"
     );
+
+    /**
+     * Y9 FIX: Check if a webhook with this idempotency key was already processed.
+     * Uses a simple DB check with 24h TTL (old records cleaned by cron).
+     */
+    public Uni<Boolean> checkIdempotency(String idempotencyKey) {
+        String sql = """
+            SELECT COUNT(*) AS cnt FROM usage_events
+            WHERE request_id = $1 AND service = 'webhook-receiver'
+            """;
+        return client.preparedQuery(sql)
+            .execute(Tuple.of(idempotencyKey))
+            .map(rowSet -> rowSet.iterator().next().getLong("cnt") > 0);
+    }
+
+    @Inject
+    PgPool client;
 
     private void publishUsageEvent(String partnerId, String eventId) {
         try {

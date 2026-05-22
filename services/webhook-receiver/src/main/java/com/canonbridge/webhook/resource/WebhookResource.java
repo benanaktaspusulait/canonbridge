@@ -42,6 +42,7 @@ public class WebhookResource {
             @PathParam("eventType") String eventType,
             @HeaderParam("X-Webhook-Key") String webhookKey,
             @HeaderParam("X-Webhook-Signature") String webhookSignature,
+            @HeaderParam("Idempotency-Key") String idempotencyKey,
             @Context HttpHeaders headers,
             String payload) {
 
@@ -53,6 +54,25 @@ public class WebhookResource {
             );
         }
 
+        // Y9 FIX: If client provides Idempotency-Key, check for duplicate processing
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            return webhookService.checkIdempotency(idempotencyKey)
+                .flatMap(alreadyProcessed -> {
+                    if (alreadyProcessed) {
+                        return Uni.createFrom().item(
+                            Response.ok(new WebhookResponse(idempotencyKey, "Already processed (idempotent)")).build()
+                        );
+                    }
+                    return processAndRespond(partnerId, eventType, webhookKey, webhookSignature, idempotencyKey, headers, payload);
+                });
+        }
+
+        return processAndRespond(partnerId, eventType, webhookKey, webhookSignature, null, headers, payload);
+    }
+
+    private Uni<Response> processAndRespond(
+            String partnerId, String eventType, String webhookKey,
+            String webhookSignature, String idempotencyKey, HttpHeaders headers, String payload) {
         return webhookService.processWebhook(partnerId, eventType, webhookKey, webhookSignature, payload, headers)
             .map(eventId -> Response.accepted()
                 .entity(new WebhookResponse(eventId, "Webhook received and queued"))
