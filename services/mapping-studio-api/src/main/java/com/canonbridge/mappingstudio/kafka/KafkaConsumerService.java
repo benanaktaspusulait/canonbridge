@@ -40,19 +40,11 @@ public class KafkaConsumerService {
     }
 
     /**
-     * Process raw event - to be implemented based on business logic
-     * 
-     * @param key Event key
-     * @param payload Raw JSON payload
+     * This legacy consumer is disabled by default. The transformer service owns raw-event
+     * transformation, validation, DLQ routing, and canonical publish for production flows.
      */
     private void processRawEvent(String key, String payload) {
-        // TODO: Implement transformation logic
-        // 1. Identify partner from topic or payload
-        // 2. Load mapping configuration
-        // 3. Transform using JSONata
-        // 4. Validate against canonical schema
-        // 5. Publish to canonical topic
-        
-        LOG.debugf("Processing raw event: key=%s, payload=%s", key, payload);
+        throw new UnsupportedOperationException(
+                "Raw event transformation is handled by services/transformer; keep this consumer disabled unless a real implementation is provided");
     }
 }

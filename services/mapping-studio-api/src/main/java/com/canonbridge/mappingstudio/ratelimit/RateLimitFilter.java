@@ -1,6 +1,5 @@
 package com.canonbridge.mappingstudio.ratelimit;
 
-import io.smallrye.common.annotation.Blocking;
 import io.vertx.core.http.HttpServerRequest;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -31,7 +30,6 @@ import java.util.Map;
 @Provider
 @Priority(Priorities.AUTHORIZATION + 10)
 @ApplicationScoped
-@Blocking
 public class RateLimitFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
     private static final String RATE_LIMIT_RESULT_KEY = "canonbridge.ratelimit.result";

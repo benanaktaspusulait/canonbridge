@@ -141,17 +141,19 @@ The API enforces rate limits to prevent abuse and ensure fair resource allocatio
 
 ```bash
 # Enable/disable rate limiting (default: true)
-RATELIMIT_ENABLED=true
+RATE_LIMIT_ENABLED=true
 
 # Authenticated endpoint limits (default: 100 requests per 60 seconds)
-RATELIMIT_AUTHENTICATED_DEFAULT_LIMIT=100
-RATELIMIT_AUTHENTICATED_WINDOW_SECONDS=60
+RATE_LIMIT_AUTHENTICATED_DEFAULT_LIMIT=100
+RATE_LIMIT_AUTHENTICATED_WINDOW_SECONDS=60
 
 # Unauthenticated endpoint limits (default: 10 requests per 60 seconds per IP)
-RATELIMIT_UNAUTHENTICATED_DEFAULT_LIMIT=10
-RATELIMIT_UNAUTHENTICATED_WINDOW_SECONDS=60
+RATE_LIMIT_UNAUTHENTICATED_DEFAULT_LIMIT=10
+RATE_LIMIT_UNAUTHENTICATED_WINDOW_SECONDS=60
 
-# Redis configuration for rate limit state
+# Local memory is the default to keep the request path non-blocking.
+# Set RATE_LIMIT_STORAGE=redis only when shared distributed counters are required.
+RATE_LIMIT_STORAGE=memory
 REDIS_URL=redis://localhost:6379
 ```
 
@@ -165,7 +167,7 @@ REDIS_URL=redis://localhost:6379
   - Default: 10 requests per minute
   - Uses `X-Forwarded-For` header for proxied requests
 
-- **Algorithm**: Sliding window using Redis sorted sets
+- **Algorithm**: Sliding window using in-memory counters by default, or Redis sorted sets when `RATE_LIMIT_STORAGE=redis`
   - Prevents burst traffic at window boundaries
   - Automatic cleanup via TTL
 
