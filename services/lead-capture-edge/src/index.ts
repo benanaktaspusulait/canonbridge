@@ -111,9 +111,16 @@ export default {
     };
 
     try {
+      // X-Y3: Propagate trace context if present
+      const forwardHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      const traceparent = request.headers.get('traceparent');
+      if (traceparent) forwardHeaders['traceparent'] = traceparent;
+      const tracestate = request.headers.get('tracestate');
+      if (tracestate) forwardHeaders['tracestate'] = tracestate;
+
       const webhookResponse = await fetch(webhookUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: forwardHeaders,
         body: JSON.stringify(forwardPayload),
       });
 

@@ -1,3 +1,7 @@
+// X-Y3: Initialize OpenTelemetry FIRST (before any other imports that need instrumentation)
+import { initTracing } from './tracing.js';
+initTracing();
+
 import { loadEnv } from './env.js';
 import { PartnerRegistry } from './partnerRegistry.js';
 import { TransformEngine } from './transformEngine.js';
