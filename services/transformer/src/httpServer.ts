@@ -11,7 +11,7 @@ import {
   JSONATA_BATCH_MAX_ITEMS,
   type JsonataBatchItem,
 } from './jsonataCheck.js';
-import { renderMetrics, recordTransform, setGauge } from './metrics.js';
+import { renderMetrics, recordTransform, recordDlqRedrive, setGauge } from './metrics.js';
 import type { DlqRepository } from './dlq.js';
 import type { UsagePublisher } from './usagePublisher.js';
 
@@ -410,6 +410,10 @@ export async function buildServer(
     // Update cache size gauge on each scrape
     setGauge('transform_engine_cache_size', await engine.cacheSize());
     setGauge('partner_registry_size', registry.listPartners().length);
+    // T-Y1: Track dropped usage events for alerting
+    if (usagePublisher) {
+      setGauge('usage_dropped_total_gauge', usagePublisher.getDroppedCount(), { reason: 'no_org_id' });
+    }
     return reply
       .header('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
       .send(renderMetrics());
@@ -554,7 +558,16 @@ export async function buildServer(
       const redrivePayload = item.originalPayload ?? item.rawPayload;
       await dlqDeps.redrivePublish(item.sourceTopic, redrivePayload);
       await dlqDeps.repository.markRedriven(item.id);
-      return reply.send({ ok: true, id: item.id, redrivenToTopic: item.sourceTopic });
+
+      // T-Y2 FIX: Audit log for DLQ redrive operations
+      const redrivenBy = request.headers['x-api-key'] ? 'api-key-user' : 'unknown';
+      request.log.info(
+        { dlqId: item.id, redrivenBy, sourceTopic: item.sourceTopic, errorStage: item.errorStage },
+        'DLQ record redriven',
+      );
+      recordDlqRedrive('ok');
+
+      return reply.send({ ok: true, id: item.id, redrivenToTopic: item.sourceTopic, redrivenBy });
     },
   );
 

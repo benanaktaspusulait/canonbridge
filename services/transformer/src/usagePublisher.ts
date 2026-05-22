@@ -24,8 +24,16 @@ export class UsagePublisher {
   private producer: Producer | null = null;
   private readonly topic = 'usage.events';
   private readonly service = 'transformer';
+  private droppedCount = 0;
 
   constructor(private readonly env: Env) {}
+
+  /**
+   * T-Y1: Get the count of dropped usage events (for Prometheus metrics).
+   */
+  getDroppedCount(): number {
+    return this.droppedCount;
+  }
 
   /**
    * Initialize with an existing Kafka producer (shared with the main consumer).
@@ -37,13 +45,26 @@ export class UsagePublisher {
   /**
    * Publish a transform request usage event.
    * Fire-and-forget — errors are logged but never thrown.
+   *
+   * T-Y1 FIX: If orgId is missing, increment a metric counter instead of silently dropping.
    */
   async publishTransformRequest(
     orgId: string | undefined,
     requestId: string,
     metadata?: Record<string, unknown>,
   ): Promise<void> {
-    if (!orgId || !this.producer) return;
+    if (!orgId) {
+      // T-Y1 FIX: Track dropped usage events for alerting
+      this.droppedCount++;
+      if (this.droppedCount % 100 === 1 || this.env.logLevel === 'debug') {
+        console.warn(
+          `[UsagePublisher] Transform request missing org_id — usage event dropped (total dropped: ${this.droppedCount})`,
+        );
+      }
+      return;
+    }
+
+    if (!this.producer) return;
 
     const event: UsageEvent = {
       id: randomUUID(),

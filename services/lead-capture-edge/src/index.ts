@@ -17,8 +17,10 @@ export interface Env {
   RATE_LIMIT_MAX_REQUESTS: string;
   RATE_LIMIT_WINDOW_SECONDS: string;
   RATE_LIMIT_KV?: KVNamespace;
+  LEAD_DEDUPE_KV?: KVNamespace;
   USAGE_WEBHOOK_URL?: string;
   ORG_ID?: string;
+  DEDUPE_WINDOW_SECONDS?: string;
 }
 
 interface LeadPayload {
@@ -80,6 +82,14 @@ export default {
     const turnstileResult = await verifyTurnstile(env, body.turnstileToken, clientIp);
     if (!turnstileResult.success) {
       return jsonError(403, turnstileResult.error ?? 'Turnstile verification failed');
+    }
+
+    // L-Y2 FIX: Email-based deduplication to prevent spam from multiple IPs
+    if (body.email) {
+      const dedupeResult = await checkEmailDedupe(env, body.email);
+      if (!dedupeResult.allowed) {
+        return jsonError(429, 'Duplicate submission detected. Please wait before submitting again.');
+      }
     }
 
     // Forward to webhook
@@ -203,6 +213,49 @@ async function checkRateLimit(env: Env, clientIp: string): Promise<RateLimitResu
 }
 
 // --- Usage metering (TASK-016) ---
+
+// --- L-Y2: Email-based deduplication ---
+
+interface DedupeResult {
+  allowed: boolean;
+}
+
+async function checkEmailDedupe(env: Env, email: string): Promise<DedupeResult> {
+  const kv = env.LEAD_DEDUPE_KV ?? env.RATE_LIMIT_KV;
+  if (!kv) {
+    // If no KV available, allow (don't block legitimate leads)
+    return { allowed: true };
+  }
+
+  const windowSeconds = parseInt(env.DEDUPE_WINDOW_SECONDS ?? '86400', 10); // 24h default
+
+  // Hash the email for privacy (don't store raw emails in KV)
+  const emailHash = await hashEmail(email.toLowerCase().trim());
+  const key = `dedupe:${emailHash}`;
+
+  try {
+    const existing = await kv.get(key);
+    if (existing) {
+      return { allowed: false };
+    }
+
+    await kv.put(key, '1', { expirationTtl: windowSeconds });
+    return { allowed: true };
+  } catch {
+    // On KV errors, allow the request
+    return { allowed: true };
+  }
+}
+
+async function hashEmail(email: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(email);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('').substring(0, 32);
+}
+
+// --- Usage metering (TASK-016, original) ---
 
 async function publishUsageEvent(env: Env, clientIp: string): Promise<void> {
   const usageUrl = env.USAGE_WEBHOOK_URL;
