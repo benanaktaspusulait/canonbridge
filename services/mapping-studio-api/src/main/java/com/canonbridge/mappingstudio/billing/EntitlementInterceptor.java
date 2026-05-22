@@ -47,6 +47,9 @@ public class EntitlementInterceptor implements ContainerRequestFilter, Container
     @ConfigProperty(name = "canonbridge.entitlement.bypass-internal", defaultValue = "true")
     boolean bypassInternal;
 
+    @ConfigProperty(name = "canonbridge.billing.internal-service-secret", defaultValue = "")
+    String internalServiceSecret;
+
     @Override
     public void filter(ContainerRequestContext requestContext) {
         if (!entitlementEnabled) return;
@@ -110,20 +113,75 @@ public class EntitlementInterceptor implements ContainerRequestFilter, Container
         }
     }
 
+    /**
+     * M-Y2 FIX: Resolve org ID from the authenticated principal's claims,
+     * NOT from user-supplied X-Org-Id header (which can be spoofed).
+     * X-Org-Id is only trusted for internal service calls (already validated by isInternalCall).
+     */
     private UUID resolveOrgId(ContainerRequestContext requestContext) {
-        String orgIdStr = requestContext.getHeaderString(ORG_ID_HEADER);
-        if (orgIdStr != null && !orgIdStr.isBlank()) {
-            try {
-                return UUID.fromString(orgIdStr.trim());
-            } catch (IllegalArgumentException e) {
-                Log.warnf("Invalid X-Org-Id header value: %s", orgIdStr);
+        // For internal calls, trust the X-Org-Id header (already validated by service secret)
+        if (bypassInternal && isInternalCall(requestContext)) {
+            String orgIdStr = requestContext.getHeaderString(ORG_ID_HEADER);
+            if (orgIdStr != null && !orgIdStr.isBlank()) {
+                try {
+                    return UUID.fromString(orgIdStr.trim());
+                } catch (IllegalArgumentException e) {
+                    Log.warnf("Invalid X-Org-Id header value from internal call: %s", orgIdStr);
+                }
+            }
+            return null;
+        }
+
+        // For external calls, derive org from security context (JWT claim)
+        var securityContext = requestContext.getSecurityContext();
+        if (securityContext != null && securityContext.getUserPrincipal() != null) {
+            // Try to get org_id from a property set by the auth filter
+            Object orgIdProp = requestContext.getProperty("canonbridge.orgId");
+            if (orgIdProp instanceof UUID orgUuid) {
+                return orgUuid;
+            }
+            if (orgIdProp instanceof String orgStr && !orgStr.isBlank()) {
+                try {
+                    return UUID.fromString(orgStr.trim());
+                } catch (IllegalArgumentException e) {
+                    // fall through
+                }
             }
         }
+
+        // Fallback: use X-Org-Id only if user has admin role (cross-org access)
+        if (securityContext != null && securityContext.isUserInRole("admin")) {
+            String orgIdStr = requestContext.getHeaderString(ORG_ID_HEADER);
+            if (orgIdStr != null && !orgIdStr.isBlank()) {
+                try {
+                    return UUID.fromString(orgIdStr.trim());
+                } catch (IllegalArgumentException e) {
+                    Log.warnf("Invalid X-Org-Id header value: %s", orgIdStr);
+                }
+            }
+        }
+
         return null;
     }
 
+    /**
+     * M-Y1 FIX: Validate X-Service-Auth header against the configured internal secret.
+     * Uses constant-time comparison to prevent timing attacks.
+     * Previously, any non-empty value was accepted — now the actual secret is verified.
+     */
     private boolean isInternalCall(ContainerRequestContext requestContext) {
         String serviceAuth = requestContext.getHeaderString("X-Service-Auth");
-        return serviceAuth != null && !serviceAuth.isBlank();
+        if (serviceAuth == null || serviceAuth.isBlank()) {
+            return false;
+        }
+
+        if (internalServiceSecret == null || internalServiceSecret.isBlank()) {
+            Log.warn("Internal service secret not configured — rejecting X-Service-Auth (fail-closed)");
+            return false;
+        }
+
+        byte[] presentedBytes = serviceAuth.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] expectedBytes = internalServiceSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        return java.security.MessageDigest.isEqual(presentedBytes, expectedBytes);
     }
 }

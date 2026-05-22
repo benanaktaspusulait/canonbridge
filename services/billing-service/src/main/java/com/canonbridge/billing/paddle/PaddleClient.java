@@ -58,7 +58,7 @@ public class PaddleClient {
     }
 
     private boolean isConfigured() {
-        return config.apiKey() != null && !config.apiKey().isBlank();
+        return config.apiKey().isPresent() && !config.apiKey().get().isBlank();
     }
 
     // =========================================================================
@@ -285,7 +285,7 @@ public class PaddleClient {
 
     private Uni<JsonNode> get(String path) {
         return webClient.get(path)
-            .putHeader("Authorization", "Bearer " + config.apiKey())
+            .putHeader("Authorization", "Bearer " + config.apiKey().orElse(""))
             .putHeader("Content-Type", "application/json")
             .send()
             .map(this::parseResponse);
@@ -293,7 +293,7 @@ public class PaddleClient {
 
     private Uni<JsonNode> post(String path, ObjectNode body) {
         return webClient.post(path)
-            .putHeader("Authorization", "Bearer " + config.apiKey())
+            .putHeader("Authorization", "Bearer " + config.apiKey().orElse(""))
             .putHeader("Content-Type", "application/json")
             .sendBuffer(Buffer.buffer(body.toString()))
             .map(this::parseResponse);
@@ -301,7 +301,7 @@ public class PaddleClient {
 
     private Uni<JsonNode> patch(String path, ObjectNode body) {
         return webClient.patch(path)
-            .putHeader("Authorization", "Bearer " + config.apiKey())
+            .putHeader("Authorization", "Bearer " + config.apiKey().orElse(""))
             .putHeader("Content-Type", "application/json")
             .sendBuffer(Buffer.buffer(body.toString()))
             .map(this::parseResponse);
