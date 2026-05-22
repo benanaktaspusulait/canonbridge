@@ -64,6 +64,26 @@ export default function Home() {
           },
         ],
       },
+      {
+        "@type": "WebSite",
+        "@id": `${siteUrl}/#website`,
+        url: siteUrl,
+        name: "CanonBridge",
+        publisher: { "@id": `${siteUrl}/#organization` },
+        inLanguage: ["en", "tr", "de", "es"],
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${siteUrl}/#breadcrumb`,
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: siteUrl,
+          },
+        ],
+      },
     ],
   };
 
