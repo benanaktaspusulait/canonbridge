@@ -42,12 +42,32 @@ export function LocaleProvider({
     setT(translationsByLocale[l]);
     if (typeof window !== "undefined") {
       document.documentElement.lang = l;
+      localStorage.setItem("canonbridge-locale", l);
       const nextPath = localePath(l);
       if (window.location.pathname !== nextPath) {
         router.push(`${nextPath}${window.location.hash}`);
       }
     }
   };
+
+  // On mount: check ?lang= query param or localStorage for locale preference
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const queryLocale = params.get("lang") as Locale | null;
+    const storedLocale = localStorage.getItem("canonbridge-locale") as Locale | null;
+    const preferred = queryLocale ?? storedLocale;
+
+    if (preferred && allowedLocales.includes(preferred) && preferred !== locale) {
+      setLocaleState(preferred);
+      setT(translationsByLocale[preferred]);
+      document.documentElement.lang = preferred;
+      const nextPath = localePath(preferred);
+      if (window.location.pathname !== nextPath) {
+        router.replace(`${nextPath}${window.location.hash}`);
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     document.documentElement.lang = locale;

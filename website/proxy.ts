@@ -15,7 +15,38 @@ export function proxy(request: NextRequest) {
     });
   }
 
-  return NextResponse.next({ request: { headers: requestHeaders } });
+  // Generate per-request CSP nonce for inline scripts
+  const nonce = generateNonce();
+  requestHeaders.set("x-nonce", nonce);
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+
+  // Override CSP with nonce — replaces 'unsafe-inline' for script-src
+  const csp = [
+    `default-src 'self'`,
+    `script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com`,
+    `style-src 'self' 'unsafe-inline'`,
+    `img-src 'self' data: blob:`,
+    `font-src 'self' data:`,
+    `connect-src 'self' https:`,
+    `frame-src https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com`,
+    `object-src 'none'`,
+    `base-uri 'self'`,
+    `form-action 'self'`,
+    `frame-ancestors 'self'`,
+    `report-uri /api/csp-report`,
+    `report-to canonbridge-csp`,
+  ].join("; ");
+
+  response.headers.set("Content-Security-Policy", csp);
+
+  return response;
+}
+
+function generateNonce(): string {
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  return btoa(String.fromCharCode(...array));
 }
 
 export const config = {
