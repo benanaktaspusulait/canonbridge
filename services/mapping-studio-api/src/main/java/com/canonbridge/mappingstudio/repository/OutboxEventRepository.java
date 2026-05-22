@@ -54,7 +54,7 @@ public class OutboxEventRepository {
                 ") VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, 'PENDING', $8, $8) " +
                 "RETURNING event_id"
         )
-        .execute(Tuples.of(
+        .execute(SqlParams.of(
                 eventId,
                 tenantId,
                 topic,

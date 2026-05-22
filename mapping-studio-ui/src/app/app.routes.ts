@@ -1,6 +1,28 @@
 import { Routes } from '@angular/router';
 import { authGuard, publicGuard } from './core/guards/auth.guard';
 
+/**
+ * Application Route Structure
+ *
+ * ┌─ /login ─────────────── LoginComponent (full-screen, no layout shell)
+ * │
+ * └─ / ──────────────────── LayoutComponent (sidebar + topbar + <router-outlet>)
+ *    ├─ /dashboard
+ *    ├─ /mappings
+ *    ├─ /wizard
+ *    ├─ /partners
+ *    ├─ /schemas, /schemas/:id
+ *    ├─ /external-systems
+ *    ├─ /dlq
+ *    ├─ /monitoring
+ *    ├─ /audit
+ *    ├─ /tenant
+ *    └─ /settings
+ *
+ * Login uses its own full-screen layout (no sidebar/topbar).
+ * All other routes are children of LayoutComponent which provides
+ * the app shell (sidebar, topbar, skip-links, keyboard shortcuts).
+ */
 export const routes: Routes = [
   {
     path: 'login',

@@ -42,7 +42,7 @@ public class BatchJobRepository {
                 ") VALUES ($1, $2, $3, 'RUNNING', $4, $5, $6::jsonb, $7, $8, $8) " +
                 "RETURNING job_id"
         )
-        .execute(Tuples.of(
+        .execute(SqlParams.of(
                 jobId,
                 tenantId,
                 draftId,
@@ -70,7 +70,7 @@ public class BatchJobRepository {
                 "result_summary = $5::jsonb, updated_at = $6, completed_at = $6 " +
                 "WHERE tenant_id = $7 AND job_id = $8"
         )
-        .execute(Tuples.of(
+        .execute(SqlParams.of(
                 status,
                 Math.max(0, succeededRows),
                 Math.max(0, failedRows),

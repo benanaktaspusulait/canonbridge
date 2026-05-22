@@ -73,7 +73,7 @@ public class CredentialRepository {
 
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         return client.preparedQuery(sql)
-                .execute(Tuples.of(
+                .execute(SqlParams.of(
                         credential.credentialId() != null ? credential.credentialId() : UUID.randomUUID(),
                         credential.tenantId(),
                         credential.displayName(),
@@ -117,7 +117,7 @@ public class CredentialRepository {
                 """;
 
         return client.preparedQuery(sql)
-                .execute(Tuples.of(
+                .execute(SqlParams.of(
                         encryptedSecret,
                         Credential.CredentialStatus.ACTIVE.name(),
                         toOffsetDateTime(rotationDueAt),

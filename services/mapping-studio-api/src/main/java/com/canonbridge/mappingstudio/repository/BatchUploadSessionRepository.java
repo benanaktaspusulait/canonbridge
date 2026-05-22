@@ -41,7 +41,7 @@ public class BatchUploadSessionRepository {
                 "metadata, created_by, created_at, updated_at" +
                 ") VALUES ($1, $2, $3, 'OPEN', $4, $5, $6, $7, $8::jsonb, $9, $10, $10) " +
                 "RETURNING *")
-        .execute(Tuples.of(
+        .execute(SqlParams.of(
                 sessionId,
                 tenantId,
                 draftId,
@@ -113,7 +113,7 @@ public class BatchUploadSessionRepository {
                 "row_count = EXCLUDED.row_count, rows = EXCLUDED.rows, checksum = EXCLUDED.checksum, " +
                 "created_by = EXCLUDED.created_by, updated_at = EXCLUDED.updated_at " +
                 "RETURNING chunk_id")
-        .execute(Tuples.of(
+        .execute(SqlParams.of(
                 tenantId,
                 sessionId,
                 Math.max(0, chunkIndex),
@@ -171,7 +171,7 @@ public class BatchUploadSessionRepository {
                 "UPDATE etl_batch_upload_sessions SET status = 'PROCESSING', updated_at = $3 " +
                 "WHERE tenant_id = $1 AND session_id = $2 AND status IN ('OPEN', 'RECEIVING') " +
                 "RETURNING *")
-        .execute(Tuples.of(tenantId, sessionId, toLocalDateTime(now)))
+        .execute(SqlParams.of(tenantId, sessionId, toLocalDateTime(now)))
         .map(rows -> rows.size() == 0 ? null : toSession(rows.iterator().next()));
     }
 
@@ -181,7 +181,7 @@ public class BatchUploadSessionRepository {
                 "UPDATE etl_batch_upload_sessions SET status = 'COMPLETED', batch_job_id = $3, " +
                 "error_message = NULL, updated_at = $4, completed_at = $4 " +
                 "WHERE tenant_id = $1 AND session_id = $2 RETURNING *")
-        .execute(Tuples.of(tenantId, sessionId, batchJobId, toLocalDateTime(now)))
+        .execute(SqlParams.of(tenantId, sessionId, batchJobId, toLocalDateTime(now)))
         .map(rows -> rows.size() == 0 ? null : toSession(rows.iterator().next()));
     }
 
@@ -190,7 +190,7 @@ public class BatchUploadSessionRepository {
         return client.preparedQuery(
                 "UPDATE etl_batch_upload_sessions SET status = 'FAILED', error_message = $3, updated_at = $4, completed_at = $4 " +
                 "WHERE tenant_id = $1 AND session_id = $2 RETURNING *")
-        .execute(Tuples.of(tenantId, sessionId, errorMessage, toLocalDateTime(now)))
+        .execute(SqlParams.of(tenantId, sessionId, errorMessage, toLocalDateTime(now)))
         .map(rows -> rows.size() == 0 ? null : toSession(rows.iterator().next()));
     }
 
@@ -199,7 +199,7 @@ public class BatchUploadSessionRepository {
         return client.preparedQuery(
                 "UPDATE etl_batch_upload_sessions SET status = 'CANCELLED', updated_at = $3, completed_at = $3 " +
                 "WHERE tenant_id = $1 AND session_id = $2 AND status IN ('OPEN', 'RECEIVING', 'FAILED') RETURNING *")
-        .execute(Tuples.of(tenantId, sessionId, toLocalDateTime(now)))
+        .execute(SqlParams.of(tenantId, sessionId, toLocalDateTime(now)))
         .map(rows -> rows.size() == 0 ? null : toSession(rows.iterator().next()));
     }
 
@@ -212,7 +212,7 @@ public class BatchUploadSessionRepository {
                 "FROM (SELECT COUNT(*)::int AS received_chunks, COALESCE(SUM(row_count), 0)::int AS received_rows " +
                 "      FROM etl_batch_upload_chunks WHERE tenant_id = $1 AND session_id = $2) counts " +
                 "WHERE s.tenant_id = $1 AND s.session_id = $2 RETURNING s.*")
-        .execute(Tuples.of(tenantId, sessionId, toLocalDateTime(now)))
+        .execute(SqlParams.of(tenantId, sessionId, toLocalDateTime(now)))
         .map(rows -> rows.size() == 0 ? null : toSession(rows.iterator().next()));
     }
 

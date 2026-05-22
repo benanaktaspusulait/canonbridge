@@ -77,7 +77,7 @@ public class SchemaRepository {
                     ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) " +
                     "RETURNING *"
             )
-            .execute(Tuples.of(
+            .execute(SqlParams.of(
                     id,
                     schema.tenantId(),
                     schema.name(),
@@ -110,7 +110,7 @@ public class SchemaRepository {
                     "compatibility_mode = $6, status = $7, description = $8, updated_at = $9, updated_by = $10 " +
                     "WHERE tenant_id = $11 AND id = $12 RETURNING *"
             )
-            .execute(Tuples.of(
+            .execute(SqlParams.of(
                     coalesce(patch.name(), existing.name()),
                     coalesce(patch.schemaType(), existing.schemaType()).name(),
                     coalesce(patch.subject(), existing.subject()),

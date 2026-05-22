@@ -283,7 +283,7 @@ See [10_SYSTEM_SUPPORT_AUDIT.md](docs/project/10_SYSTEM_SUPPORT_AUDIT.md) for th
 | **Architects / CTOs** | [Architecture Overview](./docs/architecture/01-overview.md) · [ADRs](./docs/adr/) |
 | **Backend Engineers** | [MVP Definition](./docs/project/MVP_DEFINITION.md) · [Transformer Guide](./docs/implementation/TRANSFORMER_NODEJS_GUIDE.md) |
 | **Frontend Engineers** | [Mapping Studio](./docs/product/README.md) · [Angular UI](./mapping-studio-ui/README.md) |
-| **DevOps / SRE** | [Deployment Guide](./docs/deployment/setup-guide.md) · [Runbook](./docs/operations/08-runbook.md) |
+| **DevOps / SRE** | [Deployment Guide](./docs/deployment/setup-guide.md) · [Runbook](./docs/operations/08-runbook.md) · [Infrastructure](./infrastructure/) · [Scripts](./services/mapping-studio-api/scripts/) |
 | **Project Gaps** | [Project Gaps](./docs/project/PROJECT_GAPS.md) · [10 System Support Audit](./docs/project/10_SYSTEM_SUPPORT_AUDIT.md) |
 | **Everyone** | [Master Roadmap](./docs/project/MASTER_ROADMAP.md) · [Documentation Hub](./docs/README.md) |
 

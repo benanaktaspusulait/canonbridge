@@ -65,7 +65,7 @@ public class PartnerRepository {
             "VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11) " +
             "RETURNING *"
         )
-        .execute(Tuples.of(
+        .execute(SqlParams.of(
             partner.getId(),
             partner.getTenantId(),
             partner.getExternalId(),
@@ -91,7 +91,7 @@ public class PartnerRepository {
             "WHERE tenant_id = $8 AND id = $9 " +
             "RETURNING *"
         )
-        .execute(Tuples.of(
+        .execute(SqlParams.of(
             partner.getExternalId(),
             partner.getName(),
             partner.getDescription(),

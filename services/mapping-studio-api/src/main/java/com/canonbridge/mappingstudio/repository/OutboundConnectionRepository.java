@@ -72,7 +72,7 @@ public class OutboundConnectionRepository {
                 ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) " +
                 "RETURNING *"
         )
-        .execute(Tuples.of(
+        .execute(SqlParams.of(
                 connectionId,
                 connection.tenantId(),
                 connection.draftId(),
@@ -110,7 +110,7 @@ public class OutboundConnectionRepository {
                     "last_test_result = $15, updated_at = $16 " +
                     "WHERE tenant_id = $17 AND connection_id = $18 RETURNING *"
             )
-            .execute(Tuples.of(
+            .execute(SqlParams.of(
                     coalesce(patch.draftId(), existing.draftId()),
                     coalesce(patch.name(), existing.name()),
                     coalesce(patch.purpose(), existing.purpose()).name(),
@@ -153,7 +153,7 @@ public class OutboundConnectionRepository {
                 "SET status = $1, last_test_at = $2, last_test_result = $3, updated_at = $2 " +
                 "WHERE tenant_id = $4 AND connection_id = $5 RETURNING *"
         )
-        .execute(Tuples.of(status.name(), OffsetDateTime.now(ZoneOffset.UTC), result, tenantId, connectionId))
+        .execute(SqlParams.of(status.name(), OffsetDateTime.now(ZoneOffset.UTC), result, tenantId, connectionId))
         .map(rows -> rows.iterator().hasNext() ? toConnection(rows.iterator().next()) : null);
     }
 

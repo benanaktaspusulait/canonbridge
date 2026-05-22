@@ -6,9 +6,13 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
-final class Tuples {
+/**
+ * Utility for building reactive SQL parameter tuples with automatic type conversion.
+ * Converts {@link Instant} values to {@link LocalDateTime} (UTC) for PostgreSQL compatibility.
+ */
+final class SqlParams {
 
-    private Tuples() {
+    private SqlParams() {
     }
 
     static Tuple of(Object... values) {

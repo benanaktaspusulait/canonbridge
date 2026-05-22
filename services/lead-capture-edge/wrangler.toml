@@ -1,0 +1,14 @@
+name = "lead-capture-edge"
+main = "src/index.ts"
+compatibility_date = "2024-05-01"
+
+[vars]
+ALLOWED_ORIGINS = "https://canonbridge.io,https://www.canonbridge.io"
+MAX_BODY_BYTES = "16384"
+RATE_LIMIT_MAX_REQUESTS = "5"
+RATE_LIMIT_WINDOW_SECONDS = "60"
+
+# KV namespace for rate limiting
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT_KV"
+# id = "<your-kv-namespace-id>"

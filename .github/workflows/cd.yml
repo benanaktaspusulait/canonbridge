@@ -25,7 +25,7 @@ jobs:
           - { name: transformer, path: services/transformer, java: false }
           - { name: website, path: website, java: false }
           - { name: mapping-studio-ui, path: mapping-studio-ui, java: false }
-          - { name: canonbridge-mock, path: services/canonbridge-mock, java: true }
+          - { name: canonbridge-mock, path: services/canonbridge-mock, java: true, exclude-production: true }
     steps:
       - uses: actions/checkout@v4
 
@@ -79,6 +79,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
+        if: ${{ !(matrix.service.exclude-production && startsWith(github.ref, 'refs/tags/v')) }}
         working-directory: ${{ matrix.service.path }}
         run: |
           IMAGE=${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}

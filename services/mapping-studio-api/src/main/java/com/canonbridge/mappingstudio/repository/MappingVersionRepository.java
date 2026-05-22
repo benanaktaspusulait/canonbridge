@@ -94,7 +94,7 @@ public class MappingVersionRepository {
             "$14, $15, $16, $17, $18, $19, $20" +
             ") RETURNING *"
         )
-        .execute(Tuples.of(
+        .execute(SqlParams.of(
             version.getId(),
             version.getTenantId(),
             version.getDraftId(),

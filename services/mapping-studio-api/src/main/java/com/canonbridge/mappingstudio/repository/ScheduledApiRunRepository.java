@@ -117,7 +117,7 @@ public class ScheduledApiRunRepository {
                 "last_result = $5::jsonb, updated_at = $2 " +
                 "WHERE tenant_id = $6 AND draft_id = $7"
         )
-        .execute(Tuples.of(
+        .execute(SqlParams.of(
                 success ? "SUCCESS" : "FAILED",
                 toLocalDateTime(completedAt),
                 durationMs,
@@ -182,7 +182,7 @@ public class ScheduledApiRunRepository {
                 "status = $1, completed_at = $2, duration_ms = $3, error_message = $4, " +
                 "result_payload = $5::jsonb, updated_at = $2 WHERE run_id = $6"
         )
-        .execute(Tuples.of(
+        .execute(SqlParams.of(
                 success ? "SUCCESS" : "FAILED",
                 toLocalDateTime(completedAt),
                 durationMs,
