@@ -86,7 +86,7 @@ public class WebhookService {
                     return eventId;
                 });
             });
-    }
+            });
     }
 
     private static final Set<String> ALLOWED_HEADERS = Set.of(
