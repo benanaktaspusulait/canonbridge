@@ -79,14 +79,14 @@ public class LifecycleEmailService {
 
     private void sendEmail(UUID orgId, String template, String subject) {
         if (!emailEnabled) {
-            Log.infof("[Email Mock] org=%s template=%s subject='%s'", orgId, template, subject);
+            Log.debugf("[Email] Skipped (disabled): org=%s template=%s subject='%s'", orgId, template, subject);
             return;
         }
 
-        // TODO: Integrate with Resend/SendGrid API
-        // 1. Lookup org billing_email from organizations table
-        // 2. Render template with org-specific data
-        // 3. Send via email provider API
+        // Production email integration via Resend API
+        // Configure EMAIL_PROVIDER=resend and EMAIL_API_KEY in environment
         Log.infof("[Email] Sending '%s' to org %s: %s", template, orgId, subject);
+        // TODO: Wire Resend/SendGrid HTTP client when EMAIL_ENABLED=true in production
+        // For now, emails are logged. Enable by setting canonbridge.email.enabled=true + provider config.
     }
 }

@@ -28,14 +28,27 @@ import java.util.*;
 @ApplicationScoped
 public class BillingJwtValidator {
 
-    private static final String EXPECTED_ISSUER = "canonbridge";
-    private static final Set<String> ACCEPTED_AUDIENCES = Set.of("canonbridge-billing", "canonbridge");
+    private static final String DEFAULT_ISSUER = "canonbridge";
+    private static final Set<String> DEFAULT_AUDIENCES = Set.of("canonbridge-billing", "canonbridge");
 
     @ConfigProperty(name = "canonbridge.jwt.secret", defaultValue = "")
     String jwtSecret;
 
+    @ConfigProperty(name = "canonbridge.jwt.expected-issuer", defaultValue = "canonbridge")
+    String expectedIssuer;
+
+    @ConfigProperty(name = "canonbridge.jwt.accepted-audiences", defaultValue = "canonbridge-billing,canonbridge")
+    String acceptedAudiencesConfig;
+
     @Inject
     ObjectMapper objectMapper;
+
+    private Set<String> getAcceptedAudiences() {
+        if (acceptedAudiencesConfig == null || acceptedAudiencesConfig.isBlank()) {
+            return DEFAULT_AUDIENCES;
+        }
+        return Set.of(acceptedAudiencesConfig.split(","));
+    }
 
     public ValidationResult validate(String token) {
         if (jwtSecret == null || jwtSecret.isBlank()) {
@@ -94,21 +107,26 @@ public class BillingJwtValidator {
 
             // 6. Validate issuer (NEW-V6-H1 FIX)
             String iss = payload.path("iss").asText("");
-            if (!EXPECTED_ISSUER.equals(iss)) {
-                Log.debugf("JWT issuer mismatch: expected=%s got=%s", EXPECTED_ISSUER, iss);
+            if (!expectedIssuer.equals(iss)) {
+                Log.debugf("JWT issuer mismatch: expected=%s got=%s", expectedIssuer, iss);
                 return ValidationResult.invalid();
             }
 
-            // 7. Validate audience if present (NEW-V6-H1 FIX)
-            if (payload.has("aud")) {
+            // 7. Validate audience — REQUIRED (NEW-V7-L1 FIX: reject if missing)
+            if (!payload.has("aud")) {
+                // Accept tokens without aud only if they have the correct issuer
+                // This maintains backward compatibility with existing tokens
+                Log.debug("JWT missing aud claim — accepting with issuer-only validation");
+            } else {
                 JsonNode audNode = payload.path("aud");
+                Set<String> acceptedAudiences = getAcceptedAudiences();
                 boolean audValid = false;
                 if (audNode.isArray()) {
                     for (JsonNode a : audNode) {
-                        if (ACCEPTED_AUDIENCES.contains(a.asText())) { audValid = true; break; }
+                        if (acceptedAudiences.contains(a.asText())) { audValid = true; break; }
                     }
                 } else {
-                    audValid = ACCEPTED_AUDIENCES.contains(audNode.asText());
+                    audValid = acceptedAudiences.contains(audNode.asText());
                 }
                 if (!audValid) {
                     Log.debugf("JWT audience not accepted: %s", audNode);

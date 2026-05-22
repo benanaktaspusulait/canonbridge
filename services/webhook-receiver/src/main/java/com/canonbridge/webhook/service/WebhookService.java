@@ -114,9 +114,8 @@ public class WebhookService {
 
     private void publishUsageEvent(String partnerId, String eventId) {
         try {
-            // TODO: Resolve org_id from partner_id (via DB lookup or cache)
-            // For now, use a placeholder — will be resolved when org-partner mapping is implemented
-            String orgId = "a0000000-0000-0000-0000-000000000001";
+            // Resolve org_id from partner via DB (partners table has tenant_id → organizations)
+            String orgId = resolveOrgIdFromPartner(partnerId);
 
             JsonObject usageEvent = new JsonObject()
                 .put("id", UUID.randomUUID().toString())
@@ -133,6 +132,23 @@ public class WebhookService {
             // Graceful degradation: never let billing break webhook processing
             LOG.warnf("Failed to publish usage event for webhook: %s", e.getMessage());
         }
+    }
+
+    private String resolveOrgIdFromPartner(String partnerId) {
+        // Look up org from partner's tenant → organization mapping
+        // For single-tenant deployment, use the default org
+        try {
+            var rowSet = client.preparedQuery(
+                "SELECT o.id FROM organizations o JOIN partners p ON p.tenant_id = o.tenant_id WHERE p.id = $1::uuid LIMIT 1"
+            ).executeAndAwait(Tuple.of(partnerId));
+            if (rowSet.size() > 0) {
+                return rowSet.iterator().next().getUUID("id").toString();
+            }
+        } catch (Exception e) {
+            LOG.debugf("Could not resolve org for partner %s: %s", partnerId, e.getMessage());
+        }
+        // Fallback to default org
+        return "a0000000-0000-0000-0000-000000000001";
     }
 
     private JsonObject extractHeaders(HttpHeaders headers) {
