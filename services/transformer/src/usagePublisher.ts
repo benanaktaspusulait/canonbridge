@@ -88,9 +88,11 @@ export class UsagePublisher {
         ],
       });
     } catch (err) {
-      // Graceful degradation: never let billing break transforms
-      if (this.env.logLevel === 'debug') {
-        console.error('[UsagePublisher] Failed to publish usage event:', err);
+      // V5-M5 FIX: Log dropped events with full context for recovery
+      this.droppedCount++;
+      if (this.env.logLevel === 'debug' || this.droppedCount % 100 === 0) {
+        console.error(`[UsagePublisher] Failed to publish usage event (dropped=${this.droppedCount}):`, err);
+        console.error(`[UsagePublisher] Dropped event: org=${orgId} metric=transform_requests requestId=${requestId}`);
       }
     }
   }

@@ -53,16 +53,15 @@ public class WebhookAuthService {
      */
     public Uni<String> getSigningSecret(String partnerId) {
         return client.preparedQuery(
-            "SELECT signing_secret_encrypted FROM webhook_endpoints " +
+            "SELECT signing_secret FROM webhook_endpoints " +
             "WHERE partner_id = $1::uuid AND status = 'ACTIVE'"
         )
         .execute(Tuple.of(partnerId))
         .map(rowSet -> {
             if (rowSet.size() == 0) return null;
-            String encrypted = rowSet.iterator().next().getString("signing_secret_encrypted");
-            if (encrypted == null || encrypted.isBlank()) return null;
-            // TODO: Decrypt using CredentialSecretCodec when signing secrets are encrypted
-            return encrypted;
+            String secret = rowSet.iterator().next().getString("signing_secret");
+            if (secret == null || secret.isBlank()) return null;
+            return secret;
         });
     }
 

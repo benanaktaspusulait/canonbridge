@@ -66,6 +66,12 @@ public class BillingSecurityConfigurationValidator {
             failures.add("BILLING_API_KEYS must be configured for external API access");
         }
 
+        // V5-M4 FIX: JWT secret must be configured in production
+        String jwtSecret = value(config, "canonbridge.jwt.secret", "");
+        if (jwtSecret.isBlank()) {
+            failures.add("JWT_SECRET_KEY must be set in production — all JWT auth will silently fail without it");
+        }
+
         // Auth enabled
         boolean authEnabled = booleanValue(config, "canonbridge.billing.auth.enabled", true);
         if (!authEnabled) {

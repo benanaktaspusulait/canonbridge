@@ -31,6 +31,20 @@ public class InvoiceService {
             );
     }
 
+    /**
+     * V5-L2 FIX: Purge paddle_processed_events older than 90 days.
+     * Runs daily at 06:00 UTC.
+     */
+    @Scheduled(cron = "0 0 6 * * ?", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
+    public void purgeOldProcessedEvents() {
+        String sql = "DELETE FROM paddle_processed_events WHERE processed_at < NOW() - INTERVAL '90 days'";
+        client.preparedQuery(sql).execute(Tuple.tuple())
+            .subscribe().with(
+                result -> { if (result.rowCount() > 0) Log.infof("Purged %d old paddle_processed_events", result.rowCount()); },
+                error -> Log.errorf(error, "Failed to purge paddle_processed_events")
+            );
+    }
+
     public Uni<Long> generateMonthlyInvoices() {
         LocalDate lastMonth = LocalDate.now(ZoneOffset.UTC).minusMonths(1).withDayOfMonth(1);
         LocalDate periodEnd = lastMonth.plusMonths(1).minusDays(1);
