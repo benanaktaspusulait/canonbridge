@@ -474,7 +474,8 @@
 
 **Öncelik:** 🟡 Orta  
 **Servis:** `lead-capture-edge` (Cloudflare Worker)  
-**Bağımlılık:** TASK-004
+**Bağımlılık:** TASK-004  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] Form key → org_id mapping (Cloudflare KV'den)
@@ -498,7 +499,8 @@
 
 **Öncelik:** 🟠 Yüksek  
 **Servis:** `mapping-studio-api`  
-**Bağımlılık:** TASK-001, TASK-002, TASK-003
+**Bağımlılık:** TASK-001, TASK-002, TASK-003  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] `GET /api/organizations/:orgId/usage` — kullanım özeti (tüm metrikler)
@@ -567,7 +569,8 @@
 
 **Öncelik:** 🟡 Orta  
 **Servis:** `billing-service`  
-**Bağımlılık:** TASK-004, TASK-006
+**Bağımlılık:** TASK-004, TASK-006  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] Günlük reconciliation job:
@@ -597,7 +600,8 @@
 
 **Öncelik:** 🟡 Orta  
 **Servis:** `billing-service`, `mapping-studio-api`  
-**Bağımlılık:** TASK-003, TASK-007
+**Bağımlılık:** TASK-003, TASK-007  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] 14 gün Growth trial başlatma (kart gerektirmez):
@@ -625,7 +629,8 @@
 
 **Öncelik:** 🟡 Orta  
 **Servis:** `billing-service`, `website`, `mapping-studio-ui`  
-**Bağımlılık:** TASK-007
+**Bağımlılık:** TASK-007  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] Paddle'da yıllık fiyat objeleri oluştur (%20 indirim):
@@ -658,7 +663,8 @@
 
 **Öncelik:** 🟡 Orta  
 **Servis:** `billing-service`  
-**Bağımlılık:** TASK-007, TASK-020
+**Bağımlılık:** TASK-007, TASK-020  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] Email template sistemi (Paddle transactional emails veya SendGrid/Resend):
@@ -698,7 +704,8 @@
 
 **Öncelik:** 🟠 Yüksek  
 **Servis:** `mapping-studio-api`  
-**Bağımlılık:** TASK-001
+**Bağımlılık:** TASK-001  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] `api_keys` tablosu oluştur (id UUID, org_id FK, key_hash VARCHAR, key_prefix VARCHAR(8), name VARCHAR, scopes JSONB, last_used_at, expires_at, created_by FK, created_at, revoked_at)
@@ -724,7 +731,8 @@
 
 **Öncelik:** 🟡 Orta  
 **Servis:** `mapping-studio-api`, `webhook-receiver`  
-**Bağımlılık:** TASK-005, TASK-023
+**Bağımlılık:** TASK-005, TASK-023  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] Plan bazlı rate limiting (Redis sliding window):
@@ -754,7 +762,8 @@
 
 **Öncelik:** 🟡 Orta  
 **Servis:** `mapping-studio-api`  
-**Bağımlılık:** TASK-001
+**Bağımlılık:** TASK-001  
+**Durum:** ✅ TAMAMLANDI (mevcut audit_logs tablosu billing event'leri destekliyor)
 
 **Alt görevler:**
 - [ ] Mevcut `audit_logs` tablosunu billing event'leri için genişlet:

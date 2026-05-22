@@ -17,6 +17,8 @@ export interface Env {
   RATE_LIMIT_MAX_REQUESTS: string;
   RATE_LIMIT_WINDOW_SECONDS: string;
   RATE_LIMIT_KV?: KVNamespace;
+  USAGE_WEBHOOK_URL?: string;
+  ORG_ID?: string;
 }
 
 interface LeadPayload {
@@ -114,6 +116,9 @@ export default {
       return jsonError(502, 'Failed to process lead submission');
     }
 
+    // TASK-016: Publish usage event for billing metering (fire-and-forget)
+    publishUsageEvent(env, clientIp).catch(() => {});
+
     return new Response(JSON.stringify({ success: true, message: 'Lead submitted successfully' }), {
       status: 200,
       headers: {
@@ -194,6 +199,35 @@ async function checkRateLimit(env: Env, clientIp: string): Promise<RateLimitResu
   } catch {
     // On KV errors, fail open to avoid blocking legitimate traffic
     return { allowed: true, retryAfter: 0 };
+  }
+}
+
+// --- Usage metering (TASK-016) ---
+
+async function publishUsageEvent(env: Env, clientIp: string): Promise<void> {
+  const usageUrl = env.USAGE_WEBHOOK_URL;
+  if (!usageUrl) return;
+
+  const orgId = env.ORG_ID ?? 'a0000000-0000-0000-0000-000000000001';
+  const event = {
+    id: crypto.randomUUID(),
+    org_id: orgId,
+    service: 'lead-capture-edge',
+    metric: 'lead_captures',
+    qty: 1,
+    ts: new Date().toISOString(),
+    request_id: `lead-${Date.now()}-${clientIp.replace(/\./g, '')}`,
+    metadata: {},
+  };
+
+  try {
+    await fetch(usageUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(event),
+    });
+  } catch {
+    // Graceful degradation: never let billing break lead capture
   }
 }
 

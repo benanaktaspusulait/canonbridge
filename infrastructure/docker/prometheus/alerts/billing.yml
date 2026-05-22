@@ -1,0 +1,52 @@
+groups:
+  - name: billing_alerts
+    rules:
+      - alert: UsageEventConsumerLag
+        expr: kafka_consumergroup_lag_sum{consumergroup="billing-service", topic="usage.events"} > 5000
+        for: 5m
+        labels:
+          severity: warning
+          service: billing-service
+        annotations:
+          summary: "Usage event consumer lag is high"
+          description: "billing-service consumer lag on usage.events is {{ $value }} (threshold: 5000)"
+
+      - alert: PaddleWebhookErrors
+        expr: rate(http_server_requests_seconds_count{job="billing-service", uri="/api/webhooks/paddle", status=~"5.."}[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: critical
+          service: billing-service
+        annotations:
+          summary: "Paddle webhook processing errors"
+          description: "billing-service is returning 5xx on Paddle webhooks (rate: {{ $value }}/s)"
+
+      - alert: InvoiceGenerationFailed
+        expr: increase(billing_invoice_generation_errors_total[1h]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          service: billing-service
+        annotations:
+          summary: "Invoice generation encountered errors"
+          description: "{{ $value }} invoice generation errors in the last hour"
+
+      - alert: EntitlementCheckLatencyHigh
+        expr: histogram_quantile(0.99, rate(entitlement_check_duration_seconds_bucket{job="mapping-studio-api"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: mapping-studio-api
+        annotations:
+          summary: "Entitlement check p99 latency is high"
+          description: "p99 entitlement check latency is {{ $value }}s (threshold: 100ms)"
+
+      - alert: QuotaAbuseDetected
+        expr: increase(cb_usage_total[1h]) > 2 * on(org_id) group_left() (entitlement_limit_value)
+        for: 0m
+        labels:
+          severity: critical
+          service: billing
+        annotations:
+          summary: "Potential quota abuse detected"
+          description: "An organization exceeded 200% of their quota in 1 hour"

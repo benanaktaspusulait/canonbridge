@@ -1,0 +1,101 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Active Subscriptions by Plan",
+      "type": "piechart",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "rawSql": "SELECT p.name AS metric, COUNT(*) AS value FROM subscriptions s JOIN plans p ON p.id = s.plan_id WHERE s.status = 'active' GROUP BY p.name",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "title": "MRR (Monthly Recurring Revenue)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "rawSql": "SELECT SUM(p.price_monthly_cents) / 100.0 AS value FROM subscriptions s JOIN plans p ON p.id = s.plan_id WHERE s.status IN ('active', 'trialing')",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "currencyUSD", "thresholds": { "steps": [{ "color": "green", "value": 0 }] } }
+      }
+    },
+    {
+      "title": "Total Organizations",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 3, "x": 12, "y": 0 },
+      "targets": [
+        { "rawSql": "SELECT COUNT(*) AS value FROM organizations WHERE status = 'ACTIVE'", "format": "table" }
+      ]
+    },
+    {
+      "title": "Total Users",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 3, "x": 15, "y": 0 },
+      "targets": [
+        { "rawSql": "SELECT COUNT(*) AS value FROM users WHERE status = 'ACTIVE'", "format": "table" }
+      ]
+    },
+    {
+      "title": "Daily Usage — Mapping Runs",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "rawSql": "SELECT day AS time, SUM(qty) AS value FROM usage_aggregates_daily WHERE metric = 'mapping_runs' AND day >= CURRENT_DATE - INTERVAL '30 days' GROUP BY day ORDER BY day",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "title": "Daily Usage — Transform Requests",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "rawSql": "SELECT day AS time, SUM(qty) AS value FROM usage_aggregates_daily WHERE metric = 'transform_requests' AND day >= CURRENT_DATE - INTERVAL '30 days' GROUP BY day ORDER BY day",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "title": "Top 10 Organizations by Usage",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "rawSql": "SELECT o.name, SUM(uad.qty) AS total_usage FROM usage_aggregates_daily uad JOIN organizations o ON o.id = uad.org_id WHERE uad.day >= CURRENT_DATE - INTERVAL '30 days' GROUP BY o.name ORDER BY total_usage DESC LIMIT 10",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "title": "Subscription Status Distribution",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "rawSql": "SELECT status AS metric, COUNT(*) AS value FROM subscriptions GROUP BY status",
+          "format": "table"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["billing", "usage", "revenue"],
+  "templating": { "list": [] },
+  "time": { "from": "now-30d", "to": "now" },
+  "title": "Billing & Usage",
+  "uid": "billing-usage"
+}
