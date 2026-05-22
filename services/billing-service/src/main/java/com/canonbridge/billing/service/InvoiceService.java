@@ -205,4 +205,20 @@ public class InvoiceService {
             .execute(Tuple.of(invoiceId, providerRef))
             .map(r -> r.rowCount() > 0);
     }
+
+    /**
+     * NEW-Y3 FIX: Update invoice tax from Paddle transaction data.
+     * Called when transaction.completed webhook arrives with tax details.
+     */
+    public Uni<Boolean> updateTaxFromPaddle(UUID orgId, int taxCents, String currency) {
+        String sql = """
+            UPDATE invoices
+            SET tax_cents = $2, total_cents = subtotal_cents + $2, currency = COALESCE($3, currency)
+            WHERE org_id = $1 AND status = 'open'
+              AND period_start = date_trunc('month', CURRENT_DATE)::date
+            """;
+        return client.preparedQuery(sql)
+            .execute(Tuple.of(orgId, taxCents, currency))
+            .map(r -> r.rowCount() > 0);
+    }
 }

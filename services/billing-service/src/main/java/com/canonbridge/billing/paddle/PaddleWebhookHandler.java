@@ -53,6 +53,9 @@ public class PaddleWebhookHandler {
     @Inject
     ObjectMapper objectMapper;
 
+    @Inject
+    com.canonbridge.billing.service.InvoiceService invoiceService;
+
     @ConfigProperty(name = "canonbridge.security.environment", defaultValue = "development")
     String environment;
 
@@ -196,9 +199,31 @@ public class PaddleWebhookHandler {
     }
 
     private Uni<Boolean> handleTransactionCompleted(JsonNode data) {
-        // Payment successful — could create invoice record
+        // NEW-Y3 FIX: Extract tax from Paddle transaction and update invoice
         String transactionId = data.path("id").asText();
-        Log.infof("Transaction completed: %s", transactionId);
+        String orgIdStr = data.path("custom_data").path("org_id").asText(null);
+        int taxCents = 0;
+        String currency = "USD";
+
+        // Paddle transaction details contain tax info
+        JsonNode details = data.path("details");
+        if (details != null && !details.isMissingNode()) {
+            JsonNode totals = details.path("totals");
+            if (totals != null && !totals.isMissingNode()) {
+                String taxStr = totals.path("tax").asText("0");
+                try { taxCents = Integer.parseInt(taxStr); } catch (NumberFormatException ignored) {}
+                currency = totals.path("currency_code").asText("USD");
+            }
+        }
+
+        Log.infof("Transaction completed: %s, tax=%d cents, org=%s", transactionId, taxCents, orgIdStr);
+
+        if (orgIdStr != null && taxCents > 0) {
+            int finalTaxCents = taxCents;
+            String finalCurrency = currency;
+            return invoiceService.updateTaxFromPaddle(java.util.UUID.fromString(orgIdStr), finalTaxCents, finalCurrency)
+                .map(updated -> true);
+        }
         return Uni.createFrom().item(true);
     }
 

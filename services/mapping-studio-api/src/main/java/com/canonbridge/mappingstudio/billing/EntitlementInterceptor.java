@@ -17,6 +17,7 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * JAX-RS filter that enforces entitlement quotas on annotated endpoints.
@@ -35,6 +36,8 @@ public class EntitlementInterceptor implements ContainerRequestFilter, Container
     private static final String ORG_ID_HEADER = "X-Org-Id";
     private static final String QUOTA_WARNING_HEADER = "X-Quota-Warning";
     private static final String ENTITLEMENT_RESULT_PROPERTY = "entitlement.result";
+    private static final int CIRCUIT_BREAKER_THRESHOLD = 5;
+    private final ConcurrentHashMap<UUID, Integer> failureCount = new ConcurrentHashMap<>();
 
     @Inject
     EntitlementService entitlementService;
@@ -77,15 +80,29 @@ public class EntitlementInterceptor implements ContainerRequestFilter, Container
             return;
         }
 
-        // Check quota with timeout (M-O2 FIX: prevent thread blocking if Redis is slow)
-        // Redis cache hit is typically <5ms; 500ms timeout prevents thread starvation
+        // NEW-O1 FIX: Circuit breaker — track failures per org, fail-closed after threshold
         EntitlementResult result;
         try {
             result = entitlementService.checkQuota(orgId, check.metric(), check.qty())
                 .await().atMost(java.time.Duration.ofMillis(500));
+            // Reset failure count on success
+            failureCount.remove(orgId);
         } catch (Exception e) {
-            // Timeout or Redis failure — fail-open (allow request, log warning)
-            Log.warnf("Entitlement check timed out for org=%s metric=%s — allowing request (fail-open)", orgId, check.metric());
+            int failures = failureCount.merge(orgId, 1, Integer::sum);
+            if (failures > CIRCUIT_BREAKER_THRESHOLD) {
+                // Too many failures for this org — fail-closed to prevent abuse
+                Log.errorf("Entitlement circuit breaker OPEN for org=%s (failures=%d) — blocking request", orgId, failures);
+                requestContext.abortWith(
+                    Response.status(503)
+                        .type(MediaType.APPLICATION_JSON)
+                        .entity(Map.of("error", "service_unavailable", "message", "Quota service temporarily unavailable. Please retry later."))
+                        .build()
+                );
+                return;
+            }
+            // Below threshold — fail-open (allow request, log warning)
+            Log.warnf("Entitlement check failed for org=%s metric=%s (failure %d/%d) — allowing request",
+                orgId, check.metric(), failures, CIRCUIT_BREAKER_THRESHOLD);
             return;
         }
 

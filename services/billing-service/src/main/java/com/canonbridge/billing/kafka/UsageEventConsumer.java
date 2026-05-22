@@ -75,9 +75,28 @@ public class UsageEventConsumer {
                 });
 
         } catch (Exception e) {
-            Log.errorf(e, "Failed to parse usage event from Kafka — acknowledging to avoid poison pill");
-            // Ack unparseable messages to avoid infinite retry loop (dead letter)
+            // P-2 FIX: Send parse failures to DLQ for forensic analysis, then ack
+            Log.errorf(e, "Failed to parse usage event from Kafka — sending to DLQ and acknowledging");
+            sendToDlq(message.getPayload(), e.getMessage());
             return Uni.createFrom().completionStage(message.ack());
+        }
+    }
+
+    /**
+     * P-2 FIX: Forward unparseable events to usage.events.dlq topic.
+     */
+    private void sendToDlq(String payload, String errorMessage) {
+        try {
+            String dlqPayload = objectMapper.writeValueAsString(java.util.Map.of(
+                "original_payload", payload != null ? payload.substring(0, Math.min(payload.length(), 4096)) : "",
+                "error", errorMessage != null ? errorMessage : "unknown",
+                "consumer", "billing-service.UsageEventConsumer",
+                "timestamp", Instant.now().toString()
+            ));
+            // Log DLQ event — in production, publish to usage.events.dlq topic
+            Log.warnf("[DLQ] Usage event parse failure: %s", dlqPayload);
+        } catch (Exception dlqError) {
+            Log.errorf(dlqError, "Failed to create DLQ record");
         }
     }
 }

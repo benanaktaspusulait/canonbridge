@@ -50,6 +50,9 @@ public class BillingAuthenticationFilter implements ContainerRequestFilter {
     @Inject
     BillingJwtValidator jwtValidator;
 
+    @Inject
+    io.vertx.mutiny.pgclient.PgPool pgPool;
+
     @Override
     public void filter(ContainerRequestContext requestContext) {
         if (!authEnabled || shouldBypass(requestContext)) {
@@ -155,7 +158,9 @@ public class BillingAuthenticationFilter implements ContainerRequestFilter {
     }
 
     /**
-     * Validate API key via X-API-Key header.
+     * NEW-Y2 FIX: Validate API key via DB lookup (api_keys table).
+     * Each key is bound to an org with specific roles/scopes.
+     * Falls back to config-based keys for backward compatibility.
      */
     private boolean hasValidApiKey(ContainerRequestContext requestContext) {
         String apiKey = requestContext.getHeaderString(API_KEY_HEADER);
@@ -163,24 +168,60 @@ public class BillingAuthenticationFilter implements ContainerRequestFilter {
             return false;
         }
 
-        if (configuredApiKeys == null || configuredApiKeys.isBlank()) {
-            return false;
-        }
+        // Try DB-based key lookup first (org-bound, with scopes)
+        String keyHash = hashApiKey(apiKey);
+        // Note: This is a blocking call but API key auth is rare path
+        // In production, use Redis cache for key→org mapping
+        try {
+            var rowSet = pgPool.preparedQuery(
+                "SELECT org_id, name FROM api_keys WHERE key_hash = $1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > NOW())"
+            ).executeAndAwait(io.vertx.mutiny.sqlclient.Tuple.of(keyHash));
 
-        // Support multiple keys separated by comma
-        for (String accepted : configuredApiKeys.split(",")) {
-            String trimmed = accepted.trim();
-            if (!trimmed.isBlank() && constantTimeEquals(apiKey, trimmed)) {
+            if (rowSet.size() > 0) {
+                var row = rowSet.iterator().next();
+                String orgId = row.getUUID("org_id").toString();
                 requestContext.setSecurityContext(new BillingSecurityContext(
                         requestContext.getSecurityContext(),
-                        "api-key-client",
-                        null,
+                        "api-key:" + row.getString("name"),
+                        orgId,
                         Set.of("service")
                 ));
                 return true;
             }
+        } catch (Exception e) {
+            Log.warnf("DB API key lookup failed, falling back to config: %s", e.getMessage());
+        }
+
+        // Fallback: config-based keys (legacy, no org binding)
+        if (configuredApiKeys == null || configuredApiKeys.isBlank()) {
+            return false;
+        }
+
+        for (String accepted : configuredApiKeys.split(",")) {
+            String trimmed = accepted.trim();
+            if (!trimmed.isBlank() && constantTimeEquals(apiKey, trimmed)) {
+                // Legacy key: service role but NO org binding — org-authorization filter will reject org-scoped paths
+                requestContext.setSecurityContext(new BillingSecurityContext(
+                        requestContext.getSecurityContext(),
+                        "api-key-legacy",
+                        null,
+                        Set.of("service")
+                ));
+                Log.warn("Legacy config-based API key used — migrate to DB-based keys for org binding");
+                return true;
+            }
         }
         return false;
+    }
+
+    private String hashApiKey(String rawKey) {
+        try {
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(rawKey.getBytes(StandardCharsets.UTF_8));
+            return java.util.HexFormat.of().formatHex(hash);
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     private void abort(ContainerRequestContext requestContext, String error, String message) {
