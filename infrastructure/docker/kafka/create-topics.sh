@@ -34,4 +34,8 @@ create_topic "transformation.dlq" 6 1209600000
 create_topic "canonbridge.dlq" 6 1209600000
 create_topic "business.events" 6 604800000
 
+# Billing & Usage topics
+create_topic "usage.events" 6 2592000000
+create_topic "billing.events" 6 7776000000
+
 echo "Kafka topics are ready."
