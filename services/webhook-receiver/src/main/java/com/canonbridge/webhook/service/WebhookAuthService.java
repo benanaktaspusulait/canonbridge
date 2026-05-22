@@ -47,6 +47,8 @@ public class WebhookAuthService {
         .onFailure().invoke(throwable -> LOG.error("Failed to validate webhook key", throwable));
     }
 
+    private static final long TIMESTAMP_TOLERANCE_SECONDS = 300; // 5 minutes
+
     public boolean verifyHmacSignature(String payload, String signatureHeader, String secretKey) {
         if (signatureHeader == null || signatureHeader.isBlank() || secretKey == null) {
             return false;
@@ -57,6 +59,16 @@ public class WebhookAuthService {
             Optional<String> stripeTimestamp = signaturePart(trimmed, "t");
             Optional<String> stripeSignature = signaturePart(trimmed, "v1");
             if (stripeSignature.isPresent()) {
+                // K5: Validate timestamp tolerance to prevent replay attacks
+                if (stripeTimestamp.isPresent()) {
+                    long timestamp = Long.parseLong(stripeTimestamp.get());
+                    long now = System.currentTimeMillis() / 1000;
+                    if (Math.abs(now - timestamp) > TIMESTAMP_TOLERANCE_SECONDS) {
+                        LOG.warnf("Webhook timestamp outside tolerance: t=%d, now=%d, diff=%ds",
+                                timestamp, now, Math.abs(now - timestamp));
+                        return false;
+                    }
+                }
                 String signedPayload = stripeTimestamp
                         .map(timestamp -> timestamp + "." + payload)
                         .orElse(payload);

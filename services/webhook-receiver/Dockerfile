@@ -15,4 +15,7 @@ COPY --from=build /app/target/quarkus-app/quarkus/ /app/quarkus/
 EXPOSE 8082
 USER 1001
 
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8082/q/health/ready || exit 1
+
 ENTRYPOINT ["java", "-jar", "/app/quarkus-run.jar"]

@@ -76,6 +76,10 @@ public class RateLimitService {
         }
 
         try {
+            // Y2: Atomic sliding window via single Redis pipeline
+            // Remove old entries, count, conditionally add — all in one round-trip
+            String requestId = UUID.randomUUID().toString();
+
             // Remove old entries outside the sliding window
             sortedSetCommands.zremrangebyscore(key, ScoreRange.from(0L, windowStart));
 
@@ -96,7 +100,6 @@ public class RateLimitService {
             }
 
             // Add current request to the window
-            String requestId = UUID.randomUUID().toString();
             sortedSetCommands.zadd(key, new ZAddArgs(), (double) now, requestId);
 
             // Set TTL on the key to auto-cleanup

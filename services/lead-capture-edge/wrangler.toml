@@ -1,6 +1,6 @@
 name = "lead-capture-edge"
 main = "src/index.ts"
-compatibility_date = "2024-05-01"
+compatibility_date = "2025-05-01"
 
 [vars]
 ALLOWED_ORIGINS = "https://canonbridge.io,https://www.canonbridge.io"

@@ -16,9 +16,12 @@ public class SecurityHeadersFilter implements ContainerResponseFilter {
         responseContext.getHeaders().putSingle("X-Content-Type-Options", "nosniff");
         responseContext.getHeaders().putSingle("X-Frame-Options", "DENY");
         responseContext.getHeaders().putSingle("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-        responseContext.getHeaders().putSingle("Content-Security-Policy", "default-src 'self'");
+        responseContext.getHeaders().putSingle("Content-Security-Policy",
+                "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
         responseContext.getHeaders().putSingle("Referrer-Policy", "strict-origin-when-cross-origin");
         responseContext.getHeaders().putSingle("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
         responseContext.getHeaders().putSingle("X-Permitted-Cross-Domain-Policies", "none");
+        responseContext.getHeaders().putSingle("Cross-Origin-Resource-Policy", "same-origin");
+        responseContext.getHeaders().putSingle("Cross-Origin-Opener-Policy", "same-origin");
     }
 }

@@ -172,8 +172,9 @@ interface RateLimitResult {
 async function checkRateLimit(env: Env, clientIp: string): Promise<RateLimitResult> {
   const kv = env.RATE_LIMIT_KV;
   if (!kv) {
-    // No KV configured — allow but log warning
-    return { allowed: true, retryAfter: 0 };
+    // Y13: Fail-closed — no KV means no rate limiting protection
+    console.error('RATE_LIMIT_KV not configured — rejecting request (fail-closed)');
+    return { allowed: false, retryAfter: 60 };
   }
 
   const maxRequests = parseInt(env.RATE_LIMIT_MAX_REQUESTS ?? '5', 10);
@@ -201,12 +202,15 @@ async function checkRateLimit(env: Env, clientIp: string): Promise<RateLimitResu
 function handleCors(request: Request, env: Env): Response {
   const origin = request.headers.get('Origin') ?? '';
   const allowedOrigins = (env.ALLOWED_ORIGINS ?? '').split(',').map((s) => s.trim());
-  const allowOrigin = allowedOrigins.includes(origin) ? origin : '';
+
+  if (!allowedOrigins.includes(origin)) {
+    return jsonError(403, 'Origin not allowed');
+  }
 
   return new Response(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': allowOrigin,
+      'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
       'Access-Control-Max-Age': '86400',

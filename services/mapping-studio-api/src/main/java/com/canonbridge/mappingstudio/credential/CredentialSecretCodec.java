@@ -22,10 +22,7 @@ public class CredentialSecretCodec {
 
     private final SecureRandom secureRandom = new SecureRandom();
 
-    @ConfigProperty(
-            name = "canonbridge.credentials.encryption-key",
-            defaultValue = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
-    )
+    @ConfigProperty(name = "canonbridge.credentials.encryption-key")
     String configuredBase64Key;
 
     CredentialSecretCodec() {

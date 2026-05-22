@@ -19,12 +19,28 @@ type DlqManagementDeps = {
   redrivePublish: (topic: string, payload: unknown) => Promise<void>;
 };
 
-// G-06: API key auth hook
+import { timingSafeEqual, randomBytes } from 'node:crypto';
+
+// G-06: API key auth hook (timing-safe comparison)
 async function apiKeyAuth(env: Env, request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const acceptedApiKeys = env.apiKeys?.length ? env.apiKeys : env.apiKey ? [env.apiKey] : [];
-  if (acceptedApiKeys.length === 0) return; // auth disabled
+  if (acceptedApiKeys.length === 0) {
+    // K8: In production, empty API keys = fail-fast
+    if (process.env.NODE_ENV === 'production') {
+      return reply.code(503).send({ error: { message: 'API key authentication not configured' } });
+    }
+    return; // auth disabled in dev
+  }
   const provided = request.headers['x-api-key'];
-  if (typeof provided !== 'string' || !acceptedApiKeys.includes(provided)) {
+  if (typeof provided !== 'string') {
+    return reply.code(401).send({ error: { message: 'Unauthorized' } });
+  }
+  // K7: Timing-safe comparison to prevent timing oracle attacks
+  const matched = acceptedApiKeys.some((key) => {
+    if (key.length !== provided.length) return false;
+    return timingSafeEqual(Buffer.from(key, 'utf8'), Buffer.from(provided, 'utf8'));
+  });
+  if (!matched) {
     return reply.code(401).send({ error: { message: 'Unauthorized' } });
   }
 }
@@ -40,7 +56,10 @@ export async function buildServer(
     bodyLimit: env.httpBodyLimitBytes ?? 20 * 1024 * 1024,
   });
 
-  // G-06: CORS — explicit origins or allow all if empty
+  // Y5: CORS — explicit origins required in production
+  if (process.env.NODE_ENV === 'production' && env.corsOrigins.length === 0) {
+    throw new Error('CORS_ORIGINS must be configured in production (comma-separated list of allowed origins)');
+  }
   const corsOrigin = env.corsOrigins.length > 0 ? env.corsOrigins : true;
   await app.register(cors, { origin: corsOrigin });
 

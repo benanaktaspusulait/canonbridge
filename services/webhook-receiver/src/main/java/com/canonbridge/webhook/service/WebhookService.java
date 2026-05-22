@@ -12,6 +12,7 @@ import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.jboss.logging.Logger;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -75,12 +76,16 @@ public class WebhookService {
             });
     }
 
+    private static final Set<String> ALLOWED_HEADERS = Set.of(
+            "content-type", "user-agent", "x-request-id", "x-correlation-id",
+            "x-forwarded-for", "x-real-ip", "accept", "accept-encoding",
+            "idempotency-key", "x-idempotency-key"
+    );
+
     private JsonObject extractHeaders(HttpHeaders headers) {
         JsonObject headerObj = new JsonObject();
         headers.getRequestHeaders().forEach((key, values) -> {
-            if (!key.equalsIgnoreCase("X-Webhook-Key") && 
-                !key.equalsIgnoreCase("X-Webhook-Signature") &&
-                !key.equalsIgnoreCase("Authorization")) {
+            if (ALLOWED_HEADERS.contains(key.toLowerCase())) {
                 headerObj.put(key, values.isEmpty() ? null : values.get(0));
             }
         });
