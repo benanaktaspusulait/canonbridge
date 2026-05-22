@@ -20,13 +20,14 @@ public class EntitlementQueryService {
     PgPool client;
 
     public Uni<List<Map<String, Object>>> getEntitlements(UUID orgId) {
+        // B-V1-M7 FIX: Only return entitlements for active/trialing subscriptions
         String sql = """
             SELECT ec.feature_key, ec.limit_value, ec.used_value, ec.remaining, ec.resets_at,
                    pf.unit, pf.is_soft_limit, pf.description
             FROM entitlements_cache ec
             LEFT JOIN subscriptions s ON s.org_id = ec.org_id
             LEFT JOIN plan_features pf ON pf.plan_id = s.plan_id AND pf.feature_key = ec.feature_key
-            WHERE ec.org_id = $1
+            WHERE ec.org_id = $1 AND s.status IN ('active', 'trialing', 'past_due')
             ORDER BY ec.feature_key
             """;
 

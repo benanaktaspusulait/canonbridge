@@ -19,7 +19,7 @@
 
     @if (!collapsed) {
       <nav id="primary-navigation" class="layout-sidebar-nav" role="navigation" aria-label="Primary navigation">
-        @for (group of navGroups; track group.labelKey) {
+        @for (group of navGroups(); track group.labelKey) {
           <section class="layout-nav-section" role="group" [attr.aria-label]="group.labelKey | i18n">
             <button type="button" class="layout-nav-section-title" (click)="toggleSection(group.labelKey)" [attr.aria-expanded]="!isSectionCollapsed(group.labelKey)">
               <i [class]="isSectionCollapsed(group.labelKey) ? 'pi pi-chevron-right' : 'pi pi-chevron-down'" aria-hidden="true"></i>
@@ -61,7 +61,7 @@
       </div>
     } @else {
       <nav id="primary-navigation" class="layout-sidebar-rail" role="navigation" aria-label="Primary navigation">
-        @for (item of iconNavItems; track item.route) {
+        @for (item of iconNavItems(); track item.route) {
           <a
             class="layout-rail-item"
             [routerLink]="item.route"

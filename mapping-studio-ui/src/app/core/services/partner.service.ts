@@ -1,8 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AuthService } from './auth.service';
 
 export interface Partner {
   id: string;
@@ -42,45 +41,32 @@ export interface PartnerUpdateRequest {
 })
 export class PartnerService {
   private readonly http = inject(HttpClient);
-  private readonly auth = inject(AuthService);
   private readonly baseUrl = `${environment.api.baseUrl}/partners`;
 
-  private getHeaders(): HttpHeaders {
-    const user = this.auth.currentUser();
-    let headers = new HttpHeaders();
-    
-    if (user?.tenantId) {
-      headers = headers.set('X-Tenant-Id', user.tenantId);
-    }
-    
-    if (user?.id) {
-      headers = headers.set('X-User-Id', user.id);
-    }
-    
-    return headers;
-  }
+  // [H2] No custom tenant/user headers — interceptor sends Bearer token,
+  // backend derives identity from JWT claims.
 
   list(): Observable<Partner[]> {
-    return this.http.get<Partner[]>(this.baseUrl, { headers: this.getHeaders() });
+    return this.http.get<Partner[]>(this.baseUrl);
   }
 
   getById(id: string): Observable<Partner> {
-    return this.http.get<Partner>(`${this.baseUrl}/${id}`, { headers: this.getHeaders() });
+    return this.http.get<Partner>(`${this.baseUrl}/${id}`);
   }
 
   getByExternalId(externalId: string): Observable<Partner> {
-    return this.http.get<Partner>(`${this.baseUrl}/external/${externalId}`, { headers: this.getHeaders() });
+    return this.http.get<Partner>(`${this.baseUrl}/external/${externalId}`);
   }
 
   create(partner: PartnerCreateRequest): Observable<Partner> {
-    return this.http.post<Partner>(this.baseUrl, partner, { headers: this.getHeaders() });
+    return this.http.post<Partner>(this.baseUrl, partner);
   }
 
   update(id: string, partner: PartnerUpdateRequest): Observable<Partner> {
-    return this.http.put<Partner>(`${this.baseUrl}/${id}`, partner, { headers: this.getHeaders() });
+    return this.http.put<Partner>(`${this.baseUrl}/${id}`, partner);
   }
 
   delete(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`, { headers: this.getHeaders() });
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 }

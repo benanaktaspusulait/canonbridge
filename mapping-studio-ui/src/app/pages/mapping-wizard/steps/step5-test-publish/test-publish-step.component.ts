@@ -606,14 +606,12 @@ export class TestPublishStepComponent implements OnInit {
   }
 
   getTestHeaders(): Record<string, string> {
-    return this.tenantHeaders({ 'Content-Type': 'application/json' });
+    return { 'Content-Type': 'application/json' };
   }
 
-  private tenantHeaders(extra: Record<string, string> = {}): Record<string, string> {
-    return {
-      ...extra,
-      'X-Tenant-Id': this.auth.currentTenant().id
-    };
+  /** [H2] No longer sends X-Tenant-Id — interceptor handles auth via Bearer token */
+  private tenantHeaders(): Record<string, string> {
+    return {};
   }
 
   getProxyDescription(): string {

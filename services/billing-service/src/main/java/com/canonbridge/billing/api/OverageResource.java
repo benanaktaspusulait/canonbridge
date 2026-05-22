@@ -77,5 +77,9 @@ public class OverageResource {
             .map(r -> Response.ok(Map.of("overage_enabled", false)).build());
     }
 
-    public record OverageSettings(int capCents, int thresholdPercent) {}
+    // B-V1-L7 FIX: Validate overage settings
+    public record OverageSettings(
+        @jakarta.validation.constraints.Min(0) @jakarta.validation.constraints.Max(1000000) int capCents,
+        @jakarta.validation.constraints.Min(1) @jakarta.validation.constraints.Max(100) int thresholdPercent
+    ) {}
 }

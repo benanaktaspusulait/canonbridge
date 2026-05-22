@@ -108,10 +108,11 @@ public class SubscriptionService {
     }
 
     public Uni<SubscriptionResponse> cancel(UUID orgId) {
+        // B-V1-H3 FIX: Don't overwrite status — just set cancel_at
         String sql = """
             UPDATE subscriptions
-            SET cancel_at = current_period_end, status = 'active'
-            WHERE org_id = $1
+            SET cancel_at = current_period_end
+            WHERE org_id = $1 AND status IN ('active', 'trialing', 'past_due')
             RETURNING id, org_id, status, billing_cycle, current_period_start, current_period_end, trial_end, cancel_at
             """;
 
@@ -141,9 +142,10 @@ public class SubscriptionService {
     }
 
     public Uni<SubscriptionResponse> resume(UUID orgId) {
+        // B-V1-H3 FIX: Resume from paused OR past_due, clear cancel_at
         String sql = """
-            UPDATE subscriptions SET status = 'active', paused_at = NULL
-            WHERE org_id = $1 AND status = 'paused'
+            UPDATE subscriptions SET status = 'active', paused_at = NULL, cancel_at = NULL
+            WHERE org_id = $1 AND status IN ('paused', 'past_due')
             RETURNING id, org_id, status, billing_cycle, current_period_start, current_period_end, trial_end, cancel_at
             """;
 

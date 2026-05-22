@@ -20,6 +20,9 @@ FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
+# CM-V1-L4 FIX: Install wget (not included in jre-alpine by default)
+RUN apk add --no-cache wget
+
 # Copy jar from builder
 COPY --from=builder /app/target/*.jar app.jar
 

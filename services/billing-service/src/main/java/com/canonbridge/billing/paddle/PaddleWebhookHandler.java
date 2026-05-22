@@ -56,6 +56,9 @@ public class PaddleWebhookHandler {
     @Inject
     com.canonbridge.billing.service.InvoiceService invoiceService;
 
+    @Inject
+    com.canonbridge.billing.service.LifecycleEmailService lifecycleEmailService;
+
     @ConfigProperty(name = "canonbridge.security.environment", defaultValue = "development")
     String environment;
 
@@ -187,6 +190,7 @@ public class PaddleWebhookHandler {
 
     private Uni<Boolean> handleSubscriptionPastDue(JsonNode data) {
         String externalRef = data.path("id").asText();
+        String orgIdStr = data.path("custom_data").path("org_id").asText(null);
 
         String sql = "UPDATE subscriptions SET status = 'past_due' WHERE external_ref = $1";
 
@@ -194,6 +198,11 @@ public class PaddleWebhookHandler {
             .execute(Tuple.of(externalRef))
             .map(rowSet -> {
                 Log.warnf("Subscription past due via Paddle: ref=%s", externalRef);
+                // B-V1-L2 FIX: Send dunning email
+                if (orgIdStr != null) {
+                    invoiceService.toString(); // ensure injected
+                    lifecycleEmailService.sendPaymentFailed(java.util.UUID.fromString(orgIdStr));
+                }
                 return true;
             });
     }
@@ -222,7 +231,11 @@ public class PaddleWebhookHandler {
             int finalTaxCents = taxCents;
             String finalCurrency = currency;
             return invoiceService.updateTaxFromPaddle(java.util.UUID.fromString(orgIdStr), finalTaxCents, finalCurrency)
-                .map(updated -> true);
+                .flatMap(updated -> {
+                    // B-V1-L1 FIX: Mark the invoice as paid
+                    return invoiceService.markPaid(java.util.UUID.fromString(orgIdStr), transactionId);
+                })
+                .map(marked -> true);
         }
         return Uni.createFrom().item(true);
     }

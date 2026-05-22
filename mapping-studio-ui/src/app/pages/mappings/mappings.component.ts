@@ -519,6 +519,8 @@ export class MappingsComponent implements OnInit {
   }
 
   private tenantHeaders(): Record<string, string> {
-    return { 'X-Tenant-Id': this.auth.currentTenant().id };
+    // [H2] Headers no longer needed — interceptor sends Bearer token,
+    // backend derives tenant from JWT claims.
+    return {};
   }
 }

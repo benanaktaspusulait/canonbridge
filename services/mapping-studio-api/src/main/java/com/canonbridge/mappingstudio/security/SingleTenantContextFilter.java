@@ -14,21 +14,29 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.util.Set;
+
+/**
+ * [A-V8-H2] Tenant context is now derived from the authenticated principal's
+ * JWT claims (via {@link ApiAuthenticationFilter#AUTHORIZED_TENANTS_PROPERTY}),
+ * NOT from client-supplied X-Tenant-Id headers.
+ *
+ * In single-tenant mode, this filter enforces that the authenticated user
+ * belongs to the configured default tenant.
+ */
 @Provider
 @ApplicationScoped
 @Priority(Priorities.AUTHENTICATION + 2)
 public class SingleTenantContextFilter implements ContainerRequestFilter {
 
     public static final String TENANT_ID_PROPERTY = "canonbridge.tenant.id";
+    public static final String USER_ID_PROPERTY = "canonbridge.user.id";
 
     @ConfigProperty(name = "canonbridge.tenant.single-tenant.enabled", defaultValue = "true")
     boolean singleTenantEnabled;
 
     @ConfigProperty(name = "canonbridge.tenant.default-id", defaultValue = "tenant-acme")
     String defaultTenantId;
-
-    @ConfigProperty(name = "canonbridge.tenant.header-name", defaultValue = "X-Tenant-Id")
-    String tenantHeaderName;
 
     @Inject
     AuditLogService auditLogService;
@@ -39,18 +47,55 @@ public class SingleTenantContextFilter implements ContainerRequestFilter {
             return;
         }
 
-        String requestedTenantId = trimToNull(requestContext.getHeaderString(tenantHeaderName));
-        if (requestedTenantId != null && !defaultTenantId.equals(requestedTenantId)) {
-            auditTenantDenied(requestContext, requestedTenantId);
+        // Derive tenant from authenticated JWT claims, not from client headers
+        Set<String> authorizedTenants = getAuthorizedTenants(requestContext);
+
+        String resolvedTenantId;
+        if (authorizedTenants.isEmpty() || authorizedTenants.contains("*")) {
+            // Wildcard (API key with all-tenant access) or unauthenticated — use default
+            resolvedTenantId = defaultTenantId;
+        } else if (authorizedTenants.contains(defaultTenantId)) {
+            resolvedTenantId = defaultTenantId;
+        } else {
+            // Authenticated user's tenant doesn't match the single-tenant config
+            String attemptedTenant = authorizedTenants.iterator().next();
+            auditTenantDenied(requestContext, attemptedTenant);
             requestContext.abortWith(Response.status(Response.Status.FORBIDDEN)
                     .type(MediaType.APPLICATION_JSON_TYPE)
-                    .entity(new TenantErrorResponse("invalid_tenant", "Only tenant '" + defaultTenantId + "' is available"))
+                    .entity(new TenantErrorResponse("invalid_tenant",
+                            "Only tenant '" + defaultTenantId + "' is available"))
                     .build());
             return;
         }
 
-        requestContext.getHeaders().putSingle(tenantHeaderName, defaultTenantId);
-        requestContext.setProperty(TENANT_ID_PROPERTY, defaultTenantId);
+        // Set tenant context for downstream resources — ignore any client-supplied header
+        requestContext.setProperty(TENANT_ID_PROPERTY, resolvedTenantId);
+
+        // Override the X-Tenant-Id header with the JWT-derived value so that
+        // existing @HeaderParam("X-Tenant-Id") annotations in resources work correctly.
+        // This ensures client-supplied values are NEVER trusted.
+        requestContext.getHeaders().putSingle("X-Tenant-Id", resolvedTenantId);
+
+        // Extract user ID from principal (format: "user:<uuid>")
+        if (requestContext.getSecurityContext() != null
+                && requestContext.getSecurityContext().getUserPrincipal() != null) {
+            String principal = requestContext.getSecurityContext().getUserPrincipal().getName();
+            if (principal != null && principal.startsWith("user:")) {
+                String userId = principal.substring(5);
+                requestContext.setProperty(USER_ID_PROPERTY, userId);
+                // Override X-User-Id header with JWT-derived value
+                requestContext.getHeaders().putSingle("X-User-Id", userId);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<String> getAuthorizedTenants(ContainerRequestContext requestContext) {
+        Object value = requestContext.getProperty(ApiAuthenticationFilter.AUTHORIZED_TENANTS_PROPERTY);
+        if (value instanceof Set<?> tenants) {
+            return (Set<String>) tenants;
+        }
+        return Set.of();
     }
 
     private boolean shouldBypass(ContainerRequestContext requestContext) {
@@ -63,14 +108,6 @@ public class SingleTenantContextFilter implements ContainerRequestFilter {
                 || path.startsWith("api/auth/login")
                 || path.startsWith("api/auth/refresh")
                 || path.startsWith("api/auth/me");
-    }
-
-    private static String trimToNull(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private void auditTenantDenied(ContainerRequestContext requestContext, String requestedTenantId) {

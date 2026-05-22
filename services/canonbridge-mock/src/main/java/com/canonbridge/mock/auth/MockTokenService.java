@@ -2,7 +2,9 @@ package com.canonbridge.mock.auth;
 
 import com.canonbridge.mock.config.MockConfiguration;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -16,12 +18,26 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MockTokenService {
 
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final MockConfiguration mockConfig;
     private final Map<String, TokenClaims> issuedTokens = new ConcurrentHashMap<>();
+
+    /**
+     * CM-V1-H4 FIX: Evict expired tokens every 60 seconds to prevent memory leak.
+     */
+    @Scheduled(fixedDelay = 60000)
+    public void evictExpiredTokens() {
+        int before = issuedTokens.size();
+        issuedTokens.entrySet().removeIf(e -> !Instant.now().isBefore(e.getValue().expiresAt()));
+        int evicted = before - issuedTokens.size();
+        if (evicted > 0) {
+            log.debug("Evicted {} expired tokens ({} remaining)", evicted, issuedTokens.size());
+        }
+    }
 
     public IssuedToken issueToken(String clientId, String requestedScope) {
         return issueToken(clientId, requestedScope, mockConfig.getShopmax().getTokenExpirySeconds());

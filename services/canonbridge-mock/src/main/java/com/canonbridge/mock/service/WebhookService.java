@@ -68,11 +68,13 @@ public class WebhookService {
 
     private void persistToDisk(WebhookEvent event) {
         try {
-            String filename = event.receivedAt().toString().replace(":", "-") + "-" + event.type() + "-" + event.id() + ".json";
+            // CM-V1-H2 FIX: Replace all filesystem-unsafe characters
+            String safeTs = event.receivedAt().toString().replace(':', '-').replace('.', '-');
+            String filename = safeTs + "_" + event.type() + "_" + event.id() + ".json";
             Path file = storageDir.resolve(filename);
             Files.writeString(file, objectMapper.writeValueAsString(event));
         } catch (IOException e) {
-            log.debug("Could not persist webhook to disk: {}", e.getMessage());
+            log.warn("Could not persist webhook to disk: {}", e.getMessage());
         }
     }
 }

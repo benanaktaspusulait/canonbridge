@@ -213,23 +213,31 @@ public class InvoiceService {
             });
     }
 
-    public Uni<Boolean> markPaid(UUID invoiceId, String providerRef) {
-        String sql = "UPDATE invoices SET status = 'paid', paid_at = NOW(), provider_ref = $2 WHERE id = $1";
+    public Uni<Boolean> markPaid(UUID orgId, String providerRef) {
+        // B-V1-L1 FIX: Mark the most recent open invoice for this org as paid
+        String sql = """
+            UPDATE invoices SET status = 'paid', paid_at = NOW(), provider_ref = $2
+            WHERE id = (SELECT id FROM invoices WHERE org_id = $1 AND status = 'open' ORDER BY period_start DESC LIMIT 1)
+            """;
         return client.preparedQuery(sql)
-            .execute(Tuple.of(invoiceId, providerRef))
+            .execute(Tuple.of(orgId, providerRef))
             .map(r -> r.rowCount() > 0);
     }
 
     /**
-     * NEW-Y3 FIX: Update invoice tax from Paddle transaction data.
-     * Called when transaction.completed webhook arrives with tax details.
+     * B-V1-H2 FIX: Update invoice tax from Paddle transaction data.
+     * Matches the most recent OPEN invoice for the org (not current month).
      */
     public Uni<Boolean> updateTaxFromPaddle(UUID orgId, int taxCents, String currency) {
         String sql = """
             UPDATE invoices
             SET tax_cents = $2, total_cents = subtotal_cents + $2, currency = COALESCE($3, currency)
-            WHERE org_id = $1 AND status = 'open'
-              AND period_start = date_trunc('month', CURRENT_DATE)::date
+            WHERE id = (
+                SELECT id FROM invoices
+                WHERE org_id = $1 AND status = 'open'
+                ORDER BY period_start DESC
+                LIMIT 1
+            )
             """;
         return client.preparedQuery(sql)
             .execute(Tuple.of(orgId, taxCents, currency))

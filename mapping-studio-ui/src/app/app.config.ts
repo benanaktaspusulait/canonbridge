@@ -42,12 +42,12 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideAnimationsAsync(),
     provideHttpClient(withInterceptors([authInterceptor])),
-    provideAppInitializer(() => {
+    provideAppInitializer(async () => {
       const theme = inject(ThemeService);
       const i18n = inject(I18nService);
-      // Initialize theme synchronously (no HTTP), then i18n in parallel
-      theme.init();
-      return i18n.init();
+      // [L6] Await both initializers to be resilient to future async refactors
+      await Promise.resolve(theme.init());
+      await i18n.init();
     }),
     provideRouter(routes, withComponentInputBinding()),
     providePrimeNG({

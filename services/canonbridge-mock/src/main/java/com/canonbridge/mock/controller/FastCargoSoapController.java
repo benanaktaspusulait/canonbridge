@@ -131,12 +131,40 @@ public class FastCargoSoapController {
         return extractFirstText(soapRequest, "trackingNumber");
     }
 
+    /**
+     * CM-V1-H3 FIX: Use proper XML parsing instead of regex.
+     * Handles namespaces, attributes, CDATA, and multi-line values.
+     */
     private String extractFirstText(String soapRequest, String elementName) {
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
-                "<(?:[a-zA-Z0-9_]+:)?" + elementName + "[^>]*>([^<]+)</(?:[a-zA-Z0-9_]+:)?" + elementName + ">");
-        java.util.regex.Matcher matcher = pattern.matcher(soapRequest);
-        if (matcher.find()) {
-            return matcher.group(1).trim();
+        try {
+            javax.xml.parsers.DocumentBuilderFactory factory = javax.xml.parsers.DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            // Security: prevent XXE
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+
+            javax.xml.parsers.DocumentBuilder builder = factory.newDocumentBuilder();
+            org.w3c.dom.Document doc = builder.parse(new org.xml.sax.InputSource(new java.io.StringReader(soapRequest)));
+
+            org.w3c.dom.NodeList nodes = doc.getElementsByTagNameNS("*", elementName);
+            if (nodes.getLength() == 0) {
+                // Fallback: try without namespace
+                nodes = doc.getElementsByTagName(elementName);
+            }
+            if (nodes.getLength() > 0) {
+                String text = nodes.item(0).getTextContent();
+                return text != null ? text.trim() : null;
+            }
+        } catch (Exception e) {
+            // Fallback to regex for malformed XML (best-effort for mock)
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                    "<(?:[a-zA-Z0-9_-]+:)?" + elementName + "[^>]*>([^<]+)</(?:[a-zA-Z0-9_-]+:)?" + elementName + ">",
+                    java.util.regex.Pattern.DOTALL);
+            java.util.regex.Matcher matcher = pattern.matcher(soapRequest);
+            if (matcher.find()) {
+                return matcher.group(1).trim();
+            }
         }
         return null;
     }

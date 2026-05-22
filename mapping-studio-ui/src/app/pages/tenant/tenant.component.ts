@@ -29,9 +29,9 @@ export class TenantComponent {
   readonly user = this.auth.currentUser;
 
   readonly requestHeaders = computed(() => [
-    { name: 'X-Tenant-Id', value: this.tenant().id },
-    { name: 'X-User-Id', value: this.user()?.id ?? 'n/a' },
-    { name: 'Authorization', value: this.auth.getToken() ? 'Bearer ...' : 'n/a' }
+    { name: 'Authorization', value: this.auth.getToken() ? 'Bearer <jwt>' : 'n/a' },
+    { name: 'Tenant (from JWT)', value: this.tenant().id },
+    { name: 'User (from JWT)', value: this.user()?.id ?? 'n/a' }
   ]);
 
   readonly controls: TenantControl[] = [
