@@ -100,7 +100,7 @@
 **Öncelik:** 🔴 Kritik  
 **Servis:** `mapping-studio-api`, `transformer`, `webhook-receiver`  
 **Dosyalar:** Flyway migration, Kafka topic, publisher sınıfları  
-**Durum:** 🟡 KISMEN TAMAMLANDI (DB + Kafka topic + Publisher hazır, servis entegrasyonları bekliyor)
+**Durum:** ✅ TAMAMLANDI (DB + Kafka topic + Publisher + tüm servis entegrasyonları hazır)
 
 **Alt görevler:**
 - [ ] `usage_events` tablosu oluştur (id UUID, org_id FK, service VARCHAR, metric VARCHAR, qty INT, ts TIMESTAMPTZ DEFAULT NOW(), request_id VARCHAR UNIQUE, metadata JSONB)
@@ -419,7 +419,8 @@
 
 **Öncelik:** 🟠 Yüksek  
 **Servis:** `transformer` (Node.js + Fastify + KafkaJS)  
-**Bağımlılık:** TASK-004
+**Bağımlılık:** TASK-004  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] `X-Org-Id` header zorunluluğu ekle (middleware)
@@ -446,7 +447,8 @@
 
 **Öncelik:** 🟠 Yüksek  
 **Servis:** `webhook-receiver` (Quarkus)  
-**Bağımlılık:** TASK-004
+**Bağımlılık:** TASK-004  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] Webhook endpoint URL'ine org slug ekle: `/webhook/{orgSlug}/{partnerId}/{eventType}`

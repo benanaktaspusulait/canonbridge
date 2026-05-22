@@ -25,6 +25,10 @@ public class WebhookService {
     Emitter<Record<String, String>> rawEventsEmitter;
 
     @Inject
+    @Channel("usage-events")
+    Emitter<Record<String, String>> usageEventsEmitter;
+
+    @Inject
     WebhookAuthService authService;
 
     public Uni<String> processWebhook(
@@ -71,6 +75,8 @@ public class WebhookService {
                 ).map(v -> {
                     LOG.infof("Webhook received: partnerId=%s, eventType=%s, eventId=%s", 
                         partnerId, eventType, eventId);
+                    // Publish usage event for billing metering (fire-and-forget)
+                    publishUsageEvent(partnerId, eventId);
                     return eventId;
                 });
             });
@@ -81,6 +87,29 @@ public class WebhookService {
             "x-forwarded-for", "x-real-ip", "accept", "accept-encoding",
             "idempotency-key", "x-idempotency-key"
     );
+
+    private void publishUsageEvent(String partnerId, String eventId) {
+        try {
+            // TODO: Resolve org_id from partner_id (via DB lookup or cache)
+            // For now, use a placeholder — will be resolved when org-partner mapping is implemented
+            String orgId = "a0000000-0000-0000-0000-000000000001";
+
+            JsonObject usageEvent = new JsonObject()
+                .put("id", UUID.randomUUID().toString())
+                .put("org_id", orgId)
+                .put("service", "webhook-receiver")
+                .put("metric", "webhook_events")
+                .put("qty", 1)
+                .put("ts", Instant.now().toString())
+                .put("request_id", eventId)
+                .put("metadata", new JsonObject().put("partner_id", partnerId));
+
+            usageEventsEmitter.send(Record.of(orgId, usageEvent.encode()));
+        } catch (Exception e) {
+            // Graceful degradation: never let billing break webhook processing
+            LOG.warnf("Failed to publish usage event for webhook: %s", e.getMessage());
+        }
+    }
 
     private JsonObject extractHeaders(HttpHeaders headers) {
         JsonObject headerObj = new JsonObject();

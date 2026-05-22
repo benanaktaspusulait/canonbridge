@@ -13,6 +13,7 @@ import {
 } from './jsonataCheck.js';
 import { renderMetrics, recordTransform, setGauge } from './metrics.js';
 import type { DlqRepository } from './dlq.js';
+import type { UsagePublisher } from './usagePublisher.js';
 
 type DlqManagementDeps = {
   repository: DlqRepository;
@@ -50,6 +51,7 @@ export async function buildServer(
   registry: PartnerRegistry,
   engine: TransformEngine,
   dlqDeps?: DlqManagementDeps,
+  usagePublisher?: UsagePublisher,
 ): Promise<FastifyInstance> {
   const app = Fastify({
     logger: { level: env.logLevel },
@@ -214,6 +216,18 @@ export async function buildServer(
       // G-05: record successful transform metric
       recordTransform('ok', 'output_validation', String(partnerId ?? ''), String(eventType ?? ''), durationMs);
       request.log.info({ partnerId, eventType, durationMs }, 'transform succeeded via HTTP');
+
+      // Publish usage event for billing metering
+      if (usagePublisher) {
+        const orgId = request.headers['x-org-id'] as string | undefined;
+        const requestId = request.headers['x-request-id'] as string || `http-${Date.now()}`;
+        void usagePublisher.publishTransformRequest(orgId, requestId, {
+          partner_id: partnerId,
+          event_type: eventType,
+          duration_ms: durationMs,
+        });
+      }
+
       return reply.send({ canonical: result.canonical });
     },
   );
