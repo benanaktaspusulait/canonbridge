@@ -19,6 +19,7 @@ export default function Navbar() {
     { href: "#sources", label: t.nav.sources },
     { href: "#architecture", label: t.nav.architecture },
     { href: "#features", label: t.nav.features },
+    { href: "/pricing", label: "Pricing" },
   ];
 
   useEffect(() => {
@@ -51,13 +52,23 @@ export default function Navbar() {
 
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="text-sm text-navy-700 hover:text-navy-900 transition-colors"
-            >
-              {link.label}
-            </a>
+            link.href.startsWith("/") ? (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-sm text-navy-700 hover:text-navy-900 transition-colors"
+              >
+                {link.label}
+              </Link>
+            ) : (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-sm text-navy-700 hover:text-navy-900 transition-colors"
+              >
+                {link.label}
+              </a>
+            )
           ))}
 
           <div className="relative">
@@ -142,14 +153,25 @@ export default function Navbar() {
           >
             <div className="flex flex-col gap-3">
               {navLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="min-h-11 rounded-lg px-3 py-2.5 text-sm font-medium text-navy-800 hover:bg-navy-900/5"
-                >
-                  {link.label}
-                </a>
+                link.href.startsWith("/") ? (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="min-h-11 rounded-lg px-3 py-2.5 text-sm font-medium text-navy-800 hover:bg-navy-900/5"
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="min-h-11 rounded-lg px-3 py-2.5 text-sm font-medium text-navy-800 hover:bg-navy-900/5"
+                  >
+                    {link.label}
+                  </a>
+                )
               ))}
               <div className="grid grid-cols-4 gap-2 pt-2">
                 {locales.map((l) => (

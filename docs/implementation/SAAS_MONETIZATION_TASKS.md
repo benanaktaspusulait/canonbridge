@@ -30,17 +30,18 @@
 
 **Öncelik:** 🔴 Kritik  
 **Servis:** `mapping-studio-api`  
-**Dosyalar:** Flyway migration (V43+), entity sınıfları, repository
+**Dosyalar:** Flyway migration (V43+), entity sınıfları, repository  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
-- [ ] `organizations` tablosu oluştur (id UUID, name, slug, owner_user_id, billing_email, country, vat_id, status, metadata JSONB, created_at, updated_at)
-- [ ] `org_members` tablosu oluştur (org_id, user_id, role, invited_at, accepted_at)
-- [ ] Mevcut `tenants` tablosunu `organizations` ile ilişkilendir (tenant = deployment unit, org = billing unit)
-- [ ] `users` tablosuna `default_org_id` kolonu ekle
-- [ ] Sign-up akışında otomatik "Personal" organization oluşturma
-- [ ] `X-Org-Id` header desteği ekle (mevcut `X-Tenant-Id` yanına)
-- [ ] Organization CRUD endpoint'leri: `GET/POST/PUT /api/organizations`
-- [ ] Org member davet/kabul/çıkar endpoint'leri
+- [x] `organizations` tablosu oluştur (id UUID, name, slug, owner_user_id, billing_email, country, vat_id, status, metadata JSONB, created_at, updated_at)
+- [x] `org_members` tablosu oluştur (org_id, user_id, role, invited_at, accepted_at)
+- [x] Mevcut `tenants` tablosunu `organizations` ile ilişkilendir (tenant = deployment unit, org = billing unit)
+- [x] `users` tablosuna `default_org_id` kolonu ekle
+- [x] Sign-up akışında otomatik "Personal" organization oluşturma
+- [x] `X-Org-Id` header desteği ekle (mevcut `X-Tenant-Id` yanına)
+- [x] Organization CRUD endpoint'leri: `GET/POST/PUT /api/organizations`
+- [x] Org member davet/kabul/çıkar endpoint'leri
 - [ ] Birim testleri
 
 **Kabul kriterleri:**
@@ -54,7 +55,8 @@
 
 **Öncelik:** 🔴 Kritik  
 **Servis:** `mapping-studio-api`  
-**Dosyalar:** Flyway migration, seed data
+**Dosyalar:** Flyway migration, seed data  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] `plans` tablosu oluştur (id, code VARCHAR UNIQUE, name, price_monthly_cents INT, price_yearly_cents INT, currency, is_public BOOLEAN, sort_order, created_at)
@@ -75,7 +77,8 @@
 
 **Öncelik:** 🔴 Kritik  
 **Servis:** `mapping-studio-api`  
-**Dosyalar:** Flyway migration, entity, repository, service
+**Dosyalar:** Flyway migration, entity, repository, service  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] `subscriptions` tablosu oluştur (id UUID, org_id FK, plan_id FK, status ENUM[active, trialing, past_due, canceled, paused], current_period_start TIMESTAMPTZ, current_period_end TIMESTAMPTZ, trial_end TIMESTAMPTZ, cancel_at TIMESTAMPTZ, canceled_at TIMESTAMPTZ, external_provider VARCHAR, external_ref VARCHAR, metadata JSONB, created_at, updated_at)
@@ -96,7 +99,8 @@
 
 **Öncelik:** 🔴 Kritik  
 **Servis:** `mapping-studio-api`, `transformer`, `webhook-receiver`  
-**Dosyalar:** Flyway migration, Kafka topic, publisher sınıfları
+**Dosyalar:** Flyway migration, Kafka topic, publisher sınıfları  
+**Durum:** 🟡 KISMEN TAMAMLANDI (DB + Kafka topic + Publisher hazır, servis entegrasyonları bekliyor)
 
 **Alt görevler:**
 - [ ] `usage_events` tablosu oluştur (id UUID, org_id FK, service VARCHAR, metric VARCHAR, qty INT, ts TIMESTAMPTZ DEFAULT NOW(), request_id VARCHAR UNIQUE, metadata JSONB)
@@ -125,7 +129,8 @@
 
 **Öncelik:** 🔴 Kritik  
 **Servis:** `mapping-studio-api`  
-**Dosyalar:** Redis key design, EntitlementService, Flyway migration
+**Dosyalar:** Redis key design, EntitlementService, Flyway migration  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] `entitlements_cache` tablosu (org_id, feature_key, limit_value BIGINT, used_value BIGINT, remaining BIGINT, resets_at TIMESTAMPTZ, updated_at)
@@ -153,7 +158,8 @@
 
 **Öncelik:** 🟠 Yüksek  
 **Servis:** Yeni — `services/billing-service`  
-**Tech:** Quarkus 3.15.1 + Reactive PG + Kafka + Redis
+**Tech:** Quarkus 3.15.1 + Reactive PG + Kafka + Redis  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] Maven proje yapısı oluştur (pom.xml, Quarkus BOM, dependencies)
@@ -219,7 +225,8 @@
 
 **Öncelik:** 🟠 Yüksek  
 **Servis:** `mapping-studio-api`  
-**Bağımlılık:** TASK-005
+**Bağımlılık:** TASK-005  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] `@EntitlementCheck` custom annotation oluştur (metric, qty parametreleri)
@@ -346,7 +353,8 @@
 
 **Öncelik:** 🟠 Yüksek  
 **Servis:** `website` (Next.js 16 + React 19 + Tailwind 4)  
-**Bağımlılık:** Yok (paralel çalışılabilir)
+**Bağımlılık:** Yok (paralel çalışılabilir)  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] `/pricing` route oluştur
