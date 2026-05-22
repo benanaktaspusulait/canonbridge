@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -22,6 +22,15 @@ const canonMono = localFont({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f7faf8" },
+    { media: "(prefers-color-scheme: dark)", color: "#061016" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
@@ -35,6 +44,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
     languages: {
+      "x-default": "/",
       en: "/",
       tr: "/tr",
       de: "/de",
@@ -48,6 +58,8 @@ export const metadata: Metadata = {
     title: "CanonBridge | Enterprise Integration Platform",
     description:
       "A no-code integration control plane for mapping partner payloads into canonical business events.",
+    locale: "en_US",
+    alternateLocale: ["tr_TR", "de_DE", "es_ES"],
     images: [
       {
         url: ogImage,
@@ -59,6 +71,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
+    site: "@canonbridge",
+    creator: "@canonbridge",
     title: "CanonBridge | Enterprise Integration Platform",
     description:
       "Visual mapping, runtime recovery, and observability for partner integrations.",

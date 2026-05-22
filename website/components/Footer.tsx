@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
 import type { FormEvent } from "react";
@@ -10,7 +9,7 @@ import { useLocale } from "@/lib/LocaleContext";
 
 export default function Footer() {
   const { t } = useLocale();
-  const [status, setStatus] = useState<"idle" | "submitting" | "sent" | "mail" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "submitting" | "sent" | "error">("idle");
   const formStartedAt = useRef(Date.now());
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
 
@@ -63,28 +62,14 @@ export default function Footer() {
       }
     }
 
-    const body = [
-      `Name: ${payload.name}`,
-      `Company: ${payload.company}`,
-      `Email: ${payload.email}`,
-      `Partner integrations: ${payload.partners || "Not specified"}`,
-      "",
-      payload.message,
-    ].join("\n");
-
-    window.location.href = `mailto:sales@canonbridge.io?subject=${encodeURIComponent(
-      `CanonBridge demo request from ${payload.company || payload.name}`,
-    )}&body=${encodeURIComponent(body)}`;
-    setStatus("mail");
-    form.reset();
-    formStartedAt.current = Date.now();
+    // Lead capture not configured — show error instead of silent mailto fallback
+    setStatus("error");
   }
 
   const statusMessage = {
     idle: t.footer.formNote,
     submitting: "Sending demo request...",
     sent: "Demo request sent. We will get back to you within 24 hours.",
-    mail: "Your email client is ready with the demo request.",
     error: "We could not send the request. Please email sales@canonbridge.io.",
   }[status];
 
@@ -123,7 +108,7 @@ export default function Footer() {
                 className="space-y-5 rounded-xl border border-navy-900/10 bg-white p-6 shadow-xl"
                 onSubmit={handleSubmit}
               >
-                <div className="hidden" aria-hidden="true">
+                <div className="absolute -left-[9999px]" aria-hidden="true">
                   <label htmlFor="website">Website</label>
                   <input
                     id="website"
@@ -252,11 +237,11 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <Image
-                src="/images/canonbridge-logo-wide-light.png"
+              <img
+                src="/images/logo-canonbridge.svg"
                 alt="CanonBridge"
-                width={458}
-                height={100}
+                width={180}
+                height={40}
                 className="h-14 w-auto"
               />
             </div>

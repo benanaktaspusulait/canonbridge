@@ -8,7 +8,7 @@ const localePaths = ["", "/tr", "/de", "/es"];
 export default function sitemap(): MetadataRoute.Sitemap {
   return localePaths.map((path) => ({
     url: `${siteUrl}${path}`,
-    lastModified: new Date("2026-05-21"),
+    lastModified: new Date(),
     changeFrequency: "weekly",
     priority: path ? 0.9 : 1,
   }));

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { ChevronDown, Menu, X } from "lucide-react";
@@ -41,13 +40,12 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3" aria-label="CanonBridge home">
-          <Image
-            src="/images/canonbridge-logo-wide-light.png"
+          <img
+            src="/images/logo-canonbridge.svg"
             alt="CanonBridge"
-            width={458}
-            height={100}
+            width={180}
+            height={40}
             className="h-11 w-auto"
-            priority
           />
         </Link>
 

@@ -1,0 +1,16 @@
+{
+  "name": "CanonBridge",
+  "short_name": "CanonBridge",
+  "description": "Enterprise Integration Platform — Transform partner data with zero code.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7faf8",
+  "theme_color": "#061016",
+  "icons": [
+    {
+      "src": "/images/logo-canonbridge.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

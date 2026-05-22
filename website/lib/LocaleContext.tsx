@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import type { Locale, Translations } from "./i18n";
 import en from "./i18n";
 import tr from "./locales/tr";
@@ -34,6 +35,7 @@ export function LocaleProvider({
   const normalizedInitialLocale = allowedLocales.includes(initialLocale) ? initialLocale : "en";
   const [locale, setLocaleState] = useState<Locale>(normalizedInitialLocale);
   const [t, setT] = useState<Translations>(translationsByLocale[normalizedInitialLocale]);
+  const router = useRouter();
 
   const setLocale = (l: Locale) => {
     setLocaleState(l);
@@ -42,7 +44,7 @@ export function LocaleProvider({
       document.documentElement.lang = l;
       const nextPath = localePath(l);
       if (window.location.pathname !== nextPath) {
-        window.history.pushState({}, "", `${nextPath}${window.location.hash}`);
+        router.push(`${nextPath}${window.location.hash}`);
       }
     }
   };

@@ -1,0 +1,5 @@
+Contact: mailto:security@canonbridge.io
+Expires: 2027-05-22T00:00:00.000Z
+Preferred-Languages: en, tr
+Canonical: https://canonbridge.io/.well-known/security.txt
+Policy: https://github.com/benanaktaspusulait/canonbridge/blob/main/SECURITY.md

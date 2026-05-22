@@ -10,8 +10,9 @@ const csp = [
   "frame-src https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com",
   "object-src 'none'",
   "base-uri 'self'",
-  "form-action 'self' mailto:",
+  "form-action 'self'",
   "frame-ancestors 'self'",
+  "report-uri /api/csp-report",
   "report-to canonbridge-csp",
 ].join("; ");
 
@@ -23,19 +24,19 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/:path*",
+        source: "/((?!api/csp-report).*)",
         headers: [
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-DNS-Prefetch-Control", value: "on" },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+            value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
           },
           {
-            key: "Report-To",
-            value:
-              '{"group":"canonbridge-csp","max_age":10886400,"endpoints":[{"url":"/api/csp-report"}]}',
+            key: "Reporting-Endpoints",
+            value: 'canonbridge-csp="/api/csp-report"',
           },
           { key: "Content-Security-Policy", value: csp },
         ],

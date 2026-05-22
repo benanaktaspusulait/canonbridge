@@ -72,6 +72,11 @@ export default function VideoSection({
 
   useEffect(() => {
     if (!videoRef.current) return;
+    // B7: Respect prefers-reduced-motion for HTML5 video autoplay
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      videoRef.current.pause();
+      return;
+    }
     if (isInView) {
       videoRef.current.play().catch(() => {});
     } else {
