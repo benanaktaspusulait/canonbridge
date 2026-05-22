@@ -7,6 +7,13 @@
 @import "primeflex/primeflex.css";
 @import "highlight.js/styles/github.min.css";
 
+/* highlight.js dark-mode override */
+html.dark-mode pre code.hljs,
+html.dark-mode .hljs {
+  background: #0d1117;
+  color: #c9d1d9;
+}
+
 /* ── CanonBridge design tokens (app chrome on top of Prime Aura) ── */
 :root {
   --cb-brand-from: var(--cb-color-brand-700);
@@ -23,7 +30,9 @@
 html.dark-mode {
   --cb-code-partner: #93c5fd;
   --cb-code-event: #c4b5fd;
-  --cb-page-mesh: var(--surface-ground);
+  --cb-page-mesh: radial-gradient(1200px 600px at 10% -10%, rgba(20, 184, 166, 0.05), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgba(109, 40, 217, 0.04), transparent 50%),
+    var(--surface-ground);
 }
 
 /* Base */
@@ -41,6 +50,10 @@ html, body {
 }
 
 /* Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-400) var(--surface-100);
+}
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--surface-100); }
 ::-webkit-scrollbar-thumb { background: var(--surface-400); border-radius: 3px; }
@@ -115,12 +128,13 @@ code {
   display: inline-block;
   font-size: 0.75rem;
   font-weight: 600;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--cb-font-mono);
   background: var(--surface-100);
   color: var(--text-color-secondary);
-  padding: 2px 8px;
-  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--cb-radius-sm);
   border: 1px solid var(--surface-border);
+  line-height: 1.4;
 }
 
 /* ── Placeholder pages ── */
@@ -144,9 +158,7 @@ code {
 
 /* ── Utilities ── */
 .cursor-pointer { cursor: pointer; }
-.full-height    { height: 100vh; }
-.text-sm        { font-size: 0.875rem; }
-.mt-4           { margin-top: 1rem; }
+.full-height    { height: 100dvh; }
 
 .mono-pre {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
@@ -155,7 +167,7 @@ code {
   margin: 0;
   padding: 1rem;
   border-radius: 10px;
-  background: #0b1220;
+  background: var(--cb-color-ink-950);
   color: #e2e8f0;
   overflow: auto;
   max-height: 320px;

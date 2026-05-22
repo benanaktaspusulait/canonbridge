@@ -20,6 +20,7 @@ html.dark-mode :host ::ng-deep .layout-toolbar.p-toolbar {
   width: auto;
   object-fit: contain;
   display: block;
+  color: var(--text-color);
 }
 
 .lang-wrap {
@@ -45,6 +46,10 @@ html.dark-mode :host ::ng-deep .layout-toolbar.p-toolbar {
   border-radius: var(--border-radius-lg, 10px);
   cursor: pointer;
   transition: background 0.15s;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
 
   &:hover {
     background: var(--surface-hover);

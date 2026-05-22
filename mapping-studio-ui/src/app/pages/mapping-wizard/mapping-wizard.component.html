@@ -15,7 +15,8 @@
       <p-steps 
         [model]="steps" 
         [activeIndex]="currentStep()" 
-        [readonly]="true"
+        [readonly]="false"
+        (activeIndexChange)="onStepClick($event)"
         styleClass="wizard-steps" />
     </div>
   </div>

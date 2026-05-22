@@ -1,12 +1,12 @@
 .login-wrapper {
   display: flex;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* ── Left brand panel ─────────────────────────── */
 .login-brand {
   flex: 0 0 440px;
-  background: linear-gradient(155deg, #0f172a 0%, #1e1b4b 42%, #1e3a8a 100%);
+  background: linear-gradient(155deg, var(--cb-color-ink-950) 0%, var(--cb-color-ink-900) 42%, var(--cb-color-brand-700) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -59,7 +59,7 @@
 
   i {
     font-size: 1.75rem;
-    color: #60a5fa;
+    color: var(--cb-color-brand-500);
   }
 }
 

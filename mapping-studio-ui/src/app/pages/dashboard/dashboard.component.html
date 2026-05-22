@@ -23,7 +23,12 @@
       <div class="stat-body">
         <div class="stat-value">{{ stat.value }}</div>
         <div class="stat-label">{{ stat.labelKey | i18n }}</div>
-        <div class="stat-change" [class]="stat.changeType">{{ stat.changeKey | i18n }}</div>
+        <div class="stat-change" [class]="stat.changeType">
+          @if (stat.changeType === 'positive') { <i class="pi pi-arrow-up" aria-hidden="true"></i> }
+          @if (stat.changeType === 'negative') { <i class="pi pi-arrow-down" aria-hidden="true"></i> }
+          @if (stat.changeType === 'neutral') { <i class="pi pi-minus" aria-hidden="true"></i> }
+          {{ stat.changeKey | i18n }}
+        </div>
       </div>
     </div>
   }
@@ -33,8 +38,8 @@
   <ng-template pTemplate="header">
     <div class="card-header-row">
       <div>
-        <h2 class="card-title">Top mappings</h2>
-        <p class="card-subtitle">Most used mappings in the current operational window</p>
+        <h2 class="card-title">{{ 'dashboard.topMappingsTitle' | i18n }}</h2>
+        <p class="card-subtitle">{{ 'dashboard.topMappingsSubtitle' | i18n }}</p>
       </div>
     </div>
   </ng-template>
@@ -42,11 +47,11 @@
   <p-table [value]="topMappings()" styleClass="p-datatable-sm">
     <ng-template pTemplate="header">
       <tr>
-        <th>Mapping</th>
+        <th>{{ 'table.mapping' | i18n }}</th>
         <th>{{ 'table.eventType' | i18n }}</th>
-        <th style="text-align:right">Calls</th>
-        <th style="text-align:right">Errors</th>
-        <th style="text-align:right">Avg latency</th>
+        <th style="text-align:right">{{ 'table.calls' | i18n }}</th>
+        <th style="text-align:right">{{ 'table.errors' | i18n }}</th>
+        <th style="text-align:right">{{ 'table.avgLatency' | i18n }}</th>
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-m>

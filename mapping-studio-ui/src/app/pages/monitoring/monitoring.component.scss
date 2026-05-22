@@ -109,8 +109,8 @@ html.dark-mode .metric-card {
   align-items: center;
   gap: 4px;
 
-  &.ok     { color: #16a34a; }
-  &.breach { color: #dc2626; }
+  &.ok     { color: var(--green-600, #16a34a); }
+  &.breach { color: var(--red-600, #dc2626); }
 }
 
 .grafana-frame {
@@ -122,10 +122,9 @@ html.dark-mode .metric-card {
 }
 
 // ── Table helpers ─────────────────────────────────────────────────────────────
-.latency-warn { color: #ca8a04; font-weight: 600; }
-.dlq-warn     { color: #dc2626; font-weight: 600; }
-.lag-warn     { color: #ea580c; font-weight: 600; }
-.text-sm      { font-size: 0.875rem; }
+.latency-warn { color: var(--yellow-600, #ca8a04); font-weight: 600; }
+.dlq-warn     { color: var(--red-600, #dc2626); font-weight: 600; }
+.lag-warn     { color: var(--orange-600, #ea580c); font-weight: 600; }
 
 // ── Responsive ───────────────────────────────────────────────────────────────
 @media (max-width: 900px) {

@@ -126,6 +126,8 @@
     "subtitle": "Operational snapshot of CanonBridge.",
     "studio": "Integration Studio",
     "monitoring": "Monitoring",
+    "topMappingsTitle": "Top mappings",
+    "topMappingsSubtitle": "Most used mappings in the current operational window",
     "recentTitle": "Recent Mappings",
     "recentSubtitle": "Latest mapping activity across all partners",
     "viewAll": "View All",
@@ -166,7 +168,12 @@
     "lastModified": "Last Modified",
     "by": "By",
     "transformations": "Transformations",
-    "published": "Published"
+    "published": "Published",
+    "mapping": "Mapping",
+    "calls": "Calls",
+    "errors": "Errors",
+    "avgLatency": "Avg latency",
+    "health": "Health"
   },
   "status": {
     "active": "active",

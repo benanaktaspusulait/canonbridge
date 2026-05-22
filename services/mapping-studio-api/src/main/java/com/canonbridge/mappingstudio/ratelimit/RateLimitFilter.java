@@ -6,10 +6,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
-import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.ext.Provider;
 import org.jboss.resteasy.reactive.server.ServerRequestFilter;
 import org.jboss.resteasy.reactive.server.ServerResponseFilter;
 
@@ -19,7 +17,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Reactive rate limiting filter for API endpoints.
@@ -46,16 +43,16 @@ public class RateLimitFilter {
     HttpServerRequest request;
 
     @ServerRequestFilter(priority = jakarta.ws.rs.Priorities.AUTHORIZATION + 10)
-    public Uni<Optional<Response>> filter(ContainerRequestContext requestContext) {
+    public Uni<Response> filter(ContainerRequestContext requestContext) {
         if (!config.enabled()) {
-            return Uni.createFrom().item(Optional.empty());
+            return Uni.createFrom().nullItem();
         }
 
         // Skip only infrastructure and documentation endpoints.
         String path = requestContext.getUriInfo().getPath();
         if (path.startsWith("health") || path.startsWith("metrics") ||
             path.startsWith("openapi") || path.startsWith("swagger-ui")) {
-            return Uni.createFrom().item(Optional.empty());
+            return Uni.createFrom().nullItem();
         }
 
         // Determine client identifier and rate limit
@@ -95,18 +92,16 @@ public class RateLimitFilter {
                         errorBody.put("window_seconds", finalWindowSeconds);
                         errorBody.put("retry_after_seconds", result.getRetryAfter());
 
-                        Response response = Response.status(429)
+                        return Response.status(429)
                                 .entity(errorBody)
                                 .header("Retry-After", String.valueOf(result.getRetryAfter()))
                                 .header("X-RateLimit-Limit", String.valueOf(result.getLimit()))
                                 .header("X-RateLimit-Remaining", "0")
                                 .header("X-RateLimit-Reset", String.valueOf(result.getResetTime()))
                                 .build();
-
-                        return Optional.of(response);
                     }
 
-                    return Optional.<Response>empty();
+                    return (Response) null;
                 });
     }
 

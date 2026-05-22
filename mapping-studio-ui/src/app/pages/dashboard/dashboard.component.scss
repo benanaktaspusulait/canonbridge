@@ -39,7 +39,7 @@ html.dark-mode .stat-card:hover {
   i {
     font-size: 1.125rem;
     color: var(--text-color);
-    opacity: 0.75;
+    opacity: 1;
   }
 }
 
@@ -64,6 +64,13 @@ html.dark-mode .stat-card:hover {
 .stat-change {
   font-size: 0.75rem;
   font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  i {
+    font-size: 0.625rem;
+  }
 
   &.positive { color: #15803d; }
   &.negative { color: #dc2626; }

@@ -1,10 +1,12 @@
 package com.canonbridge.mappingstudio.ratelimit;
 
+import io.smallrye.mutiny.Uni;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.net.SocketAddress;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import org.junit.jupiter.api.Test;
@@ -14,6 +16,8 @@ import java.security.Principal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -28,10 +32,10 @@ class RateLimitFilterUnitTest {
     void authLoginRequestsAreRateLimited() {
         Fixture fixture = fixture("api/auth/login");
 
-        fixture.filter.filter(fixture.requestContext);
+        Response result = fixture.filter.filter(fixture.requestContext).await().indefinitely();
 
-        verify(fixture.rateLimitService).checkRateLimitNow("ip:127.0.0.1", 10, 60);
-        verify(fixture.requestContext).setProperty(anyString(), org.mockito.ArgumentMatchers.any(RateLimitResult.class));
+        verify(fixture.rateLimitService).checkRateLimit("ip:127.0.0.1", 10, 60);
+        assertNull(result);
     }
 
     @Test
@@ -42,18 +46,19 @@ class RateLimitFilterUnitTest {
         when(securityContext.getUserPrincipal()).thenReturn(principal);
         when(fixture.requestContext.getSecurityContext()).thenReturn(securityContext);
 
-        fixture.filter.filter(fixture.requestContext);
+        fixture.filter.filter(fixture.requestContext).await().indefinitely();
 
-        verify(fixture.rateLimitService).checkRateLimitNow("jwt:user-123", 100, 60);
+        verify(fixture.rateLimitService).checkRateLimit("jwt:user-123", 100, 60);
     }
 
     @Test
     void healthRequestsAreNotRateLimited() {
         Fixture fixture = fixture("health/live");
 
-        fixture.filter.filter(fixture.requestContext);
+        Response result = fixture.filter.filter(fixture.requestContext).await().indefinitely();
 
-        verify(fixture.rateLimitService, never()).checkRateLimitNow(anyString(), anyInt(), anyInt());
+        verify(fixture.rateLimitService, never()).checkRateLimit(anyString(), anyInt(), anyInt());
+        assertNull(result);
     }
 
     @Test
@@ -61,26 +66,25 @@ class RateLimitFilterUnitTest {
         Fixture fixture = fixture("api/auth/login");
         when(fixture.requestContext.getHeaderString("X-API-Key")).thenReturn("plain-secret-key");
 
-        fixture.filter.filter(fixture.requestContext);
+        fixture.filter.filter(fixture.requestContext).await().indefinitely();
 
         ArgumentCaptor<String> clientId = ArgumentCaptor.forClass(String.class);
-        verify(fixture.rateLimitService).checkRateLimitNow(clientId.capture(), anyInt(), anyInt());
+        verify(fixture.rateLimitService).checkRateLimit(clientId.capture(), anyInt(), anyInt());
         assertTrue(clientId.getValue().startsWith("api-key:"));
         assertFalse(clientId.getValue().contains("plain-secret-key"));
     }
 
     @Test
-    void deniedRequestIsAbortedWithRateLimitHeaders() {
+    void deniedRequestReturns429WithRateLimitHeaders() {
         Fixture fixture = fixture("api/auth/login", new RateLimitResult(false, 10, 0, 123456L, 42L));
 
-        fixture.filter.filter(fixture.requestContext);
+        Response result = fixture.filter.filter(fixture.requestContext).await().indefinitely();
 
-        ArgumentCaptor<jakarta.ws.rs.core.Response> response = ArgumentCaptor.forClass(jakarta.ws.rs.core.Response.class);
-        verify(fixture.requestContext).abortWith(response.capture());
-        assertEquals(429, response.getValue().getStatus());
-        assertEquals("42", response.getValue().getHeaderString("Retry-After"));
-        assertEquals("10", response.getValue().getHeaderString("X-RateLimit-Limit"));
-        assertEquals("0", response.getValue().getHeaderString("X-RateLimit-Remaining"));
+        assertNotNull(result);
+        assertEquals(429, result.getStatus());
+        assertEquals("42", result.getHeaderString("Retry-After"));
+        assertEquals("10", result.getHeaderString("X-RateLimit-Limit"));
+        assertEquals("0", result.getHeaderString("X-RateLimit-Remaining"));
     }
 
     @Test
@@ -92,7 +96,7 @@ class RateLimitFilterUnitTest {
         when(fixture.requestContext.getProperty("canonbridge.ratelimit.result"))
                 .thenReturn(new RateLimitResult(true, 10, 8, 123456L, 0L));
 
-        fixture.filter.filter(fixture.requestContext, responseContext);
+        fixture.filter.responseFilter(fixture.requestContext, responseContext);
 
         assertEquals("10", headers.getFirst("X-RateLimit-Limit"));
         assertEquals("8", headers.getFirst("X-RateLimit-Remaining"));
@@ -121,8 +125,8 @@ class RateLimitFilterUnitTest {
         when(authenticated.windowSeconds()).thenReturn(60);
         when(unauthenticated.defaultLimit()).thenReturn(10);
         when(unauthenticated.windowSeconds()).thenReturn(60);
-        when(rateLimitService.checkRateLimitNow(anyString(), anyInt(), anyInt()))
-                .thenReturn(result);
+        when(rateLimitService.checkRateLimit(anyString(), anyInt(), anyInt()))
+                .thenReturn(Uni.createFrom().item(result));
         when(uriInfo.getPath()).thenReturn(path);
         when(requestContext.getUriInfo()).thenReturn(uriInfo);
         when(requestContext.getSecurityContext()).thenReturn(securityContext);

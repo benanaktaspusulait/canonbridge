@@ -120,7 +120,7 @@ public class MappingProxyResource {
         return draftRepository.findById(tenantId, mappingId)
             .chain(draft -> {
                 if (draft == null) {
-                    LOG.warnf("❌ Mapping %s not found for tenant %s", mappingId, tenantId);
+                    LOG.warnf("Mapping %s not found for tenant %s", mappingId, tenantId);
                     return Uni.createFrom().item(
                         Response.status(Response.Status.NOT_FOUND)
                             .entity(new ErrorResponse("Mapping not found"))
@@ -132,10 +132,10 @@ public class MappingProxyResource {
                 return executionService.executeMapping(draft, requestPayload, headers)
                     .map(result -> {
                         if (result.success()) {
-                            LOG.infof("✅ Mapping %s executed successfully", mappingId);
+                            LOG.infof("Mapping %s executed successfully", mappingId);
                             return Response.ok(result.transformedResponse()).build();
                         } else {
-                            LOG.errorf("❌ Mapping %s execution failed: %s", mappingId, result.error());
+                            LOG.errorf("Mapping %s execution failed: %s", mappingId, result.error());
                             int statusCode = determineErrorStatus(result.error());
                             return Response.status(statusCode)
                                 .entity(new ErrorDetailResponse(
@@ -145,7 +145,7 @@ public class MappingProxyResource {
                         }
                     })
                     .onFailure().recoverWithItem(throwable -> {
-                        LOG.errorf(throwable, "❌ Unexpected error executing mapping %s", mappingId);
+                        LOG.errorf(throwable, "Unexpected error executing mapping %s", mappingId);
                         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                             .entity(new ErrorDetailResponse(
                                 "Mapping execution failed", "system", throwable.getMessage()

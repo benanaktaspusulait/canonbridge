@@ -1060,6 +1060,14 @@ export class MappingWizardComponent implements OnInit {
     }
   }
 
+  /** Allow clicking on previously completed steps to navigate back */
+  onStepClick(index: number): void {
+    // Only allow navigating to steps that are before or equal to the current step
+    if (index < this.currentStep()) {
+      this.currentStep.set(index);
+    }
+  }
+
   private getNextStep(currentStep: number): number {
     // Step 2 (Sample Data) → Step 3 (Request Mapping) or Step 4 (Target Schema)
     if (currentStep === 2) {

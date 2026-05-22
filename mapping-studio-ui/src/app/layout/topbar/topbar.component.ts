@@ -49,8 +49,8 @@ export class TopbarComponent {
   userMenuOpen = false;
 
   readonly langOptions: { label: string; value: LangId }[] = [
-    { label: 'English', value: 'en' },
-    { label: 'Türkçe', value: 'tr' }
+    { label: '🇬🇧 EN', value: 'en' },
+    { label: '🇹🇷 TR', value: 'tr' }
   ];
 
   userMenuItems: MenuItem[] = [];

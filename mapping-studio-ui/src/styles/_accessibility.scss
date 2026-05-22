@@ -231,6 +231,11 @@ html.dark-mode .skip-link:focus-visible {
   .skip-links {
     transition: none;
   }
+
+  /* Disable PrimeNG ripple effect */
+  .p-ink {
+    display: none !important;
+  }
 }
 
 // ============================================

@@ -95,7 +95,7 @@ public class MappingExecutionService {
             // Step 0: Validate incoming request against validation_rules
             String validationError = validateAgainstRules(mapping.getValidationRules(), requestJson, "request");
             if (validationError != null) {
-                LOG.warnf("❌ Request validation failed: %s", validationError);
+                LOG.warnf("Request validation failed: %s", validationError);
                 return Uni.createFrom().item(
                     new ExecutionResult(false, null, "Request validation failed: " + validationError, requestJson, null, null)
                 );
@@ -104,22 +104,22 @@ public class MappingExecutionService {
             // Step 1: Apply request transformation
             return applyRequestTransformation(mapping, requestJson)
                 .chain(transformedRequest -> {
-                    LOG.infof("✅ Request transformed successfully");
+                    LOG.infof("Request transformed successfully");
                     
                     // Step 2: Call external API (pass original request for URL param substitution)
                     return callExternalApi(mapping, transformedRequest, requestJson)
                         .chain(apiResponse -> {
-                            LOG.infof("✅ External API called successfully");
+                            LOG.infof("External API called successfully");
                             
                             // Step 3: Apply response transformation
                             return applyResponseTransformation(mapping, apiResponse)
                                 .map(transformedResponse -> {
-                                    LOG.infof("✅ Response transformed successfully");
+                                    LOG.infof("Response transformed successfully");
 
                                     // Step 4: Validate transformed response against canonical schema
                                     String responseError = validateAgainstSchema(mapping, transformedResponse);
                                     if (responseError != null) {
-                                        LOG.warnf("⚠️ Response validation failed: %s", responseError);
+                                        LOG.warnf("Response validation failed: %s", responseError);
                                         return new ExecutionResult(
                                             false,
                                             transformedResponse,
@@ -142,7 +142,7 @@ public class MappingExecutionService {
                         });
                 })
                 .onFailure().recoverWithItem(throwable -> {
-                    LOG.errorf(throwable, "[%s] ❌ Mapping execution failed", correlationId);
+                    LOG.errorf(throwable, "[%s] Mapping execution failed", correlationId);
                     return new ExecutionResult(
                         false,
                         null,
@@ -155,7 +155,7 @@ public class MappingExecutionService {
                 .invoke(result -> recordExecution(mapping, requestPayload, correlationId, startTime, result, true));
 
         } catch (Exception e) {
-            LOG.errorf(e, "❌ Failed to parse request payload");
+            LOG.errorf(e, "Failed to parse request payload");
             var result = new ExecutionResult(false, null, "Invalid JSON payload: " + e.getMessage(), null, null, null);
             recordExecution(mapping, requestPayload, correlationId, startTime, result, false);
             return Uni.createFrom().item(result);
@@ -250,8 +250,8 @@ public class MappingExecutionService {
         } catch (Exception ignored) {}
 
         executionLogRepository.create(log).subscribe().with(
-            saved -> LOG.infof("[%s] 📝 Execution logged: %s %dms", correlationId, log.getStatus(), durationMs),
-            err -> LOG.warnf("[%s] ⚠️ Failed to save execution log: %s", correlationId, err.getMessage())
+            saved -> LOG.infof("[%s] Execution logged: %s %dms", correlationId, log.getStatus(), durationMs),
+            err -> LOG.warnf("[%s] Failed to save execution log: %s", correlationId, err.getMessage())
         );
 
         String mappingIdStr = mapping.getId() != null ? mapping.getId().toString().substring(0, 8) : "unknown";
@@ -741,7 +741,7 @@ public class MappingExecutionService {
             String value = payload.getString(paramName);
             if (value != null && !value.isBlank()) {
                 result = result.replace("{" + paramName + "}", value);
-                LOG.infof("🔗 URL param substitution: {%s} -> %s", paramName, value);
+                LOG.infof("URL param substitution: {%s} -> %s", paramName, value);
             }
         }
         

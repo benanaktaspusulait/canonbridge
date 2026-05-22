@@ -34,9 +34,13 @@ export class I18nService {
 
   async init(): Promise<void> {
     try {
+      // Check URL query param first (?lang=tr)
+      const urlLang = new URLSearchParams(window.location.search).get('lang') as LangId | null;
       const saved = localStorage.getItem('canonbridge.lang') as LangId | null;
       const browser = navigator.language.toLowerCase().startsWith('tr') ? 'tr' : 'en';
-      const initial = saved === 'en' || saved === 'tr' ? saved : browser;
+      const initial = (urlLang === 'en' || urlLang === 'tr') ? urlLang
+        : (saved === 'en' || saved === 'tr') ? saved
+        : browser;
       await this.loadLang(initial);
     } catch (e) {
       console.error('i18n init failed', e);

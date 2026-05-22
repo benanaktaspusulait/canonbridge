@@ -81,8 +81,8 @@ public class MappingPublishService {
                 draft.setStatus(MappingDraft.DraftStatus.READY_TO_PUBLISH);
                 draft.setUpdatedBy(userId);
                 draftRepository.update(draft).subscribe().with(
-                    updated -> LOG.infof("✅ Draft status updated after publish"),
-                    err -> LOG.warnf("⚠️ Failed to update draft status: %s", err.getMessage())
+                    updated -> LOG.infof("Draft status updated after publish"),
+                    err -> LOG.warnf("Failed to update draft status: %s", err.getMessage())
                 );
 
                 // Auto-register webhook endpoint if source type is WEBHOOK
@@ -114,11 +114,11 @@ public class MappingPublishService {
                     .addString(secretHash)
                 )
                 .subscribe().with(
-                    result -> LOG.infof("🔗 Webhook endpoint registered: %s (key: %s)", webhookPath, webhookKey),
-                    err -> LOG.warnf("⚠️ Failed to register webhook endpoint: %s", err.getMessage())
+                    result -> LOG.infof("Webhook endpoint registered: %s (key: %s)", webhookPath, webhookKey),
+                    err -> LOG.warnf("Failed to register webhook endpoint: %s", err.getMessage())
                 );
         } catch (Exception e) {
-            LOG.warnf("⚠️ Failed to register webhook endpoint: %s", e.getMessage());
+            LOG.warnf("Failed to register webhook endpoint: %s", e.getMessage());
         }
     }
 

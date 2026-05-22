@@ -126,6 +126,8 @@
     "subtitle": "CanonBridge operasyon özeti.",
     "studio": "Integration Studio",
     "monitoring": "İzleme",
+    "topMappingsTitle": "En çok kullanılan eşlemeler",
+    "topMappingsSubtitle": "Mevcut operasyon penceresinde en çok kullanılan eşlemeler",
     "recentTitle": "Son eşlemeler",
     "recentSubtitle": "Tüm ortaklardaki son eşleme aktivitesi",
     "viewAll": "Tümünü gör",
@@ -166,7 +168,12 @@
     "lastModified": "Son değişiklik",
     "by": "Kullanıcı",
     "transformations": "Dönüşümler",
-    "published": "Yayınlanma"
+    "published": "Yayınlanma",
+    "mapping": "Eşleme",
+    "calls": "Çağrılar",
+    "errors": "Hatalar",
+    "avgLatency": "Ort. gecikme",
+    "health": "Sağlık"
   },
   "status": {
     "active": "aktif",
