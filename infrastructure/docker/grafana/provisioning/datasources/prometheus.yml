@@ -5,6 +5,8 @@ datasources:
     type: prometheus
     access: proxy
     url: http://prometheus:9090
+    # O6: Set a stable UID so dashboards can reference it consistently
+    uid: prometheus
     isDefault: true
     editable: true
     jsonData:

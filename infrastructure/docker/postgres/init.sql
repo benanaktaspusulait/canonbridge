@@ -2,6 +2,8 @@
 -- PostgreSQL 15
 
 -- Create extensions
+-- P2: pg_stat_statements requires shared_preload_libraries='pg_stat_statements'
+-- This is configured via PostgreSQL args in the StatefulSet manifest
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
 
@@ -36,12 +38,19 @@ CREATE TABLE IF NOT EXISTS events (
     CONSTRAINT events_status_check CHECK (status IN ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'))
 ) PARTITION BY RANGE (created_at);
 
--- Create initial partitions (current and next month)
+-- Create initial partitions (current + next 3 months for safety)
+-- P1: Automatic partition management via CronJob (postgres-partition-manager)
 CREATE TABLE events_2026_05 PARTITION OF events
     FOR VALUES FROM ('2026-05-01') TO ('2026-06-01');
 
 CREATE TABLE events_2026_06 PARTITION OF events
     FOR VALUES FROM ('2026-06-01') TO ('2026-07-01');
+
+CREATE TABLE events_2026_07 PARTITION OF events
+    FOR VALUES FROM ('2026-07-01') TO ('2026-08-01');
+
+CREATE TABLE events_2026_08 PARTITION OF events
+    FOR VALUES FROM ('2026-08-01') TO ('2026-09-01');
 
 -- Orders table
 CREATE TABLE IF NOT EXISTS orders (
