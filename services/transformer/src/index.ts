@@ -7,6 +7,7 @@ import { createCache } from './cache.js';
 import { WorkerPool } from './workerPool.js';
 import { OutboxRepository, OutboxRelay } from './outbox.js';
 import { DlqRepository } from './dlq.js';
+import { UsagePublisher } from './usagePublisher.js';
 
 async function main(): Promise<void> {
   const env = loadEnv();
@@ -57,6 +58,9 @@ async function main(): Promise<void> {
       }
     | undefined;
 
+  // Initialize usage publisher for billing metering
+  const usagePublisher = new UsagePublisher(env);
+
   const app = await buildServer(
     env,
     registry,
@@ -75,6 +79,7 @@ async function main(): Promise<void> {
           },
         }
       : undefined,
+    usagePublisher,
   );
 
   let kafkaShutdown: (() => Promise<void>) | undefined;
@@ -84,6 +89,9 @@ async function main(): Promise<void> {
     const kafka = await startKafkaConsumer(env, registry, engine, app.log, outboxRepo, dlqRepo);
     kafkaShutdown = kafka.shutdown;
     kafkaProducer = kafka.producer;
+
+    // Connect usage publisher to Kafka producer
+    usagePublisher.setProducer(kafka.producer);
     
     // G-18: Start outbox relay if enabled
     if (outboxRepo && kafka.producer) {

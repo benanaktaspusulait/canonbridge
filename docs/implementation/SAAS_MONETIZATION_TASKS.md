@@ -257,7 +257,8 @@
 
 **Öncelik:** 🟡 Orta  
 **Servis:** `billing-service`  
-**Bağımlılık:** TASK-006, TASK-007
+**Bağımlılık:** TASK-006, TASK-007  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] `invoices` tablosu oluştur (id UUID, org_id FK, period_start DATE, period_end DATE, subtotal_cents INT, tax_cents INT, total_cents INT, currency, status ENUM[draft, open, paid, void, uncollectible], provider_ref VARCHAR, pdf_url VARCHAR, created_at, paid_at)
@@ -320,7 +321,8 @@
 
 **Öncelik:** 🟠 Yüksek  
 **Servis:** `mapping-studio-ui`  
-**Bağımlılık:** TASK-010
+**Bağımlılık:** TASK-010  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] Upgrade modal component:
@@ -394,7 +396,8 @@
 
 **Öncelik:** 🟡 Orta  
 **Servis:** `website`  
-**Bağımlılık:** Yok
+**Bağımlılık:** Yok  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] `/terms` — Terms of Service sayfası
@@ -524,7 +527,8 @@
 
 **Öncelik:** 🟡 Orta  
 **Servis:** Tüm servisler + `infrastructure/docker/grafana`  
-**Bağımlılık:** TASK-004
+**Bağımlılık:** TASK-004  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] Prometheus counter: `cb_usage_total{service, metric, org_id, plan}` — her serviste
@@ -1120,16 +1124,16 @@ EMAIL_FROM=billing@canonbridge.io
 
 ## Başarı Kriterleri (90 Gün Sonunda)
 
-- [ ] Tüm yeni org'lar Free plan ile başlıyor
-- [ ] Usage metering 3 ana serviste çalışıyor (mapping, transform, webhook)
-- [ ] Soft-enforce aktif (uyarı veriyor, henüz block yok)
-- [ ] Paddle sandbox'ta subscription oluşturulabiliyor
-- [ ] Billing UI'da kullanım grafikleri görünüyor
-- [ ] Website'da /pricing sayfası yayında
-- [ ] Grafana'da MRR ve usage dashboard'ları çalışıyor
-- [ ] API key → org mapping çalışıyor
-- [ ] Günlük reconciliation job çalışıyor
-- [ ] Tüm billing event'leri audit log'da
+- [x] Tüm yeni org'lar Free plan ile başlıyor
+- [x] Usage metering 3 ana serviste çalışıyor (mapping, transform, webhook)
+- [x] Soft-enforce aktif (uyarı veriyor, henüz block yok)
+- [x] Paddle sandbox'ta subscription oluşturulabiliyor
+- [x] Billing UI'da kullanım grafikleri görünüyor
+- [x] Website'da /pricing sayfası yayında
+- [x] Grafana'da MRR ve usage dashboard'ları çalışıyor
+- [x] API key → org mapping çalışıyor
+- [x] Günlük reconciliation job çalışıyor
+- [x] Tüm billing event'leri audit log'da
 
 ---
 

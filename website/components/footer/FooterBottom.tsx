@@ -27,14 +27,20 @@ export default function FooterBottom() {
             <a href="#architecture" className="hover:text-navy-900 transition-colors">
               Architecture
             </a>
-            <a href="#features" className="hover:text-navy-900 transition-colors">
-              Features
-            </a>
+            <Link href="/pricing" className="hover:text-navy-900 transition-colors">
+              Pricing
+            </Link>
             <a href="#demo" className="hover:text-navy-900 transition-colors">
               Contact
             </a>
-            <Link href="/component-gallery" className="hover:text-navy-900 transition-colors">
-              Components
+            <Link href="/terms" className="hover:text-navy-900 transition-colors">
+              Terms
+            </Link>
+            <Link href="/privacy" className="hover:text-navy-900 transition-colors">
+              Privacy
+            </Link>
+            <Link href="/dpa" className="hover:text-navy-900 transition-colors">
+              DPA
             </Link>
           </nav>
 
