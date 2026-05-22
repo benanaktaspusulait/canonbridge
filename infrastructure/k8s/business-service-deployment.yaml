@@ -48,6 +48,8 @@ spec:
         fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
+      imagePullSecrets:
+        - name: registry-credentials
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: topology.kubernetes.io/zone

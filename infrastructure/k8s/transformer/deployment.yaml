@@ -36,6 +36,8 @@ spec:
         fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
+      imagePullSecrets:
+        - name: registry-credentials
       # Anti-affinity to spread pods across nodes and zones (A5)
       affinity:
         podAntiAffinity:

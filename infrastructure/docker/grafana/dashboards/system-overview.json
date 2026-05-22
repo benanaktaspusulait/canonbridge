@@ -1,7 +1,7 @@
 {
-  "title": "ETL Solutions - System Overview",
+  "title": "CanonBridge - System Overview",
   "tags": [
-    "etl-solutions",
+    "canonbridge",
     "system",
     "overview"
   ],
@@ -75,7 +75,7 @@
       },
       "targets": [
         {
-          "expr": "rate(container_cpu_usage_seconds_total{namespace=\"etl-solutions\"}[5m]) * 100",
+          "expr": "rate(container_cpu_usage_seconds_total{namespace=\"canonbridge\"}[5m]) * 100",
           "legendFormat": "{{pod}}"
         }
       ],
@@ -101,7 +101,7 @@
       },
       "targets": [
         {
-          "expr": "container_memory_usage_bytes{namespace=\"etl-solutions\"} / 1024 / 1024 / 1024",
+          "expr": "container_memory_usage_bytes{namespace=\"canonbridge\"} / 1024 / 1024 / 1024",
           "legendFormat": "{{pod}}"
         }
       ],

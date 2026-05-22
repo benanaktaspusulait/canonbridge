@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: canonbridge
+  namespace: argocd
+spec:
+  description: CanonBridge ETL Platform
+  sourceRepos:
+    - https://github.com/benanaktaspusulait/canonbridge.git
+  destinations:
+    - namespace: canonbridge
+      server: https://kubernetes.default.svc
+    - namespace: monitoring
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: "*"
+    - group: apps
+      kind: "*"
+    - group: autoscaling
+      kind: "*"
+    - group: batch
+      kind: "*"
+    - group: policy
+      kind: "*"
+    - group: monitoring.coreos.com
+      kind: "*"
+    - group: networking.k8s.io
+      kind: "*"
+  orphanedResources:
+    warn: true

@@ -11,11 +11,11 @@ spec:
     - Egress
 
 ---
-# Allow transformer → kafka
+# Allow transformer → kafka + postgres + otel-collector
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-transformer-to-kafka
+  name: allow-transformer-egress
   namespace: canonbridge
 spec:
   podSelector:
@@ -38,6 +38,15 @@ spec:
       ports:
         - port: 5432
           protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: otel-collector
+      ports:
+        - port: 4317
+          protocol: TCP
+        - port: 4318
+          protocol: TCP
     # Allow DNS
     - to: []
       ports:
@@ -47,7 +56,7 @@ spec:
           protocol: TCP
 
 ---
-# Allow business-service → postgres + kafka
+# Allow business-service → postgres + kafka + otel-collector
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -74,6 +83,15 @@ spec:
       ports:
         - port: 9092
           protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: otel-collector
+      ports:
+        - port: 4317
+          protocol: TCP
+        - port: 4318
+          protocol: TCP
     # Allow DNS
     - to: []
       ports:
@@ -83,7 +101,33 @@ spec:
           protocol: TCP
 
 ---
-# Allow prometheus → all pods /metrics
+# Allow otel-collector → tempo (tracing backend)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-otel-collector-egress
+  namespace: canonbridge
+spec:
+  podSelector:
+    matchLabels:
+      app: otel-collector
+  policyTypes:
+    - Egress
+  egress:
+    - to: []
+      ports:
+        - port: 4317
+          protocol: TCP
+    # Allow DNS
+    - to: []
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+
+---
+# Allow prometheus → all pods /metrics + otel-collector prometheus port
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -101,7 +145,31 @@ spec:
       ports:
         - port: 8080
           protocol: TCP
+        - port: 8889
+          protocol: TCP
         - port: 9090
+          protocol: TCP
+
+---
+# Allow ingress to otel-collector from all pods in namespace (for telemetry)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-otel-collector
+  namespace: canonbridge
+spec:
+  podSelector:
+    matchLabels:
+      app: otel-collector
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector: {}
+      ports:
+        - port: 4317
+          protocol: TCP
+        - port: 4318
           protocol: TCP
 
 ---
