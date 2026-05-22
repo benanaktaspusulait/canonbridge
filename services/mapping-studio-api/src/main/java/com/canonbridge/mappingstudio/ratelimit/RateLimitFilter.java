@@ -1,17 +1,17 @@
 package com.canonbridge.mappingstudio.ratelimit;
 
+import io.smallrye.mutiny.Uni;
 import io.vertx.core.http.HttpServerRequest;
-import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
+import org.jboss.resteasy.reactive.server.ServerRequestFilter;
+import org.jboss.resteasy.reactive.server.ServerResponseFilter;
 
 import java.security.MessageDigest;
 import java.security.Principal;
@@ -19,18 +19,20 @@ import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
- * JAX-RS filter that enforces rate limiting on API endpoints.
+ * Reactive rate limiting filter for API endpoints.
+ * 
+ * Uses Quarkus RESTEasy Reactive {@code @ServerRequestFilter} to avoid blocking
+ * the Vert.x event loop when Redis is used as the rate limit storage backend.
  * 
  * Rate limits are applied based on:
  * - Authenticated requests: client identifier from JWT subject or API key
  * - Unauthenticated requests: client IP address
  */
-@Provider
-@Priority(Priorities.AUTHORIZATION + 10)
 @ApplicationScoped
-public class RateLimitFilter implements ContainerRequestFilter, ContainerResponseFilter {
+public class RateLimitFilter {
 
     private static final String RATE_LIMIT_RESULT_KEY = "canonbridge.ratelimit.result";
 
@@ -43,17 +45,17 @@ public class RateLimitFilter implements ContainerRequestFilter, ContainerRespons
     @Context
     HttpServerRequest request;
 
-    @Override
-    public void filter(ContainerRequestContext requestContext) {
+    @ServerRequestFilter(priority = jakarta.ws.rs.Priorities.AUTHORIZATION + 10)
+    public Uni<Optional<Response>> filter(ContainerRequestContext requestContext) {
         if (!config.enabled()) {
-            return;
+            return Uni.createFrom().item(Optional.empty());
         }
 
         // Skip only infrastructure and documentation endpoints.
         String path = requestContext.getUriInfo().getPath();
-        if (path.startsWith("health") || path.startsWith("metrics") || 
+        if (path.startsWith("health") || path.startsWith("metrics") ||
             path.startsWith("openapi") || path.startsWith("swagger-ui")) {
-            return;
+            return Uni.createFrom().item(Optional.empty());
         }
 
         // Determine client identifier and rate limit
@@ -66,52 +68,53 @@ public class RateLimitFilter implements ContainerRequestFilter, ContainerRespons
         boolean isAuthenticated = principal != null;
 
         if (isAuthenticated) {
-            // Authenticated request - use principal name (JWT subject or API key).
             clientId = principal.getName();
             limit = config.authenticated().defaultLimit();
             windowSeconds = config.authenticated().windowSeconds();
         } else {
-            // Unauthenticated request - prefer a presented API key as a stable client id in test/dev,
-            // then fall back to IP address.
             String apiKey = requestContext.getHeaderString("X-API-Key");
             clientId = apiKey != null && !apiKey.isBlank() ? "api-key:" + fingerprint(apiKey) : "ip:" + getClientIp();
             limit = config.unauthenticated().defaultLimit();
             windowSeconds = config.unauthenticated().windowSeconds();
         }
 
-        // Check rate limit
-        RateLimitResult result = rateLimitService.checkRateLimitNow(clientId, limit, windowSeconds);
+        final int finalWindowSeconds = windowSeconds;
 
-        requestContext.setProperty(RATE_LIMIT_RESULT_KEY, result);
+        // Non-blocking rate limit check
+        return rateLimitService.checkRateLimit(clientId, limit, windowSeconds)
+                .map(result -> {
+                    requestContext.setProperty(RATE_LIMIT_RESULT_KEY, result);
 
-        if (!result.isAllowed()) {
-            // Rate limit exceeded - return 429
-            Map<String, Object> errorBody = new HashMap<>();
-            errorBody.put("error", "rate_limit_exceeded");
-            errorBody.put("message", String.format(
-                    "Rate limit exceeded. Maximum %d requests per %d seconds allowed.",
-                    result.getLimit(), windowSeconds));
-            errorBody.put("limit", result.getLimit());
-            errorBody.put("window_seconds", windowSeconds);
-            errorBody.put("retry_after_seconds", result.getRetryAfter());
+                    if (!result.isAllowed()) {
+                        Map<String, Object> errorBody = new HashMap<>();
+                        errorBody.put("error", "rate_limit_exceeded");
+                        errorBody.put("message", String.format(
+                                "Rate limit exceeded. Maximum %d requests per %d seconds allowed.",
+                                result.getLimit(), finalWindowSeconds));
+                        errorBody.put("limit", result.getLimit());
+                        errorBody.put("window_seconds", finalWindowSeconds);
+                        errorBody.put("retry_after_seconds", result.getRetryAfter());
 
-            Response response = Response.status(429)
-                    .entity(errorBody)
-                    .header("Retry-After", String.valueOf(result.getRetryAfter()))
-                    .header("X-RateLimit-Limit", String.valueOf(result.getLimit()))
-                    .header("X-RateLimit-Remaining", "0")
-                    .header("X-RateLimit-Reset", String.valueOf(result.getResetTime()))
-                    .build();
+                        Response response = Response.status(429)
+                                .entity(errorBody)
+                                .header("Retry-After", String.valueOf(result.getRetryAfter()))
+                                .header("X-RateLimit-Limit", String.valueOf(result.getLimit()))
+                                .header("X-RateLimit-Remaining", "0")
+                                .header("X-RateLimit-Reset", String.valueOf(result.getResetTime()))
+                                .build();
 
-            requestContext.abortWith(response);
-        }
+                        return Optional.of(response);
+                    }
+
+                    return Optional.<Response>empty();
+                });
     }
 
     /**
      * Add rate limit headers to the response.
      */
-    @Override
-    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
+    @ServerResponseFilter
+    public void responseFilter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
         RateLimitResult result = (RateLimitResult) requestContext.getProperty(RATE_LIMIT_RESULT_KEY);
         if (result == null) {
             return;
@@ -126,14 +129,11 @@ public class RateLimitFilter implements ContainerRequestFilter, ContainerRespons
      * Extract client IP address from request.
      */
     private String getClientIp() {
-        // Check X-Forwarded-For header first (for proxied requests)
         String forwardedFor = request.getHeader("X-Forwarded-For");
         if (forwardedFor != null && !forwardedFor.isBlank()) {
-            // Take the first IP in the chain
             return forwardedFor.split(",")[0].trim();
         }
 
-        // Fall back to remote address
         String remoteAddress = request.remoteAddress().host();
         return remoteAddress != null ? remoteAddress : "unknown";
     }

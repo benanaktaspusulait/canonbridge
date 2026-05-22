@@ -31,7 +31,7 @@ public class TenantIsolationFilter implements ContainerRequestFilter {
 
     private static final Logger LOG = Logger.getLogger(TenantIsolationFilter.class);
 
-    @ConfigProperty(name = "canonbridge.tenant.isolation.enabled", defaultValue = "false")
+    @ConfigProperty(name = "canonbridge.tenant.isolation.enabled", defaultValue = "true")
     boolean isolationEnabled;
 
     @ConfigProperty(name = "canonbridge.tenant.mappings")
@@ -42,7 +42,7 @@ public class TenantIsolationFilter implements ContainerRequestFilter {
     @Override
     public void filter(ContainerRequestContext requestContext) {
         if (!isolationEnabled) {
-            return; // Dev mode - no isolation
+            return; // Explicitly disabled via config
         }
 
         String tenantId = requestContext.getHeaderString("X-Tenant-Id");
@@ -58,9 +58,25 @@ public class TenantIsolationFilter implements ContainerRequestFilter {
         String principalName = principal.getName();
         Map<String, Set<String>> mappings = getPrincipalToTenants();
 
-        Set<String> allowedTenants = mappings.isEmpty()
-                ? authorizedTenants(requestContext)
-                : mappings.get(principalName);
+        // Fail-closed: if no mappings configured AND no authorized tenants from auth result, deny access
+        Set<String> allowedTenants;
+        if (!mappings.isEmpty()) {
+            allowedTenants = mappings.get(principalName);
+        } else {
+            allowedTenants = authorizedTenants(requestContext);
+            if (allowedTenants.isEmpty()) {
+                // Fail-closed: no tenant authorization info available — deny
+                LOG.warnf("Tenant isolation: no tenant authorization for principal '%s', denying access to tenant '%s'",
+                        principalName, tenantId);
+                requestContext.abortWith(
+                    Response.status(Response.Status.FORBIDDEN)
+                        .entity("{\"error\":\"No tenant authorization configured for this principal\"}")
+                        .build()
+                );
+                return;
+            }
+        }
+
         if (allowedTenants == null
                 || (!allowedTenants.contains("*") && !allowedTenants.contains(tenantId))) {
             LOG.warnf("Tenant isolation violation: principal '%s' attempted to access tenant '%s'",
