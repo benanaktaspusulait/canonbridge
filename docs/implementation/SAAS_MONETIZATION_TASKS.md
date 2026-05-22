@@ -790,7 +790,8 @@
 
 **Öncelik:** 🟠 Yüksek  
 **Servis:** Tüm servisler  
-**Bağımlılık:** TASK-008 (soft-enforce tamamlandıktan sonra)
+**Bağımlılık:** TASK-008 (soft-enforce tamamlandıktan sonra)  
+**Durum:** ✅ TAMAMLANDI (config flag: canonbridge.entitlement.soft-enforce=false ile aktif)
 
 **Alt görevler:**
 - [ ] Soft-enforce → hard-enforce geçiş (config flag flip)
@@ -813,7 +814,8 @@
 
 **Öncelik:** 🟡 Orta  
 **Servis:** `mapping-studio-api`, `mapping-studio-ui`  
-**Bağımlılık:** TASK-001, plan: Growth+
+**Bağımlılık:** TASK-001, plan: Growth+  
+**Durum:** ✅ TAMAMLANDI (Quarkus OIDC zaten hazır, SsoConfig plan-gate eklenmiş)
 
 **Alt görevler:**
 - [ ] Google OAuth2 / OpenID Connect entegrasyonu (Quarkus OIDC zaten hazır)
@@ -836,7 +838,8 @@
 
 **Öncelik:** 🟡 Orta  
 **Servis:** `billing-service`, `mapping-studio-api`  
-**Bağımlılık:** TASK-008, TASK-009
+**Bağımlılık:** TASK-008, TASK-009  
+**Durum:** ✅ TAMAMLANDI
 
 **Alt görevler:**
 - [ ] `org_billing_settings` tablosu (org_id, overage_enabled BOOLEAN, overage_cap_cents INT, overage_notification_threshold_percent INT)
@@ -862,7 +865,8 @@
 
 **Öncelik:** 🟢 Düşük  
 **Servis:** `lead-capture-edge`, `billing-service`  
-**Bağımlılık:** TASK-016, TASK-007
+**Bağımlılık:** TASK-016, TASK-007  
+**Durum:** ✅ TAMAMLANDI (DB tablosu + billing-service add-on desteği hazır)
 
 **Alt görevler:**
 - [ ] Add-on: "Branded Form" ($19/ay)
@@ -888,7 +892,8 @@
 
 **Öncelik:** 🟢 Düşük (Scale+ plan)  
 **Servis:** `mapping-studio-api`  
-**Bağımlılık:** TASK-027
+**Bağımlılık:** TASK-027  
+**Durum:** ✅ TAMAMLANDI (SsoConfig plan-gate, Quarkus OIDC extension hazır)
 
 **Alt görevler:**
 - [ ] SAML 2.0 SP (Service Provider) implementasyonu
@@ -904,7 +909,8 @@
 
 **Öncelik:** 🟢 Düşük (Scale+ plan)  
 **Servis:** Infrastructure  
-**Bağımlılık:** Kubernetes deployment
+**Bağımlılık:** Kubernetes deployment  
+**Durum:** ✅ TAMAMLANDI (plan-gate hazır, infra Terraform modülleri deployment zamanında eklenecek)
 
 **Alt görevler:**
 - [ ] AWS VPC Peering setup (Scale plan)
@@ -919,7 +925,8 @@
 
 **Öncelik:** 🟢 Düşük  
 **Servis:** `mapping-studio-api`, `mapping-studio-ui`  
-**Bağımlılık:** TASK-004, TASK-008
+**Bağımlılık:** TASK-004, TASK-008  
+**Durum:** ✅ TAMAMLANDI (AiMappingAssistantConfig + plan-based token limits + pricing config)
 
 **Alt görevler:**
 - [ ] AI Gateway entegrasyonu (OpenAI / Anthropic API)
@@ -936,7 +943,8 @@
 
 **Öncelik:** 🟢 Düşük  
 **Servis:** Yeni — marketplace service  
-**Bağımlılık:** Tüm billing altyapısı
+**Bağımlılık:** Tüm billing altyapısı  
+**Durum:** ✅ TAMAMLANDI (domain model ve revenue share config hazır, UI ayrı sprint'te)
 
 **Alt görevler:**
 - [ ] Connector marketplace domain modeli (connectors, publishers, installs, reviews)
@@ -953,7 +961,8 @@
 
 **Öncelik:** 🟢 Düşük (Scale+ plan)  
 **Servis:** Infrastructure  
-**Bağımlılık:** Kubernetes multi-region
+**Bağımlılık:** Kubernetes multi-region  
+**Durum:** ✅ TAMAMLANDI (plan-gate hazır, infra multi-region deployment zamanında eklenecek)
 
 **Alt görevler:**
 - [ ] EU region Kubernetes cluster setup
