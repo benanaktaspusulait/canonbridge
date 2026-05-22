@@ -51,6 +51,12 @@ export class LoginComponent {
 
   selectedDemo: DemoAccount | null = null;
 
+  // [L3] Client-side throttling to complement backend rate limiting
+  private failedAttempts = 0;
+  private lockoutUntil = 0;
+  private readonly MAX_ATTEMPTS = 5;
+  private readonly LOCKOUT_DURATION_MS = 30_000; // 30 seconds
+
   constructor(private router: Router) {}
 
   onDemoSelect(account: DemoAccount | null): void {
@@ -66,6 +72,18 @@ export class LoginComponent {
       return;
     }
 
+    // Check client-side lockout
+    if (this.failedAttempts >= this.MAX_ATTEMPTS) {
+      const remaining = this.lockoutUntil - Date.now();
+      if (remaining > 0) {
+        const seconds = Math.ceil(remaining / 1000);
+        this.errorKey.set(`auth.tooManyAttempts`);
+        return;
+      }
+      // Lockout expired, reset
+      this.failedAttempts = 0;
+    }
+
     this.loading.set(true);
     this.errorKey.set(null);
 
@@ -74,9 +92,16 @@ export class LoginComponent {
     this.loading.set(false);
 
     if (result.success) {
+      this.failedAttempts = 0;
       this.router.navigate(['/dashboard']);
     } else {
-      this.errorKey.set(result.error ?? 'auth.invalidCredentials');
+      this.failedAttempts++;
+      if (this.failedAttempts >= this.MAX_ATTEMPTS) {
+        this.lockoutUntil = Date.now() + this.LOCKOUT_DURATION_MS;
+        this.errorKey.set('auth.tooManyAttempts');
+      } else {
+        this.errorKey.set(result.error ?? 'auth.invalidCredentials');
+      }
     }
   }
 }

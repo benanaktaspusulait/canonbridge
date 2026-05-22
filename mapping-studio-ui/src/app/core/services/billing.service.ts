@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
@@ -76,53 +76,44 @@ export class BillingService {
   private readonly baseUrl = `${environment.api.baseUrl}/organizations`;
   private readonly plansUrl = `${environment.api.baseUrl}/plans`;
 
-  private getHeaders(): HttpHeaders {
-    const user = this.auth.currentUser();
-    let headers = new HttpHeaders();
-    if (user?.tenantId) {
-      headers = headers.set('X-Tenant-Id', user.tenantId);
-    }
-    if (user?.id) {
-      headers = headers.set('X-User-Id', user.id);
-    }
-    return headers;
-  }
-
   private getOrgId(): string {
-    // TODO: Get from org context when multi-org is implemented
-    return 'a0000000-0000-0000-0000-000000000001';
+    const user = this.auth.currentUser();
+    if (!user?.tenantId) {
+      throw new Error('BillingService: No tenant context available');
+    }
+    return user.tenantId;
   }
 
   // Plans
   getPlans(): Observable<Plan[]> {
-    return this.http.get<Plan[]>(this.plansUrl, { headers: this.getHeaders() });
+    return this.http.get<Plan[]>(this.plansUrl);
   }
 
   getPlan(code: string): Observable<Plan> {
-    return this.http.get<Plan>(`${this.plansUrl}/${code}`, { headers: this.getHeaders() });
+    return this.http.get<Plan>(`${this.plansUrl}/${code}`);
   }
 
   // Subscription
   getSubscription(): Observable<Subscription> {
     const orgId = this.getOrgId();
-    return this.http.get<Subscription>(`${this.baseUrl}/${orgId}/subscription`, { headers: this.getHeaders() });
+    return this.http.get<Subscription>(`${this.baseUrl}/${orgId}/subscription`);
   }
 
   // Usage & Entitlements
   getUsageSummary(): Observable<EntitlementStatus[]> {
     const orgId = this.getOrgId();
-    return this.http.get<EntitlementStatus[]>(`${this.baseUrl}/${orgId}/usage`, { headers: this.getHeaders() });
+    return this.http.get<EntitlementStatus[]>(`${this.baseUrl}/${orgId}/usage`);
   }
 
   getUsageHistory(days: number = 30, metric?: string): Observable<UsageHistoryItem[]> {
     const orgId = this.getOrgId();
     let url = `${this.baseUrl}/${orgId}/usage/history?days=${days}`;
     if (metric) url += `&metric=${metric}`;
-    return this.http.get<UsageHistoryItem[]>(url, { headers: this.getHeaders() });
+    return this.http.get<UsageHistoryItem[]>(url);
   }
 
   getEntitlements(): Observable<EntitlementStatus[]> {
     const orgId = this.getOrgId();
-    return this.http.get<EntitlementStatus[]>(`${this.baseUrl}/${orgId}/usage/entitlements`, { headers: this.getHeaders() });
+    return this.http.get<EntitlementStatus[]>(`${this.baseUrl}/${orgId}/usage/entitlements`);
   }
 }

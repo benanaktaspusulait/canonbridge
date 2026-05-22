@@ -29,7 +29,6 @@ export const environment = {
     issuer: 'http://localhost:8080/auth/realms/canonbridge',
     redirectUri: 'http://localhost:4200/auth/callback',
     scope: 'openid profile email',
-    tokenRefreshThreshold: 300, // 5 minutes before expiry
     demoAccounts: [
       { label: 'Admin User', email: 'admin@canonbridge.io', roleLabel: 'admin' },
       { label: 'Integration Engineer', email: 'engineer@canonbridge.io', roleLabel: 'integration_author' },

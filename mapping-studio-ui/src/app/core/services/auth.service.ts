@@ -99,8 +99,23 @@ export class AuthService {
   private loadFromStorage(): User | null {
     try {
       const raw = sessionStorage.getItem(this.STORAGE_KEY);
-      return raw ? this.normalizeStoredUser(JSON.parse(raw)) : null;
+      if (!raw) return null;
+
+      // [L2] Validate shape and size before trusting stored data
+      if (raw.length > 10_000) {
+        sessionStorage.removeItem(this.STORAGE_KEY);
+        return null;
+      }
+
+      const parsed = JSON.parse(raw);
+      if (!this.isValidUserShape(parsed)) {
+        sessionStorage.removeItem(this.STORAGE_KEY);
+        return null;
+      }
+
+      return this.normalizeStoredUser(parsed);
     } catch {
+      sessionStorage.removeItem(this.STORAGE_KEY);
       return null;
     }
   }
@@ -118,12 +133,26 @@ export class AuthService {
   }
 
   private normalizeStoredUser(user: User): User {
-    if (!user.tenantName || user.tenantName === 'Acme Corp') {
+    // [L1] Resolve tenant name from environment config if not set or stale
+    if (!user.tenantName) {
       user.tenantName = this.resolveTenantName(user.tenantId, user.tenantName);
       sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
     }
 
     return user;
+  }
+
+  /** [L2] Runtime shape check for data loaded from sessionStorage */
+  private isValidUserShape(obj: unknown): obj is User {
+    if (!obj || typeof obj !== 'object') return false;
+    const u = obj as Record<string, unknown>;
+    return (
+      typeof u['id'] === 'string' &&
+      typeof u['email'] === 'string' &&
+      typeof u['name'] === 'string' &&
+      typeof u['role'] === 'string' &&
+      typeof u['tenantId'] === 'string'
+    );
   }
 
   private formatTenantName(tenantId: string): string {
@@ -135,7 +164,7 @@ export class AuthService {
   }
 
   private resolveTenantName(tenantId: string, tenantName?: string): string {
-    if (tenantName && tenantName !== 'Acme Corp') {
+    if (tenantName) {
       return tenantName;
     }
 

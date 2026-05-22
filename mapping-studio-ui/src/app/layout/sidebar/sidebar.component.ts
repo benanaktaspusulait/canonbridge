@@ -1,9 +1,10 @@
-import { Component, Input, inject } from '@angular/core';
+import { Component, Input, inject, computed } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { TooltipModule } from 'primeng/tooltip';
 import { I18nPipe } from '../../core/i18n/i18n.pipe';
 import { ThemeService } from '../../core/theme/theme.service';
 import { AuthService } from '../../core/services/auth.service';
+import { User } from '../../core/models/user.model';
 
 interface NavEntry {
   route: string;
@@ -11,6 +12,7 @@ interface NavEntry {
   labelKey: string;
   badge?: string;
   badgeStyleClass?: string;
+  roles?: User['role'][];
 }
 
 interface NavGroup {
@@ -30,13 +32,13 @@ const PRIMARY_NAV: NavEntry[] = [
     labelKey: 'nav.dlq'
   },
   { route: '/monitoring', icon: 'pi pi-chart-line', labelKey: 'nav.monitoring' },
-  { route: '/audit', icon: 'pi pi-shield', labelKey: 'nav.audit' }
+  { route: '/audit', icon: 'pi pi-shield', labelKey: 'nav.audit', roles: ['admin', 'operator'] }
 ];
 
 const SECONDARY_NAV: NavEntry[] = [
-  { route: '/tenant', icon: 'pi pi-building', labelKey: 'nav.tenant' },
-  { route: '/billing', icon: 'pi pi-credit-card', labelKey: 'nav.billing' },
-  { route: '/settings', icon: 'pi pi-cog', labelKey: 'nav.settings' }
+  { route: '/tenant', icon: 'pi pi-building', labelKey: 'nav.tenant', roles: ['admin'] },
+  { route: '/billing', icon: 'pi pi-credit-card', labelKey: 'nav.billing', roles: ['admin'] },
+  { route: '/settings', icon: 'pi pi-cog', labelKey: 'nav.settings', roles: ['admin', 'operator'] }
 ];
 
 @Component({
@@ -55,17 +57,27 @@ export class SidebarComponent {
 
   collapsedSections = new Set<string>();
 
-  readonly navGroups: NavGroup[] = [
+  /** Filter nav items based on user role */
+  private filterByRole(items: NavEntry[]): NavEntry[] {
+    const role = this.auth.userRole();
+    return items.filter(item => !item.roles || (role && item.roles.includes(role)));
+  }
+
+  readonly navGroups = computed<NavGroup[]>(() => [
     {
       labelKey: 'sidebar.menuGroup',
-      items: PRIMARY_NAV
+      items: this.filterByRole(PRIMARY_NAV)
     },
     {
       labelKey: 'sidebar.preferencesGroup',
-      items: SECONDARY_NAV
+      items: this.filterByRole(SECONDARY_NAV)
     }
-  ];
-  readonly iconNavItems: NavEntry[] = [...PRIMARY_NAV, ...SECONDARY_NAV];
+  ]);
+
+  readonly iconNavItems = computed(() => [
+    ...this.filterByRole(PRIMARY_NAV),
+    ...this.filterByRole(SECONDARY_NAV)
+  ]);
   
   isActive(route: string): boolean {
     return this.router.url === route;

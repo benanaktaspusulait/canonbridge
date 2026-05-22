@@ -28,7 +28,7 @@ export function proxy(request: NextRequest) {
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: blob:`,
     `font-src 'self' data:`,
-    `connect-src 'self' https:`,
+    `connect-src 'self' https://challenges.cloudflare.com`,
     `frame-src https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com`,
     `object-src 'none'`,
     `base-uri 'self'`,

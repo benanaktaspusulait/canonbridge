@@ -31,7 +31,6 @@ export const environment = {
     issuer: runtimeString('authIssuer', 'https://auth.canonbridge.com/realms/canonbridge'),
     redirectUri: runtimeString('authRedirectUri', 'https://studio.canonbridge.com/auth/callback'),
     scope: 'openid profile email',
-    tokenRefreshThreshold: 300, // 5 minutes before expiry
     demoAccounts: [],
   },
 

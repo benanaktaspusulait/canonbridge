@@ -43,6 +43,8 @@ export function LocaleProvider({
     if (typeof window !== "undefined") {
       document.documentElement.lang = l;
       localStorage.setItem("canonbridge-locale", l);
+      // W-V8-M5 FIX: Set cookie for SSR locale persistence (avoids flash of EN)
+      document.cookie = `canonbridge-locale=${l};path=/;max-age=31536000;SameSite=Lax`;
       const nextPath = localePath(l);
       if (window.location.pathname !== nextPath) {
         router.push(`${nextPath}${window.location.hash}`);

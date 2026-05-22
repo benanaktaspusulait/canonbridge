@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, publicGuard } from './core/guards/auth.guard';
+import { roleGuard } from './core/guards/role.guard';
 
 /**
  * Application Route Structure
@@ -92,21 +93,25 @@ export const routes: Routes = [
       },
       {
         path: 'audit',
+        canActivate: [roleGuard('admin', 'operator')],
         loadComponent: () =>
           import('./pages/audit/audit.component').then(m => m.AuditComponent)
       },
       {
         path: 'tenant',
+        canActivate: [roleGuard('admin')],
         loadComponent: () =>
           import('./pages/tenant/tenant.component').then(m => m.TenantComponent)
       },
       {
         path: 'settings',
+        canActivate: [roleGuard('admin', 'operator')],
         loadComponent: () =>
           import('./pages/settings/settings.component').then(m => m.SettingsComponent)
       },
       {
         path: 'billing',
+        canActivate: [roleGuard('admin')],
         loadComponent: () =>
           import('./pages/billing/billing.component').then(m => m.BillingComponent)
       }
@@ -114,6 +119,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: ''
+    redirectTo: 'dashboard'
   }
 ];

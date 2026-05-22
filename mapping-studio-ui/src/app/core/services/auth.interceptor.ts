@@ -1,5 +1,6 @@
 import { inject } from '@angular/core';
-import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { throwError, EMPTY } from 'rxjs';
 import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
 import { Router } from '@angular/router';
@@ -16,39 +17,37 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const user = auth.currentUser();
   const token = auth.getToken();
 
-  // Skip auth for login endpoint
-  if (req.url.includes('/auth/login')) {
+  // Skip auth for login endpoint — use exact path segment match to avoid
+  // accidentally skipping auth for URLs that merely contain the substring.
+  const url = new URL(req.url, window.location.origin);
+  if (url.pathname.endsWith('/auth/login')) {
     return next(req);
   }
 
-  // Authentication is REQUIRED for all API calls
+  // [H4] Return proper Observable error instead of throwing synchronously
   if (!user || !token) {
-    console.error('[AuthInterceptor] No authentication found, redirecting to login');
     router.navigate(['/login']);
-    throw new Error('Authentication required');
+    return throwError(() => new HttpErrorResponse({
+      status: 401,
+      statusText: 'Authentication required'
+    }));
   }
 
   // Validate tenant ID
   if (!user.tenantId) {
-    console.error('[AuthInterceptor] User has no tenantId:', user);
     auth.logout();
-    throw new Error('Invalid user session - missing tenant ID');
+    return throwError(() => new HttpErrorResponse({
+      status: 401,
+      statusText: 'Invalid user session - missing tenant ID'
+    }));
   }
 
-  // Add authentication headers
+  // [H2] Only send Authorization header — tenant/user identity must be
+  // derived from the JWT on the backend, not from client-supplied headers.
   const cloned = req.clone({
     setHeaders: {
-      'Authorization': `Bearer ${token}`,
-      'X-Tenant-Id': user.tenantId,
-      'X-User-Id': user.id
+      'Authorization': `Bearer ${token}`
     }
-  });
-
-  console.log('[AuthInterceptor] Request headers:', {
-    url: req.url,
-    tenantId: user.tenantId,
-    userId: user.id,
-    hasToken: !!token
   });
 
   return next(cloned);

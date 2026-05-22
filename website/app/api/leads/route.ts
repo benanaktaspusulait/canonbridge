@@ -2,10 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-const MIN_ELAPSED_MS = 1500;
+const MIN_ELAPSED_MS = 800; // W-V8-M7 FIX: lowered from 1500 for keyboard users
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = Number(process.env.LEAD_RATE_LIMIT_PER_MINUTE ?? 8);
 const rateLimits = new Map<string, { count: number; resetAt: number }>();
+
+// W-V8-H2 FIX: Allowed origins for lead form submissions
+const ALLOWED_ORIGINS = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://canonbridge.io")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+// Always allow localhost in development
+if (process.env.NODE_ENV !== "production") {
+  ALLOWED_ORIGINS.push("http://localhost:3000", "http://localhost:4200");
+}
+
+// W-V8-M6 FIX: Dangerous header names that should never be forwarded
+const FORBIDDEN_HEADERS = new Set([
+  "host", "authorization", "cookie", "x-forwarded-for", "x-forwarded-host",
+  "x-real-ip", "transfer-encoding", "content-length",
+]);
 
 function clientIp(request: NextRequest) {
   return (
@@ -38,7 +54,14 @@ function validEmail(value: string) {
 
 async function verifyTurnstile(token: string, ip: string) {
   const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
-  if (!secret) return true;
+  // W-V8-H2 FIX: Fail-closed in production when secret is not configured
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("[leads] TURNSTILE_SECRET_KEY not configured in production — rejecting");
+      return false;
+    }
+    return true; // Allow in development without Turnstile
+  }
   if (!token) return false;
 
   const form = new FormData();
@@ -57,6 +80,12 @@ async function verifyTurnstile(token: string, ip: string) {
 }
 
 export async function POST(request: NextRequest) {
+  // W-V8-H2 FIX: Origin validation to prevent cross-origin form submissions
+  const origin = request.headers.get("origin") ?? "";
+  if (origin && !ALLOWED_ORIGINS.some((allowed) => origin.startsWith(allowed))) {
+    return NextResponse.json({ ok: false, error: "Origin not allowed." }, { status: 403 });
+  }
+
   const ip = clientIp(request);
   if (rateLimited(ip)) {
     return NextResponse.json({ ok: false, error: "Too many requests." }, { status: 429 });
@@ -103,7 +132,14 @@ export async function POST(request: NextRequest) {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const authHeader = process.env.LEAD_WEBHOOK_AUTH_HEADER?.trim();
   const authValue = process.env.LEAD_WEBHOOK_AUTH_VALUE?.trim();
-  if (authHeader && authValue) headers[authHeader] = authValue;
+  // W-V8-M6 FIX: Validate header name to prevent injection of dangerous headers
+  if (authHeader && authValue) {
+    if (/^[A-Za-z0-9-]{1,64}$/.test(authHeader) && !FORBIDDEN_HEADERS.has(authHeader.toLowerCase())) {
+      headers[authHeader] = authValue;
+    } else {
+      console.error(`[leads] Rejected dangerous LEAD_WEBHOOK_AUTH_HEADER: ${authHeader}`);
+    }
+  }
 
   const upstream = await fetch(webhookUrl, {
     method: "POST",
