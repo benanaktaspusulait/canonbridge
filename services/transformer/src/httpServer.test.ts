@@ -68,7 +68,6 @@ describe('HTTP Server', () => {
     registry = new PartnerRegistry(testDir);
     await registry.load();
     const cache = new InMemoryCache();
-    engine = new TransformEngine(testDir, env, registry, cache);
 
     const env: Env = {
       mappingsRoot: testDir,
@@ -102,6 +101,7 @@ describe('HTTP Server', () => {
       enrichmentMaxTimeoutMs: 10000,
     };
 
+    engine = new TransformEngine(testDir, env, registry, cache);
     app = await buildServer(env, registry, engine);
   });
 
@@ -336,6 +336,7 @@ describe('HTTP Server', () => {
         mappingsRoot: testDir,
         port: 8080,
         apiKey: 'secret-key',
+        authDisabled: true,
         corsOrigins: [],
         kafkaEnabled: false,
         kafkaBrokers: [],
@@ -356,7 +357,11 @@ describe('HTTP Server', () => {
         outboxPollIntervalMs: 1000,
         outboxBatchSize: 100,
         dlqDatabaseUrl: undefined,
+        dlqMaxRedriveAttempts: 5,
         logLevel: 'silent',
+        transformMaxPayloadBytes: 2_000_000,
+        enrichmentAllowedHosts: [],
+        enrichmentMaxTimeoutMs: 10000,
       };
 
       const authApp = await buildServer(envWithAuth, registry, engine);
@@ -381,6 +386,7 @@ describe('HTTP Server', () => {
         mappingsRoot: testDir,
         port: 8080,
         apiKey: 'secret-key',
+        authDisabled: true,
         corsOrigins: [],
         kafkaEnabled: false,
         kafkaBrokers: [],
@@ -401,7 +407,11 @@ describe('HTTP Server', () => {
         outboxPollIntervalMs: 1000,
         outboxBatchSize: 100,
         dlqDatabaseUrl: undefined,
+        dlqMaxRedriveAttempts: 5,
         logLevel: 'silent',
+        transformMaxPayloadBytes: 2_000_000,
+        enrichmentAllowedHosts: [],
+        enrichmentMaxTimeoutMs: 10000,
       };
 
       const authApp = await buildServer(envWithAuth, registry, engine);
@@ -420,6 +430,7 @@ describe('HTTP Server', () => {
         mappingsRoot: testDir,
         port: 8080,
         apiKey: 'secret-key',
+        authDisabled: true,
         corsOrigins: [],
         kafkaEnabled: false,
         kafkaBrokers: [],
@@ -440,7 +451,11 @@ describe('HTTP Server', () => {
         outboxPollIntervalMs: 1000,
         outboxBatchSize: 100,
         dlqDatabaseUrl: undefined,
+        dlqMaxRedriveAttempts: 5,
         logLevel: 'silent',
+        transformMaxPayloadBytes: 2_000_000,
+        enrichmentAllowedHosts: [],
+        enrichmentMaxTimeoutMs: 10000,
       };
 
       const authApp = await buildServer(envWithAuth, registry, engine);
@@ -495,6 +510,7 @@ function envFixture(testDir: string): Env {
     mappingsRoot: testDir,
     port: 8080,
     apiKey: undefined,
+    authDisabled: true,
     corsOrigins: [],
     kafkaEnabled: false,
     kafkaBrokers: [],
@@ -515,6 +531,10 @@ function envFixture(testDir: string): Env {
     outboxPollIntervalMs: 1000,
     outboxBatchSize: 100,
     dlqDatabaseUrl: undefined,
+    dlqMaxRedriveAttempts: 5,
     logLevel: 'silent',
+    transformMaxPayloadBytes: 2_000_000,
+    enrichmentAllowedHosts: [],
+    enrichmentMaxTimeoutMs: 10000,
   };
 }

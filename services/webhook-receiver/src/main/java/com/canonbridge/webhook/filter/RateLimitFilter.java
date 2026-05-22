@@ -47,15 +47,20 @@ public class RateLimitFilter implements ContainerRequestFilter {
     @Inject
     MeterRegistry meterRegistry;
 
-    private ValueCommands<String, Long> valueCommands;
-    private KeyCommands<String> keyCommands;
-    private Counter redisFailureCounter;
+    private volatile ValueCommands<String, Long> valueCommands;
+    private volatile KeyCommands<String> keyCommands;
+    private volatile Counter redisFailureCounter;
 
+    // WR-V1-M7 FIX: Thread-safe lazy init with double-checked locking
     private void initRedis() {
         if (valueCommands == null) {
-            valueCommands = redisDataSource.value(Long.class);
-            keyCommands = redisDataSource.key();
-            redisFailureCounter = meterRegistry.counter("webhook_ratelimit_redis_failures_total");
+            synchronized (this) {
+                if (valueCommands == null) {
+                    valueCommands = redisDataSource.value(Long.class);
+                    keyCommands = redisDataSource.key();
+                    redisFailureCounter = meterRegistry.counter("webhook_ratelimit_redis_failures_total");
+                }
+            }
         }
     }
 
@@ -71,9 +76,25 @@ public class RateLimitFilter implements ContainerRequestFilter {
 
         String partnerId = segments[1];
 
+        // WR-V1-H4 FIX: Validate partnerId is a UUID to prevent key-cardinality DoS
+        if (!partnerId.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
+            requestContext.abortWith(
+                Response.status(400)
+                    .type(MediaType.APPLICATION_JSON_TYPE)
+                    .entity(new RateLimitError("invalid_partner_id", "Partner ID must be a valid UUID"))
+                    .build()
+            );
+            return;
+        }
+
         try {
             initRedis();
-            String key = KEY_PREFIX + partnerId;
+            // WR-V1-H4 FIX: Key includes partner + source IP to prevent per-partner bypass
+            String clientIp = requestContext.getHeaderString("X-Forwarded-For");
+            if (clientIp != null) clientIp = clientIp.split(",")[0].trim();
+            else clientIp = "unknown";
+
+            String key = KEY_PREFIX + partnerId + ":" + clientIp;
 
             // Atomic increment
             Long count = valueCommands.incr(key);

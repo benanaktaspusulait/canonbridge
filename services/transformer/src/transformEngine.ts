@@ -230,8 +230,8 @@ export class TransformEngine {
     }
 
     // Scheme check
-    const allowHttp = process.env.NODE_ENV !== 'production';
-    if (parsed.protocol !== 'https:' && !(allowHttp && parsed.protocol === 'http:')) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    if (parsed.protocol !== 'https:' && !((!isProduction) && parsed.protocol === 'http:')) {
       throw new Error(`Enrichment URL scheme must be https (got ${parsed.protocol})`);
     }
 
@@ -241,18 +241,21 @@ export class TransformEngine {
       throw new Error(`Enrichment URL hostname '${parsed.hostname}' is not in the allowed hosts list`);
     }
 
-    // DNS resolution + private IP block
-    try {
-      const addresses = await lookup(parsed.hostname, { all: true });
-      for (const addr of addresses) {
-        if (isPrivateIp(addr.address)) {
-          throw new Error(`Enrichment URL resolves to private/reserved IP (${addr.address})`);
+    // [T-V1-H1] DNS resolution + private IP block (production only)
+    // In non-production, allow private IPs for local development/testing
+    if (isProduction) {
+      try {
+        const addresses = await lookup(parsed.hostname, { all: true });
+        for (const addr of addresses) {
+          if (isPrivateIp(addr.address)) {
+            throw new Error(`Enrichment URL resolves to private/reserved IP (${addr.address})`);
+          }
         }
+      } catch (err) {
+        if (err instanceof Error && err.message.includes('private/reserved')) throw err;
+        if (err instanceof Error && err.message.includes('not in the allowed')) throw err;
+        throw new Error(`Cannot resolve enrichment URL hostname: ${parsed.hostname}`);
       }
-    } catch (err) {
-      if (err instanceof Error && err.message.includes('private/reserved')) throw err;
-      if (err instanceof Error && err.message.includes('not in the allowed')) throw err;
-      throw new Error(`Cannot resolve enrichment URL hostname: ${parsed.hostname}`);
     }
   }
 

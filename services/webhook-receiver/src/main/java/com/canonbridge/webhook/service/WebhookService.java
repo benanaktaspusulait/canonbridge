@@ -52,11 +52,14 @@ public class WebhookService {
                     return Uni.createFrom().failure(new NotAuthorizedException("Missing webhook signature"));
                 }
 
-                // K4 FIX: Use dedicated signing secret from DB instead of webhook key
+                // WR-V1-H3 FIX: Refuse if no signing secret configured (no fallback to webhook key)
                 return authService.getSigningSecret(partnerId)
                     .flatMap(signingSecret -> {
-                        String secretForHmac = (signingSecret != null) ? signingSecret : webhookKey;
-                        if (!authService.verifyHmacSignature(payload, webhookSignature, secretForHmac)) {
+                        if (signingSecret == null) {
+                            LOG.warnf("No signing secret configured for partner %s — rejecting", partnerId);
+                            return Uni.createFrom().failure(new NotAuthorizedException("Webhook signing secret not configured for this endpoint"));
+                        }
+                        if (!authService.verifyHmacSignature(payload, webhookSignature, signingSecret)) {
                             LOG.warnf("HMAC signature mismatch for partner: %s, event: %s", partnerId, eventType);
                             return Uni.createFrom().failure(new NotAuthorizedException("Invalid webhook signature"));
                         }
@@ -89,15 +92,15 @@ public class WebhookService {
             });
     }
 
+    // WR-V1-M3 FIX: Remove spoofable IP headers from allow-list
     private static final Set<String> ALLOWED_HEADERS = Set.of(
             "content-type", "user-agent", "x-request-id", "x-correlation-id",
-            "x-forwarded-for", "x-real-ip", "accept", "accept-encoding",
+            "accept", "accept-encoding",
             "idempotency-key", "x-idempotency-key"
     );
 
     /**
      * Y9 FIX: Check if a webhook with this idempotency key was already processed.
-     * Uses a simple DB check with 24h TTL (old records cleaned by cron).
      */
     public Uni<Boolean> checkIdempotency(String idempotencyKey) {
         String sql = """
@@ -112,43 +115,54 @@ public class WebhookService {
     @Inject
     PgPool client;
 
+    /**
+     * WR-V1-H1 FIX: Non-blocking usage event publish.
+     * Uses fire-and-forget Uni chain instead of blocking executeAndAwait.
+     * WR-V1-H6 FIX: On lookup failure, skip usage event (don't invent org_id).
+     */
     private void publishUsageEvent(String partnerId, String eventId) {
-        try {
-            // Resolve org_id from partner via DB (partners table has tenant_id → organizations)
-            String orgId = resolveOrgIdFromPartner(partnerId);
-
-            JsonObject usageEvent = new JsonObject()
-                .put("id", UUID.randomUUID().toString())
-                .put("org_id", orgId)
-                .put("service", "webhook-receiver")
-                .put("metric", "webhook_events")
-                .put("qty", 1)
-                .put("ts", Instant.now().toString())
-                .put("request_id", eventId)
-                .put("metadata", new JsonObject().put("partner_id", partnerId));
-
-            usageEventsEmitter.send(Record.of(orgId, usageEvent.encode()));
-        } catch (Exception e) {
-            // Graceful degradation: never let billing break webhook processing
-            LOG.warnf("Failed to publish usage event for webhook: %s", e.getMessage());
-        }
+        // Non-blocking org resolution + publish
+        resolveOrgIdAsync(partnerId)
+            .subscribe().with(
+                orgId -> {
+                    if (orgId == null) {
+                        // WR-V1-H6: Don't emit usage with fake org — skip silently
+                        LOG.debugf("Skipping usage event: could not resolve org for partner %s", partnerId);
+                        return;
+                    }
+                    JsonObject usageEvent = new JsonObject()
+                        .put("id", UUID.randomUUID().toString())
+                        .put("org_id", orgId)
+                        .put("service", "webhook-receiver")
+                        .put("metric", "webhook_events")
+                        .put("qty", 1)
+                        .put("ts", Instant.now().toString())
+                        .put("request_id", eventId)
+                        .put("metadata", new JsonObject().put("partner_id", partnerId));
+                    try {
+                        usageEventsEmitter.send(Record.of(orgId, usageEvent.encode()));
+                    } catch (Exception e) {
+                        LOG.warnf("Failed to send usage event to Kafka: %s", e.getMessage());
+                    }
+                },
+                error -> LOG.warnf("Usage event publish failed for partner %s: %s", partnerId, error.getMessage())
+            );
     }
 
-    private String resolveOrgIdFromPartner(String partnerId) {
-        // Look up org from partner's tenant → organization mapping
-        // For single-tenant deployment, use the default org
-        try {
-            var rowSet = client.preparedQuery(
-                "SELECT o.id FROM organizations o JOIN partners p ON p.tenant_id = o.tenant_id WHERE p.id = $1::uuid LIMIT 1"
-            ).executeAndAwait(Tuple.of(partnerId));
+    /**
+     * WR-V1-H1 FIX: Non-blocking org resolution via reactive PgPool.
+     */
+    private Uni<String> resolveOrgIdAsync(String partnerId) {
+        return client.preparedQuery(
+            "SELECT o.id FROM organizations o JOIN partners p ON p.tenant_id = o.tenant_id WHERE p.id = $1::uuid LIMIT 1"
+        ).execute(Tuple.of(partnerId))
+        .map(rowSet -> {
             if (rowSet.size() > 0) {
                 return rowSet.iterator().next().getUUID("id").toString();
             }
-        } catch (Exception e) {
-            LOG.debugf("Could not resolve org for partner %s: %s", partnerId, e.getMessage());
-        }
-        // Fallback to default org
-        return "a0000000-0000-0000-0000-000000000001";
+            return null;
+        })
+        .onFailure().recoverWithItem((String) null);
     }
 
     private JsonObject extractHeaders(HttpHeaders headers) {
