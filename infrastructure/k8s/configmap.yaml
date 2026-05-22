@@ -1,45 +1,26 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: transformer-config
-  namespace: etl-solutions
-data:
-  NODE_ENV: "production"
-  LOG_LEVEL: "info"
-  PORT: "3000"
-  KAFKA_BROKERS: "kafka-0.kafka-headless:9092,kafka-1.kafka-headless:9092,kafka-2.kafka-headless:9092"
-  KAFKA_CLIENT_ID: "etl-solutions-transformer"
-  KAFKA_GROUP_ID: "transformer-group"
-  KAFKA_RAW_TOPIC: "partner.raw.events"
-  KAFKA_CANONICAL_TOPIC: "canonical.events"
-  KAFKA_DLQ_TOPIC: "transformation.dlq"
-  KAFKA_RETRY_TOPIC: "transformation.retry"
-  WORKER_POOL_SIZE: "4"
-  METRICS_PORT: "9090"
-  ENABLE_TRACING: "true"
-  ENABLE_METRICS: "true"
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
   name: business-service-config
-  namespace: etl-solutions
+  namespace: canonbridge
+  labels:
+    app.kubernetes.io/name: business-service
+    app.kubernetes.io/part-of: canonbridge
 data:
   application.properties: |
     # Quarkus configuration
     quarkus.http.port=8080
     quarkus.log.level=INFO
     
-    # Database
+    # Database (SSL enabled for production)
     quarkus.datasource.db-kind=postgresql
-    quarkus.datasource.jdbc.url=jdbc:postgresql://postgres:5432/etldb
+    quarkus.datasource.jdbc.url=jdbc:postgresql://postgres.canonbridge.svc.cluster.local:5432/etldb?sslmode=require
     quarkus.datasource.username=etluser
     quarkus.datasource.jdbc.max-size=50
     quarkus.datasource.jdbc.min-size=10
     
     # Kafka
-    kafka.bootstrap.servers=kafka-0.kafka-headless:9092,kafka-1.kafka-headless:9092,kafka-2.kafka-headless:9092
+    kafka.bootstrap.servers=kafka-0.kafka-headless.canonbridge.svc.cluster.local:9092,kafka-1.kafka-headless.canonbridge.svc.cluster.local:9092,kafka-2.kafka-headless.canonbridge.svc.cluster.local:9092
     mp.messaging.incoming.canonical-events.connector=smallrye-kafka
     mp.messaging.incoming.canonical-events.topic=canonical.events
     mp.messaging.incoming.canonical-events.group.id=business-service-group

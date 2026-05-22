@@ -5,6 +5,8 @@ metadata:
   namespace: canonbridge
   labels:
     app: transformer
+    app.kubernetes.io/name: transformer
+    app.kubernetes.io/part-of: canonbridge
 data:
   # HTTP Server
   PORT: "8080"
@@ -15,7 +17,7 @@ data:
   
   # Kafka
   KAFKA_ENABLED: "true"
-  KAFKA_BROKERS: "kafka-service.canonbridge.svc.cluster.local:9092"
+  KAFKA_BROKERS: "kafka-0.kafka-headless.canonbridge.svc.cluster.local:9092,kafka-1.kafka-headless.canonbridge.svc.cluster.local:9092,kafka-2.kafka-headless.canonbridge.svc.cluster.local:9092"
   KAFKA_GROUP_ID: "canonbridge-transformer"
   KAFKA_FALLBACK_DLQ_TOPIC: "canonbridge.dlq"
   KAFKA_CONNECT_RETRIES: "10"
@@ -27,3 +29,8 @@ data:
   
   # Mappings
   MAPPINGS_ROOT: "/mappings"
+  
+  # OpenTelemetry
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.canonbridge.svc.cluster.local:4318"
+  ENABLE_TRACING: "true"
+  ENABLE_METRICS: "true"

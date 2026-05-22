@@ -1,8 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: etl-solutions
+  name: canonbridge
   labels:
-    name: etl-solutions
-    environment: production
-    app: etl-solutions
+    name: canonbridge
+    app.kubernetes.io/part-of: canonbridge
