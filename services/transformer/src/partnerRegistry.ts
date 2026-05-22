@@ -83,7 +83,13 @@ export class PartnerRegistry {
     await this.loadDatabaseConfigs(next, nextByTopic);
 
     if (next.size === 0) {
-      throw new Error(`No inbound mapping configs found under ${path.join(this.mappingsRoot, 'partners', '**', 'config.json')} or mapping_drafts database source`);
+      // [T-V1-L5] On hot-reload (/v1/admin/reload), don't crash if DB is temporarily empty.
+      // Only throw on initial boot (when byKey is not yet populated).
+      if (this.byKey.size === 0) {
+        throw new Error(`No inbound mapping configs found under ${path.join(this.mappingsRoot, 'partners', '**', 'config.json')} or mapping_drafts database source`);
+      }
+      // Hot-reload with empty result — keep existing configs, log warning
+      return;
     }
 
     // Atomic swap — only replace if load succeeded

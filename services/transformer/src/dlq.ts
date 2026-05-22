@@ -2,6 +2,7 @@ import { Pool } from 'pg';
 
 export interface DlqRecord {
   id: string;
+  tenantId: string | null;
   sourceTopic: string;
   sourcePartition: number | null;
   sourceOffset: string | null;
@@ -16,6 +17,7 @@ export interface DlqRecord {
 }
 
 export type CreateDlqRecordInput = {
+  tenantId?: string;
   sourceTopic: string;
   sourcePartition?: number;
   sourceOffset?: string;
@@ -32,7 +34,9 @@ export class DlqRepository {
   constructor(connectionString: string) {
     this.pool = new Pool({
       connectionString,
-      max: 20,
+      // [T-V1-L6] Reduced from 20 to 5 — multiply by services (outbox + dlq = 10 per pod).
+      // Use PgBouncer for connection pooling in multi-replica deployments.
+      max: 5,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000,
     });
@@ -45,6 +49,7 @@ export class DlqRepository {
       await client.query(`
         CREATE TABLE IF NOT EXISTS dead_letter_queue (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          tenant_id VARCHAR(255),
           source_topic VARCHAR(255) NOT NULL,
           source_partition INTEGER,
           source_offset VARCHAR(100),
@@ -67,6 +72,11 @@ export class DlqRepository {
         ON dead_letter_queue (created_at DESC)
         WHERE redriven_at IS NULL
       `);
+      // [T-V1-H5] Index for tenant-scoped queries
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_dead_letter_queue_tenant
+        ON dead_letter_queue (tenant_id, created_at DESC)
+      `);
     } finally {
       client.release();
     }
@@ -75,11 +85,12 @@ export class DlqRepository {
   async create(input: CreateDlqRecordInput): Promise<string> {
     const result = await this.pool.query(
       `INSERT INTO dead_letter_queue (
-        source_topic, source_partition, source_offset, original_payload, raw_payload,
+        tenant_id, source_topic, source_partition, source_offset, original_payload, raw_payload,
         error_stage, error_message, error_details
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING id`,
       [
+        input.tenantId ?? null,
         input.sourceTopic,
         input.sourcePartition ?? null,
         input.sourceOffset ?? null,
@@ -94,26 +105,39 @@ export class DlqRepository {
     return result.rows[0].id as string;
   }
 
-  async list(limit: number, offset: number): Promise<DlqRecord[]> {
-    const result = await this.pool.query(
-      `SELECT id, source_topic, source_partition, source_offset, original_payload, raw_payload,
-              error_stage, error_message, error_details, redriven_at, redrive_attempts, created_at
-       FROM dead_letter_queue
-       ORDER BY created_at DESC
-       LIMIT $1 OFFSET $2`,
-      [limit, offset],
-    );
+  async list(limit: number, offset: number, tenantId?: string): Promise<DlqRecord[]> {
+    // [T-V1-H5] Tenant-scoped queries when tenantId is provided
+    const query = tenantId
+      ? `SELECT id, tenant_id, source_topic, source_partition, source_offset, original_payload, raw_payload,
+                error_stage, error_message, error_details, redriven_at, redrive_attempts, created_at
+         FROM dead_letter_queue
+         WHERE tenant_id = $3
+         ORDER BY created_at DESC
+         LIMIT $1 OFFSET $2`
+      : `SELECT id, tenant_id, source_topic, source_partition, source_offset, original_payload, raw_payload,
+                error_stage, error_message, error_details, redriven_at, redrive_attempts, created_at
+         FROM dead_letter_queue
+         ORDER BY created_at DESC
+         LIMIT $1 OFFSET $2`;
+
+    const params = tenantId ? [limit, offset, tenantId] : [limit, offset];
+    const result = await this.pool.query(query, params);
     return result.rows.map(this.mapRow);
   }
 
-  async getById(id: string): Promise<DlqRecord | undefined> {
-    const result = await this.pool.query(
-      `SELECT id, source_topic, source_partition, source_offset, original_payload, raw_payload,
-              error_stage, error_message, error_details, redriven_at, redrive_attempts, created_at
-       FROM dead_letter_queue
-       WHERE id = $1`,
-      [id],
-    );
+  async getById(id: string, tenantId?: string): Promise<DlqRecord | undefined> {
+    const query = tenantId
+      ? `SELECT id, tenant_id, source_topic, source_partition, source_offset, original_payload, raw_payload,
+                error_stage, error_message, error_details, redriven_at, redrive_attempts, created_at
+         FROM dead_letter_queue
+         WHERE id = $1 AND tenant_id = $2`
+      : `SELECT id, tenant_id, source_topic, source_partition, source_offset, original_payload, raw_payload,
+                error_stage, error_message, error_details, redriven_at, redrive_attempts, created_at
+         FROM dead_letter_queue
+         WHERE id = $1`;
+
+    const params = tenantId ? [id, tenantId] : [id];
+    const result = await this.pool.query(query, params);
     if (result.rows.length === 0) return undefined;
     return this.mapRow(result.rows[0]);
   }
@@ -135,6 +159,7 @@ export class DlqRepository {
   private mapRow(row: Record<string, unknown>): DlqRecord {
     return {
       id: String(row.id),
+      tenantId: row.tenant_id === null ? null : String(row.tenant_id),
       sourceTopic: String(row.source_topic),
       sourcePartition: row.source_partition === null ? null : Number(row.source_partition),
       sourceOffset: row.source_offset === null ? null : String(row.source_offset),
