@@ -2,6 +2,12 @@ import { Kafka, type Producer } from 'kafkajs';
 import { randomUUID } from 'node:crypto';
 import type { Env } from './env.js';
 
+// [T-V1-L9] Logger interface to avoid console.* bypassing pino
+interface UsageLogger {
+  warn(obj: Record<string, unknown>, msg: string): void;
+  error(obj: Record<string, unknown>, msg: string): void;
+}
+
 export interface UsageEvent {
   id: string;
   org_id: string;
@@ -26,9 +32,15 @@ export class UsagePublisher {
   private readonly service = 'transformer';
   private droppedCount = 0;
   private readonly logLevel: string;
+  private logger: UsageLogger | null = null;
 
   constructor(private readonly env: Env) {
     this.logLevel = env.logLevel;
+  }
+
+  /** Set a structured logger (call after Fastify is initialized). */
+  setLogger(logger: UsageLogger): void {
+    this.logger = logger;
   }
 
   /**
@@ -67,8 +79,9 @@ export class UsagePublisher {
       // T-Y1 FIX: Track dropped usage events for alerting
       this.droppedCount++;
       if (this.droppedCount % 100 === 1 || this.env.logLevel === 'debug') {
-        console.warn(
-          `[UsagePublisher] Transform request missing org_id — usage event dropped (total dropped: ${this.droppedCount})`,
+        this.logger?.warn(
+          { droppedCount: this.droppedCount },
+          'Transform request missing org_id — usage event dropped',
         );
       }
       return;
@@ -101,8 +114,10 @@ export class UsagePublisher {
       // V5-M5 FIX: Log dropped events with full context for recovery
       this.droppedCount++;
       if (this.env.logLevel === 'debug' || this.droppedCount % 100 === 0) {
-        console.error(`[UsagePublisher] Failed to publish usage event (dropped=${this.droppedCount}):`, err);
-        console.error(`[UsagePublisher] Dropped event: org=${orgId} metric=transform_requests requestId=${requestId}`);
+        this.logger?.error(
+          { droppedCount: this.droppedCount, orgId, requestId, err },
+          'Failed to publish usage event',
+        );
       }
     }
   }
@@ -123,7 +138,7 @@ export class UsagePublisher {
       });
     } catch (err) {
       if (this.env.logLevel === 'debug') {
-        console.error('[UsagePublisher] Failed to publish usage batch:', err);
+        this.logger?.error({ err }, 'Failed to publish usage batch');
       }
     }
   }

@@ -16,6 +16,17 @@ import { existsSync } from 'node:fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// [T-V1-L9] Minimal logger interface to avoid console.error bypassing pino
+interface PoolLogger {
+  error(msg: string, ...args: unknown[]): void;
+  warn(msg: string, ...args: unknown[]): void;
+}
+
+const nullLogger: PoolLogger = {
+  error() {},
+  warn() {},
+};
+
 export interface EvaluationTask {
   expression: string;
   input: unknown;
@@ -42,9 +53,14 @@ export class WorkerPool {
   private nextWorkerId = 0;
   // [T-V1-M2] Cap queue length to prevent OOM under sustained load
   private readonly maxQueueLength: number;
+  private readonly logger: PoolLogger;
 
-  constructor(private readonly poolSize: number = Math.max(1, cpus().length - 1)) {
+  constructor(
+    private readonly poolSize: number = Math.max(1, cpus().length - 1),
+    logger?: PoolLogger,
+  ) {
     this.maxQueueLength = 2 * this.poolSize;
+    this.logger = logger ?? nullLogger;
   }
 
   async start(): Promise<void> {
@@ -103,14 +119,14 @@ export class WorkerPool {
     const worker = new Worker(workerScript, workerOptions);
 
     worker.on('error', (err) => {
-      console.error(`Worker ${workerId} error:`, err);
+      this.logger.error(`Worker ${workerId} error:`, err);
       this.removeWorker(worker);
     });
 
     worker.on('exit', (code) => {
       this.removeWorker(worker);
       if (code !== 0 && !this.shuttingDown) {
-        console.error(`Worker ${workerId} exited with code ${code}`);
+        this.logger.error(`Worker ${workerId} exited with code ${code}`);
       }
     });
 
@@ -139,7 +155,7 @@ export class WorkerPool {
       this.removeWorker(worker);
       pending.resolve({ ok: false, error: `Worker evaluation timed out after ${pending.timeoutMs}ms` });
       worker.terminate()
-        .catch((err) => console.error('Failed to terminate timed-out worker:', err))
+        .catch((err) => this.logger.error('Failed to terminate timed-out worker:', err))
         .finally(() => {
           if (!this.shuttingDown) {
             this.addWorker();

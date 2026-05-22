@@ -1,11 +1,45 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TransformEngine } from './transformEngine.js';
+import type { Env } from './env.js';
 import { PartnerRegistry } from './partnerRegistry.js';
 import { InMemoryCache } from './cache.js';
 import { writeFile, mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 import http from 'node:http';
+
+
+const testEnv: Env = {
+  mappingsRoot: '',
+  port: 8080,
+  apiKey: undefined,
+  authDisabled: true,
+  corsOrigins: [],
+  kafkaEnabled: false,
+  kafkaBrokers: [],
+  kafkaGroupId: 'test',
+  kafkaFallbackDlqTopic: 'test.dlq',
+  kafkaConnectRetries: 3,
+  kafkaConnectRetryDelayMs: 100,
+  kafkaSslEnabled: false,
+  kafkaSaslMechanism: undefined,
+  kafkaSaslUsername: undefined,
+  kafkaSaslPassword: undefined,
+  redisUrl: undefined,
+  redisCacheTtlSeconds: 3600,
+  workerPoolEnabled: false,
+  workerPoolSize: 0,
+  outboxEnabled: false,
+  outboxDatabaseUrl: undefined,
+  outboxPollIntervalMs: 1000,
+  outboxBatchSize: 100,
+  dlqDatabaseUrl: undefined,
+  dlqMaxRedriveAttempts: 5,
+  logLevel: 'silent',
+  transformMaxPayloadBytes: 2_000_000,
+  enrichmentAllowedHosts: [],
+  enrichmentMaxTimeoutMs: 10000,
+};
 
 describe('TransformEngine', () => {
   let testDir: string;
@@ -67,7 +101,7 @@ describe('TransformEngine', () => {
     registry = new PartnerRegistry(testDir);
     await registry.load();
     const cache = new InMemoryCache();
-    engine = new TransformEngine(testDir, registry, cache);
+    engine = new TransformEngine(testDir, { ...testEnv, mappingsRoot: testDir }, registry, cache);
   });
 
   afterEach(async () => {
@@ -311,7 +345,7 @@ describe('TransformEngine', () => {
     await registry.load();
     // Create new engine with updated registry
     const cache = new InMemoryCache();
-    const newEngine = new TransformEngine(testDir, registry, cache);
+    const newEngine = new TransformEngine(testDir, { ...testEnv, mappingsRoot: testDir }, registry, cache);
 
     const envelope = {
       orderId: 'ORD-456',

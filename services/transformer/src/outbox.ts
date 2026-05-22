@@ -27,7 +27,8 @@ export class OutboxRepository {
   constructor(connectionString: string) {
     this.pool = new Pool({
       connectionString,
-      max: 20,
+      // [T-V1-L6] Reduced from 20 to 5 per pool to avoid exhausting max_connections
+      max: 5,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000,
     });
