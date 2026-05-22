@@ -1,25 +1,27 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { User } from '../models/user.model';
 
 /**
- * Factory that creates a route guard restricting access to specific roles.
- * Usage in routes:
- *   canActivate: [roleGuard('admin', 'operator')]
+ * A-V8-H3 FIX: Role-based route guard.
+ * Restricts access to routes based on the user's role.
+ * Usage: canActivate: [roleGuard('admin', 'operator')]
  */
-export function roleGuard(...allowedRoles: User['role'][]): CanActivateFn {
+export function roleGuard(...allowedRoles: string[]): CanActivateFn {
   return () => {
     const auth = inject(AuthService);
     const router = inject(Router);
+    const user = auth.currentUser();
 
-    const role = auth.userRole();
+    if (!user) {
+      return router.createUrlTree(['/login']);
+    }
 
-    if (role && allowedRoles.includes(role)) {
+    if (allowedRoles.includes(user.role)) {
       return true;
     }
 
-    // Redirect unauthorized users to dashboard with a hint
+    // User doesn't have the required role — redirect to dashboard
     return router.createUrlTree(['/dashboard']);
   };
 }

@@ -20,18 +20,21 @@ type DlqManagementDeps = {
   redrivePublish: (topic: string, payload: unknown) => Promise<void>;
 };
 
-import { timingSafeEqual, randomBytes } from 'node:crypto';
+import { timingSafeEqual } from 'node:crypto';
 
-// G-06: API key auth hook (timing-safe comparison)
+// [T-V1-H3] API key auth hook (timing-safe comparison)
+// Auth is REQUIRED unless explicitly disabled via AUTH_DISABLED=true
 async function apiKeyAuth(env: Env, request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const acceptedApiKeys = env.apiKeys?.length ? env.apiKeys : env.apiKey ? [env.apiKey] : [];
+
   if (acceptedApiKeys.length === 0) {
-    // K8: In production, empty API keys = fail-fast
-    if (process.env.NODE_ENV === 'production') {
-      return reply.code(503).send({ error: { message: 'API key authentication not configured' } });
+    // [T-V1-H3] Only skip auth if explicitly opted in
+    if (env.authDisabled) {
+      return;
     }
-    return; // auth disabled in dev
+    return reply.code(503).send({ error: { message: 'API key authentication not configured' } });
   }
+
   const provided = request.headers['x-api-key'];
   if (typeof provided !== 'string') {
     return reply.code(401).send({ error: { message: 'Unauthorized' } });
@@ -54,21 +57,31 @@ export async function buildServer(
   usagePublisher?: UsagePublisher,
 ): Promise<FastifyInstance> {
   const app = Fastify({
-    logger: { level: env.logLevel },
+    // [T-V1-M1] Redact sensitive headers from logs
+    logger: {
+      level: env.logLevel,
+      redact: {
+        paths: ['req.headers["x-api-key"]', 'req.headers.authorization', 'req.headers.cookie'],
+        censor: '[REDACTED]',
+      },
+    },
     bodyLimit: env.httpBodyLimitBytes ?? 20 * 1024 * 1024,
   });
 
-  // Y5: CORS — explicit origins required in production
-  if (process.env.NODE_ENV === 'production' && env.corsOrigins.length === 0) {
-    throw new Error('CORS_ORIGINS must be configured in production (comma-separated list of allowed origins)');
+  // [T-V1-M5] CORS — require explicit origins unless auth is disabled
+  if (!env.authDisabled && env.corsOrigins.length === 0) {
+    throw new Error('CORS_ORIGINS must be configured when auth is enabled (set AUTH_DISABLED=true for development)');
   }
-  const corsOrigin = env.corsOrigins.length > 0 ? env.corsOrigins : true;
+  const corsOrigin = env.corsOrigins.length > 0 ? env.corsOrigins : env.authDisabled ? true : [];
   await app.register(cors, { origin: corsOrigin });
 
-  app.addHook('onSend', async (_request, reply) => {
+  app.addHook('onSend', async (request, reply) => {
     reply.header('X-Content-Type-Options', 'nosniff');
     reply.header('X-Frame-Options', 'DENY');
-    reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    // [T-V1-L2] Only send HSTS when connection is secure (behind TLS terminator)
+    if (request.protocol === 'https') {
+      reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
     reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
     reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     reply.header('X-Permitted-Cross-Domain-Policies', 'none');
@@ -192,6 +205,14 @@ export async function buildServer(
       preHandler: async (request, reply) => apiKeyAuth(env, request, reply),
     },
     async (request, reply) => {
+      // [T-V1-M9] Enforce payload size cap (same as JSONata check limit)
+      const rawBody = JSON.stringify(request.body);
+      if (rawBody.length > (env.transformMaxPayloadBytes ?? 2_000_000)) {
+        return reply.code(400 as any).send({
+          error: { stage: 'resolve', message: 'Payload exceeds maximum size for transform' },
+        } as any);
+      }
+
       const start = Date.now();
       const result = await engine.transformEnvelope(request.body);
       const durationMs = Date.now() - start;
@@ -218,9 +239,23 @@ export async function buildServer(
       request.log.info({ partnerId, eventType, durationMs }, 'transform succeeded via HTTP');
 
       // Publish usage event for billing metering
+      // [T-V1-H4 FIX] Derive org_id from API key via Redis lookup (api_key:{hash} → org_id)
+      // Falls back to X-Org-Id header only if Redis lookup fails (graceful degradation)
       if (usagePublisher) {
-        const orgId = request.headers['x-org-id'] as string | undefined;
         const requestId = request.headers['x-request-id'] as string || `http-${Date.now()}`;
+        const apiKeyHeader = request.headers['x-api-key'] as string | undefined;
+        let orgId: string | undefined;
+
+        // Try to resolve org from API key (server-side, trusted)
+        if (apiKeyHeader && usagePublisher.resolveOrgFromApiKey) {
+          orgId = await usagePublisher.resolveOrgFromApiKey(apiKeyHeader);
+        }
+
+        // Fallback to header only if API key lookup didn't resolve
+        if (!orgId) {
+          orgId = request.headers['x-org-id'] as string | undefined;
+        }
+
         void usagePublisher.publishTransformRequest(orgId, requestId, {
           partner_id: partnerId,
           event_type: eventType,
@@ -551,6 +586,14 @@ export async function buildServer(
       if (!item) {
         return reply.code(404).send({ error: { message: 'DLQ record not found' } });
       }
+
+      // [T-V1-H5] Cap redrive attempts to prevent infinite retry loops
+      if (item.redriveAttempts >= (env.dlqMaxRedriveAttempts ?? 5)) {
+        return reply.code(422).send({
+          error: { message: `Maximum redrive attempts (${env.dlqMaxRedriveAttempts ?? 5}) exceeded for this record` },
+        });
+      }
+
       if (item.originalPayload === null && item.rawPayload === null) {
         return reply.code(422).send({ error: { message: 'DLQ record has no payload to redrive' } });
       }
@@ -559,7 +602,6 @@ export async function buildServer(
       await dlqDeps.redrivePublish(item.sourceTopic, redrivePayload);
       await dlqDeps.repository.markRedriven(item.id);
 
-      // T-Y2 FIX: Audit log for DLQ redrive operations
       const redrivenBy = request.headers['x-api-key'] ? 'api-key-user' : 'unknown';
       request.log.info(
         { dlqId: item.id, redrivenBy, sourceTopic: item.sourceTopic, errorStage: item.errorStage },

@@ -33,7 +33,7 @@ async function main(): Promise<void> {
     await workerPool.start();
   }
   
-  const engine = new TransformEngine(env.mappingsRoot, registry, cache, workerPool);
+  const engine = new TransformEngine(env.mappingsRoot, env, registry, cache, workerPool);
   
   // G-18: Initialize outbox pattern if enabled
   let outboxRepo: OutboxRepository | undefined;
@@ -142,10 +142,10 @@ async function main(): Promise<void> {
   };
 
   process.on('SIGINT', () => {
-    void stop().then(() => process.exit(0));
+    void stop().then(() => process.exit(0)).catch(() => process.exit(1));
   });
   process.on('SIGTERM', () => {
-    void stop().then(() => process.exit(0));
+    void stop().then(() => process.exit(0)).catch(() => process.exit(1));
   });
 }
 

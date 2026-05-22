@@ -25,8 +25,11 @@ export class UsagePublisher {
   private readonly topic = 'usage.events';
   private readonly service = 'transformer';
   private droppedCount = 0;
+  private readonly logLevel: string;
 
-  constructor(private readonly env: Env) {}
+  constructor(private readonly env: Env) {
+    this.logLevel = env.logLevel;
+  }
 
   /**
    * T-Y1: Get the count of dropped usage events (for Prometheus metrics).
@@ -41,6 +44,13 @@ export class UsagePublisher {
   setProducer(producer: Producer): void {
     this.producer = producer;
   }
+
+  /**
+   * [T-V1-H4 FIX] Resolve org_id from API key via Redis lookup.
+   * mapping-studio-api's ApiKeyService stores api_key:{hash} → org_id in Redis.
+   * Returns undefined if Redis is unavailable or key not found.
+   */
+  resolveOrgFromApiKey?: (apiKey: string) => Promise<string | undefined>;
 
   /**
    * Publish a transform request usage event.

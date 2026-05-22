@@ -11,6 +11,8 @@ export interface Env {
   // HTTP auth
   apiKey: string | undefined;
   apiKeys?: string[];
+  /** [T-V1-H3] Explicit opt-in to disable auth (must be set to 'true') */
+  authDisabled: boolean;
   corsOrigins: string[];
   httpBodyLimitBytes?: number;
   docsEnabled?: boolean;
@@ -39,8 +41,15 @@ export interface Env {
   outboxBatchSize: number;
   // DLQ persistence
   dlqDatabaseUrl: string | undefined;
+  // DLQ redrive limits
+  dlqMaxRedriveAttempts: number;
   // Logging
   logLevel: string;
+  // [T-V1-M9] Transform payload size cap
+  transformMaxPayloadBytes: number;
+  // [T-V1-H1] Enrichment URL allow-list
+  enrichmentAllowedHosts: string[];
+  enrichmentMaxTimeoutMs: number;
 }
 
 export function loadEnv(): Env {
@@ -70,10 +79,13 @@ export function loadEnv(): Env {
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean),
+    // [T-V1-H3] Explicit opt-in to disable auth — treat missing NODE_ENV as production
+    authDisabled: process.env.AUTH_DISABLED === 'true',
     // G-06: explicit CORS origins; empty = allow all (dev default)
     corsOrigins,
     httpBodyLimitBytes: Number.parseInt(process.env.HTTP_BODY_LIMIT_BYTES ?? String(20 * 1024 * 1024), 10),
-    docsEnabled: process.env.TRANSFORMER_DOCS_ENABLED === 'true' || process.env.NODE_ENV !== 'production',
+    // [T-V1-H3] Docs only enabled with explicit opt-in or AUTH_DISABLED=true
+    docsEnabled: process.env.TRANSFORMER_DOCS_ENABLED === 'true' || process.env.AUTH_DISABLED === 'true',
     // Kafka
     kafkaEnabled: process.env.KAFKA_ENABLED === 'true',
     kafkaBrokers: (process.env.KAFKA_BROKERS ?? 'localhost:9092').split(',').map((s) => s.trim()),
@@ -100,6 +112,16 @@ export function loadEnv(): Env {
     outboxPollIntervalMs: Number.parseInt(process.env.OUTBOX_POLL_INTERVAL_MS ?? '1000', 10),
     outboxBatchSize: Number.parseInt(process.env.OUTBOX_BATCH_SIZE ?? '100', 10),
     dlqDatabaseUrl: process.env.DLQ_DATABASE_URL || process.env.OUTBOX_DATABASE_URL || undefined,
+    // [T-V1-H5] DLQ redrive max attempts
+    dlqMaxRedriveAttempts: Number.parseInt(process.env.DLQ_MAX_REDRIVE_ATTEMPTS ?? '5', 10),
     logLevel: process.env.LOG_LEVEL ?? 'info',
+    // [T-V1-M9] Transform payload size cap (default 2MB, same as JSONata check)
+    transformMaxPayloadBytes: Number.parseInt(process.env.TRANSFORM_MAX_PAYLOAD_BYTES ?? '2000000', 10),
+    // [T-V1-H1] Enrichment URL allow-list and timeout cap
+    enrichmentAllowedHosts: (process.env.ENRICHMENT_ALLOWED_HOSTS ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+    enrichmentMaxTimeoutMs: Number.parseInt(process.env.ENRICHMENT_MAX_TIMEOUT_MS ?? '10000', 10),
   };
 }
