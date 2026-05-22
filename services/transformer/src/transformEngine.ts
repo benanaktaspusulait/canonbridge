@@ -295,7 +295,7 @@ export class TransformEngine {
       // Note: Worker pool is disabled by default (WORKER_POOL_ENABLED=false)
       // For most workloads, main thread evaluation is sufficient
       if (this.workerPool && compiled.mappingText) {
-        const result = await this.workerPool.evaluate(compiled.mappingText, envelope);
+        const result = await this.workerPool.evaluate(compiled.mappingText, envelope, config.timeoutMs ?? 5000);
         if (!result.ok) {
           return {
             ok: false,
@@ -307,7 +307,11 @@ export class TransformEngine {
         transformed = result.result;
       } else {
         // Fallback to main thread evaluation (default)
-        transformed = await compiled.evaluate(envelope);
+        transformed = await withTimeout(
+          compiled.evaluate(envelope),
+          config.timeoutMs ?? 5000,
+          'JSONata evaluation',
+        );
       }
     } catch (err) {
       return {
@@ -330,6 +334,20 @@ export class TransformEngine {
     }
 
     return { ok: true, canonical: transformed, durationMs: elapsed() };
+  }
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timeout = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
   }
 }
 

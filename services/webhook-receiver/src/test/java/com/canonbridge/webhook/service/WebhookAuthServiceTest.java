@@ -94,6 +94,34 @@ class WebhookAuthServiceTest {
         );
     }
 
+    @Test
+    void verifiesGithubStyleHexSignature() {
+        String payload = "{\"event\":\"created\"}";
+        String secret = "webhook-secret";
+        String signature = "sha256=" + webhookAuthService.computeHmac(payload, secret);
+
+        assertTrue(webhookAuthService.verifyHmacSignature(payload, signature, secret));
+    }
+
+    @Test
+    void verifiesShopifyStyleBase64Signature() {
+        String payload = "{\"event\":\"created\"}";
+        String secret = "webhook-secret";
+        String signature = webhookAuthService.computeHmacBase64(payload, secret);
+
+        assertTrue(webhookAuthService.verifyHmacSignature(payload, signature, secret));
+    }
+
+    @Test
+    void verifiesStripeStyleTimestampedSignature() {
+        String payload = "{\"event\":\"created\"}";
+        String secret = "webhook-secret";
+        String timestamp = "1716200000";
+        String signature = webhookAuthService.computeHmac(timestamp + "." + payload, secret);
+
+        assertTrue(webhookAuthService.verifyHmacSignature(payload, "t=" + timestamp + ",v1=" + signature, secret));
+    }
+
     private RowSet<Row> mockRowSetWithHash(String hash) {
         RowSet<Row> rowSet = Mockito.mock(RowSet.class);
         Row row = Mockito.mock(Row.class);

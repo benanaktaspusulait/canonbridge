@@ -12,7 +12,9 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -23,6 +25,7 @@ public class JwtService {
     private static final Base64.Encoder BASE64_URL_ENCODER = Base64.getUrlEncoder().withoutPadding();
     private static final Base64.Decoder BASE64_URL_DECODER = Base64.getUrlDecoder();
     private static final TypeReference<Map<String, Object>> JSON_MAP = new TypeReference<>() {};
+    private final Set<String> revokedTokenIds = ConcurrentHashMap.newKeySet();
 
     @ConfigProperty(name = "canonbridge.jwt.secret")
     String jwtSecret;
@@ -43,6 +46,7 @@ public class JwtService {
     public String generateToken(User user) {
         long issuedAt = Instant.now().getEpochSecond();
         long expiry = issuedAt + resolvedTtlSeconds();
+        String tokenId = UUID.randomUUID().toString();
 
         Map<String, Object> header = Map.of(
                 "alg", "HS256",
@@ -54,7 +58,9 @@ public class JwtService {
                 "email", user.getEmail(),
                 "role", user.getRole(),
                 "tenant_id", user.getTenantId(),
+                "jti", tokenId,
                 "iat", issuedAt,
+                "nbf", issuedAt,
                 "exp", expiry
         );
 
@@ -88,8 +94,18 @@ public class JwtService {
                 return Optional.empty();
             }
 
+            long notBefore = longClaim(payload.get("nbf"));
+            if (Instant.now().getEpochSecond() < notBefore) {
+                return Optional.empty();
+            }
+
             long expiry = longClaim(payload.get("exp"));
             if (Instant.now().getEpochSecond() >= expiry) {
+                return Optional.empty();
+            }
+
+            String tokenId = stringClaim(payload.get("jti"));
+            if (revokedTokenIds.contains(tokenId)) {
                 return Optional.empty();
             }
 
@@ -98,11 +114,18 @@ public class JwtService {
                     stringClaim(payload.get("email")),
                     stringClaim(payload.get("role")),
                     stringClaim(payload.get("tenant_id")),
+                    tokenId,
                     expiry
             ));
         } catch (Exception error) {
             return Optional.empty();
         }
+    }
+
+    public boolean revokeToken(String token) {
+        return validateToken(token)
+                .map(claims -> revokedTokenIds.add(claims.tokenId()))
+                .orElse(false);
     }
 
     private String base64UrlJson(Map<String, Object> value) {
@@ -172,6 +195,7 @@ public class JwtService {
             String email,
             String role,
             String tenantId,
+            String tokenId,
             long expiry
     ) {
     }

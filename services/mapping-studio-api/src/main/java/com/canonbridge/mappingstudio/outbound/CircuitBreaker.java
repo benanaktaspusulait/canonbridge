@@ -43,10 +43,10 @@ public class CircuitBreaker {
             case OPEN:
                 if (state.cooldownExpired(cooldownSeconds)) {
                     state.transitionTo(State.HALF_OPEN);
-                    LOG.infof("⚡ Circuit HALF_OPEN for: %s", key);
+                    LOG.infof("Circuit HALF_OPEN for: %s", key);
                     return true; // Allow one test request
                 }
-                LOG.warnf("🚫 Circuit OPEN for: %s (failing fast)", key);
+                LOG.warnf("Circuit OPEN for: %s (failing fast)", key);
                 return false;
             case HALF_OPEN:
             case CLOSED:
@@ -60,7 +60,7 @@ public class CircuitBreaker {
         if (state != null) {
             if (state.getState() == State.HALF_OPEN) {
                 state.transitionTo(State.CLOSED);
-                LOG.infof("✅ Circuit CLOSED for: %s (recovered)", key);
+                LOG.infof("Circuit CLOSED for: %s (recovered)", key);
             }
             state.resetFailures();
         }
@@ -72,7 +72,7 @@ public class CircuitBreaker {
         
         if (failures >= failureThreshold && state.getState() == State.CLOSED) {
             state.transitionTo(State.OPEN);
-            LOG.warnf("🔴 Circuit OPEN for: %s (after %d failures)", key, failures);
+            LOG.warnf("Circuit OPEN for: %s (after %d failures)", key, failures);
         }
     }
 

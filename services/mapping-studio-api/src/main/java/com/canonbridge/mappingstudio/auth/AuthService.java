@@ -65,7 +65,20 @@ public class AuthService {
 
     public Uni<AuthResponse> refresh(String token) {
         return validateToken(token)
-            .map(user -> new AuthResponse(jwtService.generateToken(user), user));
+            .map(user -> {
+                jwtService.revokeToken(token);
+                return new AuthResponse(jwtService.generateToken(user), user);
+            });
+    }
+
+    public Uni<Void> logout(String token) {
+        if (!localJwtEnabled) {
+            return Uni.createFrom().failure(new AuthException("Local JWT authentication is disabled"));
+        }
+        if (!jwtService.revokeToken(token)) {
+            return Uni.createFrom().failure(new AuthException("Invalid or expired token"));
+        }
+        return Uni.createFrom().voidItem();
     }
 
     public static class AuthException extends RuntimeException {

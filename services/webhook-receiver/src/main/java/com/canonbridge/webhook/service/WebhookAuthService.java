@@ -12,6 +12,8 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Base64;
+import java.util.Arrays;
+import java.util.Optional;
 
 @ApplicationScoped
 public class WebhookAuthService {
@@ -51,15 +53,24 @@ public class WebhookAuthService {
         }
 
         try {
-            String expected = computeHmac(payload, secretKey);
-            String provided = signatureHeader.startsWith("sha256=")
-                    ? signatureHeader.substring(7)
-                    : signatureHeader;
+            String trimmed = signatureHeader.trim();
+            Optional<String> stripeTimestamp = signaturePart(trimmed, "t");
+            Optional<String> stripeSignature = signaturePart(trimmed, "v1");
+            if (stripeSignature.isPresent()) {
+                String signedPayload = stripeTimestamp
+                        .map(timestamp -> timestamp + "." + payload)
+                        .orElse(payload);
+                return constantTimeEquals(computeHmac(signedPayload, secretKey), stripeSignature.get());
+            }
 
-            return MessageDigest.isEqual(
-                    expected.getBytes(StandardCharsets.UTF_8),
-                    provided.getBytes(StandardCharsets.UTF_8)
-            );
+            String provided = trimmed.startsWith("sha256=")
+                    ? trimmed.substring("sha256=".length())
+                    : trimmed;
+            String expectedHex = computeHmac(payload, secretKey);
+            String expectedBase64 = computeHmacBase64(payload, secretKey);
+
+            return constantTimeEquals(expectedHex, provided)
+                    || constantTimeEquals(expectedBase64, provided);
         } catch (Exception e) {
             LOG.error("HMAC verification failed", e);
             return false;
@@ -80,6 +91,33 @@ public class WebhookAuthService {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to compute HMAC-SHA256", e);
         }
+    }
+
+    public String computeHmacBase64(String payload, String secretKey) {
+        try {
+            Mac mac = Mac.getInstance(HMAC_ALGORITHM);
+            SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8), HMAC_ALGORITHM);
+            mac.init(keySpec);
+            return Base64.getEncoder().encodeToString(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to compute HMAC-SHA256", e);
+        }
+    }
+
+    private Optional<String> signaturePart(String header, String key) {
+        return Arrays.stream(header.split(","))
+                .map(String::trim)
+                .filter(part -> part.startsWith(key + "="))
+                .map(part -> part.substring((key + "=").length()))
+                .filter(value -> !value.isBlank())
+                .findFirst();
+    }
+
+    private boolean constantTimeEquals(String expected, String provided) {
+        return MessageDigest.isEqual(
+                expected.getBytes(StandardCharsets.UTF_8),
+                provided.getBytes(StandardCharsets.UTF_8)
+        );
     }
 
     private String hashKey(String key) {

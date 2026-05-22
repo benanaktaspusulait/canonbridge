@@ -11,6 +11,7 @@ export interface PartnerMappingConfig {
   inputSchema: string;
   mapping: string;
   canonicalSchema: string;
+  timeoutMs?: number;
   enrichmentSteps?: EnrichmentStepConfig[];
   inlineInputSchema?: unknown;
   inlineCanonicalSchema?: unknown;
@@ -168,6 +169,7 @@ export class PartnerRegistry {
         inlineInputSchema: asSchema(row.input_schema),
         inlineCanonicalSchema: asSchema(row.target_schema_json),
         inlineMappingText: String(row.generated_jsonata),
+        timeoutMs: numberValue(sourceConfig.timeoutMs),
         enrichmentSteps,
         topics: {
           raw: rawTopic,

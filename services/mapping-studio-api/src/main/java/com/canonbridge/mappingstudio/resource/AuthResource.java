@@ -119,6 +119,29 @@ public class AuthResource {
             );
     }
 
+    @POST
+    @Path("/logout")
+    @Operation(summary = "Revoke current local JWT")
+    public Uni<Response> logout(@HeaderParam("Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return Uni.createFrom().item(
+                    Response.status(Response.Status.UNAUTHORIZED)
+                            .entity(new ErrorResponse("Missing or invalid authorization header"))
+                            .build()
+            );
+        }
+
+        String token = authHeader.substring(7);
+        return authService.logout(token)
+                .replaceWith(Response.noContent().build())
+                .onFailure(AuthService.AuthException.class)
+                .recoverWithItem(error ->
+                        Response.status(Response.Status.UNAUTHORIZED)
+                                .entity(new ErrorResponse(error.getMessage()))
+                                .build()
+                );
+    }
+
     private boolean isOidcAuthenticated(SecurityContext securityContext) {
         return securityIdentity != null
                 && !securityIdentity.isAnonymous()
