@@ -7,7 +7,10 @@ metadata:
   namespace: canonbridge
   labels:
     app: transformer
-    prometheus: kube-prometheus
+    app.kubernetes.io/name: transformer
+    app.kubernetes.io/part-of: canonbridge
+    # O4: Use standard label that kube-prometheus-stack expects
+    release: kube-prometheus-stack
 spec:
   selector:
     matchLabels:
@@ -15,7 +18,7 @@ spec:
   endpoints:
     - port: http
       path: /metrics
-      interval: 30s
+      interval: 15s
       scrapeTimeout: 10s
   namespaceSelector:
     matchNames:

@@ -5,6 +5,8 @@ metadata:
   namespace: canonbridge
   labels:
     app: transformer
+    app.kubernetes.io/name: transformer
+    app.kubernetes.io/part-of: canonbridge
     version: v1
 spec:
   replicas: 3
@@ -20,13 +22,21 @@ spec:
     metadata:
       labels:
         app: transformer
+        app.kubernetes.io/name: transformer
+        app.kubernetes.io/part-of: canonbridge
         version: v1
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
         prometheus.io/path: "/metrics"
     spec:
-      # Anti-affinity to spread pods across nodes
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      # Anti-affinity to spread pods across nodes and zones (A5)
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -39,11 +49,18 @@ spec:
                       values:
                         - transformer
                 topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: transformer
       
       containers:
         - name: transformer
           image: canonbridge/transformer:latest
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 8080
@@ -54,12 +71,13 @@ spec:
                 name: transformer-config
           
           env:
+            # K10: optional: false - pod must fail-fast if secret is missing
             - name: API_KEY
               valueFrom:
                 secretKeyRef:
                   name: transformer-secret
                   key: API_KEY
-                  optional: true
+                  optional: false
             - name: KAFKA_SASL_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -79,11 +97,19 @@ spec:
               cpu: "250m"
             limits:
               memory: "1Gi"
-              cpu: "1000m"
+              # CPU limits removed (R1) - CFS throttling antipattern
           
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+          
+          # A7: Separate liveness (process only) from readiness (dependencies)
           livenessProbe:
             httpGet:
-              path: /health
+              path: /health/live
               port: 8080
             initialDelaySeconds: 30
             periodSeconds: 10
@@ -92,7 +118,7 @@ spec:
           
           readinessProbe:
             httpGet:
-              path: /health
+              path: /health/ready
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 5
@@ -101,7 +127,7 @@ spec:
           
           startupProbe:
             httpGet:
-              path: /health
+              path: /health/live
               port: 8080
             initialDelaySeconds: 0
             periodSeconds: 5
@@ -112,12 +138,16 @@ spec:
             - name: mappings
               mountPath: /mappings
               readOnly: true
+            - name: tmp
+              mountPath: /tmp
       
       volumes:
         - name: mappings
           configMap:
             name: mappings-config
             optional: true
+        - name: tmp
+          emptyDir: {}
       
       # Graceful shutdown
       terminationGracePeriodSeconds: 60

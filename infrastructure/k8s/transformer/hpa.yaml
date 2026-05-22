@@ -5,6 +5,8 @@ metadata:
   namespace: canonbridge
   labels:
     app: transformer
+    app.kubernetes.io/name: transformer
+    app.kubernetes.io/part-of: canonbridge
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -13,18 +15,13 @@ spec:
   minReplicas: 3
   maxReplicas: 20
   metrics:
+    # R5: Only CPU metric - memory is antipattern for GC-based runtimes
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
           averageUtilization: 70
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: 80
   behavior:
     scaleUp:
       stabilizationWindowSeconds: 60

@@ -2,9 +2,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres
-  namespace: etl-solutions
+  namespace: canonbridge
   labels:
     app: postgres
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: canonbridge
 spec:
   ports:
     - port: 5432
@@ -18,10 +20,17 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres
-  namespace: etl-solutions
+  namespace: canonbridge
+  labels:
+    app: postgres
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: canonbridge
 spec:
   serviceName: postgres
   replicas: 1
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: postgres
@@ -29,7 +38,15 @@ spec:
     metadata:
       labels:
         app: postgres
+        app.kubernetes.io/name: postgres
+        app.kubernetes.io/part-of: canonbridge
     spec:
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: postgres
           image: postgres:15-alpine
@@ -54,6 +71,26 @@ spec:
                   key: POSTGRES_PASSWORD
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
+            # Enable SSL
+            - name: POSTGRES_INITDB_ARGS
+              value: "--auth-host=scram-sha-256"
+          args:
+            - "-c"
+            - "ssl=on"
+            - "-c"
+            - "ssl_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem"
+            - "-c"
+            - "ssl_key_file=/etc/ssl/private/ssl-cert-snakeoil.key"
+            - "-c"
+            - "shared_preload_libraries=pg_stat_statements"
+            - "-c"
+            - "wal_level=replica"
+            - "-c"
+            - "archive_mode=on"
+            - "-c"
+            - "archive_command=/bin/true"
+            - "-c"
+            - "max_wal_senders=5"
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
@@ -65,7 +102,12 @@ spec:
               cpu: "500m"
             limits:
               memory: "2Gi"
-              cpu: "1000m"
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: false
           livenessProbe:
             exec:
               command:
@@ -74,8 +116,12 @@ spec:
                 - etluser
                 - -d
                 - etldb
+                - -h
+                - "127.0.0.1"
             initialDelaySeconds: 30
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
           readinessProbe:
             exec:
               command:
@@ -84,8 +130,12 @@ spec:
                 - etluser
                 - -d
                 - etldb
-            initialDelaySeconds: 5
+                - -h
+                - "127.0.0.1"
+            initialDelaySeconds: 15
             periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
       volumes:
         - name: init-script
           configMap:
@@ -99,3 +149,147 @@ spec:
         resources:
           requests:
             storage: 100Gi
+
+---
+# PodDisruptionBudget for PostgreSQL (A4)
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-pdb
+  namespace: canonbridge
+  labels:
+    app: postgres
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: canonbridge
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: postgres
+
+---
+# CronJob for PostgreSQL backup (A3)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: canonbridge
+  labels:
+    app: postgres-backup
+    app.kubernetes.io/name: postgres-backup
+    app.kubernetes.io/part-of: canonbridge
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: pg-backup
+              image: postgres:15-alpine
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+                  pg_dump -h postgres.canonbridge.svc.cluster.local \
+                    -U $POSTGRES_USER -d $POSTGRES_DB \
+                    --format=custom --compress=9 \
+                    -f /backups/etldb_${TIMESTAMP}.dump
+                  echo "Backup completed: etldb_${TIMESTAMP}.dump"
+                  # Cleanup backups older than 7 days
+                  find /backups -name "*.dump" -mtime +7 -delete
+              env:
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-secret
+                      key: POSTGRES_USER
+                - name: POSTGRES_DB
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-secret
+                      key: POSTGRES_DB
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-secret
+                      key: POSTGRES_PASSWORD
+              volumeMounts:
+                - name: backup-storage
+                  mountPath: /backups
+              securityContext:
+                runAsNonRoot: true
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+          restartPolicy: OnFailure
+          volumes:
+            - name: backup-storage
+              persistentVolumeClaim:
+                claimName: postgres-backup-pvc
+
+---
+# CronJob for automatic partition creation (P1)
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-partition-manager
+  namespace: canonbridge
+  labels:
+    app: postgres-partition-manager
+    app.kubernetes.io/name: postgres-partition-manager
+    app.kubernetes.io/part-of: canonbridge
+spec:
+  schedule: "0 0 25 * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: partition-creator
+              image: postgres:15-alpine
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  psql -h postgres.canonbridge.svc.cluster.local \
+                    -U $POSTGRES_USER -d $POSTGRES_DB \
+                    -c "SELECT create_monthly_partition();"
+                  echo "Partition creation completed"
+              env:
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-secret
+                      key: POSTGRES_USER
+                - name: POSTGRES_DB
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-secret
+                      key: POSTGRES_DB
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-secret
+                      key: POSTGRES_PASSWORD
+              securityContext:
+                runAsNonRoot: true
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+          restartPolicy: OnFailure

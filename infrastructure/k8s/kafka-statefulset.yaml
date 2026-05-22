@@ -2,13 +2,17 @@ apiVersion: v1
 kind: Service
 metadata:
   name: kafka-headless
-  namespace: etl-solutions
+  namespace: canonbridge
   labels:
     app: kafka
+    app.kubernetes.io/name: kafka
+    app.kubernetes.io/part-of: canonbridge
 spec:
   ports:
     - port: 9092
       name: kafka
+    - port: 9093
+      name: controller
   clusterIP: None
   selector:
     app: kafka
@@ -18,9 +22,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: kafka
-  namespace: etl-solutions
+  namespace: canonbridge
   labels:
     app: kafka
+    app.kubernetes.io/name: kafka
+    app.kubernetes.io/part-of: canonbridge
 spec:
   ports:
     - port: 9092
@@ -33,10 +39,17 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: kafka
-  namespace: etl-solutions
+  namespace: canonbridge
+  labels:
+    app: kafka
+    app.kubernetes.io/name: kafka
+    app.kubernetes.io/part-of: canonbridge
 spec:
   serviceName: kafka-headless
   replicas: 3
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: kafka
@@ -44,24 +57,82 @@ spec:
     metadata:
       labels:
         app: kafka
+        app.kubernetes.io/name: kafka
+        app.kubernetes.io/part-of: canonbridge
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: kafka
+      initContainers:
+        - name: kafka-init
+          image: confluentinc/cp-kafka:7.6.0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              export KAFKA_NODE_ID=${HOSTNAME##*-}
+              echo "node.id=${KAFKA_NODE_ID}" > /tmp/kraft/node-id.properties
+          volumeMounts:
+            - name: kraft-config
+              mountPath: /tmp/kraft
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: false
       containers:
         - name: kafka
-          image: confluentinc/cp-kafka:7.5.0
+          image: confluentinc/cp-kafka:7.6.0
           ports:
             - containerPort: 9092
               name: kafka
+            - containerPort: 9093
+              name: controller
             - containerPort: 9101
               name: jmx
           env:
-            - name: KAFKA_BROKER_ID_COMMAND
-              value: "echo ${HOSTNAME##*-}"
-            - name: KAFKA_ZOOKEEPER_CONNECT
-              value: "zookeeper-0.zookeeper-headless:2181,zookeeper-1.zookeeper-headless:2181,zookeeper-2.zookeeper-headless:2181"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: CLUSTER_ID
+              value: "MkU3OEVBNTcwNTJENDM2Qk"
+            # KRaft mode (no ZooKeeper)
+            - name: KAFKA_PROCESS_ROLES
+              value: "broker,controller"
+            - name: KAFKA_NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+              value: "0@kafka-0.kafka-headless.canonbridge.svc.cluster.local:9093,1@kafka-1.kafka-headless.canonbridge.svc.cluster.local:9093,2@kafka-2.kafka-headless.canonbridge.svc.cluster.local:9093"
+            - name: KAFKA_LISTENERS
+              value: "PLAINTEXT://:9092,CONTROLLER://:9093"
             - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
-              value: "PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
+              value: "PLAINTEXT:SASL_PLAINTEXT,CONTROLLER:SASL_PLAINTEXT"
             - name: KAFKA_ADVERTISED_LISTENERS
-              value: "PLAINTEXT://$(POD_NAME).kafka-headless:9092"
+              value: "PLAINTEXT://$(POD_NAME).kafka-headless.canonbridge.svc.cluster.local:9092"
+            - name: KAFKA_CONTROLLER_LISTENER_NAMES
+              value: "CONTROLLER"
+            - name: KAFKA_INTER_BROKER_LISTENER_NAME
+              value: "PLAINTEXT"
+            # SASL Configuration
+            - name: KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL
+              value: "SCRAM-SHA-512"
+            - name: KAFKA_SASL_ENABLED_MECHANISMS
+              value: "SCRAM-SHA-512"
+            # Replication settings
             - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
               value: "3"
             - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
@@ -72,36 +143,59 @@ spec:
               value: "2"
             - name: KAFKA_DEFAULT_REPLICATION_FACTOR
               value: "3"
+            # JMX
             - name: KAFKA_JMX_PORT
               value: "9101"
             - name: KAFKA_JMX_HOSTNAME
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
+            # Heap settings (R4)
+            - name: KAFKA_HEAP_OPTS
+              value: "-Xmx3G -Xms3G"
+            # Log dirs
+            - name: KAFKA_LOG_DIRS
+              value: "/var/lib/kafka/data"
           volumeMounts:
             - name: kafka-storage
               mountPath: /var/lib/kafka/data
+            - name: kraft-config
+              mountPath: /tmp/kraft
           resources:
             requests:
-              memory: "2Gi"
+              memory: "4Gi"
               cpu: "1000m"
             limits:
-              memory: "4Gi"
-              cpu: "2000m"
+              memory: "5Gi"
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: false
           livenessProbe:
-            tcpSocket:
-              port: 9092
-            initialDelaySeconds: 30
-            periodSeconds: 10
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - kafka-broker-api-versions --bootstrap-server localhost:9092 --command-config /dev/null > /dev/null 2>&1
+            initialDelaySeconds: 45
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 5
           readinessProbe:
-            tcpSocket:
-              port: 9092
-            initialDelaySeconds: 10
-            periodSeconds: 5
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - kafka-broker-api-versions --bootstrap-server localhost:9092 --command-config /dev/null > /dev/null 2>&1
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: kraft-config
+          emptyDir: {}
   volumeClaimTemplates:
     - metadata:
         name: kafka-storage
@@ -111,3 +205,20 @@ spec:
         resources:
           requests:
             storage: 200Gi
+
+---
+# PodDisruptionBudget for Kafka (A4)
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kafka-pdb
+  namespace: canonbridge
+  labels:
+    app: kafka
+    app.kubernetes.io/name: kafka
+    app.kubernetes.io/part-of: canonbridge
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: kafka

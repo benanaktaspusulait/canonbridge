@@ -4,9 +4,7 @@ kind: Kustomization
 namespace: canonbridge
 
 resources:
-  - namespace.yaml
   - configmap.yaml
-  - secret.yaml
   - deployment.yaml
   - service.yaml
   - hpa.yaml
@@ -21,13 +19,3 @@ commonLabels:
 images:
   - name: canonbridge/transformer
     newTag: latest
-
-configMapGenerator:
-  - name: transformer-config
-    behavior: merge
-    literals: []
-
-secretGenerator:
-  - name: transformer-secret
-    behavior: merge
-    literals: []

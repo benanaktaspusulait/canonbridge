@@ -2,9 +2,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: business-service
-  namespace: etl-solutions
+  namespace: canonbridge
   labels:
     app: business-service
+    app.kubernetes.io/name: business-service
+    app.kubernetes.io/part-of: canonbridge
 spec:
   ports:
     - port: 8080
@@ -19,9 +21,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: business-service
-  namespace: etl-solutions
+  namespace: canonbridge
   labels:
     app: business-service
+    app.kubernetes.io/name: business-service
+    app.kubernetes.io/part-of: canonbridge
 spec:
   replicas: 3
   selector:
@@ -31,15 +35,30 @@ spec:
     metadata:
       labels:
         app: business-service
+        app.kubernetes.io/name: business-service
+        app.kubernetes.io/part-of: canonbridge
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
         prometheus.io/path: "/q/metrics"
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: business-service
       containers:
         - name: business-service
-          image: etl-solutions/business-service:latest
-          imagePullPolicy: Always
+          image: canonbridge/business-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
               name: http
@@ -52,18 +71,30 @@ spec:
                 secretKeyRef:
                   name: postgres-secret
                   key: DB_PASSWORD
+            # JVM tuning (R2)
+            - name: JAVA_OPTS_APPEND
+              value: "-XX:MaxRAMPercentage=75 -XX:+UseG1GC -XX:+AlwaysPreTouch -XX:+UseStringDeduplication"
+            # OpenTelemetry (O5)
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://otel-collector.canonbridge.svc.cluster.local:4318"
           resources:
             requests:
               memory: "1Gi"
               cpu: "500m"
             limits:
               memory: "2Gi"
-              cpu: "1000m"
+              # CPU limits removed (R1) - CFS throttling antipattern
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: false
           livenessProbe:
             httpGet:
               path: /health/live
               port: 8080
-            initialDelaySeconds: 30
+            initialDelaySeconds: 0
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
@@ -85,11 +116,15 @@ spec:
             failureThreshold: 30
 
 ---
+# HPA (R5 - removed memory metric, use only CPU)
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: business-service-hpa
-  namespace: etl-solutions
+  namespace: canonbridge
+  labels:
+    app.kubernetes.io/name: business-service
+    app.kubernetes.io/part-of: canonbridge
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -104,12 +139,6 @@ spec:
         target:
           type: Utilization
           averageUtilization: 70
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: 80
   behavior:
     scaleUp:
       stabilizationWindowSeconds: 60
@@ -123,3 +152,20 @@ spec:
         - type: Percent
           value: 10
           periodSeconds: 60
+
+---
+# PodDisruptionBudget (A4)
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: business-service-pdb
+  namespace: canonbridge
+  labels:
+    app: business-service
+    app.kubernetes.io/name: business-service
+    app.kubernetes.io/part-of: canonbridge
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: business-service

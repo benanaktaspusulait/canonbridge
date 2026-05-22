@@ -5,6 +5,13 @@ global:
     cluster: canonbridge-vps
     environment: production
 
+# O2: Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
 rule_files:
   - "alerts/*.yml"
 
@@ -17,19 +24,20 @@ scrape_configs:
     static_configs:
       - targets: ["transformer:8080"]
     metrics_path: /metrics
-    scrape_interval: 10s
+    scrape_interval: 15s
 
+  # O1: Fixed metrics_path to /q/metrics for Quarkus service
   - job_name: mapping-studio-api
     static_configs:
       - targets: ["mapping-studio-api:8080"]
-    metrics_path: /metrics
-    scrape_interval: 10s
+    metrics_path: /q/metrics
+    scrape_interval: 15s
 
   - job_name: webhook-receiver
     static_configs:
       - targets: ["webhook-receiver:8082"]
     metrics_path: /q/metrics
-    scrape_interval: 10s
+    scrape_interval: 15s
 
   - job_name: postgres
     static_configs:
