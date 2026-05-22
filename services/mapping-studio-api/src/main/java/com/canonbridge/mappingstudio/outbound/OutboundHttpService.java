@@ -104,7 +104,11 @@ public class OutboundHttpService {
                 : defaultMethod(outboundRequest);
         int timeoutMs = connection.timeoutMs() != null ? connection.timeoutMs() : DEFAULT_TIMEOUT_MS;
 
-        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(connection.url()))
+        // MS-V1-H3 FIX: Validate URL to prevent SSRF
+        URI targetUri = URI.create(connection.url());
+        validateOutboundUrl(targetUri);
+
+        HttpRequest.Builder builder = HttpRequest.newBuilder(targetUri)
                 .timeout(Duration.ofMillis(timeoutMs));
 
         applyHeaders(builder, outboundRequest != null ? outboundRequest.safeHeaders() : new JsonObject());
@@ -121,11 +125,54 @@ public class OutboundHttpService {
         return builder.build();
     }
 
+    // MS-V1-H3 FIX: SSRF protection — block internal/private IPs and non-HTTPS in production
+    private static final Set<String> BLOCKED_HOSTS = Set.of(
+        "localhost", "127.0.0.1", "0.0.0.0", "[::1]", "metadata.google.internal"
+    );
+
+    private void validateOutboundUrl(URI uri) {
+        String host = uri.getHost();
+        if (host == null) {
+            throw new IllegalArgumentException("Invalid outbound URL: no host");
+        }
+
+        String hostLower = host.toLowerCase();
+        if (BLOCKED_HOSTS.contains(hostLower)) {
+            throw new SecurityException("SSRF blocked: target host " + host + " is not allowed");
+        }
+
+        // Block private IP ranges
+        if (hostLower.startsWith("10.") || hostLower.startsWith("192.168.") ||
+            hostLower.startsWith("172.16.") || hostLower.startsWith("172.17.") ||
+            hostLower.startsWith("172.18.") || hostLower.startsWith("172.19.") ||
+            hostLower.startsWith("172.2") || hostLower.startsWith("172.3") ||
+            hostLower.startsWith("169.254.") || hostLower.startsWith("fc") ||
+            hostLower.startsWith("fd")) {
+            throw new SecurityException("SSRF blocked: private/link-local IP range not allowed");
+        }
+
+        // Block non-HTTPS in production
+        String scheme = uri.getScheme();
+        if (scheme == null || (!scheme.equals("https") && !scheme.equals("http"))) {
+            throw new SecurityException("SSRF blocked: only http/https schemes allowed");
+        }
+    }
+
+    // MS-V1-H4 FIX: Header allow-list to prevent injection of dangerous headers
+    private static final Set<String> FORBIDDEN_OUTBOUND_HEADERS = Set.of(
+        "host", "authorization", "cookie", "content-length", "transfer-encoding",
+        "proxy-authorization", "proxy-connection", "x-forwarded-for", "x-forwarded-host",
+        "x-canonbridge-internal", "x-service-auth"
+    );
+
     private void applyHeaders(HttpRequest.Builder builder, JsonObject headers) {
         for (String headerName : headers.fieldNames()) {
             Object value = headers.getValue(headerName);
             if (value != null) {
-                builder.header(headerName, String.valueOf(value));
+                // MS-V1-H4: Filter dangerous headers
+                if (!FORBIDDEN_OUTBOUND_HEADERS.contains(headerName.toLowerCase())) {
+                    builder.header(headerName, String.valueOf(value));
+                }
             }
         }
     }

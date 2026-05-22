@@ -42,7 +42,8 @@ public class JsonataProxyResource {
         }
 
         JsonObject payload = body.getJsonObject("payload");
-        int timeoutMs = body.getInteger("timeoutMs", 500);
+        // MS-V1-M6 FIX: Cap timeout to prevent DoS via long-running expressions
+        int timeoutMs = Math.min(body.getInteger("timeoutMs", 500), 2000);
 
         try {
             JsonObject result = requestTemplateService.evaluateBlocking(expression, payload, timeoutMs);
