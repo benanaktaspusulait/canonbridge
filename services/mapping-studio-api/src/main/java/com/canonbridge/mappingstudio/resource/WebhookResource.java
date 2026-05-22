@@ -25,6 +25,7 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Webhooks", description = "Webhook endpoint management and ingestion")
+@jakarta.annotation.security.RolesAllowed({"admin", "integration_author"})
 public class WebhookResource {
     @Inject
     TenantContext tenantContext;

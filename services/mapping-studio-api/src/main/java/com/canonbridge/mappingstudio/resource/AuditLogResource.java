@@ -15,6 +15,7 @@ import java.util.List;
 @Path("/api/audit-logs")
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "Audit Logs", description = "Audit log query endpoints")
+@jakarta.annotation.security.RolesAllowed({"admin", "operator"})
 public class AuditLogResource {
     @Inject
     TenantContext tenantContext;

@@ -37,6 +37,7 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "File Batch", description = "Batch payload ingestion for FILE_BATCH mappings")
+@jakarta.annotation.security.RolesAllowed({"admin", "integration_author"})
 public class FileBatchResource {
     @Inject
     TenantContext tenantContext;

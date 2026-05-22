@@ -27,6 +27,7 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Schemas", description = "JSON schema management operations")
+@jakarta.annotation.security.RolesAllowed({"admin", "integration_author"})
 public class SchemaResource {
     @Inject
     TenantContext tenantContext;

@@ -21,6 +21,7 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Mapping Versions", description = "Published mapping version operations")
+@jakarta.annotation.security.RolesAllowed({"admin", "integration_author"})
 public class MappingVersionResource {
     @Inject
     TenantContext tenantContext;

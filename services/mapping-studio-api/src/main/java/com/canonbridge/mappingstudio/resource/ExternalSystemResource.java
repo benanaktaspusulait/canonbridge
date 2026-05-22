@@ -33,6 +33,7 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "External Systems", description = "External system connection management operations")
+@jakarta.annotation.security.RolesAllowed({"admin", "integration_author"})
 public class ExternalSystemResource {
     @Inject
     TenantContext tenantContext;

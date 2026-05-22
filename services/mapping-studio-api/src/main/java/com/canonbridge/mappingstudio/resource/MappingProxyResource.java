@@ -34,6 +34,7 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Mapping Proxy", description = "Dynamic API proxy for seamless integration migration")
+@jakarta.annotation.security.RolesAllowed({"admin", "integration_author", "operator", "viewer"})
 public class MappingProxyResource {
     @Inject
     TenantContext tenantContext;

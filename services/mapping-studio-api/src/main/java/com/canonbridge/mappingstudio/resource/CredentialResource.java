@@ -23,6 +23,7 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Credentials", description = "Credential management operations")
+@jakarta.annotation.security.RolesAllowed({"admin", "integration_author"})
 public class CredentialResource {
     @Inject
     TenantContext tenantContext;
@@ -63,6 +64,7 @@ public class CredentialResource {
 
     @POST
     @Operation(summary = "Create new credential with secret (write-only)")
+    @jakarta.annotation.security.RolesAllowed({"admin"})
     public Uni<Response> create(
             @HeaderParam("X-Tenant-Id") String tenantId,
             @HeaderParam("X-User-Id") String userId,
@@ -107,6 +109,7 @@ public class CredentialResource {
     @POST
     @Path("/{credentialId}/disable")
     @Operation(summary = "Disable credential")
+    @jakarta.annotation.security.RolesAllowed({"admin"})
     public Uni<Response> disable(
             @PathParam("credentialId") UUID credentialId,
             @HeaderParam("X-Tenant-Id") String tenantId,
@@ -148,6 +151,7 @@ public class CredentialResource {
     @POST
     @Path("/{credentialId}/rotate")
     @Operation(summary = "Rotate credential secret (write-only)")
+    @jakarta.annotation.security.RolesAllowed({"admin"})
     public Uni<Response> rotate(
             @PathParam("credentialId") UUID credentialId,
             @HeaderParam("X-Tenant-Id") String tenantId,

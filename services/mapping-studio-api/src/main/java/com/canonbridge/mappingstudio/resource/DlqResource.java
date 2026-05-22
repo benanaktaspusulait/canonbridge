@@ -25,6 +25,7 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "DLQ Management", description = "Dead Letter Queue message management")
+@jakarta.annotation.security.RolesAllowed({"admin", "operator"})
 public class DlqResource {
     @Inject
     TenantContext tenantContext;

@@ -39,7 +39,7 @@
   width: 36px !important;
   height: 36px !important;
   font-size: 0.75rem !important;
-  background: linear-gradient(135deg, #2563eb, #7c3aed) !important;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-800, #7c3aed)) !important;
   color: #fff !important;
   font-weight: 600 !important;
   flex-shrink: 0;
@@ -67,8 +67,8 @@
 
 .dlq-badge {
   display: inline-block;
-  background: #fee2e2;
-  color: #dc2626;
+  background: color-mix(in srgb, var(--red-500, #ef4444) 12%, var(--surface-card));
+  color: var(--red-600, #dc2626);
   font-size: 0.75rem;
   font-weight: 700;
   padding: 1px 8px;
@@ -106,8 +106,6 @@
   min-height: 7rem;
   resize: vertical;
 }
-
-.text-sm { font-size: 0.875rem; }
 
 @media (max-width: 720px) {
   .partner-summary,

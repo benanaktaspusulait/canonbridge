@@ -20,6 +20,7 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Partners", description = "Partner management operations")
+@jakarta.annotation.security.RolesAllowed({"admin", "integration_author"})
 public class PartnerResource {
     @Inject
     TenantContext tenantContext;

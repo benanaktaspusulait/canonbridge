@@ -29,6 +29,7 @@ import org.jboss.logging.Logger;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Mapping Drafts", description = "Mapping draft management operations")
+@jakarta.annotation.security.RolesAllowed({"admin", "integration_author"})
 public class MappingDraftResource {
     @Inject
     TenantContext tenantContext;
