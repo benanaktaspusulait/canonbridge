@@ -61,6 +61,9 @@ docker-compose.override.yml
 # Kubernetes
 k8s/secrets/
 k8s/local/
+# K1/K2: Never commit actual secrets - only .example files
+infrastructure/k8s/secrets.yaml
+infrastructure/k8s/transformer/secret.yaml
 
 # Database
 *.db

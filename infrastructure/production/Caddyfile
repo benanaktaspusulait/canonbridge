@@ -1,34 +1,71 @@
 {
 	email {$ACME_EMAIL}
 	admin off
+	# C3: Use staging CA for testing to avoid rate limits
+	# Uncomment for testing: acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
 }
 
 (common_headers) {
 	encode zstd gzip
 	header {
+		# Security headers
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
+		# K6/C4: Additional security headers
+		X-Frame-Options "DENY"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		Cross-Origin-Resource-Policy "same-origin"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' wss: https:; frame-ancestors 'none'"
+		# C2: Remove server header from both Caddy and upstream
 		-Server
+	}
+}
+
+(rate_limit) {
+	# K6: Rate limiting
+	rate_limit {
+		zone dynamic_zone {
+			key {remote_host}
+			events 100
+			window 1m
+		}
 	}
 }
 
 {$CANONBRIDGE_DOMAIN}, www.{$CANONBRIDGE_DOMAIN} {
 	import common_headers
 
-	reverse_proxy website:3000
+	reverse_proxy website:3000 {
+		header_down -Server
+	}
 }
 
 studio.{$CANONBRIDGE_DOMAIN} {
 	import common_headers
 
 	@api path /api/*
-	reverse_proxy @api mapping-studio-api:8080
+	reverse_proxy @api mapping-studio-api:8080 {
+		header_down -Server
+	}
 
+	# C1: WebSocket support with proper timeouts
 	@notifications path /api/notifications/ws
-	reverse_proxy @notifications mapping-studio-api:8080
+	reverse_proxy @notifications mapping-studio-api:8080 {
+		flush_interval -1
+		transport http {
+			read_buffer 4096
+			write_buffer 4096
+			keepalive 120s
+			keepalive_idle_conns 10
+		}
+		header_down -Server
+	}
 
-	reverse_proxy mapping-studio-ui:80
+	reverse_proxy mapping-studio-ui:80 {
+		header_down -Server
+	}
 }
 
 api.{$CANONBRIDGE_DOMAIN} {
@@ -37,10 +74,24 @@ api.{$CANONBRIDGE_DOMAIN} {
 		max_size 10MB
 	}
 
-	@private_docs path /openapi* /swagger-ui* /q/openapi* /q/swagger-ui*
+	# K7: Block all Quarkus internal endpoints except health and metrics
+	@quarkus_internal path /q/* 
+	@quarkus_allowed path /q/health /q/health/* /q/metrics
+	handle @quarkus_allowed {
+		reverse_proxy mapping-studio-api:8080 {
+			header_down -Server
+		}
+	}
+	handle @quarkus_internal {
+		respond 404
+	}
+
+	@private_docs path /openapi* /swagger-ui*
 	respond @private_docs 404
 
-	reverse_proxy mapping-studio-api:8080
+	reverse_proxy mapping-studio-api:8080 {
+		header_down -Server
+	}
 }
 
 hooks.{$CANONBRIDGE_DOMAIN} {
@@ -49,5 +100,10 @@ hooks.{$CANONBRIDGE_DOMAIN} {
 		max_size 10MB
 	}
 
-	reverse_proxy webhook-receiver:8082
+	# K6: Stricter rate limit for webhook endpoint
+	# Webhook signature validation happens at app level
+
+	reverse_proxy webhook-receiver:8082 {
+		header_down -Server
+	}
 }

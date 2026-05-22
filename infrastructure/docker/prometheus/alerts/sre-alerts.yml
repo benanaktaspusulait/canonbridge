@@ -1,0 +1,193 @@
+groups:
+  - name: kafka_alerts
+    rules:
+      - alert: KafkaConsumerLagHigh
+        expr: |
+          kafka_consumergroup_lag_sum > 10000
+        for: 5m
+        labels:
+          severity: high
+          team: platform
+        annotations:
+          summary: "Kafka consumer group {{ $labels.consumergroup }} lag is {{ $value }}"
+          description: "Consumer lag exceeded 10000 for 5 minutes on topic {{ $labels.topic }}"
+          runbook: "Check consumer health, increase replicas or investigate processing bottleneck"
+
+      - alert: KafkaDLQGrowing
+        expr: |
+          increase(kafka_topic_partition_current_offset{topic=~".*dlq.*"}[15m]) > 0
+        for: 5m
+        labels:
+          severity: high
+          team: application
+        annotations:
+          summary: "DLQ topic {{ $labels.topic }} is receiving messages"
+          description: "Dead letter queue is growing - messages are failing processing"
+          runbook: "Inspect DLQ messages, check transformation mappings and downstream services"
+
+      - alert: KafkaBrokerDown
+        expr: |
+          kafka_brokers < 3
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Kafka cluster has only {{ $value }} brokers (expected 3)"
+          description: "One or more Kafka brokers are down"
+          runbook: "Check Kafka pod status, storage, and node health"
+
+      - alert: KafkaUnderReplicatedPartitions
+        expr: |
+          kafka_topic_partition_under_replicated_partition > 0
+        for: 5m
+        labels:
+          severity: high
+          team: platform
+        annotations:
+          summary: "Kafka has {{ $value }} under-replicated partitions"
+          description: "Data durability is at risk"
+          runbook: "Check broker health and disk space"
+
+  - name: postgres_alerts
+    rules:
+      - alert: PostgresDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "PostgreSQL is DOWN"
+          description: "PostgreSQL instance has been unreachable for 1 minute"
+          runbook: "Check pod status, PVC, and node health"
+
+      - alert: PostgresDiskUsageHigh
+        expr: |
+          (pg_database_size_bytes / (100 * 1024 * 1024 * 1024)) * 100 > 80
+        for: 5m
+        labels:
+          severity: high
+          team: platform
+        annotations:
+          summary: "PostgreSQL disk usage is {{ $value | printf \"%.1f\" }}%"
+          description: "Database size is approaching storage limit"
+          runbook: "Consider partition cleanup, archiving old data, or expanding PVC"
+
+      - alert: PostgresConnectionsHigh
+        expr: |
+          pg_stat_activity_count > 40
+        for: 5m
+        labels:
+          severity: medium
+          team: platform
+        annotations:
+          summary: "PostgreSQL has {{ $value }} active connections (max pool: 50)"
+          description: "Connection pool is nearly exhausted"
+          runbook: "Check for connection leaks, consider increasing pool size"
+
+      - alert: PostgresSlowQueries
+        expr: |
+          pg_stat_activity_max_tx_duration{datname="etldb"} > 60
+        for: 2m
+        labels:
+          severity: medium
+          team: application
+        annotations:
+          summary: "PostgreSQL has long-running transaction ({{ $value }}s)"
+          description: "A transaction has been running for more than 60 seconds"
+          runbook: "Identify and investigate the slow query"
+
+  - name: container_alerts
+    rules:
+      - alert: ContainerOOMKilled
+        expr: |
+          increase(kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}[5m]) > 0
+        for: 0m
+        labels:
+          severity: high
+          team: platform
+        annotations:
+          summary: "Container {{ $labels.container }} in pod {{ $labels.pod }} was OOM killed"
+          description: "Container ran out of memory and was terminated"
+          runbook: "Increase memory limits or investigate memory leak"
+
+      - alert: ContainerCPUThrottling
+        expr: |
+          (rate(container_cpu_cfs_throttled_periods_total[5m]) 
+          / rate(container_cpu_cfs_periods_total[5m])) * 100 > 50
+        for: 5m
+        labels:
+          severity: medium
+          team: platform
+        annotations:
+          summary: "Container {{ $labels.container }} CPU throttled {{ $value | printf \"%.1f\" }}%"
+          description: "Container is being CPU throttled more than 50% of the time"
+          runbook: "Consider removing CPU limits or increasing CPU requests"
+
+      - alert: PodCrashLooping
+        expr: |
+          increase(kube_pod_container_status_restarts_total[15m]) > 3
+        for: 5m
+        labels:
+          severity: high
+          team: platform
+        annotations:
+          summary: "Pod {{ $labels.pod }} is crash looping ({{ $value }} restarts in 15m)"
+          description: "Pod is repeatedly crashing and restarting"
+          runbook: "Check pod logs and events for root cause"
+
+      - alert: PodNotReady
+        expr: |
+          kube_pod_status_ready{condition="true"} == 0
+        for: 5m
+        labels:
+          severity: medium
+          team: platform
+        annotations:
+          summary: "Pod {{ $labels.pod }} is not ready"
+          description: "Pod has been in not-ready state for 5 minutes"
+          runbook: "Check readiness probe, dependencies, and pod events"
+
+  - name: hpa_alerts
+    rules:
+      - alert: HPAMaxedOut
+        expr: |
+          kube_horizontalpodautoscaler_status_current_replicas 
+          == kube_horizontalpodautoscaler_spec_max_replicas
+        for: 15m
+        labels:
+          severity: high
+          team: platform
+        annotations:
+          summary: "HPA {{ $labels.horizontalpodautoscaler }} is at max replicas"
+          description: "HPA has been at maximum capacity for 15 minutes - may need scaling"
+          runbook: "Consider increasing maxReplicas or optimizing service performance"
+
+  - name: disk_alerts
+    rules:
+      - alert: PVCUsageHigh
+        expr: |
+          (kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: high
+          team: platform
+        annotations:
+          summary: "PVC {{ $labels.persistentvolumeclaim }} usage is {{ $value | printf \"%.1f\" }}%"
+          description: "Persistent volume is running out of space"
+          runbook: "Expand PVC or clean up data"
+
+  - name: certificate_alerts
+    rules:
+      - alert: CertificateExpiringSoon
+        expr: |
+          (probe_ssl_earliest_cert_expiry - time()) / 86400 < 14
+        for: 1h
+        labels:
+          severity: high
+          team: platform
+        annotations:
+          summary: "TLS certificate expires in {{ $value | printf \"%.0f\" }} days"
+          description: "Certificate will expire within 14 days"
+          runbook: "Check ACME/Let's Encrypt renewal, verify Caddy auto-renewal is working"

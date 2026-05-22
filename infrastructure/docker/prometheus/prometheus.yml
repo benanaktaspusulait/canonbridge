@@ -2,15 +2,15 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
   external_labels:
-    cluster: 'etl-solutions-local'
-    environment: 'development'
+    cluster: canonbridge-local
+    environment: development
 
-# Alertmanager configuration (optional for local development)
-# alerting:
-#   alertmanagers:
-#     - static_configs:
-#         - targets:
-#           - alertmanager:9093
+# O2: Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
 
 # Load rules once and periodically evaluate them
 rule_files:
@@ -18,51 +18,51 @@ rule_files:
 
 scrape_configs:
   # Prometheus self-monitoring
-  - job_name: 'prometheus'
+  - job_name: prometheus
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ["localhost:9090"]
 
   # Transformer Service (Node.js + Fastify) — metrics at /metrics on HTTP port
-  - job_name: 'transformer'
+  - job_name: transformer
     static_configs:
-      - targets: ['transformer:8080']
-    metrics_path: '/metrics'
-    scrape_interval: 10s
+      - targets: ["transformer:8080"]
+    metrics_path: /metrics
+    scrape_interval: 15s
 
-  # Mapping Studio API (Java + Quarkus) — Quarkus exposes metrics at /metrics
-  - job_name: 'mapping-studio-api'
+  # O1: Fixed - Mapping Studio API (Java + Quarkus) — Quarkus exposes metrics at /q/metrics
+  - job_name: mapping-studio-api
     static_configs:
-      - targets: ['mapping-studio-api:8080']
-    metrics_path: '/metrics'
-    scrape_interval: 10s
+      - targets: ["mapping-studio-api:8080"]
+    metrics_path: /q/metrics
+    scrape_interval: 15s
 
   # Webhook Receiver (Java + Quarkus) — Quarkus exposes metrics at /q/metrics
-  - job_name: 'webhook-receiver'
+  - job_name: webhook-receiver
     static_configs:
-      - targets: ['webhook-receiver:8082']
-    metrics_path: '/q/metrics'
-    scrape_interval: 10s
+      - targets: ["webhook-receiver:8082"]
+    metrics_path: /q/metrics
+    scrape_interval: 15s
 
   # PostgreSQL Exporter
-  - job_name: 'postgres'
+  - job_name: postgres
     static_configs:
-      - targets: ['postgres-exporter:9187']
+      - targets: ["postgres-exporter:9187"]
     scrape_interval: 15s
 
   # Redis Exporter
-  - job_name: 'redis'
+  - job_name: redis
     static_configs:
-      - targets: ['redis-exporter:9121']
+      - targets: ["redis-exporter:9121"]
     scrape_interval: 15s
 
   # Kafka Exporter
-  - job_name: 'kafka'
+  - job_name: kafka
     static_configs:
-      - targets: ['kafka-exporter:9308']
+      - targets: ["kafka-exporter:9308"]
     scrape_interval: 15s
 
   # Node Exporter (system metrics)
-  - job_name: 'node'
+  - job_name: node
     static_configs:
-      - targets: ['node-exporter:9100']
+      - targets: ["node-exporter:9100"]
     scrape_interval: 15s
