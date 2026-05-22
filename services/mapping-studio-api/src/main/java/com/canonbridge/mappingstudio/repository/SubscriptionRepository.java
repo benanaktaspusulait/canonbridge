@@ -148,7 +148,9 @@ public class SubscriptionRepository {
         }
         sub.setExternalProvider(row.getString("external_provider"));
         sub.setExternalRef(row.getString("external_ref"));
-        sub.setMetadata(row.getString("metadata"));
+        // metadata is JSONB — read as Object and convert to String
+        Object metadataObj = row.getValue("metadata");
+        sub.setMetadata(metadataObj != null ? metadataObj.toString() : "{}");
         sub.setCreatedAt(row.getLocalDateTime("created_at").toInstant(ZoneOffset.UTC));
         sub.setUpdatedAt(row.getLocalDateTime("updated_at").toInstant(ZoneOffset.UTC));
         return sub;

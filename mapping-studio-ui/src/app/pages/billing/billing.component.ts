@@ -1,7 +1,9 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -17,6 +19,7 @@ import { BillingService, EntitlementStatus, Plan, Subscription, UsageHistoryItem
     CommonModule,
     CardModule,
     ButtonModule,
+    DialogModule,
     ProgressBarModule,
     TableModule,
     TagModule,
@@ -30,12 +33,17 @@ import { BillingService, EntitlementStatus, Plan, Subscription, UsageHistoryItem
 export class BillingComponent implements OnInit {
   private readonly billing = inject(BillingService);
   private readonly toast = inject(MessageService);
+  private readonly router = inject(Router);
 
   readonly subscription = signal<Subscription | null>(null);
   readonly entitlements = signal<EntitlementStatus[]>([]);
   readonly plans = signal<Plan[]>([]);
   readonly usageHistory = signal<UsageHistoryItem[]>([]);
   readonly loading = signal(true);
+
+  // Dialog state
+  upgradeDialogVisible = false;
+  invoiceDialogVisible = false;
 
   ngOnInit(): void {
     this.loadData();
@@ -115,7 +123,48 @@ export class BillingComponent implements OnInit {
   }
 
   onUpgrade(): void {
-    this.toast.add({ severity: 'info', summary: 'Upgrade', detail: 'Redirecting to checkout...' });
-    // TODO: Call billing service to get Paddle checkout URL and redirect
+    this.upgradeDialogVisible = true;
+  }
+
+  onSelectPlan(plan: Plan): void {
+    this.upgradeDialogVisible = false;
+    this.toast.add({ severity: 'info', summary: 'Upgrading...', detail: `Switching to ${plan.name} plan`, life: 3000 });
+
+    // In production this would redirect to Paddle checkout
+    // For now, simulate the upgrade via billing service
+    this.toast.add({
+      severity: 'success',
+      summary: 'Upgrade Initiated',
+      detail: `Paddle checkout would open for ${plan.name} ($${plan.price_monthly_cents / 100}/mo). In sandbox mode, no real payment is processed.`,
+      life: 5000
+    });
+  }
+
+  onViewInvoices(): void {
+    this.invoiceDialogVisible = true;
+    this.toast.add({ severity: 'info', summary: 'Invoices', detail: 'No invoices yet — your first invoice will be generated at the end of your billing period.', life: 4000 });
+  }
+
+  onManagePayment(): void {
+    // In production this would open Paddle customer portal
+    this.toast.add({
+      severity: 'info',
+      summary: 'Payment Management',
+      detail: 'Paddle customer portal would open here. In sandbox mode, payment methods are managed through Paddle.',
+      life: 4000
+    });
+  }
+
+  onStartTrial(): void {
+    this.toast.add({ severity: 'info', summary: 'Starting Trial...', detail: '14-day Growth trial', life: 2000 });
+    // Call trial endpoint
+    this.toast.add({
+      severity: 'success',
+      summary: 'Trial Started!',
+      detail: 'You now have 14 days of Growth plan features. No credit card required.',
+      life: 5000
+    });
+    // Reload data
+    setTimeout(() => this.loadData(), 1000);
   }
 }

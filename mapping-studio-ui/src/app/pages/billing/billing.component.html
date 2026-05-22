@@ -42,8 +42,9 @@
       <p-card header="Quick Actions">
         <div class="quick-actions">
           <p-button label="Upgrade Plan" icon="pi pi-arrow-up" severity="primary" (onClick)="onUpgrade()" styleClass="w-full" />
-          <p-button label="View Invoices" icon="pi pi-file" severity="secondary" styleClass="w-full" [outlined]="true" />
-          <p-button label="Manage Payment" icon="pi pi-credit-card" severity="secondary" styleClass="w-full" [outlined]="true" />
+          <p-button label="Start 14-Day Trial" icon="pi pi-play" severity="success" (onClick)="onStartTrial()" styleClass="w-full" [outlined]="true" />
+          <p-button label="View Invoices" icon="pi pi-file" severity="secondary" (onClick)="onViewInvoices()" styleClass="w-full" [outlined]="true" />
+          <p-button label="Manage Payment" icon="pi pi-credit-card" severity="secondary" (onClick)="onManagePayment()" styleClass="w-full" [outlined]="true" />
         </div>
       </p-card>
     </div>
@@ -115,7 +116,7 @@
               [severity]="plan.code === 'growth' ? 'primary' : 'secondary'"
               [outlined]="plan.code !== 'growth'"
               styleClass="w-full mt-3"
-              (onClick)="onUpgrade()"
+              (onClick)="onSelectPlan(plan)"
             />
           }
         </div>
@@ -123,3 +124,35 @@
     </div>
   </p-card>
 </div>
+
+<!-- Upgrade Dialog -->
+<p-dialog
+  [(visible)]="upgradeDialogVisible"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '650px' }"
+  header="Upgrade Your Plan">
+  <div class="upgrade-dialog-content">
+    <p style="margin-bottom: 1rem; color: var(--text-color-secondary)">Choose a plan that fits your needs. You can upgrade or downgrade at any time.</p>
+    <div class="plans-grid">
+      @for (plan of plans(); track plan.code) {
+        @if (plan.code !== 'free' && plan.code !== subscription()?.plan_code) {
+          <div class="plan-card" [class.highlighted]="plan.code === 'growth'">
+            <h3>{{ plan.name }}</h3>
+            <div class="plan-price">
+              <span class="price">{{ formatPrice(plan.price_monthly_cents) }}</span>
+              <span class="period">/month</span>
+            </div>
+            <p class="plan-desc">{{ plan.description }}</p>
+            <p-button
+              [label]="'Upgrade to ' + plan.name"
+              [severity]="plan.code === 'growth' ? 'primary' : 'secondary'"
+              [outlined]="plan.code !== 'growth'"
+              styleClass="w-full"
+              (onClick)="onSelectPlan(plan)" />
+          </div>
+        }
+      }
+    </div>
+  </div>
+</p-dialog>
