@@ -123,14 +123,28 @@ public class RateLimitFilter {
     /**
      * Extract client IP address from request.
      */
+    /**
+     * MS-V1-M7 FIX: Only trust X-Forwarded-For when peer is a known proxy.
+     * In production behind a load balancer, the LB sets XFF.
+     * Direct clients can spoof XFF to bypass rate limits.
+     */
     private String getClientIp() {
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",")[0].trim();
+        String remoteAddress = request.remoteAddress() != null ? request.remoteAddress().host() : null;
+
+        // Only trust XFF if the immediate peer is a trusted proxy (loopback or private range)
+        if (remoteAddress != null && isTrustedProxy(remoteAddress)) {
+            String forwardedFor = request.getHeader("X-Forwarded-For");
+            if (forwardedFor != null && !forwardedFor.isBlank()) {
+                return forwardedFor.split(",")[0].trim();
+            }
         }
 
-        String remoteAddress = request.remoteAddress().host();
         return remoteAddress != null ? remoteAddress : "unknown";
+    }
+
+    private static boolean isTrustedProxy(String ip) {
+        return ip.startsWith("127.") || ip.startsWith("10.") || ip.startsWith("172.") ||
+               ip.startsWith("192.168.") || "::1".equals(ip) || "0:0:0:0:0:0:0:1".equals(ip);
     }
 
     private static String fingerprint(String value) {

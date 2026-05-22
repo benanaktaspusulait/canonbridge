@@ -96,19 +96,16 @@ public class MappingProxyResource {
 
         LOG.infof("🔄 Proxy GET request for mapping %s from tenant %s", mappingId, tenantId);
 
-        // Convert query params to JSON payload
+        // MS-V1-M10 FIX: Use proper JSON serialization instead of string concatenation
         var queryParams = uriInfo.getQueryParameters();
-        var jsonPayload = new StringBuilder("{");
-        boolean first = true;
+        var jsonObject = new io.vertx.core.json.JsonObject();
         for (var entry : queryParams.entrySet()) {
-            if (!first) jsonPayload.append(",");
-            jsonPayload.append("\"").append(entry.getKey()).append("\":\"")
-                      .append(entry.getValue().get(0)).append("\"");
-            first = false;
+            if (!entry.getValue().isEmpty()) {
+                jsonObject.put(entry.getKey(), entry.getValue().get(0));
+            }
         }
-        jsonPayload.append("}");
 
-        return executeProxyRequest(tenantId, mappingId, headers, jsonPayload.toString());
+        return executeProxyRequest(tenantId, mappingId, headers, jsonObject.encode());
     }
 
     private Uni<Response> executeProxyRequest(

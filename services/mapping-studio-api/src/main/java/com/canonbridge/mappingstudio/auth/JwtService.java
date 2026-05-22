@@ -3,11 +3,15 @@ package com.canonbridge.mappingstudio.auth;
 import com.canonbridge.mappingstudio.domain.User;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.quarkus.logging.Log;
+import io.quarkus.redis.datasource.RedisDataSource;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
@@ -25,7 +29,12 @@ public class JwtService {
     private static final Base64.Encoder BASE64_URL_ENCODER = Base64.getUrlEncoder().withoutPadding();
     private static final Base64.Decoder BASE64_URL_DECODER = Base64.getUrlDecoder();
     private static final TypeReference<Map<String, Object>> JSON_MAP = new TypeReference<>() {};
+    // MS-V1-H5 FIX: Local fallback set (used when Redis is unavailable)
     private final Set<String> revokedTokenIds = ConcurrentHashMap.newKeySet();
+    private static final String REVOKED_KEY_PREFIX = "jwt_revoked:";
+
+    @Inject
+    RedisDataSource redisDataSource;
 
     @ConfigProperty(name = "canonbridge.jwt.secret")
     String jwtSecret;
@@ -105,7 +114,7 @@ public class JwtService {
             }
 
             String tokenId = stringClaim(payload.get("jti"));
-            if (revokedTokenIds.contains(tokenId)) {
+            if (isTokenRevoked(tokenId)) {
                 return Optional.empty();
             }
 
@@ -124,8 +133,39 @@ public class JwtService {
 
     public boolean revokeToken(String token) {
         return validateToken(token)
-                .map(claims -> revokedTokenIds.add(claims.tokenId()))
+                .map(claims -> {
+                    revokeTokenId(claims.tokenId());
+                    return true;
+                })
                 .orElse(false);
+    }
+
+    // MS-V1-H5 FIX: Redis-backed token revocation (distributed across replicas)
+    private boolean isTokenRevoked(String tokenId) {
+        if (tokenId == null) return false;
+        // Check local cache first
+        if (revokedTokenIds.contains(tokenId)) return true;
+        // Check Redis
+        try {
+            String val = redisDataSource.value(String.class).get(REVOKED_KEY_PREFIX + tokenId);
+            if (val != null) {
+                revokedTokenIds.add(tokenId); // cache locally
+                return true;
+            }
+        } catch (Exception e) {
+            Log.debugf("Redis revocation check failed for jti=%s: %s", tokenId, e.getMessage());
+        }
+        return false;
+    }
+
+    private void revokeTokenId(String tokenId) {
+        revokedTokenIds.add(tokenId);
+        try {
+            // Store in Redis with TTL = max token lifetime (8h)
+            redisDataSource.value(String.class).setex(REVOKED_KEY_PREFIX + tokenId, 28800, "revoked");
+        } catch (Exception e) {
+            Log.warnf("Redis revocation write failed for jti=%s: %s", tokenId, e.getMessage());
+        }
     }
 
     private String base64UrlJson(Map<String, Object> value) {

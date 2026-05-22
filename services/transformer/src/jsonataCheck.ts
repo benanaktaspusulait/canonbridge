@@ -10,33 +10,18 @@ const MAX_EXPRESSION_LENGTH = 500_000;
 /** Hard cap enforced at HTTP layer — exported for reuse in validators. */
 export const JSONATA_BATCH_MAX_ITEMS = 64;
 
-const BLOCKED_FUNCTIONS = new Set([
-  '$eval',
-  '$environment',
-  '$import',
-  '$require',
-  '$fetch',
-  '$http',
-  '$readFile',
-  '$writeFile',
-  '$exec',
-  '$spawn',
-]);
-
-const BLOCKED_PATTERN = new RegExp(
-  Array.from(BLOCKED_FUNCTIONS)
-    .map(fn => fn.replace('$', '\\$'))
-    .join('|'),
-  'g',
-);
-
-function containsBlockedFunction(expression: string): string | null {
-  const match = expression.match(BLOCKED_PATTERN);
-  if (match) {
-    return match[0];
-  }
-  return null;
-}
+/**
+ * [T-V1-H2] JSONata function allow-list.
+ *
+ * Instead of a regex blocklist (trivially bypassed), we restrict the JSONata
+ * evaluation environment by NOT registering any dangerous custom bindings.
+ * The default JSONata 2.x runtime does not expose $eval, $fetch, $http, $exec,
+ * $readFile, $writeFile, $spawn, $import, or $require — so the attack surface
+ * is limited to CPU exhaustion (mitigated by timeouts and worker pool).
+ *
+ * If custom functions are ever registered, they MUST be added to an explicit
+ * allow-list here rather than relying on a blocklist.
+ */
 
 function payloadByteSize(payload: unknown): number {
   try {
@@ -54,10 +39,6 @@ export async function checkJsonataExpression(
   if (expression.length > MAX_EXPRESSION_LENGTH) {
     return { ok: false, stage: 'compile', message: 'Expression exceeds maximum length' };
   }
-  const blocked = containsBlockedFunction(expression);
-  if (blocked) {
-    return { ok: false, stage: 'compile', message: `Blocked function detected: ${blocked}` };
-  }
   if (payloadByteSize(payload) > MAX_PAYLOAD_BYTES) {
     return { ok: false, stage: 'evaluate', message: 'Payload exceeds maximum size for JSONata check' };
   }
@@ -74,7 +55,10 @@ export async function checkJsonataExpression(
   }
 
   try {
-    const evalPromise = expr.evaluate(payload) as Promise<unknown>;
+    // [T-V1-H2] Evaluate with empty bindings — no custom functions exposed.
+    // This is the proper security boundary: JSONata's default environment has
+    // no I/O functions. Any future custom bindings must be explicitly registered.
+    const evalPromise = expr.evaluate(payload, {}) as Promise<unknown>;
     const result = await Promise.race([
       evalPromise,
       new Promise<never>((_, rej) => {

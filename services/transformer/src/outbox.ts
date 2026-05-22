@@ -82,8 +82,47 @@ export class OutboxRepository {
   }
 
   /**
-   * Fetch unpublished messages for relay.
-   * Limit controls batch size.
+   * [T-V1-H6] Fetch unpublished messages with row-level locking.
+   * Uses FOR UPDATE SKIP LOCKED to prevent duplicate processing across replicas.
+   * Returns a client that MUST be released after marking messages as published.
+   */
+  async fetchUnpublishedLocked(limit: number = 100): Promise<{ messages: OutboxMessage[]; client: PoolClient }> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await client.query(
+        `SELECT id, topic, key, value, headers, created_at, published_at
+         FROM outbox
+         WHERE published_at IS NULL
+         ORDER BY created_at ASC
+         LIMIT $1
+         FOR UPDATE SKIP LOCKED`,
+        [limit],
+      );
+
+      const messages = result.rows.map((row) => ({
+        id: row.id,
+        topic: row.topic,
+        key: row.key,
+        value: typeof row.value === 'string' ? row.value : JSON.stringify(row.value),
+        headers: row.headers
+          ? (typeof row.headers === 'string' ? JSON.parse(row.headers) : row.headers)
+          : undefined,
+        createdAt: row.created_at,
+        publishedAt: row.published_at,
+      }));
+
+      return { messages, client };
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      client.release();
+      throw err;
+    }
+  }
+
+  /**
+   * Fetch unpublished messages for relay (legacy, non-locking).
+   * @deprecated Use fetchUnpublishedLocked for multi-replica safety.
    */
   async fetchUnpublished(limit: number = 100): Promise<OutboxMessage[]> {
     const result = await this.pool.query(
@@ -183,6 +222,7 @@ type OutboxLogger = {
 export class OutboxRelay {
   private running = false;
   private intervalHandle?: NodeJS.Timeout;
+  private cleanupHandle?: NodeJS.Timeout;
 
   constructor(
     private readonly outbox: OutboxRepository,
@@ -205,6 +245,14 @@ export class OutboxRelay {
       void this.poll();
     }, this.pollIntervalMs);
 
+    // [T-V1-M10] Schedule daily cleanup of old published messages
+    this.cleanupHandle = setInterval(() => {
+      void this.cleanup();
+    }, 24 * 60 * 60 * 1000); // 24 hours
+
+    // Run initial cleanup on start
+    void this.cleanup();
+
     this.logger?.info(
       { pollIntervalMs: this.pollIntervalMs, batchSize: this.batchSize },
       'outbox relay started',
@@ -217,15 +265,40 @@ export class OutboxRelay {
       clearInterval(this.intervalHandle);
       this.intervalHandle = undefined;
     }
+    if (this.cleanupHandle) {
+      clearInterval(this.cleanupHandle);
+      this.cleanupHandle = undefined;
+    }
     this.logger?.info({}, 'outbox relay stopped');
+  }
+
+  /** [T-V1-M10] Clean up old published messages to prevent table bloat. */
+  private async cleanup(): Promise<void> {
+    try {
+      const deleted = await this.outbox.cleanupPublished(7);
+      if (deleted > 0) {
+        this.logger?.info({ deleted }, 'outbox cleanup removed old published messages');
+      }
+    } catch (err) {
+      this.logger?.error({ err }, 'outbox cleanup failed');
+    }
   }
 
   private async poll(): Promise<void> {
     if (!this.running) return;
 
+    let client: import('pg').PoolClient | undefined;
     try {
-      const messages = await this.outbox.fetchUnpublished(this.batchSize);
-      if (messages.length === 0) return;
+      // [T-V1-H6] Use locked fetch to prevent duplicate processing across replicas
+      const result = await this.outbox.fetchUnpublishedLocked(this.batchSize);
+      client = result.client;
+      const messages = result.messages;
+
+      if (messages.length === 0) {
+        await client.query('COMMIT');
+        client.release();
+        return;
+      }
 
       // Group messages by topic for efficient batching
       const byTopic = new Map<string, OutboxMessage[]>();
@@ -248,19 +321,25 @@ export class OutboxRelay {
             })),
           });
 
-          // Collect IDs for batch update
           publishedIds.push(...batch.map((m) => m.id!));
         } catch (err) {
           this.logger?.error({ err, topic }, 'outbox relay failed to publish batch');
         }
       }
 
-      // Mark all successfully published messages
+      // Mark all successfully published messages within the same transaction
       if (publishedIds.length > 0) {
         await this.outbox.markPublishedBatch(publishedIds);
         this.logger?.info({ count: publishedIds.length }, 'outbox relay published messages');
       }
+
+      await client.query('COMMIT');
+      client.release();
     } catch (err) {
+      if (client) {
+        await client.query('ROLLBACK').catch(() => {});
+        client.release();
+      }
       this.logger?.error({ err }, 'outbox relay poll error');
     }
   }

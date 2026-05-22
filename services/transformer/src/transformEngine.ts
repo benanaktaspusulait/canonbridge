@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { lookup } from 'node:dns/promises';
 import path from 'node:path';
 import type { ValidateFunction } from 'ajv';
 import * as ajv2020Ns from 'ajv/dist/2020.js';
@@ -10,8 +11,10 @@ import jsonata from 'jsonata';
 import type { EnrichmentStepConfig, PartnerMappingConfig } from './partnerRegistry.js';
 import type { PartnerRegistry } from './partnerRegistry.js';
 import { mappingVersion } from './partnerRegistry.js';
+import { parseTopicPartnerKeys } from './kafkaRunner.js';
 import type { TransformCache, Compiled, CacheEntry } from './cache.js';
 import type { WorkerPool } from './workerPool.js';
+import type { Env } from './env.js';
 
 function formatAjvErrors(validate: ValidateFunction): string {
   const errs = validate.errors;
@@ -47,6 +50,7 @@ export interface EnvelopeContext {
 export class TransformEngine {
   constructor(
     private readonly mappingsRoot: string,
+    private readonly env: Env,
     private readonly registry: PartnerRegistry,
     private readonly cache: TransformCache,
     private readonly workerPool?: WorkerPool,
@@ -65,22 +69,6 @@ export class TransformEngine {
   /** Invalidate all compiled entries. */
   async evictAll(): Promise<void> {
     await this.cache.clear();
-  }
-
-  /**
-   * Parse partnerId and eventType from Kafka topic name.
-   * Expected format: tenant-{id}.raw.{partnerId}.{eventType}
-   * Example: tenant-001.raw.acme-marketplace.order-created
-   * Returns: { partnerId: 'acme-marketplace', eventType: 'order-created' }
-   */
-  private parseTopicName(topic: string): { partnerId: string; eventType: string } | undefined {
-    const parts = topic.split('.');
-    if (parts.length < 4) return undefined;
-    // Skip tenant prefix and 'raw' segment
-    const partnerId = parts[2];
-    const eventType = parts.slice(3).join('.'); // Support multi-segment event types
-    if (!partnerId || !eventType) return undefined;
-    return { partnerId, eventType };
   }
 
   /**
@@ -114,7 +102,8 @@ export class TransformEngine {
           schemaVersion: mappingVersion(topicConfig),
         };
       }
-      return this.parseTopicName(context.topic);
+      // [T-V1-M6] Use shared topic parser from kafkaRunner (single source of truth)
+      return parseTopicPartnerKeys(context.topic);
     }
 
     return undefined;
@@ -184,11 +173,18 @@ export class TransformEngine {
         throw new Error('Enrichment step requires name and url');
       }
 
+      const renderedUrl = renderTemplate(step.url, enriched);
+
+      // [T-V1-H1] SSRF protection: validate URL before fetching
+      await this.validateEnrichmentUrl(renderedUrl);
+
+      // [T-V1-L4] Cap timeout to configured maximum
+      const timeoutMs = Math.min(step.timeoutMs ?? 5000, this.env.enrichmentMaxTimeoutMs ?? 10000);
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), step.timeoutMs ?? 5000);
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
       try {
         const method = (step.method ?? 'POST').toUpperCase();
-        const response = await fetch(renderTemplate(step.url, enriched), {
+        const response = await fetch(renderedUrl, {
           method,
           headers: {
             Accept: 'application/json',
@@ -197,6 +193,8 @@ export class TransformEngine {
           },
           body: method === 'GET' || method === 'HEAD' ? undefined : JSON.stringify(enriched),
           signal: controller.signal,
+          // [T-V1-L3] Disable redirects to prevent redirect-based SSRF
+          redirect: 'error',
         });
 
         if (!response.ok) {
@@ -215,6 +213,47 @@ export class TransformEngine {
     }
 
     return enriched;
+  }
+
+  /**
+   * [T-V1-H1] Validate enrichment URL to prevent SSRF attacks.
+   * - Only HTTPS allowed in production (HTTP allowed in dev)
+   * - DNS-resolved IP must not be private/loopback/link-local
+   * - If enrichmentAllowedHosts is configured, hostname must be in the list
+   */
+  private async validateEnrichmentUrl(urlString: string): Promise<void> {
+    let parsed: URL;
+    try {
+      parsed = new URL(urlString);
+    } catch {
+      throw new Error(`Invalid enrichment URL: ${urlString}`);
+    }
+
+    // Scheme check
+    const allowHttp = process.env.NODE_ENV !== 'production';
+    if (parsed.protocol !== 'https:' && !(allowHttp && parsed.protocol === 'http:')) {
+      throw new Error(`Enrichment URL scheme must be https (got ${parsed.protocol})`);
+    }
+
+    // Host allow-list check
+    const allowedHosts = this.env.enrichmentAllowedHosts ?? [];
+    if (allowedHosts.length > 0 && !allowedHosts.includes(parsed.hostname)) {
+      throw new Error(`Enrichment URL hostname '${parsed.hostname}' is not in the allowed hosts list`);
+    }
+
+    // DNS resolution + private IP block
+    try {
+      const addresses = await lookup(parsed.hostname, { all: true });
+      for (const addr of addresses) {
+        if (isPrivateIp(addr.address)) {
+          throw new Error(`Enrichment URL resolves to private/reserved IP (${addr.address})`);
+        }
+      }
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('private/reserved')) throw err;
+      if (err instanceof Error && err.message.includes('not in the allowed')) throw err;
+      throw new Error(`Cannot resolve enrichment URL hostname: ${parsed.hostname}`);
+    }
   }
 
   async transformEnvelope(raw: unknown, context?: EnvelopeContext): Promise<TransformResult> {
@@ -392,4 +431,30 @@ function readPath(context: Record<string, unknown>, pathExpression: string): unk
     }
     return undefined;
   }, context);
+}
+
+/**
+ * [T-V1-H1] Check if an IP address is private/reserved/loopback.
+ * Blocks: 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16,
+ *         169.254.0.0/16 (link-local), ::1, fc00::/7 (ULA), fe80::/10 (link-local v6)
+ */
+function isPrivateIp(ip: string): boolean {
+  // IPv4
+  if (ip.includes('.')) {
+    const parts = ip.split('.').map(Number);
+    if (parts[0] === 127) return true; // loopback
+    if (parts[0] === 10) return true; // RFC1918
+    if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true; // RFC1918
+    if (parts[0] === 192 && parts[1] === 168) return true; // RFC1918
+    if (parts[0] === 169 && parts[1] === 254) return true; // link-local
+    if (parts[0] === 0) return true; // "this" network
+    return false;
+  }
+  // IPv6
+  const normalized = ip.toLowerCase();
+  if (normalized === '::1') return true; // loopback
+  if (normalized.startsWith('fc') || normalized.startsWith('fd')) return true; // ULA (fc00::/7)
+  if (normalized.startsWith('fe80')) return true; // link-local
+  if (normalized === '::' || normalized.startsWith('::ffff:127.')) return true;
+  return false;
 }

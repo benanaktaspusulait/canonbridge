@@ -164,11 +164,15 @@ export class RedisCache implements TransformCache {
   async clear(): Promise<void> {
     this.localCache.clear();
     const redis = await this.getRedisClient();
-    // Delete all keys with prefix
-    const keys = await redis.keys(`${this.prefix}*`);
-    if (keys.length > 0) {
-      await redis.del(...keys);
-    }
+    // [T-V1-M4] Use SCAN + UNLINK instead of KEYS (O(N) blocking command)
+    let cursor = '0';
+    do {
+      const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', `${this.prefix}*`, 'COUNT', 100);
+      cursor = nextCursor;
+      if (keys.length > 0) {
+        await redis.unlink(...keys);
+      }
+    } while (cursor !== '0');
   }
 
   async size(): Promise<number> {

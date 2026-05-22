@@ -40,8 +40,12 @@ export class WorkerPool {
   private taskQueue: PendingTask[] = [];
   private shuttingDown = false;
   private nextWorkerId = 0;
+  // [T-V1-M2] Cap queue length to prevent OOM under sustained load
+  private readonly maxQueueLength: number;
 
-  constructor(private readonly poolSize: number = Math.max(1, cpus().length - 1)) {}
+  constructor(private readonly poolSize: number = Math.max(1, cpus().length - 1)) {
+    this.maxQueueLength = 2 * this.poolSize;
+  }
 
   async start(): Promise<void> {
     if (this.workers.length > 0) return;
@@ -58,6 +62,11 @@ export class WorkerPool {
   ): Promise<EvaluationResult> {
     if (this.shuttingDown) {
       return { ok: false, error: 'Worker pool is shutting down' };
+    }
+
+    // [T-V1-M2] Reject when queue is full to surface back-pressure
+    if (this.availableWorkers.length === 0 && this.taskQueue.length >= this.maxQueueLength) {
+      return { ok: false, error: 'Worker pool queue full — back-pressure (503)' };
     }
 
     return new Promise((resolve, reject) => {
@@ -82,6 +91,14 @@ export class WorkerPool {
     const compiledWorkerScript = path.join(__dirname, 'jsonataWorker.js');
     const sourceWorkerScript = path.join(__dirname, 'jsonataWorker.ts');
     const workerScript = existsSync(compiledWorkerScript) ? compiledWorkerScript : sourceWorkerScript;
+
+    // [T-V1-L7] Fail fast in production if compiled worker is missing
+    if (workerScript.endsWith('.ts') && process.env.NODE_ENV === 'production') {
+      throw new Error(
+        `Compiled worker script not found at ${compiledWorkerScript} — cannot use tsx in production`,
+      );
+    }
+
     const workerOptions = workerScript.endsWith('.ts') ? { execArgv: ['--import', 'tsx'] } : undefined;
     const worker = new Worker(workerScript, workerOptions);
 
