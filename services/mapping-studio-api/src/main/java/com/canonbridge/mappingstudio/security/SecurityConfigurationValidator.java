@@ -80,6 +80,11 @@ public class SecurityConfigurationValidator {
         if (corsOrigins.isBlank() || corsOrigins.contains("*") || corsOrigins.contains("localhost")) {
             failures.add("CORS_ALLOWED_ORIGINS must be explicit production origins only");
         }
+        // M-Y3 FIX: Check database password is not the insecure default
+        String dbPassword = value(config, "quarkus.datasource.password", "");
+        if (dbPassword.isBlank() || "postgres".equals(dbPassword)) {
+            failures.add("DB_PASSWORD must be set to a secure production password (not 'postgres')");
+        }
         if (value(config, "quarkus.swagger-ui.always-include", "false").equalsIgnoreCase("true")) {
             failures.add("Swagger UI must not be publicly included in production");
         }

@@ -216,7 +216,8 @@ public class PaddleWebhookHandler {
      * B-K4: Validates timestamp is within TIMESTAMP_TOLERANCE_SECONDS.
      */
     private boolean verifySignature(String signatureHeader, String body) {
-        if (config.webhookSecret().isEmpty() || config.webhookSecret().get().isBlank()) {
+        String webhookSecret = config.webhookSecret().orElse(null);
+        if (webhookSecret == null || webhookSecret.isBlank()) {
             // B-K2 FIX: Fail-CLOSED in production
             if (isProduction()) {
                 Log.error("Paddle webhook secret not configured in production — rejecting webhook (fail-closed)");
@@ -265,7 +266,7 @@ public class PaddleWebhookHandler {
             String payload = timestamp + ":" + body;
             Mac mac = Mac.getInstance("HmacSHA256");
             SecretKeySpec keySpec = new SecretKeySpec(
-                config.webhookSecret().get().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+                webhookSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
             mac.init(keySpec);
             byte[] computedHash = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
 
