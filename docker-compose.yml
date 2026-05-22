@@ -197,6 +197,8 @@ services:
       PADDLE_WEBHOOK_SECRET: ${PADDLE_WEBHOOK_SECRET:-}
       PADDLE_ENVIRONMENT: ${PADDLE_ENVIRONMENT:-sandbox}
       PADDLE_SELLER_ID: ${PADDLE_SELLER_ID:-}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-billing-service-dev-secret}
+      BILLING_INTERNAL_SECRET: ${BILLING_INTERNAL_SECRET:-billing-internal-dev-secret}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/health/live"]
       interval: 30s

@@ -152,3 +152,13 @@ export function recordTransform(
 export function recordKafkaMessage(result: 'ok' | 'dlq' | 'skip'): void {
   incCounter('kafka_messages_total', { result });
 }
+
+/** T-Y1: usage_dropped_total{reason="no_org_id"} — tracks billing revenue leaks */
+export function recordUsageDropped(reason: string): void {
+  incCounter('usage_dropped_total', { reason });
+}
+
+/** T-Y2: dlq_redrive_total{status="ok|error"} — tracks DLQ redrive operations */
+export function recordDlqRedrive(status: 'ok' | 'error'): void {
+  incCounter('dlq_redrive_total', { status });
+}
