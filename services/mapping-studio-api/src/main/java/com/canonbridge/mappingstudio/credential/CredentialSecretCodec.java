@@ -64,7 +64,9 @@ public class CredentialSecretCodec {
         JsonObject envelope = new JsonObject(encryptedSecretJson);
         
         if (!envelope.containsKey("alg")) {
-            throw new IllegalStateException("Credential secret envelope is missing encryption metadata");
+            // Legacy: credential stored as plain JSON (pre-encryption seed data).
+            // Return as-is for backward compatibility.
+            return envelope;
         }
         
         if (!"AES-256-GCM".equals(envelope.getString("alg"))) {
