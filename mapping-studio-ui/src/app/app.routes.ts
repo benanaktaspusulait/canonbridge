@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, publicGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
-import { roleGuard } from './core/guards/role.guard';
 
 /**
  * Application Route Structure

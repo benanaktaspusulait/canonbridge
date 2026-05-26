@@ -232,9 +232,11 @@ services:
       OUTBOX_ENABLED: "false"
       LOG_LEVEL: "info"
       CORS_ORIGINS: "http://localhost:4200,http://localhost:3000"
+      # [T-V1-H3] Explicit auth disable for local dev
+      AUTH_DISABLED: "true"
       NODE_ENV: "development"
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/health"]
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8080/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 3
