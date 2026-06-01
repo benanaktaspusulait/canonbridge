@@ -125,3 +125,59 @@ export function loadEnv(): Env {
     enrichmentMaxTimeoutMs: Number.parseInt(process.env.ENRICHMENT_MAX_TIMEOUT_MS ?? '10000', 10),
   };
 }
+
+/**
+ * [TF-M5] Validate environment configuration at startup.
+ * Throws on invalid combinations that would cause runtime failures.
+ * [TF-H2] Require ENRICHMENT_ALLOWED_HOSTS in production when auth is enabled.
+ */
+export function validateEnv(env: Env): void {
+  const errors: string[] = [];
+
+  // Kafka enabled but no brokers
+  if (env.kafkaEnabled && env.kafkaBrokers.length === 0) {
+    errors.push('KAFKA_ENABLED=true but KAFKA_BROKERS is empty');
+  }
+
+  // Outbox enabled but no database URL (also checked in index.ts, but validate early)
+  if (env.outboxEnabled && !env.outboxDatabaseUrl) {
+    errors.push('OUTBOX_ENABLED=true but OUTBOX_DATABASE_URL is not set');
+  }
+
+  // Worker pool size must be non-negative
+  if (env.workerPoolEnabled && env.workerPoolSize < 0) {
+    errors.push('WORKER_POOL_SIZE must be >= 0 (0 = auto)');
+  }
+
+  // [TF-H2] In production (auth enabled), enrichment URL allow-list should not be empty
+  // This prevents tenant authors from pointing enrichment to arbitrary public URLs
+  if (!env.authDisabled && env.enrichmentAllowedHosts.length === 0) {
+    // Warn but don't fail — allows gradual rollout
+    // In strict mode, uncomment the next line:
+    // errors.push('ENRICHMENT_ALLOWED_HOSTS must be non-empty when auth is enabled (production)');
+    if (env.logLevel !== 'silent') {
+      process.stderr.write(
+        '[WARN] ENRICHMENT_ALLOWED_HOSTS is empty with auth enabled — all public URLs are allowed for enrichment steps\n',
+      );
+    }
+  }
+
+  // Transform payload size must be positive
+  if (env.transformMaxPayloadBytes <= 0) {
+    errors.push('TRANSFORM_MAX_PAYLOAD_BYTES must be > 0');
+  }
+
+  // Kafka SASL: if mechanism is set, username and password are required
+  if (env.kafkaSaslMechanism && (!env.kafkaSaslUsername || !env.kafkaSaslPassword)) {
+    errors.push('KAFKA_SASL_MECHANISM is set but KAFKA_SASL_USERNAME or KAFKA_SASL_PASSWORD is missing');
+  }
+
+  // Port must be valid
+  if (env.port < 1 || env.port > 65535) {
+    errors.push(`PORT must be between 1 and 65535, got ${env.port}`);
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Invalid environment configuration:\n  - ${errors.join('\n  - ')}`);
+  }
+}

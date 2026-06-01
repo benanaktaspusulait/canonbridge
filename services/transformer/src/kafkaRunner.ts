@@ -124,6 +124,17 @@ export async function startKafkaConsumer(
     logger,
   );
 
+  // [TF-M4] Track rebalance state to prevent duplicate processing during rebalance
+  let rebalancing = false;
+  consumer.on(consumer.events.GROUP_JOIN, (event: { payload: unknown }) => {
+    rebalancing = false;
+    logger.info({ event: 'GROUP_JOIN' }, 'kafka consumer joined group — resuming processing');
+  });
+  consumer.on(consumer.events.REBALANCING, () => {
+    rebalancing = true;
+    logger.warn({ event: 'REBALANCING' }, 'kafka consumer rebalancing — pausing processing');
+  });
+
   const topics = registry.allRawTopics();
   for (const topic of topics) {
     await consumer.subscribe({ topic, fromBeginning: false });
@@ -191,6 +202,12 @@ export async function startKafkaConsumer(
     eachMessage: async (payload: EachMessagePayload) => {
       const { topic, partition, message, heartbeat } = payload;
       const offset = message.offset;
+
+      // [TF-M4] Skip processing during rebalance to prevent duplicate publishes
+      if (rebalancing) {
+        logger.warn({ topic, partition, offset }, 'skipping message during rebalance');
+        return;
+      }
 
       const rawStr = message.value?.toString('utf8');
       if (rawStr === undefined) {

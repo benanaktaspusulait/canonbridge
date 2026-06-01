@@ -22,6 +22,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Webhook", description = "Webhook ingestion endpoint")
 public class WebhookResource {
 
+    // [WR-M1] Maximum payload size per webhook (512KB default, configurable per-partner in future)
+    private static final int MAX_PAYLOAD_BYTES = 512 * 1024;
+
     @Inject
     WebhookService webhookService;
 
@@ -64,6 +67,15 @@ public class WebhookResource {
             return Uni.createFrom().item(
                 Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ErrorResponse("partnerId must be a valid UUID"))
+                    .build()
+            );
+        }
+
+        // [WR-M1] Per-partner payload size validation (before expensive auth/Kafka operations)
+        if (payload != null && payload.length() > MAX_PAYLOAD_BYTES) {
+            return Uni.createFrom().item(
+                Response.status(413)
+                    .entity(new ErrorResponse("Payload exceeds maximum size of " + MAX_PAYLOAD_BYTES + " bytes"))
                     .build()
             );
         }
