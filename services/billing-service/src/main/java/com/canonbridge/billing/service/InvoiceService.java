@@ -49,34 +49,52 @@ public class InvoiceService {
         LocalDate lastMonth = LocalDate.now(ZoneOffset.UTC).minusMonths(1).withDayOfMonth(1);
         LocalDate periodEnd = lastMonth.plusMonths(1).minusDays(1);
 
-        String sql = """
-            INSERT INTO invoices (id, org_id, period_start, period_end, subtotal_cents, tax_cents, total_cents, status)
-            SELECT
-                gen_random_uuid(),
-                s.org_id,
-                $1::date,
-                $2::date,
-                COALESCE(p.price_monthly_cents, 0),
-                0,
-                COALESCE(p.price_monthly_cents, 0),
-                CASE WHEN p.price_monthly_cents = 0 THEN 'paid' ELSE 'open' END
-            FROM subscriptions s
-            JOIN plans p ON p.id = s.plan_id
-            WHERE s.status IN ('active', 'past_due')
-              AND NOT EXISTS (
-                SELECT 1 FROM invoices i
-                WHERE i.org_id = s.org_id AND i.period_start = $1::date
-              )
-            """;
+        // [BS-M4] FIX: Use advisory lock to prevent concurrent invoice generation (cron + manual API race)
+        String lockSql = "SELECT pg_try_advisory_lock(42, EXTRACT(YEAR FROM $1::date)::int * 100 + EXTRACT(MONTH FROM $1::date)::int)";
 
-        return client.preparedQuery(sql)
-            .execute(Tuple.of(lastMonth, periodEnd))
-            .flatMap(rowSet -> {
-                long count = rowSet.rowCount();
-                if (count > 0) {
-                    return generateLineItems(lastMonth, periodEnd).map(v -> count);
+        return client.preparedQuery(lockSql)
+            .execute(Tuple.of(lastMonth))
+            .flatMap(lockResult -> {
+                boolean acquired = lockResult.iterator().next().getBoolean(0);
+                if (!acquired) {
+                    Log.info("Invoice generation already in progress (advisory lock held) — skipping");
+                    return Uni.createFrom().item(0L);
                 }
-                return Uni.createFrom().item(count);
+
+                String sql = """
+                    INSERT INTO invoices (id, org_id, period_start, period_end, subtotal_cents, tax_cents, total_cents, status)
+                    SELECT
+                        gen_random_uuid(),
+                        s.org_id,
+                        $1::date,
+                        $2::date,
+                        COALESCE(p.price_monthly_cents, 0),
+                        0,
+                        COALESCE(p.price_monthly_cents, 0),
+                        CASE WHEN p.price_monthly_cents = 0 THEN 'paid' ELSE 'open' END
+                    FROM subscriptions s
+                    JOIN plans p ON p.id = s.plan_id
+                    WHERE s.status IN ('active', 'past_due')
+                      AND NOT EXISTS (
+                        SELECT 1 FROM invoices i
+                        WHERE i.org_id = s.org_id AND i.period_start = $1::date
+                      )
+                    """;
+
+                return client.preparedQuery(sql)
+                    .execute(Tuple.of(lastMonth, periodEnd))
+                    .flatMap(rowSet -> {
+                        long count = rowSet.rowCount();
+                        if (count > 0) {
+                            return generateLineItems(lastMonth, periodEnd).map(v -> count);
+                        }
+                        return Uni.createFrom().item(count);
+                    })
+                    .eventually(() -> {
+                        // Release advisory lock
+                        String unlockSql = "SELECT pg_advisory_unlock(42, EXTRACT(YEAR FROM $1::date)::int * 100 + EXTRACT(MONTH FROM $1::date)::int)";
+                        return client.preparedQuery(unlockSql).execute(Tuple.of(lastMonth)).replaceWithVoid();
+                    });
             });
     }
 

@@ -64,6 +64,17 @@ public class ShopMaxController {
             return handleScenario(scenario);
         }
 
+        // [CM-H2] FIX: Return 404 for IDs matching "not-found" patterns
+        // This exercises consumer error handling paths that were never tested
+        if (id.startsWith("NOT-FOUND") || id.startsWith("000000") || "not-found".equalsIgnoreCase(id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "error", "order_not_found",
+                            "message", "Order with ID '" + id + "' was not found",
+                            "order_id", id
+                    ));
+        }
+
         if ("compact".equalsIgnoreCase(format)) {
             return ResponseEntity.ok(shopMaxService.getOrderCompact(id));
         }
@@ -126,6 +137,11 @@ public class ShopMaxController {
 
     private ResponseEntity<?> handleScenario(String scenario) {
         return switch (scenario) {
+            case "not-found" -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "error", "order_not_found",
+                            "message", "The requested resource was not found"
+                    ));
             case "unavailable" -> ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                     .body(Map.of(
                             "error", "Service temporarily unavailable",

@@ -88,6 +88,16 @@ public class PayFlexController {
             return handleScenario(scenario);
         }
 
+        // [CM-H2] FIX: Return 404 for IDs matching "not-found" patterns
+        if (id.startsWith("NOT-FOUND") || id.startsWith("000000") || "not-found".equalsIgnoreCase(id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "error", "payment_not_found",
+                            "message", "Payment with ID '" + id + "' was not found",
+                            "payment_id", id
+                    ));
+        }
+
         if ("flat".equalsIgnoreCase(format)) {
             return ResponseEntity.ok(payFlexService.getPaymentFlat(id));
         }

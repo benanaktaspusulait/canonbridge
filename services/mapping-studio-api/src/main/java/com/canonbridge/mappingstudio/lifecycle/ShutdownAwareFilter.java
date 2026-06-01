@@ -40,4 +40,15 @@ public class ShutdownAwareFilter implements ContainerRequestFilter, ContainerRes
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
         shutdownManager.requestCompleted();
     }
+
+    /** Error response structure for shutdown rejection */
+    public static class ErrorResponse {
+        public String error;
+        public String message;
+
+        public ErrorResponse(String error, String message) {
+            this.error = error;
+            this.message = message;
+        }
+    }
 }
