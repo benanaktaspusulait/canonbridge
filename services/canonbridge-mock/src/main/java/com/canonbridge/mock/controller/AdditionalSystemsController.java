@@ -22,6 +22,10 @@ import java.util.Map;
 @Slf4j
 public class AdditionalSystemsController {
 
+    // [CM-M1] FIX: Use MockTokenService for consistent auth across all controllers
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.canonbridge.mock.auth.MockTokenService tokenService;
+
     @GetMapping("/inventorypro/items/{sku}")
     public ResponseEntity<?> getInventoryItem(
             @RequestHeader(value = "Authorization", required = false) String authorization,
@@ -142,6 +146,15 @@ public class AdditionalSystemsController {
     }
 
     private ResponseEntity<?> requireBearer(String authorization) {
+        if (tokenService != null) {
+            var validation = tokenService.validateBearer(authorization, "read:orders", "orders.read");
+            if (!validation.valid()) {
+                return ResponseEntity.status(validation.status())
+                        .body(Map.of("error", validation.error(), "description", validation.description()));
+            }
+            return null;
+        }
+        // Fallback: accept any non-empty bearer (backward compat if tokenService not injected)
         if (authorization == null || !authorization.startsWith("Bearer ") || authorization.substring(7).isBlank()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Authorization header with Bearer token is required"));

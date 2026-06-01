@@ -165,12 +165,20 @@ export class RedisCache implements TransformCache {
     this.localCache.clear();
     const redis = await this.getRedisClient();
     // [T-V1-M4] Use SCAN + UNLINK instead of KEYS (O(N) blocking command)
+    // [TF-M3] Cap iterations to prevent infinite loop on large keyspaces
     let cursor = '0';
+    let iterations = 0;
+    const maxIterations = 1000;
     do {
       const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', `${this.prefix}*`, 'COUNT', 100);
       cursor = nextCursor;
       if (keys.length > 0) {
         await redis.unlink(...keys);
+      }
+      iterations++;
+      if (iterations >= maxIterations) {
+        // Safety cap: don't loop forever on huge keyspaces
+        break;
       }
     } while (cursor !== '0');
   }

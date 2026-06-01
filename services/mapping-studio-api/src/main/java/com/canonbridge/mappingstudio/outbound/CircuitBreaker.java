@@ -70,6 +70,13 @@ public class CircuitBreaker {
         CircuitState state = circuits.computeIfAbsent(key, k -> new CircuitState());
         int failures = state.incrementFailures();
         
+        // [MS-M4] FIX: If in HALF_OPEN and test request fails, go back to OPEN
+        if (state.getState() == State.HALF_OPEN) {
+            state.transitionTo(State.OPEN);
+            LOG.warnf("Circuit re-OPENED for: %s (HALF_OPEN test request failed)", key);
+            return;
+        }
+        
         if (failures >= failureThreshold && state.getState() == State.CLOSED) {
             state.transitionTo(State.OPEN);
             LOG.warnf("Circuit OPEN for: %s (after %d failures)", key, failures);

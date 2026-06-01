@@ -163,17 +163,35 @@ public class WebhookService {
     }
 
     /**
-     * WR-V1-H1 FIX: Non-blocking org resolution via reactive PgPool.
+     * [WR-M2] FIX: Cache partner→org mapping to avoid DB query on every webhook.
+     * TTL: 5 minutes. Invalidated on partner/org changes (acceptable staleness for billing).
+     */
+    private final java.util.concurrent.ConcurrentHashMap<String, CachedOrg> orgCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long ORG_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+    private record CachedOrg(String orgId, long cachedAt) {
+        boolean isExpired() { return System.currentTimeMillis() - cachedAt > ORG_CACHE_TTL_MS; }
+    }
+
+    /**
+     * WR-V1-H1 FIX: Non-blocking org resolution via reactive PgPool with caching.
      */
     private Uni<String> resolveOrgIdAsync(String partnerId) {
+        CachedOrg cached = orgCache.get(partnerId);
+        if (cached != null && !cached.isExpired()) {
+            return Uni.createFrom().item(cached.orgId());
+        }
+
         return client.preparedQuery(
             "SELECT o.id FROM organizations o JOIN partners p ON p.tenant_id = o.tenant_id WHERE p.id = $1::uuid LIMIT 1"
         ).execute(Tuple.of(partnerId))
         .map(rowSet -> {
+            String orgId = null;
             if (rowSet.size() > 0) {
-                return rowSet.iterator().next().getUUID("id").toString();
+                orgId = rowSet.iterator().next().getUUID("id").toString();
             }
-            return null;
+            orgCache.put(partnerId, new CachedOrg(orgId, System.currentTimeMillis()));
+            return orgId;
         })
         .onFailure().recoverWithItem((String) null);
     }

@@ -110,10 +110,16 @@ public class RateLimitService {
 
         } catch (Exception e) {
             Log.errorf(e, "Error checking rate limit for client %s, allowing request", clientId);
+            // [MS-M8] Emit metric for alerting on Redis failures
+            redisFailureCount++;
             // On Redis errors, fail open to avoid blocking legitimate traffic
             return new RateLimitResult(true, limit, limit, 0, 0);
         }
     }
+
+    /** [MS-M8] Counter for Redis failures — exposed via /metrics for Prometheus alerting */
+    private volatile long redisFailureCount = 0;
+    public long getRedisFailureCount() { return redisFailureCount; }
 
     private boolean usesInMemoryStorage() {
         return "memory".equals(config.storage().toLowerCase(Locale.ROOT));
