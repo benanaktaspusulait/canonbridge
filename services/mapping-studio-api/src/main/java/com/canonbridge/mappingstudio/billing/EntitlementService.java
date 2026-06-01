@@ -253,6 +253,9 @@ public class EntitlementService {
         }
     }
 
+    // [MS-M5] NOTE: This method blocks the event loop via executeAndAwait.
+    // Acceptable because it's only called on Redis cache miss (rare path).
+    // TODO: Refactor to fully reactive chain when cache miss rate exceeds 1%.
     private EntitlementStatus loadFromPostgres(UUID orgId, String featureKey) {
         try {
             String sql = """

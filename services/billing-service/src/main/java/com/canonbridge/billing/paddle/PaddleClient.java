@@ -170,6 +170,7 @@ public class PaddleClient {
     /**
      * Update a subscription (change plan/price).
      */
+    @org.eclipse.microprofile.faulttolerance.Timeout(value = 15, unit = java.time.temporal.ChronoUnit.SECONDS)
     public Uni<Boolean> updateSubscription(String subscriptionId, String newPlanCode, String billingCycle) {
         if (!isConfigured()) {
             Log.infof("[Paddle Mock] Updated subscription %s to %s/%s", subscriptionId, newPlanCode, billingCycle);
@@ -199,6 +200,7 @@ public class PaddleClient {
     /**
      * Cancel a subscription in Paddle (effective at end of billing period).
      */
+    @org.eclipse.microprofile.faulttolerance.Timeout(value = 15, unit = java.time.temporal.ChronoUnit.SECONDS)
     public Uni<Boolean> cancelSubscription(String subscriptionId) {
         if (!isConfigured()) {
             Log.infof("[Paddle Mock] Canceled subscription %s", subscriptionId);
@@ -222,6 +224,7 @@ public class PaddleClient {
     /**
      * Pause a subscription in Paddle.
      */
+    @org.eclipse.microprofile.faulttolerance.Timeout(value = 15, unit = java.time.temporal.ChronoUnit.SECONDS)
     public Uni<Boolean> pauseSubscription(String subscriptionId) {
         if (!isConfigured()) {
             Log.infof("[Paddle Mock] Paused subscription %s", subscriptionId);
@@ -246,6 +249,7 @@ public class PaddleClient {
     /**
      * Resume a paused subscription.
      */
+    @org.eclipse.microprofile.faulttolerance.Timeout(value = 15, unit = java.time.temporal.ChronoUnit.SECONDS)
     public Uni<Boolean> resumeSubscription(String subscriptionId) {
         if (!isConfigured()) {
             Log.infof("[Paddle Mock] Resumed subscription %s", subscriptionId);
