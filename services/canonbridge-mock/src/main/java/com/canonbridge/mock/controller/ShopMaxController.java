@@ -138,20 +138,15 @@ public class ShopMaxController {
                             "retryAfter", 60
                     ));
             case "slow-2s" -> {
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-                yield ResponseEntity.ok(shopMaxService.getRecentOrdersDetailed());
+                // [CM-H1] FIX: Return immediately with delay header instead of blocking Tomcat thread
+                yield ResponseEntity.ok()
+                        .header("X-Mock-Delay", "2000")
+                        .body(shopMaxService.getRecentOrdersDetailed());
             }
             case "slow-5s" -> {
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-                yield ResponseEntity.ok(shopMaxService.getRecentOrdersDetailed());
+                yield ResponseEntity.ok()
+                        .header("X-Mock-Delay", "5000")
+                        .body(shopMaxService.getRecentOrdersDetailed());
             }
             default -> ResponseEntity.ok(shopMaxService.getRecentOrdersDetailed());
         };

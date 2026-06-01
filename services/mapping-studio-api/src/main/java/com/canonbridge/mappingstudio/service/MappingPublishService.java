@@ -98,10 +98,12 @@ public class MappingPublishService {
             String webhookPath = sourceConfig.getString("endpoint", "/webhook/" + draft.getPartnerId() + "/" + draft.getEventType());
             String webhookKey = "wh-" + draft.getId().toString().substring(0, 8);
             String secretHash = hashWebhookKey(webhookKey);
+            // [WR-H1] FIX: Generate a dedicated signing secret for HMAC verification
+            String signingSecret = java.util.UUID.randomUUID().toString().replace("-", "");
 
-            String sql = "INSERT INTO webhook_endpoints (tenant_id, partner_id, draft_id, name, path, webhook_key, secret_hash, status) " +
-                "VALUES ($1, $2, $3, $4, $5, $6, $7, 'ACTIVE') " +
-                "ON CONFLICT (tenant_id, path) DO UPDATE SET status = 'ACTIVE', webhook_key = EXCLUDED.webhook_key, secret_hash = EXCLUDED.secret_hash, updated_at = NOW()";
+            String sql = "INSERT INTO webhook_endpoints (tenant_id, partner_id, draft_id, name, path, webhook_key, secret_hash, signing_secret, status) " +
+                "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'ACTIVE') " +
+                "ON CONFLICT (tenant_id, path) DO UPDATE SET status = 'ACTIVE', webhook_key = EXCLUDED.webhook_key, secret_hash = EXCLUDED.secret_hash, signing_secret = COALESCE(webhook_endpoints.signing_secret, EXCLUDED.signing_secret), updated_at = NOW()";
 
             draftRepository.getClient().preparedQuery(sql)
                 .execute(io.vertx.mutiny.sqlclient.Tuple.tuple()
@@ -112,9 +114,10 @@ public class MappingPublishService {
                     .addString(webhookPath)
                     .addString(webhookKey)
                     .addString(secretHash)
+                    .addString(signingSecret)
                 )
                 .subscribe().with(
-                    result -> LOG.infof("Webhook endpoint registered: %s (key: %s)", webhookPath, webhookKey),
+                    result -> LOG.infof("Webhook endpoint registered: %s (key: %s, signing_secret generated)", webhookPath, webhookKey),
                     err -> LOG.warnf("Failed to register webhook endpoint: %s", err.getMessage())
                 );
         } catch (Exception e) {
