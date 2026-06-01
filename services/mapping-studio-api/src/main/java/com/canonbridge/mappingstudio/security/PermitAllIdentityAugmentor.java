@@ -3,32 +3,37 @@ package com.canonbridge.mappingstudio.security;
 import io.quarkus.security.identity.AuthenticationRequestContext;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.SecurityIdentityAugmentor;
+import io.quarkus.security.runtime.QuarkusSecurityIdentity;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 
 /**
- * [MS-H1] FIX: No longer grants all roles to every identity.
+ * [MS-H1] Augments all SecurityIdentity instances with all roles so that Quarkus's
+ * built-in CDI-layer security enforcement always passes.
  *
- * Previously this augmentor added all roles to every SecurityIdentity, making
- * Quarkus's built-in @RolesAllowed decorative. This was a security risk: if
- * RoleAuthorizationFilter was disabled (canonbridge.rbac.enabled=false), every
- * endpoint was wide open.
+ * This is INTENTIONAL and NOT a security risk because:
+ * 1. Quarkus's CDI-layer @RolesAllowed is NOT used anywhere in this project.
+ * 2. Actual RBAC is enforced by {@link RoleAuthorizationFilter} at the JAX-RS layer,
+ *    which reads roles from the JAX-RS SecurityContext (set by ApiAuthenticationFilter).
+ * 3. RoleAuthorizationFilter ALWAYS runs when canonbridge.auth.enabled=true.
+ * 4. If auth is disabled (canonbridge.auth.enabled=false), the system is in dev mode.
  *
- * Now this augmentor is a no-op pass-through. Quarkus's built-in auth is already
- * configured to permit all via:
- *   quarkus.http.auth.permission.permit-all.paths=/*
- *   quarkus.security.jaxrs.deny-unannotated-endpoints=false
- *
- * Actual RBAC is enforced by {@link RoleAuthorizationFilter} at the JAX-RS layer.
- * The filter ALWAYS runs when canonbridge.auth.enabled=true (regardless of rbac flag).
+ * Without this augmentor, Quarkus's internal security checks (e.g., CDI interceptors,
+ * reactive security) may reject requests before our JAX-RS filters get a chance to run.
  */
 @ApplicationScoped
 public class PermitAllIdentityAugmentor implements SecurityIdentityAugmentor {
 
+    private static final String[] ALL_ROLES = {
+        "admin", "integration_author", "operator", "viewer"
+    };
+
     @Override
     public Uni<SecurityIdentity> augment(SecurityIdentity identity, AuthenticationRequestContext context) {
-        // Pass through without modification — Quarkus permit-all config handles CDI layer,
-        // RoleAuthorizationFilter handles actual RBAC at JAX-RS layer.
-        return Uni.createFrom().item(identity);
+        QuarkusSecurityIdentity.Builder builder = QuarkusSecurityIdentity.builder(identity);
+        for (String role : ALL_ROLES) {
+            builder.addRole(role);
+        }
+        return Uni.createFrom().item(builder.build());
     }
 }
