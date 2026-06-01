@@ -12,6 +12,7 @@ import { cpus } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { existsSync } from 'node:fs';
+import { setGauge, incCounter } from './metrics.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -80,8 +81,12 @@ export class WorkerPool {
       return { ok: false, error: 'Worker pool is shutting down' };
     }
 
+    // [TF-M2] Expose queue depth for Prometheus alerting
+    setGauge('worker_pool_queue_depth', this.taskQueue.length);
+
     // [T-V1-M2] Reject when queue is full to surface back-pressure
     if (this.availableWorkers.length === 0 && this.taskQueue.length >= this.maxQueueLength) {
+      incCounter('worker_pool_rejections_total', {});
       return { ok: false, error: 'Worker pool queue full — back-pressure (503)' };
     }
 

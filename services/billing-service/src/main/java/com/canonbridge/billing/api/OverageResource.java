@@ -45,7 +45,7 @@ public class OverageResource {
     @POST
     @Path("/enable")
     @Operation(summary = "Enable overage billing")
-    public Uni<Response> enable(@PathParam("orgId") UUID orgId, OverageSettings settings) {
+    public Uni<Response> enable(@PathParam("orgId") UUID orgId, @jakarta.validation.Valid OverageSettings settings) {
         String sql = """
             INSERT INTO org_billing_settings (org_id, overage_enabled, overage_cap_cents, overage_notification_threshold_percent)
             VALUES ($1, TRUE, $2, $3)

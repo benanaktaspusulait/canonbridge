@@ -54,6 +54,17 @@ public class WebhookResource {
             );
         }
 
+        // [WR-M4] Validate partnerId is a UUID to prevent DB cast errors
+        try {
+            java.util.UUID.fromString(partnerId);
+        } catch (IllegalArgumentException e) {
+            return Uni.createFrom().item(
+                Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ErrorResponse("partnerId must be a valid UUID"))
+                    .build()
+            );
+        }
+
         // Y9 FIX: If client provides Idempotency-Key, check for duplicate processing
         if (idempotencyKey != null && !idempotencyKey.isBlank()) {
             return webhookService.checkIdempotency(idempotencyKey)

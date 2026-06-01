@@ -17,7 +17,8 @@
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
 		Cross-Origin-Opener-Policy "same-origin"
 		Cross-Origin-Resource-Policy "same-origin"
-		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' wss: https:; frame-ancestors 'none'"
+		# [INF-M3] CSP removed from reverse proxy — each upstream service sets its own CSP
+		# Content-Security-Policy is set by: website (Next.js nonce-based), mapping-studio-ui (nginx), API (SecurityHeadersFilter)
 		# C2: Remove server header from both Caddy and upstream
 		-Server
 	}

@@ -84,6 +84,11 @@ export default {
       return jsonError(400, 'Invalid JSON body');
     }
 
+    // [LC-M5] Basic email format validation
+    if (body.email && !isValidEmail(body.email)) {
+      return jsonError(400, 'Invalid email format');
+    }
+
     // Turnstile verification (FAIL-CLOSED: no secret key = reject)
     const turnstileResult = await verifyTurnstile(env, body.turnstileToken, clientIp);
     if (!turnstileResult.success) {
@@ -284,7 +289,7 @@ async function publishUsageEvent(env: Env, clientIp: string): Promise<void> {
     metric: 'lead_captures',
     qty: 1,
     ts: new Date().toISOString(),
-    request_id: `lead-${Date.now()}-${clientIp.replace(/\./g, '')}`,
+    request_id: `lead-${Date.now()}-${crypto.randomUUID().substring(0, 8)}`,
     metadata: {},
   };
 
@@ -297,6 +302,11 @@ async function publishUsageEvent(env: Env, clientIp: string): Promise<void> {
   } catch {
     // Graceful degradation: never let billing break lead capture
   }
+}
+
+function isValidEmail(email: string): boolean {
+  if (typeof email !== 'string' || email.length > 254) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 // --- Input sanitization (LC-H3) ---

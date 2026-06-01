@@ -36,6 +36,9 @@ public class TrialService {
             SELECT COUNT(*) AS cnt FROM subscription_history
             WHERE org_id = $1 AND change_reason = 'trial_started'
             """;
+        // [BS-M6] NOTE: Add unique partial index to prevent race condition:
+        // CREATE UNIQUE INDEX idx_trial_one_per_org ON subscription_history (org_id) WHERE change_reason = 'trial_started';
+        // With this index, the INSERT in the chain below will fail with a constraint violation if two concurrent requests race.
 
         return client.preparedQuery(checkSql)
             .execute(Tuple.of(orgId))
