@@ -397,6 +397,49 @@
                                       [placeholder]="param.placeholder || ''"
                                       rows="3"
                                       [style]="{'width': '100%'}"></textarea>
+                                  } @else if (param.type === 'enum-editor') {
+                                    <!-- Visual Enum Mapping Editor -->
+                                    <div class="enum-editor">
+                                      <div class="enum-editor-header">
+                                        <span class="enum-editor-col">Source Value</span>
+                                        <span class="enum-editor-arrow">→</span>
+                                        <span class="enum-editor-col">Target Value</span>
+                                        <span class="enum-editor-actions"></span>
+                                      </div>
+                                      @for (pair of getEnumPairs(mapping); track $index) {
+                                        <div class="enum-editor-row">
+                                          <input
+                                            pInputText
+                                            type="text"
+                                            [ngModel]="pair.source"
+                                            (ngModelChange)="updateEnumPair(field.key, $index, 'source', $event)"
+                                            placeholder="e.g. A"
+                                            class="enum-input" />
+                                          <span class="enum-arrow">→</span>
+                                          <input
+                                            pInputText
+                                            type="text"
+                                            [ngModel]="pair.target"
+                                            (ngModelChange)="updateEnumPair(field.key, $index, 'target', $event)"
+                                            placeholder="e.g. Active"
+                                            class="enum-input" />
+                                          <button
+                                            type="button"
+                                            class="enum-remove-btn"
+                                            (click)="removeEnumPair(field.key, $index)"
+                                            pTooltip="Remove this mapping">
+                                            <i class="pi pi-trash"></i>
+                                          </button>
+                                        </div>
+                                      }
+                                      <button
+                                        type="button"
+                                        class="enum-add-btn"
+                                        (click)="addEnumPair(field.key)">
+                                        <i class="pi pi-plus"></i>
+                                        Add Mapping
+                                      </button>
+                                    </div>
                                   } @else if (param.type === 'number') {
                                     <p-inputNumber
                                       [ngModel]="getParamValue(mapping, param.name)"

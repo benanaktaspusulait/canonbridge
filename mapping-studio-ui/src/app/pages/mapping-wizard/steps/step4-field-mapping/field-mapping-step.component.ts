@@ -97,7 +97,7 @@ interface TransformOption {
   params?: Array<{
     name: string;
     label: string;
-    type: 'text' | 'number' | 'textarea' | 'select' | 'source-subfield';
+    type: 'text' | 'number' | 'textarea' | 'select' | 'source-subfield' | 'enum-editor';
     placeholder?: string;
     options?: Array<{ label: string; value: string }>;
   }>;
@@ -368,8 +368,8 @@ export class FieldMappingStepComponent implements OnInit {
       ]
     },
     { label: 'Enum Mapping', value: 'enum_map', category: 'Logic', description: 'Map values using lookup table',
-      params: [{ name: 'paramA', label: 'Mapping JSON', type: 'textarea', 
-        placeholder: '[{"source":"A","target":"Active"},{"source":"I","target":"Inactive"}]' }]
+      params: [{ name: 'paramA', label: 'Value Mappings', type: 'enum-editor', 
+        placeholder: '' }]
     },
     
     // Advanced
@@ -929,6 +929,48 @@ export class FieldMappingStepComponent implements OnInit {
     );
     // Regenerate preview after param change
     this.generatePreview();
+  }
+
+  // ── Enum Mapping Visual Editor ──────────────────────────────────────────────
+
+  getEnumPairs(mapping: MappingRule): Array<{ source: string; target: string }> {
+    const raw = mapping.paramA || '';
+    if (!raw.trim()) return [{ source: '', target: '' }];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((p: any) => ({ source: String(p.source ?? ''), target: String(p.target ?? '') }));
+      }
+    } catch { /* ignore */ }
+    return [{ source: '', target: '' }];
+  }
+
+  updateEnumPair(targetKey: string, index: number, field: 'source' | 'target', value: string): void {
+    const rule = this.mappingRules().find(r => r.targetKey === targetKey);
+    if (!rule) return;
+    const pairs = this.getEnumPairs(rule);
+    pairs[index] = { ...pairs[index], [field]: value };
+    const json = JSON.stringify(pairs);
+    this.updateRuleParam(targetKey, 'paramA', json);
+  }
+
+  removeEnumPair(targetKey: string, index: number): void {
+    const rule = this.mappingRules().find(r => r.targetKey === targetKey);
+    if (!rule) return;
+    const pairs = this.getEnumPairs(rule);
+    pairs.splice(index, 1);
+    if (pairs.length === 0) pairs.push({ source: '', target: '' });
+    const json = JSON.stringify(pairs);
+    this.updateRuleParam(targetKey, 'paramA', json);
+  }
+
+  addEnumPair(targetKey: string): void {
+    const rule = this.mappingRules().find(r => r.targetKey === targetKey);
+    if (!rule) return;
+    const pairs = this.getEnumPairs(rule);
+    pairs.push({ source: '', target: '' });
+    const json = JSON.stringify(pairs);
+    this.updateRuleParam(targetKey, 'paramA', json);
   }
 
   async generatePreview(): Promise<void> {
