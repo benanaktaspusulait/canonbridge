@@ -116,7 +116,8 @@ class WebhookAuthServiceTest {
     void verifiesStripeStyleTimestampedSignature() {
         String payload = "{\"event\":\"created\"}";
         String secret = "webhook-secret";
-        String timestamp = "1716200000";
+        // Use current timestamp to stay within 300s tolerance window
+        String timestamp = String.valueOf(System.currentTimeMillis() / 1000);
         String signature = webhookAuthService.computeHmac(timestamp + "." + payload, secret);
 
         assertTrue(webhookAuthService.verifyHmacSignature(payload, "t=" + timestamp + ",v1=" + signature, secret));

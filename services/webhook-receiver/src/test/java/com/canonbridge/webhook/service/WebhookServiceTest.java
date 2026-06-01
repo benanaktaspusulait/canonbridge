@@ -44,7 +44,9 @@ class WebhookServiceTest {
     void givenValidKey_whenProcessWebhook_thenReturnsEventId() {
         Mockito.when(authService.validateWebhookKey("partner-001", "valid-key"))
             .thenReturn(Uni.createFrom().item(true));
-        Mockito.when(authService.verifyHmacSignature("{\"orderId\":\"ORD-001\"}", "valid-signature", "valid-key"))
+        Mockito.when(authService.getSigningSecret("partner-001"))
+            .thenReturn(Uni.createFrom().item("signing-secret"));
+        Mockito.when(authService.verifyHmacSignature("{\"orderId\":\"ORD-001\"}", "valid-signature", "signing-secret"))
             .thenReturn(true);
 
         String result = webhookService
@@ -83,7 +85,9 @@ class WebhookServiceTest {
     void givenValidKeyAndSignature_whenProcessWebhook_thenEnvelopePublishedToKafka() {
         Mockito.when(authService.validateWebhookKey("shopmax", "shopmax-key"))
             .thenReturn(Uni.createFrom().item(true));
-        Mockito.when(authService.verifyHmacSignature("{\"amount\":99.99}", "valid-signature", "shopmax-key"))
+        Mockito.when(authService.getSigningSecret("shopmax"))
+            .thenReturn(Uni.createFrom().item("shopmax-signing-secret"));
+        Mockito.when(authService.verifyHmacSignature("{\"amount\":99.99}", "valid-signature", "shopmax-signing-secret"))
             .thenReturn(true);
 
         webhookService

@@ -18,13 +18,16 @@ class WebhookResourceTest {
     @InjectMock
     WebhookService webhookService;
 
+    private static final String VALID_PARTNER_ID = "a0000000-0000-0000-0000-000000000001";
+    private static final String ANOTHER_PARTNER_ID = "b0000000-0000-0000-0000-000000000002";
+
     @Test
     void givenNoWebhookKey_thenReturn401() {
         given()
             .contentType("application/json")
             .body("{\"event\": \"order.created\"}")
         .when()
-            .post("/webhook/partner-001/ORDER_CREATED")
+            .post("/webhook/" + VALID_PARTNER_ID + "/ORDER_CREATED")
         .then()
             .statusCode(401)
             .body("error", containsString("X-Webhook-Key header is required"));
@@ -37,7 +40,7 @@ class WebhookResourceTest {
             .header("X-Webhook-Key", "   ")
             .body("{\"event\": \"order.created\"}")
         .when()
-            .post("/webhook/partner-001/ORDER_CREATED")
+            .post("/webhook/" + VALID_PARTNER_ID + "/ORDER_CREATED")
         .then()
             .statusCode(401)
             .body("error", containsString("X-Webhook-Key header is required"));
@@ -54,7 +57,7 @@ class WebhookResourceTest {
             .header("X-Webhook-Key", "valid-secret-key")
             .body("{\"orderId\": \"ORD-001\", \"status\": \"CONFIRMED\"}")
         .when()
-            .post("/webhook/partner-001/ORDER_CREATED")
+            .post("/webhook/" + VALID_PARTNER_ID + "/ORDER_CREATED")
         .then()
             .statusCode(202)
             .body("eventId", equalTo(eventId))
@@ -71,7 +74,7 @@ class WebhookResourceTest {
             .header("X-Webhook-Key", "wrong-key")
             .body("{\"orderId\": \"ORD-001\"}")
         .when()
-            .post("/webhook/partner-001/ORDER_CREATED")
+            .post("/webhook/" + VALID_PARTNER_ID + "/ORDER_CREATED")
         .then()
             .statusCode(401)
             .body("error", containsString("Invalid webhook key"));
@@ -87,7 +90,7 @@ class WebhookResourceTest {
             .header("X-Webhook-Key", "valid-key")
             .body("{\"orderId\": \"ORD-001\"}")
         .when()
-            .post("/webhook/partner-001/ORDER_CREATED")
+            .post("/webhook/" + VALID_PARTNER_ID + "/ORDER_CREATED")
         .then()
             .statusCode(500)
             .body("error", containsString("Failed to process webhook"));
@@ -96,7 +99,7 @@ class WebhookResourceTest {
     @Test
     void givenDifferentPartnerAndEventType_thenRoutedCorrectly() {
         String eventId = "evt-99999";
-        Mockito.when(webhookService.processWebhook(eq("fastcargo"), eq("SHIPMENT_DELIVERED"), anyString(), any(), anyString(), any()))
+        Mockito.when(webhookService.processWebhook(eq(ANOTHER_PARTNER_ID), eq("SHIPMENT_DELIVERED"), anyString(), any(), anyString(), any()))
             .thenReturn(Uni.createFrom().item(eventId));
 
         given()
@@ -104,9 +107,22 @@ class WebhookResourceTest {
             .header("X-Webhook-Key", "cargo-key")
             .body("{\"trackingNumber\": \"TRACK-001\", \"status\": \"DELIVERED\"}")
         .when()
-            .post("/webhook/fastcargo/SHIPMENT_DELIVERED")
+            .post("/webhook/" + ANOTHER_PARTNER_ID + "/SHIPMENT_DELIVERED")
         .then()
             .statusCode(202)
             .body("eventId", equalTo(eventId));
+    }
+
+    @Test
+    void givenInvalidPartnerId_thenReturn400() {
+        given()
+            .contentType("application/json")
+            .header("X-Webhook-Key", "valid-key")
+            .body("{\"orderId\": \"ORD-001\"}")
+        .when()
+            .post("/webhook/not-a-uuid/ORDER_CREATED")
+        .then()
+            .statusCode(400)
+            .body("error", containsString("partnerId must be a valid UUID"));
     }
 }
