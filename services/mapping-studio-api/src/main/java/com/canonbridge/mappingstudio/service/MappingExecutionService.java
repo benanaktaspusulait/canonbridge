@@ -55,6 +55,9 @@ public class MappingExecutionService {
     OutboundConnectionRepository connectionRepository;
 
     @Inject
+    com.canonbridge.mappingstudio.repository.CredentialRepository credentialRepository;
+
+    @Inject
     OutboundHttpService outboundHttpService;
 
     @Inject
@@ -404,29 +407,52 @@ public class MappingExecutionService {
                     }
                 }
 
-                // Check circuit breaker before calling external API
-                String circuitKey = resolvedConnection.url();
-                if (!circuitBreaker.isAllowed(circuitKey)) {
-                    return Uni.createFrom().failure(
-                        new RuntimeException("Circuit breaker OPEN for: " + circuitKey + " (external API unavailable)")
-                    );
+                // If still no auth, try to resolve OAuth2 token from credential linked to connection
+                Uni<Void> authStep = Uni.createFrom().voidItem();
+                if (!headers.containsKey("Authorization") && !headers.containsKey("authorization")) {
+                    String authType = sourceConfig.getString("authType");
+                    if ("OAUTH2_CLIENT_CREDENTIALS".equals(authType)) {
+                        String tokenUrl = sourceConfig.getString("tokenUrl");
+                        String connId = firstNonBlank(
+                            sourceConfig.getString("connectionId"),
+                            sourceConfig.getString("externalSystemId")
+                        );
+                        if (tokenUrl != null && connId != null) {
+                            authStep = fetchOAuth2Token(mapping.getTenantId(), connId, tokenUrl, sourceConfig.getString("scope"))
+                                .invoke(token -> {
+                                    headers.put("Authorization", "Bearer " + token);
+                                    LOG.infof("🔑 Fetched OAuth2 token for %s", tokenUrl);
+                                })
+                                .replaceWithVoid();
+                        }
+                    }
                 }
 
-                return outboundHttpService.execute(
-                        mapping.getTenantId(),
-                        resolvedConnection,
-                        new OutboundHttpRequest(outboundPayload, headers)
-                    )
-                    .map(result -> {
-                        if (!result.success()) {
-                            circuitBreaker.recordFailure(circuitKey);
-                            throw new RuntimeException(
-                                "External API returned " + result.statusCode() + ": " + result.body()
-                            );
-                        }
-                        circuitBreaker.recordSuccess(circuitKey);
-                        return parseApiResponseBody(result.body(), resolvedConnection.protocol());
-                    });
+                return authStep.chain(() -> {
+                    // Check circuit breaker before calling external API
+                    String circuitKey = resolvedConnection.url();
+                    if (!circuitBreaker.isAllowed(circuitKey)) {
+                        return Uni.createFrom().failure(
+                            new RuntimeException("Circuit breaker OPEN for: " + circuitKey + " (external API unavailable)")
+                        );
+                    }
+
+                    return outboundHttpService.execute(
+                            mapping.getTenantId(),
+                            resolvedConnection,
+                            new OutboundHttpRequest(outboundPayload, headers)
+                        )
+                        .map(result -> {
+                            if (!result.success()) {
+                                circuitBreaker.recordFailure(circuitKey);
+                                throw new RuntimeException(
+                                    "External API returned " + result.statusCode() + ": " + result.body()
+                                );
+                            }
+                            circuitBreaker.recordSuccess(circuitKey);
+                            return parseApiResponseBody(result.body(), resolvedConnection.protocol());
+                        });
+                });
             });
     }
 
@@ -572,6 +598,61 @@ public class MappingExecutionService {
             LOG.error("Failed to parse source config", e);
             return new JsonObject();
         }
+    }
+
+    /**
+     * Fetch an OAuth2 access token using client_credentials grant.
+     * Resolves the credential from the connection's credential_id.
+     */
+    private Uni<String> fetchOAuth2Token(String tenantId, String connectionId, String tokenUrl, String scope) {
+        return connectionRepository.findById(tenantId, java.util.UUID.fromString(connectionId))
+            .chain(connection -> {
+                if (connection == null || connection.credentialId() == null) {
+                    return Uni.createFrom().failure(new IllegalStateException("No credential linked to connection " + connectionId));
+                }
+                return credentialRepository.findSecretById(connection.credentialId(), tenantId);
+            })
+            .chain(secret -> {
+                if (secret == null) {
+                    return Uni.createFrom().failure(new IllegalStateException("Credential not found for connection " + connectionId));
+                }
+                JsonObject secretJson = new JsonObject(secret.encryptedSecretJson());
+                String clientId = secretJson.getString("clientId");
+                String clientSecret = secretJson.getString("clientSecret");
+                String resolvedTokenUrl = secretJson.getString("tokenUrl", tokenUrl);
+                String resolvedScope = secretJson.getString("scope", scope != null ? scope : "");
+
+                // HTTP POST to token endpoint
+                String body = "grant_type=client_credentials&client_id=" + clientId + "&client_secret=" + clientSecret;
+                if (resolvedScope != null && !resolvedScope.isBlank()) {
+                    body += "&scope=" + resolvedScope;
+                }
+
+                try {
+                    java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                        .uri(java.net.URI.create(resolvedTokenUrl))
+                        .header("Content-Type", "application/x-www-form-urlencoded")
+                        .POST(java.net.http.HttpRequest.BodyPublishers.ofString(body))
+                        .timeout(java.time.Duration.ofSeconds(10))
+                        .build();
+
+                    java.net.http.HttpClient httpClient = java.net.http.HttpClient.newBuilder()
+                        .followRedirects(java.net.http.HttpClient.Redirect.NEVER)
+                        .build();
+                    java.net.http.HttpResponse<String> response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+                    if (response.statusCode() != 200) {
+                        return Uni.createFrom().failure(new RuntimeException("OAuth2 token request failed: " + response.statusCode() + " " + response.body()));
+                    }
+                    JsonObject tokenResponse = new JsonObject(response.body());
+                    String accessToken = tokenResponse.getString("access_token");
+                    if (accessToken == null || accessToken.isBlank()) {
+                        return Uni.createFrom().failure(new RuntimeException("OAuth2 response missing access_token"));
+                    }
+                    return Uni.createFrom().item(accessToken);
+                } catch (Exception e) {
+                    return Uni.createFrom().failure(new RuntimeException("OAuth2 token fetch failed: " + e.getMessage(), e));
+                }
+            });
     }
 
     private JsonObject jsonObjectValue(Object value) {

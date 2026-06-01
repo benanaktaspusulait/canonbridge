@@ -176,8 +176,8 @@ export class ConfigurationStepComponent implements OnInit {
     if (config['service']) {
       this.grpcService.set(config['service'] as string);
     }
-    if (config['rpcMethod']) {
-      this.grpcMethod.set(config['rpcMethod'] as string);
+    if (config['rpcMethod'] || config['method']) {
+      this.grpcMethod.set((config['rpcMethod'] || config['method']) as string);
     }
   }
 
