@@ -14,6 +14,7 @@ NC='\033[0m' # No Color
 # Configuration
 NAMESPACE="canonbridge"
 TIMEOUT="300s"
+REPLICATION_FACTOR="${REPLICATION_FACTOR:-3}"
 NON_INTERACTIVE=false
 
 # Parse arguments (S1: --non-interactive flag for CI)
@@ -112,21 +113,21 @@ echo ""
 # Create Kafka topics
 echo -e "${YELLOW}Creating Kafka topics...${NC}"
 kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-topics --bootstrap-server localhost:9092 \
-    --create --if-not-exists --topic partner.raw.events --partitions 12 --replication-factor 3
+    --create --if-not-exists --topic partner.raw.events --partitions 12 --replication-factor "$REPLICATION_FACTOR"
 kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-topics --bootstrap-server localhost:9092 \
-    --create --if-not-exists --topic canonical.events --partitions 12 --replication-factor 3
+    --create --if-not-exists --topic canonical.events --partitions 12 --replication-factor "$REPLICATION_FACTOR"
 kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-topics --bootstrap-server localhost:9092 \
-    --create --if-not-exists --topic transformation.dlq --partitions 3 --replication-factor 3
+    --create --if-not-exists --topic transformation.dlq --partitions 3 --replication-factor "$REPLICATION_FACTOR"
 kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-topics --bootstrap-server localhost:9092 \
-    --create --if-not-exists --topic transformation.retry --partitions 3 --replication-factor 3
+    --create --if-not-exists --topic transformation.retry --partitions 3 --replication-factor "$REPLICATION_FACTOR"
 kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-topics --bootstrap-server localhost:9092 \
-    --create --if-not-exists --topic transformation.retry.1m --partitions 3 --replication-factor 3
+    --create --if-not-exists --topic transformation.retry.1m --partitions 3 --replication-factor "$REPLICATION_FACTOR"
 kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-topics --bootstrap-server localhost:9092 \
-    --create --if-not-exists --topic transformation.retry.5m --partitions 3 --replication-factor 3
+    --create --if-not-exists --topic transformation.retry.5m --partitions 3 --replication-factor "$REPLICATION_FACTOR"
 kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-topics --bootstrap-server localhost:9092 \
-    --create --if-not-exists --topic transformation.retry.30m --partitions 3 --replication-factor 3
+    --create --if-not-exists --topic transformation.retry.30m --partitions 3 --replication-factor "$REPLICATION_FACTOR"
 kubectl exec -n "$NAMESPACE" kafka-0 -- kafka-topics --bootstrap-server localhost:9092 \
-    --create --if-not-exists --topic business.events --partitions 6 --replication-factor 3
+    --create --if-not-exists --topic business.events --partitions 6 --replication-factor "$REPLICATION_FACTOR"
 echo -e "${GREEN}✓ Kafka topics created${NC}"
 echo ""
 

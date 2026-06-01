@@ -50,12 +50,8 @@ export default {
       return jsonError(403, 'Origin not allowed');
     }
 
-    // Body size check
+    // Body size cap
     const maxBytes = parseInt(env.MAX_BODY_BYTES ?? '16384', 10);
-    const contentLength = parseInt(request.headers.get('Content-Length') ?? '0', 10);
-    if (contentLength > maxBytes) {
-      return jsonError(413, `Request body exceeds ${maxBytes} bytes`);
-    }
 
     // Rate limiting (IP-based via KV)
     // V5-M3 / NEW-V6-M2 FIX: Reject when IP cannot be determined (prevents bucket collapse)

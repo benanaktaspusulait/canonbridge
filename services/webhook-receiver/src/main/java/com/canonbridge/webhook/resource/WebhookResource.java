@@ -25,6 +25,9 @@ public class WebhookResource {
     @Inject
     WebhookService webhookService;
 
+    @Inject
+    io.micrometer.core.instrument.MeterRegistry meterRegistry;
+
     @POST
     @Path("/{partnerId}/{eventType}")
     @Operation(summary = "Receive webhook payload from partner")
@@ -89,9 +92,12 @@ public class WebhookResource {
                 .entity(new WebhookResponse(eventId, "Webhook received and queued"))
                 .build())
             .onFailure(NotAuthorizedException.class)
-            .recoverWithItem(ex -> Response.status(Response.Status.UNAUTHORIZED)
-                .entity(new ErrorResponse("Invalid webhook key"))
-                .build())
+            .recoverWithItem(ex -> {
+                meterRegistry.counter("webhook_auth_failures_total", "partner", partnerId).increment();
+                return Response.status(Response.Status.UNAUTHORIZED)
+                    .entity(new ErrorResponse("Invalid webhook key"))
+                    .build();
+            })
             .onFailure()
             .recoverWithItem(throwable -> Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity(new ErrorResponse("Failed to process webhook: " + throwable.getMessage()))

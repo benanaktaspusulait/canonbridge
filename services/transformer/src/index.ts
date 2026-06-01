@@ -2,7 +2,7 @@
 import { initTracing } from './tracing.js';
 initTracing();
 
-import { loadEnv } from './env.js';
+import { loadEnv, validateEnv } from './env.js';
 import { PartnerRegistry } from './partnerRegistry.js';
 import { TransformEngine } from './transformEngine.js';
 import { buildServer } from './httpServer.js';
@@ -15,6 +15,7 @@ import { UsagePublisher } from './usagePublisher.js';
 
 async function main(): Promise<void> {
   const env = loadEnv();
+  validateEnv(env);
   const registry = new PartnerRegistry(env.mappingsRoot, {
     databaseUrl: env.mappingDatabaseUrl,
     tenantId: env.mappingDatabaseTenantId,

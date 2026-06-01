@@ -109,6 +109,8 @@ public class PaddleClient {
      * Create a Paddle transaction to generate a checkout URL.
      * The frontend redirects the user to this URL to complete payment.
      */
+    @org.eclipse.microprofile.faulttolerance.CircuitBreaker(requestVolumeThreshold = 5, failureRatio = 0.5, delay = 30, delayUnit = java.time.temporal.ChronoUnit.SECONDS)
+    @org.eclipse.microprofile.faulttolerance.Timeout(value = 15, unit = java.time.temporal.ChronoUnit.SECONDS)
     public Uni<String> createCheckoutUrl(UUID orgId, String planCode, String billingCycle, String returnUrl) {
         if (!isConfigured()) {
             String placeholder = String.format(
