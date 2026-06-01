@@ -40,11 +40,12 @@ public class KafkaConsumerService {
     }
 
     /**
+     * [MS-M2] FIX: No-op implementation that logs and commits instead of throwing.
      * This legacy consumer is disabled by default. The transformer service owns raw-event
      * transformation, validation, DLQ routing, and canonical publish for production flows.
      */
     private void processRawEvent(String key, String payload) {
-        throw new UnsupportedOperationException(
-                "Raw event transformation is handled by services/transformer; keep this consumer disabled unless a real implementation is provided");
+        LOG.warnf("Raw event received but this consumer is a no-op — transformer service handles processing. key=%s, length=%d",
+                key, payload != null ? payload.length() : 0);
     }
 }

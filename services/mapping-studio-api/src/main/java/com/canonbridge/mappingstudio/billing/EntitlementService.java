@@ -58,13 +58,17 @@ public class EntitlementService {
     /**
      * Check if the organization has remaining quota for the given feature.
      *
+     * [MS-M5] FIX: Offload to worker thread via runOnWorkerThread to avoid blocking
+     * the Vert.x event loop during Redis/Postgres operations on cache miss.
+     *
      * @param orgId      Organization UUID
      * @param featureKey Feature key (e.g., "mapping_runs", "transform_requests")
      * @param qty        Quantity to consume
      * @return EntitlementResult with the decision
      */
     public Uni<EntitlementResult> checkQuota(UUID orgId, String featureKey, int qty) {
-        return Uni.createFrom().item(() -> checkQuotaSync(orgId, featureKey, qty));
+        return Uni.createFrom().item(() -> checkQuotaSync(orgId, featureKey, qty))
+            .runSubscriptionOn(io.smallrye.mutiny.infrastructure.Infrastructure.getDefaultWorkerPool());
     }
 
     /**
@@ -78,7 +82,8 @@ public class EntitlementService {
         return Uni.createFrom().item(() -> {
             incrementUsageSync(orgId, featureKey, qty);
             return null;
-        }).replaceWithVoid();
+        }).replaceWithVoid()
+            .runSubscriptionOn(io.smallrye.mutiny.infrastructure.Infrastructure.getDefaultWorkerPool());
     }
 
     /**

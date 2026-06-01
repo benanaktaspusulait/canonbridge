@@ -17,6 +17,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -333,19 +334,22 @@ public class PaddleClient {
     // =========================================================================
 
     /**
-     * Resolve a Paddle price ID from plan code and billing cycle.
-     * In production, these would be stored in the database or config.
-     * For now, uses a naming convention: pri_{planCode}_{cycle}
+     * [BS-M1] FIX: Resolve Paddle price ID via Quarkus config instead of System.getenv().
+     * Config keys: canonbridge.paddle.prices.{planCode}.{billingCycle}
+     * Falls back to sandbox placeholder if not configured.
      */
     private String resolvePriceId(String planCode, String billingCycle) {
-        // TODO: Load from database (paddle_price_mappings table) or config
-        // Convention: configured via environment or DB
-        String key = String.format("PADDLE_PRICE_%s_%s", planCode.toUpperCase(), billingCycle.toUpperCase());
-        String priceId = System.getenv(key);
-        if (priceId != null && !priceId.isBlank()) {
-            return priceId;
+        // Use Quarkus config system (supports profiles, test overrides, validation)
+        String configKey = String.format("canonbridge.paddle.prices.%s.%s",
+            planCode.toLowerCase(), billingCycle.toLowerCase());
+        Optional<String> priceId = org.eclipse.microprofile.config.ConfigProvider.getConfig()
+            .getOptionalValue(configKey, String.class);
+        if (priceId.isPresent() && !priceId.get().isBlank()) {
+            return priceId.get();
         }
-        // Fallback: sandbox placeholder
+        // Fallback: sandbox placeholder (safe for dev, will fail validation in prod)
+        Log.warnf("No Paddle price ID configured for %s/%s (key: %s) — using sandbox placeholder",
+            planCode, billingCycle, configKey);
         return String.format("pri_%s_%s", planCode, billingCycle);
     }
 

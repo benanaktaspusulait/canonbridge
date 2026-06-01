@@ -38,11 +38,18 @@ public class RateLimitService {
     @Inject
     RedisDataSource redisDataSource;
 
+    @Inject
+    io.micrometer.core.instrument.MeterRegistry meterRegistry;
+
     private SortedSetCommands<String, String> sortedSetCommands;
     private final Map<String, Deque<Long>> inMemoryWindows = new ConcurrentHashMap<>();
+    private io.micrometer.core.instrument.Counter redisFailureCounter;
 
     public void init() {
         this.sortedSetCommands = redisDataSource.sortedSet(String.class);
+        if (this.redisFailureCounter == null) {
+            this.redisFailureCounter = meterRegistry.counter("ratelimit_redis_failures_total");
+        }
     }
 
     /**
@@ -110,16 +117,20 @@ public class RateLimitService {
 
         } catch (Exception e) {
             Log.errorf(e, "Error checking rate limit for client %s, allowing request", clientId);
-            // [MS-M8] Emit metric for alerting on Redis failures
-            redisFailureCount++;
+            // [MS-M8] FIX: Emit proper Micrometer counter for Prometheus alerting
+            if (redisFailureCounter == null) {
+                redisFailureCounter = meterRegistry.counter("ratelimit_redis_failures_total");
+            }
+            redisFailureCounter.increment();
             // On Redis errors, fail open to avoid blocking legitimate traffic
             return new RateLimitResult(true, limit, limit, 0, 0);
         }
     }
 
-    /** [MS-M8] Counter for Redis failures — exposed via /metrics for Prometheus alerting */
-    private volatile long redisFailureCount = 0;
-    public long getRedisFailureCount() { return redisFailureCount; }
+    /** [MS-M8] FIX: Redis failure count now tracked via Micrometer counter (ratelimit_redis_failures_total) */
+    public long getRedisFailureCount() {
+        return redisFailureCounter != null ? (long) redisFailureCounter.count() : 0;
+    }
 
     private boolean usesInMemoryStorage() {
         return "memory".equals(config.storage().toLowerCase(Locale.ROOT));

@@ -87,6 +87,12 @@ public class WebhookService {
                     // Publish usage event for billing metering (fire-and-forget)
                     publishUsageEvent(partnerId, eventId);
                     return eventId;
+                })
+                // [WR-M3] On Kafka publish failure, persist to webhook_dlq table and return 202
+                .onFailure().recoverWithUni(kafkaError -> {
+                    LOG.errorf(kafkaError, "Kafka publish failed for partner=%s event=%s — persisting to DLQ", partnerId, eventType);
+                    return persistToWebhookDlq(partnerId, eventType, eventId, envelope.encode())
+                        .map(v -> eventId);
                 });
             });
             });
@@ -204,5 +210,23 @@ public class WebhookService {
             }
         });
         return headerObj;
+    }
+
+    /**
+     * [WR-M3] Persist webhook payload to webhook_dlq table when Kafka is unavailable.
+     * These records can be replayed when Kafka recovers.
+     */
+    private Uni<Void> persistToWebhookDlq(String partnerId, String eventType, String eventId, String payload) {
+        String sql = """
+            INSERT INTO webhook_dlq (id, partner_id, event_type, event_id, payload, created_at, status)
+            VALUES ($1, $2::uuid, $3, $4, $5::jsonb, NOW(), 'PENDING')
+            ON CONFLICT (event_id) DO NOTHING
+            """;
+        return client.preparedQuery(sql)
+            .execute(Tuple.of(UUID.randomUUID(), partnerId, eventType, eventId, payload))
+            .replaceWithVoid()
+            .onFailure().invoke(dlqError ->
+                LOG.errorf(dlqError, "Failed to persist webhook to DLQ table — event %s is lost", eventId)
+            );
     }
 }
