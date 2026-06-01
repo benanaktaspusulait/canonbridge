@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/pages/integration-studio/nested-mapping-dialog.component.ts"],
+  "sourcesContent": ["\n    .nested-mapping-container {\n      padding: 1rem 0;\n    }\n\n    .help-text {\n      margin-bottom: 1rem;\n      color: var(--text-color-secondary);\n    }\n\n    :host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {\n      padding: 0.5rem;\n    }\n\n    :host ::ng-deep .p-inputtext,\n    :host ::ng-deep .p-select {\n      width: 100%;\n    }\n  "],
+  "mappings": ";AACI,CAAA;AACE,WAAA,KAAA;;AAGF,CAAA;AACE,iBAAA;AACA,SAAA,IAAA;;AAGF,MAAA,UAAA,CAAA,YAAA,CAAA,kBAAA,EAAA,GAAA,EAAA;AACE,WAAA;;AAGF,MAAA,UAAA,CAAA;AAAA,MAAA,UAAA,CAAA;AAEE,SAAA;;",
+  "names": []
+}

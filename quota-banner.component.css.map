@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/core/components/quota-banner/quota-banner.component.ts"],
+  "sourcesContent": ["\n    .quota-banner {\n      display: flex;\n      align-items: center;\n      gap: 0.5rem;\n      padding: 0.5rem 1rem;\n      font-size: 0.8125rem;\n      border-bottom: 1px solid;\n    }\n    .quota-banner.warning {\n      background: var(--yellow-50);\n      border-color: var(--yellow-200);\n      color: var(--yellow-800);\n    }\n    .quota-banner.error {\n      background: var(--red-50);\n      border-color: var(--red-200);\n      color: var(--red-800);\n    }\n    .upgrade-link {\n      margin-left: auto;\n      font-weight: 600;\n      color: inherit;\n      text-decoration: underline;\n    }\n    .dismiss-btn {\n      background: none;\n      border: none;\n      cursor: pointer;\n      color: inherit;\n      padding: 0.25rem;\n    }\n  "],
+  "mappings": ";AACI,CAAA;AACE,WAAA;AACA,eAAA;AACA,OAAA;AACA,WAAA,OAAA;AACA,aAAA;AACA,iBAAA,IAAA;;AAEF,CARA,YAQA,CAAA;AACE,cAAA,IAAA;AACA,gBAAA,IAAA;AACA,SAAA,IAAA;;AAEF,CAbA,YAaA,CAAA;AACE,cAAA,IAAA;AACA,gBAAA,IAAA;AACA,SAAA,IAAA;;AAEF,CAAA;AACE,eAAA;AACA,eAAA;AACA,SAAA;AACA,mBAAA;;AAEF,CAAA;AACE,cAAA;AACA,UAAA;AACA,UAAA;AACA,SAAA;AACA,WAAA;;",
+  "names": []
+}

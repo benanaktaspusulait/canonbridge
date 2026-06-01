@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/core/i18n/i18n.pipe.ts"],
+  "sourcesContent": ["import { Pipe, PipeTransform, inject } from '@angular/core';\nimport { I18nService } from './i18n.service';\n\n@Pipe({\n  name: 'i18n',\n  standalone: true,\n  pure: false\n})\nexport class I18nPipe implements PipeTransform {\n  private readonly i18n = inject(I18nService);\n\n  transform(key: string, params?: Record<string, unknown>): string {\n    this.i18n.translations();\n    return this.i18n.translate(key, params);\n  }\n}\n"],
+  "mappings": ";;;;;;;;;;;AAQM,IAAO,WAAP,MAAO,UAAQ;EACF,OAAO,OAAO,WAAW;EAE1C,UAAU,KAAa,QAAgC;AACrD,SAAK,KAAK,aAAY;AACtB,WAAO,KAAK,KAAK,UAAU,KAAK,MAAM;EACxC;;qCANW,WAAQ;EAAA;mFAAR,WAAQ,MAAA,MAAA,CAAA;;;sEAAR,UAAQ,CAAA;UALpB;WAAK;MACJ,MAAM;MACN,YAAY;MACZ,MAAM;KACP;;;",
+  "names": []
+}

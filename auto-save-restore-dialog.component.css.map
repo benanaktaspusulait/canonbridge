@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/core/components/auto-save-restore-dialog.component.ts"],
+  "sourcesContent": ["\n    .restore-dialog-content {\n      display: flex;\n      flex-direction: column;\n      align-items: center;\n      gap: 1.5rem;\n      padding: 1rem 0;\n      text-align: center;\n    }\n\n    .message {\n      font-size: 1rem;\n      line-height: 1.5;\n      margin: 0;\n    }\n\n    .warning-note {\n      display: flex;\n      align-items: center;\n      gap: 0.5rem;\n      padding: 0.75rem 1rem;\n      background-color: var(--yellow-50);\n      border-left: 3px solid var(--yellow-500);\n      border-radius: 4px;\n      font-size: 0.875rem;\n      color: var(--yellow-900);\n      width: 100%;\n    }\n\n    .warning-note i {\n      color: var(--yellow-600);\n    }\n\n    :host ::ng-deep .p-dialog-footer {\n      display: flex;\n      justify-content: space-between;\n      gap: 0.5rem;\n    }\n  "],
+  "mappings": ";AACI,CAAA;AACE,WAAA;AACA,kBAAA;AACA,eAAA;AACA,OAAA;AACA,WAAA,KAAA;AACA,cAAA;;AAGF,CAAA;AACE,aAAA;AACA,eAAA;AACA,UAAA;;AAGF,CAAA;AACE,WAAA;AACA,eAAA;AACA,OAAA;AACA,WAAA,QAAA;AACA,oBAAA,IAAA;AACA,eAAA,IAAA,MAAA,IAAA;AACA,iBAAA;AACA,aAAA;AACA,SAAA,IAAA;AACA,SAAA;;AAGF,CAbA,aAaA;AACE,SAAA,IAAA;;AAGF,MAAA,UAAA,CAAA;AACE,WAAA;AACA,mBAAA;AACA,OAAA;;",
+  "names": []
+}

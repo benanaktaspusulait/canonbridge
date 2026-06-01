@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/pages/audit/audit.component.scss"],
+  "sourcesContent": ["code {\n  font-size: 0.75rem;\n  color: var(--text-color-secondary);\n  background: var(--surface-100);\n  padding: 0.15rem 0.35rem;\n  border-radius: 4px;\n}\n\npre {\n  max-width: 360px;\n  max-height: 120px;\n  overflow: auto;\n  margin: 0;\n  font-size: 0.75rem;\n  color: var(--text-color);\n  white-space: pre-wrap;\n}\n\n.resource-cell {\n  display: grid;\n  gap: 0.25rem;\n}\n\n.empty-cell {\n  text-align: center;\n  color: var(--text-color-secondary);\n  padding: 2rem;\n}\n"],
+  "mappings": ";AAAA;AACE,aAAA;AACA,SAAA,IAAA;AACA,cAAA,IAAA;AACA,WAAA,QAAA;AACA,iBAAA;;AAGF;AACE,aAAA;AACA,cAAA;AACA,YAAA;AACA,UAAA;AACA,aAAA;AACA,SAAA,IAAA;AACA,eAAA;;AAGF,CAAA;AACE,WAAA;AACA,OAAA;;AAGF,CAAA;AACE,cAAA;AACA,SAAA,IAAA;AACA,WAAA;;",
+  "names": []
+}
