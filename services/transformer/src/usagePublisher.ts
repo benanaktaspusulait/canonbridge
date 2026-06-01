@@ -1,5 +1,8 @@
 import { Kafka, type Producer } from 'kafkajs';
 import { randomUUID } from 'node:crypto';
+import { appendFile, readFile, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import type { Env } from './env.js';
 
 // [T-V1-L9] Logger interface to avoid console.* bypassing pino
@@ -33,9 +36,13 @@ export class UsagePublisher {
   private droppedCount = 0;
   private readonly logLevel: string;
   private logger: UsageLogger | null = null;
+  // [TF-H1] File-based buffer for dropped events (replay on reconnection)
+  private readonly bufferFile: string;
+  private replayInProgress = false;
 
   constructor(private readonly env: Env) {
     this.logLevel = env.logLevel;
+    this.bufferFile = path.join('/tmp', 'usage-events-buffer.jsonl');
   }
 
   /** Set a structured logger (call after Fastify is initialized). */
@@ -111,12 +118,13 @@ export class UsagePublisher {
         ],
       });
     } catch (err) {
-      // V5-M5 FIX: Log dropped events with full context for recovery
+      // [TF-H1] FIX: Buffer dropped events to file for later replay
       this.droppedCount++;
+      await this.bufferEvent(event).catch(() => {});
       if (this.env.logLevel === 'debug' || this.droppedCount % 100 === 0) {
         this.logger?.error(
           { droppedCount: this.droppedCount, orgId, requestId, err },
-          'Failed to publish usage event',
+          'Failed to publish usage event — buffered to disk',
         );
       }
     }
@@ -141,5 +149,49 @@ export class UsagePublisher {
         this.logger?.error({ err }, 'Failed to publish usage batch');
       }
     }
+  }
+
+  // [TF-H1] Buffer event to disk for later replay
+  private async bufferEvent(event: UsageEvent): Promise<void> {
+    try {
+      await appendFile(this.bufferFile, JSON.stringify(event) + '\n', 'utf8');
+    } catch {
+      // /tmp not writable — truly lost
+    }
+  }
+
+  /**
+   * [TF-H1] Replay buffered events from disk. Called after Kafka reconnects.
+   * Fire-and-forget: best-effort replay, clears buffer after attempt.
+   */
+  async replayBuffered(): Promise<number> {
+    if (this.replayInProgress || !this.producer) return 0;
+    if (!existsSync(this.bufferFile)) return 0;
+
+    this.replayInProgress = true;
+    let replayed = 0;
+    try {
+      const content = await readFile(this.bufferFile, 'utf8');
+      const lines = content.trim().split('\n').filter(Boolean);
+      if (lines.length === 0) return 0;
+
+      const messages = lines.map((line) => {
+        const event = JSON.parse(line) as UsageEvent;
+        return { key: event.org_id, value: line };
+      });
+
+      // Batch publish
+      await this.producer.send({ topic: this.topic, messages });
+      replayed = messages.length;
+
+      // Clear buffer after successful replay
+      await writeFile(this.bufferFile, '', 'utf8');
+      this.logger?.warn({ replayed }, 'Replayed buffered usage events');
+    } catch (err) {
+      this.logger?.error({ err }, 'Failed to replay buffered usage events');
+    } finally {
+      this.replayInProgress = false;
+    }
+    return replayed;
   }
 }

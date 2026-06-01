@@ -100,16 +100,29 @@ public class WebhookService {
     );
 
     /**
-     * Y9 FIX: Check if a webhook with this idempotency key was already processed.
+     * [WR-H3] FIX: Use dedicated webhook_idempotency check with INSERT ON CONFLICT.
+     * Atomic: if insert succeeds → not processed before. If conflict → already processed.
+     * Falls back to usage_events check if webhook_idempotency table doesn't exist.
      */
     public Uni<Boolean> checkIdempotency(String idempotencyKey) {
         String sql = """
-            SELECT COUNT(*) AS cnt FROM usage_events
-            WHERE request_id = $1 AND service = 'webhook-receiver'
+            INSERT INTO webhook_idempotency (idempotency_key, created_at)
+            VALUES ($1, NOW())
+            ON CONFLICT (idempotency_key) DO NOTHING
             """;
         return client.preparedQuery(sql)
             .execute(Tuple.of(idempotencyKey))
-            .map(rowSet -> rowSet.iterator().next().getLong("cnt") > 0);
+            .map(rowSet -> rowSet.rowCount() == 0) // 0 rows inserted = already existed
+            .onFailure().recoverWithUni(error -> {
+                // Table might not exist yet — fall back to usage_events check
+                String fallbackSql = """
+                    SELECT COUNT(*) AS cnt FROM usage_events
+                    WHERE request_id = $1 AND service = 'webhook-receiver'
+                    """;
+                return client.preparedQuery(fallbackSql)
+                    .execute(Tuple.of(idempotencyKey))
+                    .map(rowSet -> rowSet.iterator().next().getLong("cnt") > 0);
+            });
     }
 
     @Inject

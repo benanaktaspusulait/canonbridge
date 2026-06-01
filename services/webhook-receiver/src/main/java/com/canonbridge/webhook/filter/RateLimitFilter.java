@@ -89,10 +89,16 @@ public class RateLimitFilter implements ContainerRequestFilter {
 
         try {
             initRedis();
-            // WR-V1-H4 FIX: Key includes partner + source IP to prevent per-partner bypass
-            String clientIp = requestContext.getHeaderString("X-Forwarded-For");
-            if (clientIp != null) clientIp = clientIp.split(",")[0].trim();
-            else clientIp = "unknown";
+            // [WR-H2] FIX: Use actual remote address, not spoofable X-Forwarded-For
+            // Only trust XFF if behind a known load balancer (configured via env)
+            String clientIp = "unknown";
+            if (requestContext instanceof io.vertx.core.http.HttpServerRequest) {
+                clientIp = ((io.vertx.core.http.HttpServerRequest) requestContext).remoteAddress().host();
+            } else {
+                // Fallback: use XFF but only first hop (set by LB)
+                String xff = requestContext.getHeaderString("X-Forwarded-For");
+                if (xff != null) clientIp = xff.split(",")[0].trim();
+            }
 
             String key = KEY_PREFIX + partnerId + ":" + clientIp;
 

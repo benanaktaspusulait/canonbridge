@@ -18,16 +18,25 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 public class PaddleWebhookResource {
 
     private static final int MAX_WEBHOOK_REQUESTS_PER_MINUTE = 60;
-    private final java.util.concurrent.ConcurrentHashMap<String, Integer> webhookRateLimit = new java.util.concurrent.ConcurrentHashMap<>();
 
-    // Reset rate limit counters every minute
-    @jakarta.annotation.PostConstruct
-    void initRateLimitReset() {
-        java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "paddle-webhook-rl-reset");
-            t.setDaemon(true);
-            return t;
-        }).scheduleAtFixedRate(webhookRateLimit::clear, 60, 60, java.util.concurrent.TimeUnit.SECONDS);
+    // [BS-H1] FIX: Use Redis for distributed rate limiting (works across replicas)
+    @jakarta.inject.Inject
+    io.quarkus.redis.datasource.RedisDataSource redisDataSource;
+
+    private boolean checkWebhookRateLimit(String clientIp) {
+        try {
+            var valueCommands = redisDataSource.value(Long.class);
+            var keyCommands = redisDataSource.key();
+            String key = "paddle_wh_rl:" + clientIp;
+            Long count = valueCommands.incr(key);
+            if (count != null && count == 1L) {
+                keyCommands.expire(key, java.time.Duration.ofSeconds(60));
+            }
+            return count != null && count <= MAX_WEBHOOK_REQUESTS_PER_MINUTE;
+        } catch (Exception e) {
+            // Fail-open on Redis errors — don't block legitimate webhooks
+            return true;
+        }
     }
 
     @Inject
@@ -45,14 +54,13 @@ public class PaddleWebhookResource {
             return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
         }
 
-        // B-V1-H5 FIX: Basic rate limiting on webhook endpoint (per-IP)
+        // [BS-H1] Redis-based distributed rate limiting
         String clientIp = headers.getHeaderString("X-Forwarded-For");
         if (clientIp == null) clientIp = "unknown";
         else clientIp = clientIp.split(",")[0].trim();
 
-        int count = webhookRateLimit.merge(clientIp, 1, Integer::sum);
-        if (count > MAX_WEBHOOK_REQUESTS_PER_MINUTE) {
-            Log.warnf("Paddle webhook rate limit exceeded for IP %s (%d/min)", clientIp, count);
+        if (!checkWebhookRateLimit(clientIp)) {
+            Log.warnf("Paddle webhook rate limit exceeded for IP %s", clientIp);
             return Uni.createFrom().item(Response.status(429).build());
         }
 

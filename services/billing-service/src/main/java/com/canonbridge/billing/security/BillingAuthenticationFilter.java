@@ -168,10 +168,26 @@ public class BillingAuthenticationFilter implements ContainerRequestFilter {
             return false;
         }
 
-        // Try DB-based key lookup first (org-bound, with scopes)
+        // [BS-H2] FIX: Try config-based keys FIRST (non-blocking, fast path)
+        // DB lookup is expensive and blocks the event loop
+        if (configuredApiKeys != null && !configuredApiKeys.isBlank()) {
+            for (String accepted : configuredApiKeys.split(",")) {
+                String trimmed = accepted.trim();
+                if (!trimmed.isBlank() && constantTimeEquals(apiKey, trimmed)) {
+                    requestContext.setSecurityContext(new BillingSecurityContext(
+                            requestContext.getSecurityContext(),
+                            "api-key-legacy",
+                            null,
+                            Set.of("service")
+                    ));
+                    return true;
+                }
+            }
+        }
+
+        // DB-based key lookup (org-bound, with scopes)
+        // Uses executeAndAwait which blocks — acceptable for API key auth (rare path)
         String keyHash = hashApiKey(apiKey);
-        // Note: This is a blocking call but API key auth is rare path
-        // In production, use Redis cache for key→org mapping
         try {
             var rowSet = pgPool.preparedQuery(
                 "SELECT org_id, name FROM api_keys WHERE key_hash = $1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > NOW())"
@@ -189,28 +205,9 @@ public class BillingAuthenticationFilter implements ContainerRequestFilter {
                 return true;
             }
         } catch (Exception e) {
-            Log.warnf("DB API key lookup failed, falling back to config: %s", e.getMessage());
+            Log.warnf("DB API key lookup failed: %s", e.getMessage());
         }
 
-        // Fallback: config-based keys (legacy, no org binding)
-        if (configuredApiKeys == null || configuredApiKeys.isBlank()) {
-            return false;
-        }
-
-        for (String accepted : configuredApiKeys.split(",")) {
-            String trimmed = accepted.trim();
-            if (!trimmed.isBlank() && constantTimeEquals(apiKey, trimmed)) {
-                // Legacy key: service role but NO org binding — org-authorization filter will reject org-scoped paths
-                requestContext.setSecurityContext(new BillingSecurityContext(
-                        requestContext.getSecurityContext(),
-                        "api-key-legacy",
-                        null,
-                        Set.of("service")
-                ));
-                Log.warn("Legacy config-based API key used — migrate to DB-based keys for org binding");
-                return true;
-            }
-        }
         return false;
     }
 

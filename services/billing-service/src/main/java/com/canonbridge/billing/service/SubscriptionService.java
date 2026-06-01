@@ -23,6 +23,23 @@ public class SubscriptionService {
     @Inject
     PaddleClient paddleClient;
 
+    /**
+     * [BS-H3] Subscription state machine — valid transitions only.
+     */
+    private static final java.util.Map<String, java.util.Set<String>> VALID_TRANSITIONS = java.util.Map.of(
+        "active", java.util.Set.of("canceled", "paused", "past_due"),
+        "trialing", java.util.Set.of("active", "canceled"),
+        "paused", java.util.Set.of("active", "canceled"),
+        "past_due", java.util.Set.of("active", "canceled")
+        // "canceled" → no valid transitions (terminal state)
+    );
+
+    private boolean isValidTransition(String currentStatus, String targetStatus) {
+        if (currentStatus == null) return true; // New subscription
+        var allowed = VALID_TRANSITIONS.get(currentStatus);
+        return allowed != null && allowed.contains(targetStatus);
+    }
+
     public Uni<SubscriptionResponse> getByOrgId(UUID orgId) {
         String sql = """
             SELECT s.id, s.org_id, s.status, s.billing_cycle,
@@ -108,54 +125,78 @@ public class SubscriptionService {
     }
 
     public Uni<SubscriptionResponse> cancel(UUID orgId) {
-        // B-V1-H3 FIX: Don't overwrite status — just set cancel_at
-        String sql = """
-            UPDATE subscriptions
-            SET cancel_at = current_period_end
-            WHERE org_id = $1 AND status IN ('active', 'trialing', 'past_due')
-            RETURNING id, org_id, status, billing_cycle, current_period_start, current_period_end, trial_end, cancel_at
-            """;
-
-        return client.preparedQuery(sql)
-            .execute(Tuple.of(orgId))
-            .map(rowSet -> {
-                if (rowSet.size() == 0) return null;
-                Row row = rowSet.iterator().next();
-                return mapBasicResponse(row);
-            });
+        // [BS-H3] Validate state transition before executing
+        return getByOrgId(orgId).flatMap(current -> {
+            if (current == null) {
+                return Uni.createFrom().nullItem();
+            }
+            if (!isValidTransition(current.status(), "canceled")) {
+                return Uni.createFrom().failure(new IllegalStateException(
+                    "Cannot cancel subscription in '" + current.status() + "' state"));
+            }
+            // B-V1-H3 FIX: Don't overwrite status — just set cancel_at
+            String sql = """
+                UPDATE subscriptions
+                SET cancel_at = current_period_end
+                WHERE org_id = $1 AND status IN ('active', 'trialing', 'past_due')
+                RETURNING id, org_id, status, billing_cycle, current_period_start, current_period_end, trial_end, cancel_at
+                """;
+            return client.preparedQuery(sql)
+                .execute(Tuple.of(orgId))
+                .map(rowSet -> {
+                    if (rowSet.size() == 0) return null;
+                    return mapBasicResponse(rowSet.iterator().next());
+                });
+        });
     }
 
     public Uni<SubscriptionResponse> pause(UUID orgId) {
-        String sql = """
-            UPDATE subscriptions SET status = 'paused', paused_at = NOW()
-            WHERE org_id = $1 AND status = 'active'
-            RETURNING id, org_id, status, billing_cycle, current_period_start, current_period_end, trial_end, cancel_at
-            """;
-
-        return client.preparedQuery(sql)
-            .execute(Tuple.of(orgId))
-            .map(rowSet -> {
-                if (rowSet.size() == 0) return null;
-                Row row = rowSet.iterator().next();
-                return mapBasicResponse(row);
-            });
+        // [BS-H3] Validate state transition
+        return getByOrgId(orgId).flatMap(current -> {
+            if (current == null) {
+                return Uni.createFrom().nullItem();
+            }
+            if (!isValidTransition(current.status(), "paused")) {
+                return Uni.createFrom().failure(new IllegalStateException(
+                    "Cannot pause subscription in '" + current.status() + "' state"));
+            }
+            String sql = """
+                UPDATE subscriptions SET status = 'paused', paused_at = NOW()
+                WHERE org_id = $1 AND status = 'active'
+                RETURNING id, org_id, status, billing_cycle, current_period_start, current_period_end, trial_end, cancel_at
+                """;
+            return client.preparedQuery(sql)
+                .execute(Tuple.of(orgId))
+                .map(rowSet -> {
+                    if (rowSet.size() == 0) return null;
+                    return mapBasicResponse(rowSet.iterator().next());
+                });
+        });
     }
 
     public Uni<SubscriptionResponse> resume(UUID orgId) {
-        // B-V1-H3 FIX: Resume from paused OR past_due, clear cancel_at
-        String sql = """
-            UPDATE subscriptions SET status = 'active', paused_at = NULL, cancel_at = NULL
-            WHERE org_id = $1 AND status IN ('paused', 'past_due')
-            RETURNING id, org_id, status, billing_cycle, current_period_start, current_period_end, trial_end, cancel_at
-            """;
-
-        return client.preparedQuery(sql)
-            .execute(Tuple.of(orgId))
-            .map(rowSet -> {
-                if (rowSet.size() == 0) return null;
-                Row row = rowSet.iterator().next();
-                return mapBasicResponse(row);
-            });
+        // [BS-H3] Validate state transition
+        return getByOrgId(orgId).flatMap(current -> {
+            if (current == null) {
+                return Uni.createFrom().nullItem();
+            }
+            if (!isValidTransition(current.status(), "active")) {
+                return Uni.createFrom().failure(new IllegalStateException(
+                    "Cannot resume subscription in '" + current.status() + "' state"));
+            }
+            // B-V1-H3 FIX: Resume from paused OR past_due, clear cancel_at
+            String sql = """
+                UPDATE subscriptions SET status = 'active', paused_at = NULL, cancel_at = NULL
+                WHERE org_id = $1 AND status IN ('paused', 'past_due')
+                RETURNING id, org_id, status, billing_cycle, current_period_start, current_period_end, trial_end, cancel_at
+                """;
+            return client.preparedQuery(sql)
+                .execute(Tuple.of(orgId))
+                .map(rowSet -> {
+                    if (rowSet.size() == 0) return null;
+                    return mapBasicResponse(rowSet.iterator().next());
+                });
+        });
     }
 
     private Uni<SubscriptionResponse> createSubscription(UUID orgId, UUID planId, String billingCycle) {

@@ -36,6 +36,10 @@ public class UsageEventConsumer {
     @Inject
     ObjectMapper objectMapper;
 
+    @Inject
+    @org.eclipse.microprofile.reactive.messaging.Channel("usage-events-dlq")
+    org.eclipse.microprofile.reactive.messaging.Emitter<io.smallrye.reactive.messaging.kafka.Record<String, String>> dlqEmitter;
+
     @Incoming("usage-events-in")
     @Acknowledgment(Acknowledgment.Strategy.MANUAL)
     public Uni<Void> consume(Message<String> message) {
@@ -83,7 +87,7 @@ public class UsageEventConsumer {
     }
 
     /**
-     * P-2 FIX: Forward unparseable events to usage.events.dlq topic.
+     * [BS-H4] FIX: Publish unparseable events to usage.events.dlq Kafka topic.
      */
     private void sendToDlq(String payload, String errorMessage) {
         try {
@@ -93,10 +97,10 @@ public class UsageEventConsumer {
                 "consumer", "billing-service.UsageEventConsumer",
                 "timestamp", Instant.now().toString()
             ));
-            // Log DLQ event — in production, publish to usage.events.dlq topic
-            Log.warnf("[DLQ] Usage event parse failure: %s", dlqPayload);
+            dlqEmitter.send(io.smallrye.reactive.messaging.kafka.Record.of("dlq", dlqPayload));
+            Log.warnf("[DLQ] Usage event forwarded to usage.events.dlq: %s", errorMessage);
         } catch (Exception dlqError) {
-            Log.errorf(dlqError, "Failed to create DLQ record");
+            Log.errorf(dlqError, "Failed to publish DLQ record — event lost");
         }
     }
 }

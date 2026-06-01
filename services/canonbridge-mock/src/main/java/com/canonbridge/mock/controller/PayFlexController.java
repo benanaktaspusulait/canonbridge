@@ -101,6 +101,12 @@ public class PayFlexController {
 
     private ResponseEntity<?> handleScenario(String scenario) {
         return switch (scenario) {
+            // [CM-H2] 404 Not Found scenario for testing consumer error handling
+            case "not-found" -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "error", "Resource not found",
+                            "message", "The requested payment was not found"
+                    ));
             case "missing-amount" -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of(
                             "error", "Validation failed",

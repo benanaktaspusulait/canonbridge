@@ -52,6 +52,29 @@ public class JwtService {
         this.jwtSecret = jwtSecret;
     }
 
+    /**
+     * [MS-H3] Validate JWT secret at startup — fail fast if local JWT is enabled but secret is blank.
+     */
+    @jakarta.annotation.PostConstruct
+    void validateConfiguration() {
+        if (localJwtEnabled() && (jwtSecret == null || jwtSecret.isBlank())) {
+            throw new IllegalStateException(
+                "[FATAL] canonbridge.jwt.secret is blank but local JWT auth is enabled. " +
+                "Set JWT_SECRET_KEY environment variable or disable local JWT (canonbridge.auth.local-jwt.enabled=false)."
+            );
+        }
+    }
+
+    private boolean localJwtEnabled() {
+        try {
+            return org.eclipse.microprofile.config.ConfigProvider.getConfig()
+                .getOptionalValue("canonbridge.auth.local-jwt.enabled", Boolean.class)
+                .orElse(true);
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
     public String generateToken(User user) {
         long issuedAt = Instant.now().getEpochSecond();
         long expiry = issuedAt + resolvedTtlSeconds();

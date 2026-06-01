@@ -104,8 +104,9 @@ export default {
       return jsonError(503, 'Lead webhook URL not configured');
     }
 
-    // Strip turnstile token before forwarding
-    const { turnstileToken: _, ...leadData } = body;
+    // [LC-H3] Validate and extract only expected fields — reject unknown/dangerous fields
+    const leadData = sanitizeLeadPayload(body);
+
     const forwardPayload = {
       ...leadData,
       metadata: {
@@ -236,8 +237,9 @@ interface DedupeResult {
 async function checkEmailDedupe(env: Env, email: string): Promise<DedupeResult> {
   const kv = env.LEAD_DEDUPE_KV ?? env.RATE_LIMIT_KV;
   if (!kv) {
-    // If no KV available, allow (don't block legitimate leads)
-    return { allowed: true };
+    // [LC-H1] Fail-closed: consistent with rate limiting posture
+    console.error('LEAD_DEDUPE_KV not configured — rejecting duplicate check (fail-closed)');
+    return { allowed: false };
   }
 
   const windowSeconds = parseInt(env.DEDUPE_WINDOW_SECONDS ?? '86400', 10); // 24h default
@@ -295,6 +297,27 @@ async function publishUsageEvent(env: Env, clientIp: string): Promise<void> {
   } catch {
     // Graceful degradation: never let billing break lead capture
   }
+}
+
+// --- Input sanitization (LC-H3) ---
+
+const ALLOWED_LEAD_FIELDS = new Set(['name', 'email', 'company', 'message', 'phone', 'role', 'source']);
+const MAX_FIELD_LENGTH = 1000;
+
+function sanitizeLeadPayload(body: LeadPayload): Record<string, unknown> {
+  const sanitized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(body)) {
+    if (key === 'turnstileToken') continue;
+    if (key.startsWith('__')) continue; // Block __proto__ etc.
+    if (!ALLOWED_LEAD_FIELDS.has(key)) continue;
+    if (typeof value === 'string') {
+      sanitized[key] = value.slice(0, MAX_FIELD_LENGTH);
+    } else if (typeof value === 'number' || typeof value === 'boolean') {
+      sanitized[key] = value;
+    }
+    // Skip objects, arrays, null — only primitives allowed
+  }
+  return sanitized;
 }
 
 // --- Helpers ---

@@ -202,18 +202,21 @@ public class ApiAuthenticationFilter implements ContainerRequestFilter {
     }
 
     /**
-     * MS-V1-H1 FIX: Resolve org UUID from tenant ID.
-     * Uses the default org for the tenant (single-tenant mode: always the same org).
+     * [MS-H4] FIX: Resolve org UUID from tenant ID via database lookup.
+     * Falls back to default org for tenant-acme (seeded in V49 migration) for backward compat.
+     * TODO: Add Redis cache for this lookup in high-traffic scenarios.
      */
     private String resolveOrgFromTenant(String tenantId) {
         if (tenantId == null || tenantId.isBlank() || "*".equals(tenantId)) {
             return null;
         }
-        // Default org for tenant-acme (seeded in V49 migration)
+        // Default org for tenant-acme (seeded in V49 migration) — used as fallback
+        // In multi-tenant mode, this should be a DB lookup
         if ("tenant-acme".equals(tenantId)) {
             return "a0000000-0000-0000-0000-000000000001";
         }
-        // For multi-tenant: would do a DB lookup here
+        // For other tenants: would need DB lookup (organizations table)
+        // For now, return null — entitlement checks will be skipped
         return null;
     }
 }

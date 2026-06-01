@@ -42,8 +42,9 @@ public class OutboundHttpService {
     private HttpClient httpClient;
 
     public OutboundHttpService() {
+        // [MS-H2] NEVER follow redirects — prevents redirect-based SSRF
         this.httpClient = HttpClient.newBuilder()
-                .followRedirects(HttpClient.Redirect.NORMAL)
+                .followRedirects(HttpClient.Redirect.NEVER)
                 .build();
     }
 

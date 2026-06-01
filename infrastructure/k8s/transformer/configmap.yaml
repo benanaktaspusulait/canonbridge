@@ -13,7 +13,9 @@ data:
   LOG_LEVEL: "info"
   
   # CORS (comma-separated origins, empty = allow all)
-  CORS_ORIGINS: ""
+  CORS_ORIGINS: "https://studio.canonbridge.io,https://api.canonbridge.io"
+  # [INF-H1] Auth must NOT be disabled in production
+  AUTH_DISABLED: "false"
   
   # Kafka
   KAFKA_ENABLED: "true"
@@ -34,3 +36,12 @@ data:
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.canonbridge.svc.cluster.local:4318"
   ENABLE_TRACING: "true"
   ENABLE_METRICS: "true"
+  
+  # [TF-H2] Enrichment URL allow-list (required in production — empty = all public URLs allowed)
+  # Add partner enrichment API hosts here
+  ENRICHMENT_ALLOWED_HOSTS: ""
+  ENRICHMENT_MAX_TIMEOUT_MS: "10000"
+  
+  # [TF-H1] DLQ max redrive attempts
+  DLQ_MAX_REDRIVE_ATTEMPTS: "5"
+  TRANSFORM_MAX_PAYLOAD_BYTES: "2000000"
