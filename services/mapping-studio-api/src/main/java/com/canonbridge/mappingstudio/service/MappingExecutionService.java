@@ -677,6 +677,21 @@ public class MappingExecutionService {
         );
 
         if (directUrl != null) {
+            // If source_config also has a connectionId, use that connection's credential
+            UUID credentialConnectionId = firstUuid(
+                sourceConfig.getString("connectionId"),
+                sourceConfig.getString("externalSystemId")
+            );
+            if (credentialConnectionId != null) {
+                return connectionRepository.findById(mapping.getTenantId(), credentialConnectionId)
+                    .map(dbConnection -> {
+                        if (dbConnection != null && dbConnection.credentialId() != null) {
+                            // Use the DB connection's credential with the direct URL
+                            return dbConnection.withUrl(directUrl);
+                        }
+                        return buildAdhocConnection(mapping, sourceConfig, directUrl);
+                    });
+            }
             return Uni.createFrom().item(buildAdhocConnection(mapping, sourceConfig, directUrl));
         }
 
