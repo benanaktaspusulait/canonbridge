@@ -12,8 +12,8 @@ CanonBridge is for teams that need to onboard many partner systems without writi
 ## Demo Flow
 
 1. Log in to Mapping Studio.
-2. Open one REST API integration.
-3. Show that external system's auth detail.
+2. Open one REST API integration: InventoryPro.
+3. Show when the InventoryPro bearer token is used.
 4. Show the raw response before CanonBridge changes it.
 5. Show request mapping.
 6. Show response mapping.
@@ -53,6 +53,11 @@ CanonBridge_API_Proxy.postman_collection.json
 
 Do not run `Appendix - Pre-demo Checks` during the customer-facing story unless something breaks.
 
+Token distinction for the demo:
+
+- `authToken`: CanonBridge Studio/API token. We get this when we log in as `admin@canonbridge.io`.
+- `demo-bearer-token-peopleops`: InventoryPro partner API token. This belongs to the external REST service auth config and is used when CanonBridge calls InventoryPro.
+
 ## Scene 1: Login
 
 Open Mapping Studio:
@@ -88,12 +93,32 @@ Mapping ID: 43000000-0000-4000-8000-000000000001
 Source type: REST_API
 ```
 
-### Step 2.1: Show Raw Response First
+### Step 2.1: Show InventoryPro Auth Token
 
 In Postman:
 
 ```text
-01 - REST API Mapping Story / 1. RAW REST response before CanonBridge mapping
+01 - REST API Mapping Story / 1. InventoryPro auth token used by the partner REST API
+```
+
+In Studio, open the InventoryPro connection/auth area and show:
+
+```http
+Authorization: Bearer demo-bearer-token-peopleops
+```
+
+What to say:
+
+```text
+We get the CanonBridge token when we log in. Separately, CanonBridge stores the partner service token here. When CanonBridge calls InventoryPro, it sends this bearer token to the external REST API. The client calling CanonBridge does not need to know this partner token.
+```
+
+### Step 2.2: Show Raw Response Before Mapping
+
+In Postman:
+
+```text
+01 - REST API Mapping Story / 2. RAW REST response before CanonBridge mapping
 ```
 
 Equivalent curl:
@@ -109,33 +134,12 @@ What to point out:
 - The response has nested `warehouse` data.
 - It uses the partner's field naming and structure.
 - Nothing canonical has happened yet.
-
-### Step 2.2: Show Auth Detail
-
-In Studio, open the external system or mapping source configuration and show the auth section.
-
-For InventoryPro, the demo uses a bearer token:
-
-```http
-Authorization: Bearer demo-bearer-token-peopleops
-```
-
-Then show a second REST auth example quickly in Postman:
-
-```text
-01 - REST API Mapping Story / 2. REST auth detail example - PayFlex API key
-```
-
-PayFlex uses:
-
-```http
-X-API-Key: demo-api-key-12345
-```
+- This direct raw call uses the InventoryPro bearer token shown in the previous step.
 
 Talking point:
 
 ```text
-Different systems can use different authentication models. CanonBridge keeps those auth details in configuration, not in one-off adapter code.
+For this demo we stay with one REST service: InventoryPro. The important point is that the partner auth token belongs to the connection config, while the CanonBridge auth token belongs to the logged-in user.
 ```
 
 ### Step 2.3: Show Request Mapping
@@ -145,7 +149,7 @@ In Studio, show the request/source side of the InventoryPro mapping.
 Useful API support request:
 
 ```text
-01 - REST API Mapping Story / 4. InventoryPro mapping detail - request and response mapping source
+01 - REST API Mapping Story / 4. InventoryPro mapping detail - auth, request mapping, response mapping
 ```
 
 What to show:
@@ -202,6 +206,12 @@ curl -fsS http://localhost:8082/api/proxy/43000000-0000-4000-8000-000000000001 \
   -H "Authorization: Bearer $TOKEN" \
   -H 'X-Tenant-Id: tenant-acme' | jq .
 ```
+
+Token explanation:
+
+- `Authorization: Bearer $TOKEN` is the CanonBridge user/API token from Studio login.
+- The InventoryPro bearer token is not sent by the client.
+- CanonBridge uses the stored InventoryPro token internally when it calls the external REST API.
 
 Expected fields include:
 

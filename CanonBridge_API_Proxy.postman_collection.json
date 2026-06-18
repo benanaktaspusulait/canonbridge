@@ -52,21 +52,10 @@
       "type": "string"
     },
     {
-      "key": "mockApiKey",
-      "value": "demo-api-key-12345",
-      "type": "string"
-    },
-    {
       "key": "inventoryMappingId",
       "value": "43000000-0000-4000-8000-000000000001",
       "type": "string",
       "description": "InventoryPro Stock Snapshot Mapping (REST_API GET)"
-    },
-    {
-      "key": "cloudBillMappingId",
-      "value": "43000000-0000-4000-8000-000000000003",
-      "type": "string",
-      "description": "CloudBill Invoice Mapping (REST_API GET)"
     },
     {
       "key": "shopmaxKafkaMappingId",
@@ -161,10 +150,32 @@
     },
     {
       "name": "01 - REST API Mapping Story",
-      "description": "Main REST story: raw external response first, then external auth details, request mapping, response mapping, and before/after proxy output.",
+      "description": "Single REST story using InventoryPro only: get/show the partner bearer token, show raw external response, inspect request/response mapping, run proxy before and after a Studio response-mapping edit.",
       "item": [
         {
-          "name": "1. RAW REST response before CanonBridge mapping",
+          "name": "1. InventoryPro auth token used by the partner REST API",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{mockApiUrl}}/actuator/health",
+            "description": "Narration-only step: InventoryPro uses bearer auth in this local demo. Use this request as a stable placeholder while explaining that CanonBridge stores the partner token in connection/auth config. Token used by the next raw REST request: Authorization: Bearer {{mockBearerToken}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('mock service reachable while explaining InventoryPro auth', function () { pm.response.to.have.status(200); });",
+                  "pm.test('InventoryPro bearer token is configured', function () { pm.expect(pm.collectionVariables.get('mockBearerToken')).to.eql('demo-bearer-token-peopleops'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "2. RAW REST response before CanonBridge mapping",
           "request": {
             "method": "GET",
             "header": [
@@ -174,7 +185,7 @@
               }
             ],
             "url": "{{mockApiUrl}}/api/inventorypro/items/SKU-1001",
-            "description": "Show this first. This is the external REST system response before CanonBridge changes anything. Point out nested warehouse fields and partner-specific field names."
+            "description": "Run after explaining the InventoryPro bearer token. This is the external REST system response before CanonBridge changes anything. Header: Authorization: Bearer {{mockBearerToken}}."
           },
           "response": [],
           "event": [
@@ -195,38 +206,7 @@
           ]
         },
         {
-          "name": "2. REST auth detail example - PayFlex API key",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "X-API-Key",
-                "value": "{{mockApiKey}}"
-              }
-            ],
-            "url": "{{mockApiUrl}}/api/payments/latest",
-            "description": "Use this to show a concrete auth detail: PayFlex expects X-API-Key. This is separate from the InventoryPro bearer-token example, proving CanonBridge can model different auth schemes."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('PayFlex mock returns payment payload', function () {",
-                  "  pm.response.to.have.status(200);",
-                  "  const json = pm.response.json();",
-                  "  pm.expect(json.payment).to.be.an('object');",
-                  "  pm.expect(json.payment.id).to.exist;",
-                  "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "3. Mapping metadata - source type, request config, response rules",
+          "name": "3. Mapping list - locate InventoryPro REST mapping",
           "request": {
             "method": "GET",
             "header": [
@@ -240,7 +220,7 @@
               }
             ],
             "url": "{{baseUrl}}/api/mapping-drafts",
-            "description": "Use this together with Studio. Filter or search in the response for InventoryPro Stock Snapshot Mapping. Show source_type=REST_API, source_config for request details, and mapping/generated JSONata fields for response mapping."
+            "description": "Use with Studio to locate InventoryPro Stock Snapshot Mapping. Show source_type=REST_API and explain this is the selected REST integration for the demo."
           },
           "response": [],
           "event": [
@@ -256,7 +236,7 @@
           ]
         },
         {
-          "name": "4. InventoryPro mapping detail - request and response mapping source",
+          "name": "4. InventoryPro mapping detail - auth, request mapping, response mapping",
           "request": {
             "method": "GET",
             "header": [
@@ -270,7 +250,7 @@
               }
             ],
             "url": "{{baseUrl}}/api/mapping-drafts/{{inventoryMappingId}}",
-            "description": "Shows the exact mapping record used by the proxy request. In the UI, this corresponds to request mapping and response mapping details."
+            "description": "Shows the exact mapping record used by the proxy. In Studio, use this same mapping to show partner auth/config, GET request details, and response mapping fields."
           },
           "event": [
             {
@@ -287,7 +267,7 @@
           "response": []
         },
         {
-          "name": "5. CANONBRIDGE PROXY before Studio response-mapping edit",
+          "name": "5. CANONBRIDGE PROXY before response-mapping edit",
           "request": {
             "method": "GET",
             "header": [
@@ -301,7 +281,7 @@
               }
             ],
             "url": "{{baseUrl}}/api/proxy/{{inventoryMappingId}}",
-            "description": "Run after showing request/response mapping in Studio. This is the canonical response before the live response-mapping change."
+            "description": "Run before editing the Studio response mapping. This shows the current canonical response shape for the InventoryPro REST API."
           },
           "response": [],
           "event": [
@@ -323,7 +303,7 @@
           ]
         },
         {
-          "name": "6. CANONBRIDGE PROXY after Studio response-mapping edit",
+          "name": "6. CANONBRIDGE PROXY after response-mapping edit",
           "request": {
             "method": "GET",
             "header": [
@@ -337,7 +317,7 @@
               }
             ],
             "url": "{{baseUrl}}/api/proxy/{{inventoryMappingId}}",
-            "description": "Rerun this after changing the response mapping in Studio. The URL is intentionally the same; the point is that mapping configuration changes the returned response shape without changing client integration code."
+            "description": "Run after changing the response mapping in Studio. The request URL and external InventoryPro API stay the same; only CanonBridge mapping output should change."
           },
           "response": [],
           "event": [
@@ -353,36 +333,6 @@
                   "  pm.expect(json.warehouseCity).to.eql('London');",
                   "  pm.expect(json.availableQuantity).to.be.a('number');",
                   "});"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "CANONBRIDGE PROXY - CloudBill invoice canonical view",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{authToken}}"
-              },
-              {
-                "key": "X-Tenant-Id",
-                "value": "{{tenantId}}"
-              }
-            ],
-            "url": "{{baseUrl}}/api/proxy/{{cloudBillMappingId}}",
-            "description": "Second REST proxy example for a billing/invoice source."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });"
                 ]
               }
             }
@@ -437,27 +387,6 @@
           ]
         },
         {
-          "name": "3. Open Kafka UI topics",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{kafkaUiUrl}}",
-            "description": "Open Kafka UI and inspect topics: partner.raw.events, canonical.events, usage.events, transformation.dlq."
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });"
-                ]
-              }
-            }
-          ]
-        },
-        {
           "name": "2. Kafka mapping metadata in Studio/API",
           "request": {
             "method": "GET",
@@ -473,6 +402,27 @@
             ],
             "url": "{{baseUrl}}/api/mapping-drafts/{{shopmaxKafkaMappingId}}",
             "description": "Shows a KAFKA source mapping in Mapping Studio metadata. The live topic demo uses the transformer fixture topic partner.raw.events because that is the active local transformer subscription."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Open Kafka UI topics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{kafkaUiUrl}}",
+            "description": "Open Kafka UI and inspect topics: partner.raw.events, canonical.events, usage.events, transformation.dlq."
           },
           "response": [],
           "event": [
