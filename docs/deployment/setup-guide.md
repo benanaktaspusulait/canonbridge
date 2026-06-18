@@ -57,7 +57,7 @@ make health
 |---------|-----|-------------|
 | **Kafka UI** | http://localhost:8080 | - |
 | **Prometheus** | http://localhost:9090 | - |
-| **Grafana** | http://localhost:3001 | admin/admin |
+| **Grafana** | http://localhost:3000 | admin/admin |
 | **Jaeger** | http://localhost:16686 | - |
 | **PostgreSQL** | localhost:5432 | etluser/etlpass |
 | **Redis** | localhost:6379 | - |
@@ -508,7 +508,7 @@ If you encounter issues:
 - [ ] Database initialized (automatic)
 - [ ] Health check passed with `make health`
 - [ ] Accessed Kafka UI at http://localhost:8080
-- [ ] Accessed Grafana at http://localhost:3001
+- [ ] Accessed Grafana at http://localhost:3000
 - [ ] Read architecture documentation
 
 ---

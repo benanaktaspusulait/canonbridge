@@ -41,7 +41,7 @@ Useful local URLs:
 |---------|-----|
 | Kafka UI | http://localhost:8080 |
 | Prometheus | http://localhost:9090 |
-| Grafana | http://localhost:3001 |
+| Grafana | http://localhost:3000 |
 | Jaeger | http://localhost:16686 |
 
 Application health endpoints such as `/health/live`, `/health/ready`, and `/metrics` become relevant after the API and transformer services are started.

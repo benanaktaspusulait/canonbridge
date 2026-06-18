@@ -42,7 +42,7 @@ groups:
           description: "p99 entitlement check latency is {{ $value }}s (threshold: 100ms)"
 
       - alert: QuotaAbuseDetected
-        expr: increase(cb_usage_total[1h]) > 2 * on(org_id) group_left() (entitlement_limit_value)
+        expr: increase(cb_usage_total[1h]) > on(org_id) group_left() (2 * entitlement_limit_value)
         for: 0m
         labels:
           severity: critical

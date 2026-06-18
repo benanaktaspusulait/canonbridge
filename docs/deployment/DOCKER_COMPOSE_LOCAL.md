@@ -37,10 +37,11 @@ docker compose down
 |---|---|
 | Mapping Studio UI | http://localhost:4200 |
 | Mapping Studio API health | http://localhost:8082/health |
-| Transformer health | http://localhost:3000/health |
-| Mock service health | http://localhost:8080/actuator/health |
+| Transformer health | http://localhost:8083/health |
+| Mock service health | http://localhost:8085/actuator/health |
+| Kafka UI | http://localhost:8080 |
 | Prometheus | http://localhost:9090 |
-| Grafana | http://localhost:3001 |
+| Grafana | http://localhost:3000 |
 
 ## Reset Local State
 
